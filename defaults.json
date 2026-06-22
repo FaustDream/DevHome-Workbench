@@ -1,0 +1,295 @@
+{
+  "categoryNames": [
+    "常用",
+    "AI",
+    "视频",
+    "社交",
+    "开发",
+    "设计",
+    "学习",
+    "工具",
+    "购物",
+    "音乐",
+    "资讯"
+  ],
+  "pages": {
+    "常用": [
+      {
+        "name": "哔哩哔哩",
+        "url": "https://www.bilibili.com"
+      },
+      {
+        "name": "知乎",
+        "url": "https://www.zhihu.com"
+      },
+      {
+        "name": "GitHub",
+        "url": "https://github.com"
+      },
+      {
+        "name": "ChatGPT",
+        "url": "https://chatgpt.com"
+      }
+    ],
+    "AI": [
+      {
+        "name": "ChatGPT",
+        "url": "https://chatgpt.com"
+      },
+      {
+        "name": "Claude",
+        "url": "https://claude.ai"
+      },
+      {
+        "name": "Gemini",
+        "url": "https://gemini.google.com"
+      },
+      {
+        "name": "DeepSeek",
+        "url": "https://chat.deepseek.com"
+      },
+      {
+        "name": "Kimi",
+        "url": "https://kimi.moonshot.cn"
+      },
+      {
+        "name": "豆包",
+        "url": "https://www.doubao.com"
+      }
+    ],
+    "视频": [
+      {
+        "name": "哔哩哔哩",
+        "url": "https://www.bilibili.com"
+      },
+      {
+        "name": "YouTube",
+        "url": "https://www.youtube.com"
+      },
+      {
+        "name": "抖音",
+        "url": "https://www.douyin.com"
+      },
+      {
+        "name": "Netflix",
+        "url": "https://www.netflix.com"
+      },
+      {
+        "name": "腾讯视频",
+        "url": "https://v.qq.com"
+      },
+      {
+        "name": "爱奇艺",
+        "url": "https://www.iqiyi.com"
+      }
+    ],
+    "社交": [
+      {
+        "name": "微博",
+        "url": "https://weibo.com"
+      },
+      {
+        "name": "知乎",
+        "url": "https://www.zhihu.com"
+      },
+      {
+        "name": "小红书",
+        "url": "https://www.xiaohongshu.com"
+      },
+      {
+        "name": "X (Twitter)",
+        "url": "https://x.com"
+      },
+      {
+        "name": "Instagram",
+        "url": "https://www.instagram.com"
+      },
+      {
+        "name": "Reddit",
+        "url": "https://www.reddit.com"
+      }
+    ],
+    "开发": [
+      {
+        "name": "GitHub",
+        "url": "https://github.com"
+      },
+      {
+        "name": "MDN Web Docs",
+        "url": "https://developer.mozilla.org"
+      },
+      {
+        "name": "Stack Overflow",
+        "url": "https://stackoverflow.com"
+      },
+      {
+        "name": "力扣",
+        "url": "https://leetcode.cn"
+      },
+      {
+        "name": "Vercel",
+        "url": "https://vercel.com"
+      },
+      {
+        "name": "npm",
+        "url": "https://www.npmjs.com"
+      }
+    ],
+    "设计": [
+      {
+        "name": "Figma",
+        "url": "https://www.figma.com"
+      },
+      {
+        "name": "Pinterest",
+        "url": "https://www.pinterest.com"
+      },
+      {
+        "name": "Behance",
+        "url": "https://www.behance.net"
+      },
+      {
+        "name": "Dribbble",
+        "url": "https://dribbble.com"
+      },
+      {
+        "name": "Canva",
+        "url": "https://www.canva.com"
+      },
+      {
+        "name": "Iconfont",
+        "url": "https://www.iconfont.cn"
+      }
+    ],
+    "学习": [
+      {
+        "name": "菜鸟教程",
+        "url": "https://www.runoob.com"
+      },
+      {
+        "name": "中国大学MOOC",
+        "url": "https://www.icourse163.org"
+      },
+      {
+        "name": "Coursera",
+        "url": "https://www.coursera.org"
+      },
+      {
+        "name": "Wikipedia",
+        "url": "https://www.wikipedia.org"
+      },
+      {
+        "name": "DeepL 翻译",
+        "url": "https://www.deepl.com"
+      },
+      {
+        "name": "arXiv",
+        "url": "https://arxiv.org"
+      }
+    ],
+    "工具": [
+      {
+        "name": "Notion",
+        "url": "https://www.notion.so"
+      },
+      {
+        "name": "百度网盘",
+        "url": "https://pan.baidu.com"
+      },
+      {
+        "name": "Google Drive",
+        "url": "https://drive.google.com"
+      },
+      {
+        "name": "iLovePDF",
+        "url": "https://www.ilovepdf.com"
+      },
+      {
+        "name": "草料二维码",
+        "url": "https://cli.im"
+      },
+      {
+        "name": "Excalidraw",
+        "url": "https://excalidraw.com"
+      }
+    ],
+    "购物": [
+      {
+        "name": "淘宝",
+        "url": "https://www.taobao.com"
+      },
+      {
+        "name": "京东",
+        "url": "https://www.jd.com"
+      },
+      {
+        "name": "拼多多",
+        "url": "https://www.pinduoduo.com"
+      },
+      {
+        "name": "什么值得买",
+        "url": "https://www.smzdm.com"
+      },
+      {
+        "name": "eBay",
+        "url": "https://www.ebay.com"
+      },
+      {
+        "name": "AliExpress",
+        "url": "https://www.aliexpress.com"
+      }
+    ],
+    "音乐": [
+      {
+        "name": "网易云音乐",
+        "url": "https://music.163.com"
+      },
+      {
+        "name": "QQ音乐",
+        "url": "https://y.qq.com"
+      },
+      {
+        "name": "Spotify",
+        "url": "https://open.spotify.com"
+      },
+      {
+        "name": "Apple Music",
+        "url": "https://music.apple.com"
+      },
+      {
+        "name": "SoundCloud",
+        "url": "https://soundcloud.com"
+      },
+      {
+        "name": "猫耳FM",
+        "url": "https://www.missevan.com"
+      }
+    ],
+    "资讯": [
+      {
+        "name": "Hacker News",
+        "url": "https://news.ycombinator.com"
+      },
+      {
+        "name": "Product Hunt",
+        "url": "https://www.producthunt.com"
+      },
+      {
+        "name": "36氪",
+        "url": "https://36kr.com"
+      },
+      {
+        "name": "虎嗅",
+        "url": "https://www.huxiu.com"
+      },
+      {
+        "name": "今日头条",
+        "url": "https://www.toutiao.com"
+      },
+      {
+        "name": "少数派",
+        "url": "https://sspai.com"
+      }
+    ]
+  }
+}

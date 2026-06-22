@@ -1,0 +1,690 @@
+/* ============================================
+   DevHome Workbench - 四象限任务管理
+   艾森豪威尔矩阵（Eisenhower Matrix）
+   风格：日常模式玻璃拟态 + 深海暗蓝
+   ============================================ */
+
+/* ===== 工作台容器 ===== */
+.container.devhome-dimmed {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+    pointer-events: none;
+    transition: opacity var(--transition-normal), transform var(--transition-normal);
+}
+
+.devhome-stage {
+    position: fixed;
+    inset: 0;
+    z-index: 2600;
+    display: grid;
+    place-items: center;
+    padding: 96px 28px 28px;
+    /* 与日常模式共用同一套背景 */
+    background: var(--page-bg);
+    color: var(--text-primary);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity var(--transition-normal), visibility var(--transition-normal);
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+.devhome-stage::-webkit-scrollbar { display: none; }
+
+.devhome-stage.visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+/* ===== Popup 预览（保留原功能） ===== */
+.devhome-popup-stage {
+    position: fixed;
+    inset: 0;
+    z-index: 2600;
+    display: grid;
+    place-items: center;
+    padding: 96px 28px 28px;
+    /* 与日常模式共用同一套背景 */
+    background: var(--page-bg);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity var(--transition-normal), visibility var(--transition-normal);
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+.devhome-popup-stage::-webkit-scrollbar { display: none; }
+
+.devhome-popup-stage.visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.devhome-popup-preview {
+    width: min(520px, 100%);
+    max-height: calc(100vh - 56px);
+    overflow-y: auto;
+    scrollbar-width: none;
+    border: 1px solid var(--glass-border);
+    border-radius: 28px;
+    background: var(--glass-bg);
+    box-shadow: 0 20px 70px rgba(0, 0, 0, 0.30);
+    padding: 18px;
+    backdrop-filter: blur(22px) saturate(130%);
+    -webkit-backdrop-filter: blur(22px) saturate(130%);
+}
+.devhome-popup-preview::-webkit-scrollbar { display: none; }
+
+.devhome-popup-preview > header {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+.devhome-popup-preview h2 {
+    margin: 0;
+    font-size: 28px;
+    letter-spacing: -0.03em;
+}
+
+.devhome-popup-shell { display: block; }
+
+.devhome-popup-phone {
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 22px;
+    background: var(--devhome-card-bg);
+    padding: 14px;
+}
+
+.devhome-popup-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.devhome-popup-head span {
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.devhome-popup-search {
+    padding: 13px 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.06);
+    margin-bottom: 12px;
+}
+
+.devhome-popup-current {
+    display: grid;
+    gap: 8px;
+    padding: 12px;
+    border-radius: 18px;
+    border: 1px solid rgba(116, 255, 201, 0.18);
+    background: rgba(71, 240, 162, 0.07);
+    margin-bottom: 12px;
+}
+
+.devhome-popup-current div,
+.devhome-popup-tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.devhome-popup-current button,
+.devhome-popup-tabs span,
+.devhome-popup-item {
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 999px;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.06);
+    padding: 8px 10px;
+}
+
+.devhome-popup-tabs { margin-bottom: 12px; }
+
+.devhome-popup-tabs span.active {
+    color: #082116;
+    border-color: transparent;
+    background: linear-gradient(135deg, var(--devhome-green), var(--devhome-cyan));
+}
+
+.devhome-popup-list { display: grid; gap: 8px; }
+
+.devhome-popup-item {
+    width: 100%;
+    border-radius: 14px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.devhome-popup-item strong,
+.devhome-popup-item span { display: block; }
+
+.devhome-popup-item span {
+    margin-top: 4px;
+    font-size: 12px;
+}
+
+/* ===== 四象限面板 ===== */
+.quadrant-board {
+    width: min(1100px, 100%);
+    max-height: calc(100vh - 56px);
+    overflow-y: auto;
+    scrollbar-width: none;
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    background: var(--glass-bg);
+    box-shadow: 0 20px 70px rgba(0, 0, 0, 0.25);
+    padding: 24px;
+    backdrop-filter: blur(22px) saturate(130%);
+    -webkit-backdrop-filter: blur(22px) saturate(130%);
+}
+.quadrant-board::-webkit-scrollbar { display: none; }
+
+/* ===== 面板头部 ===== */
+.quadrant-board-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.quadrant-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 4px;
+    color: var(--devhome-green);
+    font-family: var(--doc-mono-font);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+}
+
+.quadrant-board-head h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+}
+
+.quadrant-board-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ===== 过滤器切换按钮 ===== */
+.quadrant-filter-btn {
+    border: 1px solid rgba(116, 255, 201, 0.25);
+    border-radius: 10px;
+    background: rgba(71, 240, 162, 0.08);
+    color: var(--devhome-green);
+    cursor: pointer;
+    padding: 7px 14px;
+    font-size: var(--font-size-sm);
+    font-family: var(--font-family);
+    font-weight: 600;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+.quadrant-filter-btn:hover {
+    background: rgba(71, 240, 162, 0.14);
+    border-color: rgba(116, 255, 201, 0.4);
+}
+
+.quadrant-filter-btn.filter-all {
+    border-color: var(--devhome-amber);
+    background: rgba(255, 204, 102, 0.12);
+    color: var(--devhome-amber);
+}
+
+/* ===== 按钮 ===== */
+.quadrant-mini-btn,
+.quadrant-primary-btn {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-primary);
+    cursor: pointer;
+    padding: 8px 14px;
+    font-size: var(--font-size-sm);
+    font-family: var(--font-family);
+    font-weight: 500;
+    transition: all var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+}
+
+.quadrant-primary-btn {
+    color: #071b13;
+    border-color: transparent;
+    background: linear-gradient(135deg, var(--devhome-green), var(--devhome-cyan));
+    font-weight: 600;
+}
+
+.quadrant-mini-btn:hover {
+    border-color: rgba(116, 255, 201, 0.28);
+    background: rgba(255, 255, 255, 0.10);
+    transform: translateY(-1px);
+}
+
+.quadrant-primary-btn:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.quadrant-mini-btn:active,
+.quadrant-primary-btn:active {
+    transform: scale(0.97);
+}
+
+/* ===== 四象限网格（2×2） ===== */
+.quadrant-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 14px;
+    min-height: 480px;
+}
+
+/* ===== 象限卡片 ===== */
+.quadrant-card {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.04);
+    padding: 16px;
+    transition: border-color var(--transition-fast), background var(--transition-fast);
+    min-height: 200px;
+}
+
+/* 象限拖入悬停高亮 */
+.quadrant-card.drag-over {
+    border-color: rgba(116, 255, 201, 0.35);
+    background: rgba(71, 240, 162, 0.06);
+}
+
+/* ===== 象限头部 ===== */
+.quadrant-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.quadrant-head-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.quadrant-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 0 8px currentColor;
+}
+
+.quadrant-head-left h2 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+}
+
+.quadrant-subtitle {
+    display: block;
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 1px;
+}
+
+.quadrant-count {
+    font-family: var(--doc-mono-font);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.06);
+    padding: 3px 9px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    white-space: nowrap;
+}
+
+/* ===== 任务列表 ===== */
+.quadrant-task-list {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.08) transparent;
+    min-height: 40px;
+    /* 空状态时的占位空间 */
+    padding: 2px 0;
+}
+.quadrant-task-list::-webkit-scrollbar {
+    width: 4px;
+}
+.quadrant-task-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+.quadrant-task-list::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.08);
+    border-radius: 2px;
+}
+
+.quadrant-task-list:empty::after {
+    content: '暂无任务';
+    display: block;
+    text-align: center;
+    color: var(--text-tertiary);
+    font-size: 12px;
+    padding: 16px 0;
+    opacity: 0.5;
+}
+
+/* ===== 任务项 ===== */
+.quadrant-task {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    cursor: grab;
+    transition: all var(--transition-fast);
+    user-select: none;
+}
+
+.quadrant-task:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.quadrant-task.dragging {
+    opacity: 0.4;
+    cursor: grabbing;
+    transform: scale(0.97);
+}
+
+/* 已完成任务（全部视图下可见） */
+.quadrant-task.is-completed {
+    opacity: 0.55;
+    border-color: rgba(71, 240, 162, 0.12);
+    background: rgba(71, 240, 162, 0.03);
+}
+
+.quadrant-task.is-completed .quadrant-task-title {
+    text-decoration: line-through;
+    color: var(--text-tertiary);
+}
+
+/* 已取消任务（全部视图下可见） */
+.quadrant-task.is-cancelled {
+    opacity: 0.4;
+    border-color: rgba(255, 255, 255, 0.03);
+    background: transparent;
+}
+
+.quadrant-task.is-cancelled .quadrant-task-title {
+    color: var(--text-tertiary);
+}
+
+/* 状态指示圆点（已完成/已取消任务替换复选框） */
+.quadrant-task-status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    opacity: 0.6;
+}
+.quadrant-task.is-completed .quadrant-task-status-dot {
+    background: var(--devhome-green);
+}
+.quadrant-task.is-cancelled .quadrant-task-status-dot {
+    background: var(--text-tertiary);
+}
+
+/* 复选框 */
+.quadrant-task-check {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    background: transparent;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quadrant-task-check:hover {
+    border-color: var(--devhome-green);
+    background: rgba(71, 240, 162, 0.1);
+}
+
+.quadrant-task-check.checked {
+    border-color: var(--devhome-green);
+    background: var(--devhome-green);
+}
+
+.quadrant-task-check.checked::after {
+    content: '';
+    display: block;
+    width: 5px;
+    height: 9px;
+    border: solid #071b26;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg) translateY(-1px);
+}
+
+/* 任务标题 */
+.quadrant-task-title {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.4;
+    word-break: break-word;
+    min-width: 0;
+}
+
+/* 任务时间戳 */
+.quadrant-task-time {
+    font-family: var(--doc-mono-font);
+    font-size: 10px;
+    color: var(--text-tertiary);
+    flex-shrink: 0;
+    white-space: nowrap;
+    user-select: none;
+}
+
+/* 任务取消按钮 */
+.quadrant-task-del {
+    opacity: 0;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+}
+
+.quadrant-task:hover .quadrant-task-del {
+    opacity: 1;
+}
+
+.quadrant-task-del:hover {
+    background: rgba(255, 71, 87, 0.15);
+    color: var(--danger);
+}
+
+/* ===== 添加任务按钮 ===== */
+.quadrant-add-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    margin-top: 10px;
+    padding: 8px 0;
+    border: 1px dashed rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text-tertiary);
+    font-size: 12px;
+    font-family: var(--font-family);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.quadrant-add-btn:hover {
+    border-color: rgba(116, 255, 201, 0.3);
+    color: var(--devhome-green);
+    background: rgba(71, 240, 162, 0.04);
+}
+
+.quadrant-add-btn:active {
+    transform: scale(0.98);
+}
+
+/* ===== 内联输入框（添加任务时显示） ===== */
+.quadrant-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    margin-top: 8px;
+    border: 1px solid rgba(116, 255, 201, 0.3);
+    border-radius: 10px;
+    background: rgba(71, 240, 162, 0.06);
+    animation: quadrantInputIn 0.15s ease;
+}
+
+@keyframes quadrantInputIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.quadrant-input-row input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-family: var(--font-family);
+}
+
+.quadrant-input-row input::placeholder {
+    color: var(--text-tertiary);
+}
+
+.quadrant-input-confirm {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: 8px;
+    background: var(--devhome-green);
+    color: #071b26;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+}
+
+.quadrant-input-confirm:hover {
+    opacity: 0.85;
+    transform: scale(1.05);
+}
+
+.quadrant-input-cancel {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+}
+
+.quadrant-input-cancel:hover {
+    color: var(--danger);
+    background: rgba(255, 71, 87, 0.1);
+}
+
+/* ===== 响应式：小屏单列 ===== */
+@media (max-width: 768px) {
+    .devhome-stage {
+        padding: 20px 10px 10px;
+    }
+    .quadrant-board {
+        border-radius: 16px;
+        padding: 14px;
+    }
+    .quadrant-board-head {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .quadrant-board-head h1 {
+        font-size: 22px;
+    }
+    .quadrant-grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+        min-height: auto;
+    }
+    .quadrant-card {
+        min-height: 140px;
+    }
+}
+
+/* ===== 偏好动画减少 ===== */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+body > * { position: relative; z-index: 1; }

@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevHome Workbench</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/time-search.css">
+    <link rel="stylesheet" href="css/tiles.css">
+    <link rel="stylesheet" href="css/overlays.css">
+    <link rel="stylesheet" href="css/workbench.css">
+    <link rel="stylesheet" href="css/workbench-v2.css">
+    <link rel="stylesheet" href="css/pixel-theme.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://api.xinac.net">
+    <link rel="dns-prefetch" href="https://api.xinac.net">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/png" href="icons/icon16.png">
+</head>
+<body>
+    <!-- Matrix 数字雨背景 -->
+    <canvas id="matrixCanvas"></canvas>
+    <!-- 聚焦过渡遮罩 -->
+    <div class="focus-overlay" id="focusOverlay"></div>
+    <!-- 背景容器 -->
+    <div id="bgContainer">
+        <img id="bgImage" alt="" style="display: none;">
+        <video id="bgVideo" autoplay muted loop playsinline style="display: none;"></video>
+        <div id="bgOverlay"></div>
+    </div>
+
+    <div class="container">
+        <!-- 文件配置警告条：未选择配置目录时显示 -->
+        <div class="config-warning-bar" id="configWarningBar" style="display:none;">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink:0;">
+                <circle cx="8" cy="8" r="7" stroke="#856404" stroke-width="1.2" fill="none"/>
+                <path d="M8 4.5v3.5M8 10.5v.5" stroke="#856404" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <span id="configWarningText">请选择配置目录以持久化数据</span>
+            <button id="configSelectDirBtn" type="button" class="config-select-dir-btn">选择目录</button>
+        </div>
+
+        <div class="time-display" id="timeDisplay">
+            <div class="time-main" id="timeMain">00:00</div>
+            <div class="date-display" id="dateDisplay">2024年1月1日 星期一</div>
+        </div>
+
+        <div class="search-container" id="searchContainer">
+            <div class="search-wrapper doc-cmd-wrapper">
+                <span class="doc-prompt">&gt;</span>
+                <div class="search-engine-selector" id="engineSelector">
+                    <div class="current-engine" id="currentEngine">
+                        <svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="8" y="11.5" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor">G</text></svg>
+                        <span>Google</span>
+                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                </div>
+                <input type="text" class="search-input doc-cmd-input" id="searchInput" placeholder="搜索..." autocomplete="off" aria-label="搜索框">
+                <button class="search-button" id="searchButton" aria-label="搜索">
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.8"/><path d="M12 12l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                </button>
+            </div>
+            <!-- 搜索建议面板 -->
+            <div class="search-suggestions" id="searchSuggestions">
+                <div class="suggestions-header" id="suggestionsHeader"></div>
+                <div class="suggestions-list" id="suggestionsList"></div>
+                <div class="suggestions-footer" id="suggestionsFooter"></div>
+            </div>
+        </div>
+
+        <div id="catRow" class="cat-row"></div>
+
+        <!-- 磁贴页面指示器 -->
+        <div class="page-indicator" id="pageIndicator">
+            <button class="page-btn" id="prevPage" title="上一页">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 2L4 6l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="page-info" id="pageInfo">
+                <span class="page-name" id="pageName" title="点击展开分类列表，可在浮窗内切换、重命名或删除分类">第1页</span>
+            </div>
+            <button class="page-btn" id="nextPage" title="下一页">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="category-popover" id="categoryPopover" aria-label="分类选择"></div>
+        </div>
+
+        <div class="tiles-container" id="tilesContainer"></div>
+
+        <div class="hidden-message" id="hiddenMessage" style="display:none;"></div>
+    </div>
+
+    <!-- DevHome 工作台 v2：多 Tab 综合性工作台 -->
+    <section class="devhome-stage" id="devhomeStage" aria-label="DevHome 综合性工作台">
+        <!-- 顶部 Tab 导航栏 -->
+        <nav class="wb-nav" id="wbNav">
+            <button class="wb-nav-tab active" data-tab="dashboard">
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="11" y="2" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="11" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="11" y="11" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
+                <span class="wb-nav-label">总览</span>
+            </button>
+            <button class="wb-nav-tab" data-tab="notes">
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M5 2h8l4 4v11.5H5V2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 2v4h4M7 10h6M7 13h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                <span class="wb-nav-label">记录</span>
+            </button>
+            <button class="wb-nav-tab" data-tab="calendar">
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="3.5" width="15" height="14" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 8h15M6.5 1.5v3M13.5 1.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                <span class="wb-nav-label">日历</span>
+            </button>
+            <button class="wb-nav-tab" data-tab="pomodoro">
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="11" r="6.5" stroke="currentColor" stroke-width="1.5"/><path d="M10 6v5M10 11l3-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 2.5h6M10 2.5V4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                <span class="wb-nav-label">番茄钟</span>
+            </button>
+        </nav>
+
+        <!-- 右侧内容区 -->
+        <div class="wb-content" id="wbContent">
+            <!-- Tab 0: 仪表盘 -->
+            <section class="wb-panel active" data-panel="dashboard" id="wbPanelDashboard">
+                <div class="wb-dashboard-layout">
+                    <!-- 快速捕获 -->
+                    <div class="wb-capture-bar" id="wbCaptureBar">
+                        <input type="text" class="wb-capture-input" id="wbCaptureInput"
+                               placeholder="记录想法、灵感、待办... 回车保存"
+                               autocomplete="off">
+                        <div class="wb-capture-recent" id="wbCaptureRecent"></div>
+                    </div>
+                    <!-- 四象限任务 -->
+                    <div class="quadrant-board" id="quadrantBoard">
+                        <header class="quadrant-board-head">
+                            <div>
+                                <span class="quadrant-eyebrow">Focus Mode</span>
+                                <h1>四象限任务</h1>
+                            </div>
+                            <div class="quadrant-board-actions">
+                                <button class="quadrant-filter-btn" id="quadrantFilterBtn" type="button">活跃</button>
+                                <button class="quadrant-mini-btn" id="devhomeClearDone" type="button">清空历史</button>
+                                <button class="quadrant-mini-btn" id="devhomeBackHome" type="button">退出专注<span class="doc-badge" style="margin-left:6px;">Esc</span></button>
+                            </div>
+                        </header>
+                        <div class="quadrant-grid" id="quadrantGrid">
+                            <section class="quadrant-card" data-quadrant="q1">
+                                <div class="quadrant-head">
+                                    <div class="quadrant-head-left">
+                                        <span class="quadrant-dot" style="background:#ff6b6b;"></span>
+                                        <div><h2>重要且紧急</h2><span class="quadrant-subtitle">立即去做</span></div>
+                                    </div>
+                                    <span class="quadrant-count" id="q1Count">0</span>
+                                </div>
+                                <div class="quadrant-task-list" id="q1TaskList" data-quadrant="q1"></div>
+                                <button class="quadrant-add-btn" data-quadrant="q1"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>添加任务</span></button>
+                            </section>
+                            <section class="quadrant-card" data-quadrant="q2">
+                                <div class="quadrant-head">
+                                    <div class="quadrant-head-left">
+                                        <span class="quadrant-dot" style="background:#47f0a2;"></span>
+                                        <div><h2>重要不紧急</h2><span class="quadrant-subtitle">计划去做</span></div>
+                                    </div>
+                                    <span class="quadrant-count" id="q2Count">0</span>
+                                </div>
+                                <div class="quadrant-task-list" id="q2TaskList" data-quadrant="q2"></div>
+                                <button class="quadrant-add-btn" data-quadrant="q2"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>添加任务</span></button>
+                            </section>
+                            <section class="quadrant-card" data-quadrant="q3">
+                                <div class="quadrant-head">
+                                    <div class="quadrant-head-left">
+                                        <span class="quadrant-dot" style="background:#ffcc66;"></span>
+                                        <div><h2>紧急不重要</h2><span class="quadrant-subtitle">授权他人</span></div>
+                                    </div>
+                                    <span class="quadrant-count" id="q3Count">0</span>
+                                </div>
+                                <div class="quadrant-task-list" id="q3TaskList" data-quadrant="q3"></div>
+                                <button class="quadrant-add-btn" data-quadrant="q3"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>添加任务</span></button>
+                            </section>
+                            <section class="quadrant-card" data-quadrant="q4">
+                                <div class="quadrant-head">
+                                    <div class="quadrant-head-left">
+                                        <span class="quadrant-dot" style="background:#6f8c94;"></span>
+                                        <div><h2>不紧急不重要</h2><span class="quadrant-subtitle">尽量不做</span></div>
+                                    </div>
+                                    <span class="quadrant-count" id="q4Count">0</span>
+                                </div>
+                                <div class="quadrant-task-list" id="q4TaskList" data-quadrant="q4"></div>
+                                <button class="quadrant-add-btn" data-quadrant="q4"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>添加任务</span></button>
+                            </section>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab 1: 笔记 -->
+            <section class="wb-panel" data-panel="notes" id="wbPanelNotes">
+                <div class="wb-notes-layout">
+                    <div class="wb-notes-sidebar" id="wbNotesSidebar">
+                        <div class="wb-notes-search">
+                            <input type="text" id="wbNotesSearch" placeholder="搜索笔记..." autocomplete="off">
+                            <button class="wb-notes-add-btn" id="wbNotesAddBtn" title="新建笔记">
+                                <svg width="16" height="16" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                            </button>
+                        </div>
+                        <div class="wb-notes-filters" id="wbNotesFilters">
+                            <button class="wb-filter-chip always" data-filter="all">全部</button>
+                            <button class="wb-filter-chip" data-filter="uncategorized">📌 未分类</button>
+                            <button class="wb-filter-chip" data-filter="note">📝 笔记</button>
+                            <button class="wb-filter-chip" data-filter="capture">⚡ 捕获</button>
+                            <button class="wb-filter-chip" data-filter="idea">💡 想法</button>
+                            <button class="wb-filter-chip" data-filter="bug">🐛 Bug</button>
+                            <button class="wb-filter-chip" data-filter="meeting">📋 会议</button>
+                            <button class="wb-filter-chip" data-filter="webclip">🔗 剪藏</button>
+                            <span class="wb-filter-sep"></span>
+                            <span id="wbCustomFilters"></span>
+                            <button class="wb-filter-add-btn" id="wbFilterAddBtn" title="新增标签分类">+</button>
+                        </div>
+                        <div class="wb-notes-list" id="wbNotesList"></div>
+                    </div>
+                    <div class="wb-notes-editor" id="wbNotesEditor">
+                        <div class="wb-notes-editor-empty" id="wbNotesEditorEmpty">
+                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" opacity="0.2">
+                                <path d="M12 4h20l10 10v28.5H12V4z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M32 4v10h10M18 24h12M18 32h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <p id="wbNotesEmptyMsg">选择或新建一篇笔记</p>
+                        </div>
+                        <div class="wb-notes-editor-active" id="wbNotesEditorActive" style="display:none;">
+                            <div class="wb-notes-editor-head">
+                                <input type="text" id="wbNoteTitle" placeholder="笔记标题..." class="wb-note-title-input">
+                                <div class="wb-notes-editor-meta">
+                                    <span class="wb-note-type-badge-editor" id="wbNoteTypeBadge"></span>
+                                </div>
+                            </div>
+                            <div class="wb-notes-editor-body">
+                                <textarea id="wbNoteContent" placeholder="在此编写内容..." class="wb-note-textarea"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab 2: 日历 -->
+            <section class="wb-panel" data-panel="calendar" id="wbPanelCalendar">
+                <div class="wb-calendar-layout">
+                    <div class="wb-calendar-head">
+                        <button class="wb-calendar-nav" id="wbCalendarPrev">&lt;</button>
+                        <h2 class="wb-calendar-title" id="wbCalendarTitle">2026年6月</h2>
+                        <button class="wb-calendar-nav" id="wbCalendarNext">&gt;</button>
+                        <button class="wb-calendar-today" id="wbCalendarToday">今天</button>
+                    </div>
+                    <div class="wb-calendar-grid" id="wbCalendarGrid">
+                        <div class="wb-calendar-weekdays">
+                            <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+                        </div>
+                        <div class="wb-calendar-days" id="wbCalendarDays"></div>
+                    </div>
+                    <div class="wb-calendar-detail" id="wbCalendarDetail">
+                        <p class="wb-calendar-detail-empty">点击日期查看当日内容</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab 3: 番茄钟 -->
+            <section class="wb-panel" data-panel="pomodoro" id="wbPanelPomodoro">
+                <div class="wb-pomodoro-layout">
+                    <div class="wb-pomodoro-main">
+                        <div class="wb-pomodoro-circle" id="wbPomodoroCircle">
+                            <svg viewBox="0 0 200 200" class="wb-pomodoro-ring">
+                                <circle cx="100" cy="100" r="90" fill="none" stroke="var(--wb-border)" stroke-width="6"/>
+                                <circle cx="100" cy="100" r="90" fill="none" stroke="var(--wb-accent)" stroke-width="6"
+                                        stroke-linecap="round" id="wbPomodoroProgress"
+                                        stroke-dasharray="565.48" stroke-dashoffset="0"
+                                        transform="rotate(-90 100 100)"/>
+                            </svg>
+                            <div class="wb-pomodoro-time" id="wbPomodoroTime">25:00</div>
+                            <div class="wb-pomodoro-label" id="wbPomodoroLabel">准备开始</div>
+                        </div>
+                        <div class="wb-pomodoro-controls">
+                            <button class="wb-pomodoro-btn primary" id="wbPomodoroStart">开始</button>
+                            <button class="wb-pomodoro-btn" id="wbPomodoroPause" style="display:none;">暂停</button>
+                            <button class="wb-pomodoro-btn" id="wbPomodoroReset">重置</button>
+                        </div>
+                        <div class="wb-pomodoro-presets">
+                            <span class="wb-pomodoro-preset-label">时长：</span>
+                            <button class="wb-pomodoro-preset active" data-duration="25">25分钟</button>
+                            <button class="wb-pomodoro-preset" data-duration="30">30分钟</button>
+                            <button class="wb-pomodoro-preset" data-duration="45">45分钟</button>
+                            <button class="wb-pomodoro-preset" data-duration="60">60分钟</button>
+                            <input type="number" class="wb-pomodoro-custom" id="wbPomodoroCustom"
+                                   placeholder="自定义" min="1" max="180">
+                        </div>
+                        <div class="wb-pomodoro-mode">
+                            <button class="wb-pomodoro-mode-btn active" data-mode="default" id="wbPomodoroModeDefault">默认番茄钟</button>
+                            <button class="wb-pomodoro-mode-btn" data-mode="focus" id="wbPomodoroModeFocus">专注模式（无限）</button>
+                        </div>
+                        <div class="wb-pomodoro-rest">
+                            <span>休息时长：</span>
+                            <button class="wb-pomodoro-rest-btn active" data-rest="5">5分钟</button>
+                            <button class="wb-pomodoro-rest-btn" data-rest="10">10分钟</button>
+                            <button class="wb-pomodoro-rest-btn" data-rest="15">15分钟</button>
+                        </div>
+                    </div>
+                    <div class="wb-pomodoro-history" id="wbPomodoroHistory">
+                        <h3>今日番茄钟</h3>
+                        <div class="wb-pomodoro-history-list" id="wbPomodoroHistoryList"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab 4: 我 -->
+            <section class="wb-panel" data-panel="me" id="wbPanelMe">
+            </section>
+        </div>
+    </section>
+
+
+
+    <!-- 磁贴右键菜单 -->
+    <div class="context-menu" id="contextMenu">
+        <div class="context-menu-item" data-action="edit">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M10 2l2 2-8 8H2v-2l8-8z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>编辑磁贴</span>
+        </div>
+        <div class="context-menu-item" data-action="delete">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 4h10M5 4V2.5h4V4M4 4v7.5h6V4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>删除磁贴</span>
+        </div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item" data-action="upload">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 10V2M4 5l3-3 3 3M2 10v2h10v-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>上传磁贴</span>
+        </div>
+        <div class="context-menu-divider" id="ctxMoveDivider" style="display:none;"></div>
+        <div class="context-menu-item ctx-has-submenu" id="ctxMoveToItem" data-submenu="move" style="display:none;">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 5l2-3h6l2 3M3 5v6h8V5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>移动到分类</span>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" class="ctx-sub-arrow"><path d="M3 2l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="context-menu-item ctx-has-submenu" id="ctxCopyToItem" data-submenu="copy" style="display:none;">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M4 4v-2h8v8h-2M2 10V4h6v6H2z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>复制到分类</span>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" class="ctx-sub-arrow"><path d="M3 2l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+    </div>
+
+    <!-- 分类子菜单（移动到/复制到分类时弹出） -->
+    <div class="context-menu ctx-submenu" id="ctxCategorySubMenu"></div>
+
+    <!-- 空白区域右键菜单 -->
+    <div class="context-menu" id="blankContextMenu">
+        <div class="context-menu-item" data-action="refresh">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7a5 5 0 019-3M12 7a5 5 0 01-9 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12 1v3H9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>刷新</span>
+            <kbd class="doc-kbd ctx-kbd">F5</kbd>
+        </div>
+        <div class="context-menu-item" data-action="addTile">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>新添磁贴</span>
+            <kbd class="doc-kbd ctx-kbd">Ctrl+N</kbd>
+        </div>
+        <div class="context-menu-item" data-action="openWorkbench">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" class="wb-icon"><rect x="1.5" y="2.5" width="11" height="8" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M5 13V10.5h4V13" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span id="ctxFocusModeLabel">进入专注模式</span>
+            <kbd class="doc-kbd ctx-kbd" id="ctxFocusModeKey">Ctrl+K</kbd>
+        </div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item" data-action="addPage">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 2h6l3 3v7.5H3V2z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 2v3h3M7 7v3M5.5 8.5h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>新建分类</span>
+        </div>
+        <div class="context-menu-item" data-action="removePage">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 2h6l3 3v7.5H3V2z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 2v3h3M5.5 8.5h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>删除当前分类</span>
+        </div>
+    </div>
+
+    <!-- 固定设置入口 -->
+    <button class="settings-gear-btn" id="settingsGearBtn" type="button" title="设置" aria-label="打开设置">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.6"/>
+            <path d="M10 1.2v2.2M10 16.6v2.2M1.2 10h2.2M16.6 10h2.2M3.8 3.8l1.5 1.5M14.7 14.7l1.5 1.5M3.8 16.2l1.5-1.5M14.7 5.3l1.5-1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            <circle cx="10" cy="2.3" r="0.7" fill="currentColor"/>
+            <circle cx="10" cy="17.7" r="0.7" fill="currentColor"/>
+            <circle cx="2.3" cy="10" r="0.7" fill="currentColor"/>
+            <circle cx="17.7" cy="10" r="0.7" fill="currentColor"/>
+            <circle cx="4.5" cy="4.5" r="0.7" fill="currentColor"/>
+            <circle cx="15.5" cy="15.5" r="0.7" fill="currentColor"/>
+            <circle cx="4.5" cy="15.5" r="0.7" fill="currentColor"/>
+            <circle cx="15.5" cy="4.5" r="0.7" fill="currentColor"/>
+        </svg>
+    </button>
+
+    <div class="settings-overlay" id="settingsOverlay">
+        <aside class="settings-panel" id="settingsPanel" aria-label="功能设置">
+            <header class="settings-panel-header">
+                <div>
+                    <span class="settings-eyebrow">Settings</span>
+                    <h2>功能设置</h2>
+                </div>
+                <button class="settings-close-btn" id="settingsCloseBtn" type="button" aria-label="关闭设置">&times;</button>
+            </header>
+
+            <section class="settings-section" data-mode="daily">
+                <span class="doc-section-title">外观</span>
+                <button type="button" class="settings-row-btn" data-setting-action="uploadBg">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2" width="13" height="11" rx="1.5" stroke="currentColor" stroke-width="1.2"/><circle cx="5.5" cy="6.5" r="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M1.5 12l3.5-3.5L8 11.5l3-3L14.5 12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>上传背景</span>
+                </button>
+                <button type="button" class="settings-row-btn" data-setting-action="resetBg">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8a6 6 0 0110-4M14 8a6 6 0 01-10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 3v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>重置背景</span>
+                </button>
+            </section>
+
+            <section class="settings-section" data-mode="daily">
+                <span class="doc-section-title">背景参数</span>
+                <label class="settings-slider-row">
+                    <span>字符大小 <span class="slider-value" id="charSizeValue">8px</span></span>
+                    <input type="range" id="charSizeSlider" min="8" max="80" value="8" class="context-slider">
+                </label>
+                <label class="settings-slider-row">
+                    <span>流动速度 <span class="slider-value" id="flowSpeedValue">2×</span></span>
+                    <input type="range" id="flowSpeedSlider" min="2" max="20" value="2" class="context-slider">
+                </label>
+                <label class="settings-slider-row">
+                    <span>字符密度 <span class="slider-value" id="charDensityValue">60%</span></span>
+                    <input type="range" id="charDensitySlider" min="3" max="5" value="3" class="context-slider">
+                </label>
+            </section>
+
+            <section class="settings-section" data-mode="daily">
+                <span class="doc-section-title">分类与搜索</span>
+                <button type="button" class="settings-row-btn" data-setting-action="toggleCatRow">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span id="catRowText">分类按钮：关</span>
+                    <kbd class="doc-kbd settings-kbd">Alt+C</kbd>
+                </button>
+                <button type="button" class="settings-row-btn" data-setting-action="toggleAutoFocus">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3" width="13" height="10" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M5 14v-1.5h6V14" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M5 4v-2M11 4V2M8 4v10" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg><span id="autoFocusText">自动聚焦：关</span>
+                </button>
+                <button type="button" class="settings-row-btn" data-setting-action="toggleCategoryMemory">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 2v12l5-3 5 3V2H3z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="categoryMemoryText">分类记忆：关</span>
+                </button>
+            </section>
+
+            <section class="settings-section" data-mode="daily">
+                <span class="doc-section-title">快捷方式</span>
+                <div class="settings-subtitle" id="shortcutSizeText">快捷方式：标准</div>
+                <div class="shortcut-size-options" aria-label="快捷方式大小">
+                    <button type="button" class="shortcut-size-btn" data-shortcut-size="small">小</button>
+                    <button type="button" class="shortcut-size-btn" data-shortcut-size="standard">标准</button>
+                    <button type="button" class="shortcut-size-btn" data-shortcut-size="large">大</button>
+                </div>
+                <div class="settings-subtitle" id="shortcutColumnsText">每排：6 个</div>
+                <div class="shortcut-size-options" aria-label="快捷方式每排数量">
+                    <button type="button" class="shortcut-columns-btn" data-shortcut-columns="6">6 个</button>
+                    <button type="button" class="shortcut-columns-btn" data-shortcut-columns="8">8 个</button>
+                </div>
+            </section>
+
+            <!-- ===== 开发工作台设置（仅工作台模式可见） ===== -->
+            <section class="settings-section" data-mode="workbench">
+                <span class="doc-section-title">行为面板</span>
+                <div class="wb-settings-stats" id="wbSettingsStats">
+                    <div class="wb-settings-stat-item"><span class="wb-settings-stat-num" id="wbMeStreakNum">0</span><span>连续打卡</span></div>
+                    <div class="wb-settings-stat-item"><span class="wb-settings-stat-num" id="wbMeStatTasks">0</span><span>完成任务</span></div>
+                    <div class="wb-settings-stat-item"><span class="wb-settings-stat-num" id="wbMeStatPomodoros">0</span><span>番茄钟</span></div>
+                    <div class="wb-settings-stat-item"><span class="wb-settings-stat-num" id="wbMeStatFocus">0</span><span>专注分钟</span></div>
+                    <div class="wb-settings-stat-item"><span class="wb-settings-stat-num" id="wbMeStatNotes">0</span><span>笔记</span></div>
+                </div>
+            </section>
+
+            <section class="settings-section" data-mode="workbench">
+                <span class="doc-section-title">AI 每日总结 <span style="font-size:10px;color:var(--text-tertiary);">腾讯混元</span></span>
+                <div class="wb-settings-ai-row">
+                    <input type="text" id="wbMeAiApiKey" placeholder="API Key（已预置默认Key）" class="settings-input">
+                    <input type="text" id="wbMeAiEndpoint" placeholder="端点" class="settings-input" value="https://hunyuan.tencentcloudapi.com" style="max-width:220px;">
+                    <input type="text" id="wbMeAiModel" placeholder="模型" class="settings-input" value="hunyuan-lite" style="max-width:100px;">
+                    <button type="button" class="settings-row-btn" id="wbMeAiSaveKey"><span>保存</span></button>
+                </div>
+                <button type="button" class="settings-row-btn" id="wbMeAiGenerate"><span>生成今日总结</span></button>
+                <div class="wb-settings-ai-result" id="wbMeAiResult" style="display:none;">
+                    <div id="wbMeAiContent"></div>
+                    <button type="button" class="settings-row-btn" id="wbMeAiSaveNote"><span>保存为笔记</span></button>
+                </div>
+            </section>
+
+            <section class="settings-section" data-mode="workbench">
+                <span class="doc-section-title">导出中心</span>
+                <p style="font-size:11px;color:var(--text-tertiary);margin:0 0 8px;">选择内容导出为单个 Markdown 文件</p>
+                <div class="wb-settings-filter-row" id="wbSettingsExportFilters">
+                    <button class="wb-filter-chip active" data-export-filter="all">全部</button>
+                    <button class="wb-filter-chip" data-export-filter="note">笔记</button>
+                    <button class="wb-filter-chip" data-export-filter="capture">捕获</button>
+                    <button class="wb-filter-chip" data-export-filter="task">任务</button>
+                </div>
+                <div class="wb-settings-export-list" id="wbMeExportList"></div>
+                <div class="wb-settings-export-actions">
+                    <button type="button" class="settings-row-btn" id="wbMeSelectAll"><span>全选</span></button>
+                    <button type="button" class="settings-row-btn" id="wbMeExportSelected"><span>导出选中</span></button>
+                </div>
+            </section>
+
+            <section class="settings-section" data-mode="workbench">
+                <span class="doc-section-title">开发设置</span>
+                <div class="wb-settings-shortcut-row">
+                    <span style="font-size:12px;color:var(--wb-text-secondary);">专注模式快捷键</span>
+                    <label class="wb-settings-toggle" style="display:inline-flex;gap:4px;">
+                        <input type="checkbox" id="wbMeShortcutCtrl" checked> Ctrl
+                    </label>
+                    <label class="wb-settings-toggle" style="display:inline-flex;gap:4px;">
+                        <input type="checkbox" id="wbMeShortcutShift"> Shift
+                    </label>
+                    <label class="wb-settings-toggle" style="display:inline-flex;gap:4px;">
+                        <input type="checkbox" id="wbMeShortcutAlt"> Alt
+                    </label>
+                    <input type="text" id="wbMeShortcutKey" value="k" maxlength="1" class="settings-input" style="width:40px;text-align:center;text-transform:lowercase;">
+                    <button type="button" class="settings-row-btn" id="wbMeShortcutSave"><span>保存</span></button>
+                </div>
+                <label class="wb-settings-toggle">
+                    <input type="checkbox" id="wbMeToggleStrict"> 严厉鞭策模式
+                </label>
+                <label class="wb-settings-toggle">
+                    <input type="checkbox" id="wbMeToggleFileSync"> 文件自动同步
+                </label>
+            </section>
+
+            <!-- ===== 通用设置（两种模式均可见） ===== -->
+            <section class="settings-section" data-mode="common">
+                <span class="doc-section-title">数据</span>
+                <button type="button" class="settings-row-btn" data-setting-action="exportData">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 6l3 3 3-3M2 10v3h12v-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>导出备份</span>
+                </button>
+                <button type="button" class="settings-row-btn" data-setting-action="importData">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 14V6M5 10l3-3 3 3M2 3v3h12V3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>导入备份</span>
+                </button>
+                <button type="button" class="settings-row-btn" data-setting-action="syncToFile" id="configSyncBtn" style="display:none;">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8a6 6 0 0110-4M14 8a6 6 0 01-10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 3v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>立即同步到文件</span>
+                </button>
+                <button type="button" class="settings-row-btn" data-setting-action="changeConfigDir" id="configChangeDirBtn">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3v10l5-3 5 3V3H3z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="configDirLabel">选择配置目录</span>
+                </button>
+                <div class="settings-subtitle" id="configSyncStatus" style="font-size:11px;color:var(--text-tertiary);margin-top:4px;"></div>
+                <button type="button" class="settings-row-btn" data-setting-action="resetSettings" style="color: var(--danger);">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8a6 6 0 0110-4M14 8a6 6 0 01-10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 3v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>重置设置</span>
+                </button>
+            </section>
+
+            <section class="settings-section" data-mode="common">
+                <span class="doc-section-title">关于</span>
+                <button type="button" class="settings-row-btn" id="changelogBtn">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 2v12M2 4h10l2 2v6.5H2V4z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 8h4M6 11h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>更新说明</span>
+                </button>
+            </section>
+        </aside>
+    </div>
+
+    <!-- 更新说明弹窗 -->
+    <div class="changelog-overlay" id="changelogOverlay">
+        <div class="changelog-modal" id="changelogModal">
+            <header class="changelog-header">
+                <div>
+                    <span class="changelog-eyebrow">Release Notes</span>
+                    <h2>更新说明</h2>
+                </div>
+                <button class="changelog-close-btn" id="changelogCloseBtn" type="button" aria-label="关闭">&times;</button>
+            </header>
+            <div class="changelog-body" id="changelogBody">
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v1.3.1</span>
+                        <span class="changelog-date">2026-06-17</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>新增</strong> 设置面板「数据」区域新增「切换配置目录」入口，更换目录后自动同步数据</li>
+                        <li><strong>修复</strong> 分类选择浮窗过于灵敏 — 鼠标掠过即弹出改为需停留 200ms 后才显示，点击仍即时响应</li>
+                    </ul>
+                </div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v1.3.0</span>
+                        <span class="changelog-date">2026-06-17</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>核心改动</strong> 新增文件系统配置持久化：用户选择本地文件夹存放配置，清除浏览器缓存/切换浏览器后可恢复全部数据</li>
+                        <li><strong>搜索历史</strong> 改用浏览器原生历史记录 API，不再占用配置文件空间</li>
+                        <li><strong>未授权保护</strong> 首次或目录失效时强制提示用户选择配置目录，扩展图标显示红色感叹号角标</li>
+                        <li><strong>设置面板</strong> 新增「立即同步到文件」和「切换配置目录」入口</li>
+                    </ul>
+                </div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v1.2.0</span>
+                        <span class="changelog-date">2026-06-17</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>核心改动</strong> 移除亮色/晨雾/暗色三套主题，统一为黑客像素风格唯一主题，纯黑背景</li>
+                        <li><strong>数字雨重写</strong> 极慢速攻防双向流动（55%下落为攻/45%上升为防），红色警示字符混入，鼠标涟漪与字符位移互动</li>
+                        <li><strong>外观透明化</strong> 时间区域、搜索栏、磁贴全部改为透明背景仅保留边框，数字雨穿透整个页面</li>
+                        <li><strong>背景参数面板</strong> 新增字符大小(8-80px)、流动速度(2-20×)、字符密度(60%-100%)三个可调滑块，带实时数值显示</li>
+                        <li><strong>新增</strong> 设置面板「重置设置」按钮，一键恢复默认值（保留磁贴和分类数据）</li>
+                        <li><strong>修复</strong> 数字雨背景未铺满全屏（z-index 层叠 + body 宽度限制导致两边留白）</li>
+                        <li><strong>修复</strong> 磁贴未居中显示（auto-fill grid 改为 flexbox）</li>
+                        <li><strong>修复</strong> CRT 闪烁动画导致持续屏闪（直接移除）</li>
+                        <li><strong>修复</strong> 背景参数滑块调节后未实时生效</li>
+                    </ul>
+                </div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v1.1.1</span>
+                        <span class="changelog-date">2026-06-17</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>修复</strong> 数字雨背景未铺满全屏，仅中间区域有效两边留白（z-index 层叠冲突 + body width 受 flex 限制）</li>
+                        <li><strong>修复</strong> 快捷方式磁贴未居中（auto-fill grid 改为 flexbox 布局）</li>
+                        <li><strong>修复</strong> CRT 屏闪（body flicker 0.15s 动画）</li>
+                        <li><strong>修复</strong> 数字雨脚本双 else 语法错误导致背景消失</li>
+                        <li><strong>修复</strong> 背景参数滑块修改后未实时生效</li>
+                    </ul>
+                </div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v1.1.0</span>
+                        <span class="changelog-date">2026-06-16</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>新增</strong> 设置齿轮按钮替换为更直观的齿轮造型图标，视觉识别性更强</li>
+                        <li><strong>新增</strong> 设置面板中增加「更新说明」入口，点击可查看完整版本变更记录</li>
+                        <li><strong>修复</strong> Font Awesome 样式表内联 onload 事件处理器违反 CSP 策略的报错</li>
+                    </ul>
+                </div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v1.0.0</span>
+                        <span class="changelog-date">2026-06-01</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>核心功能</strong> 全新标签页工作台，替代浏览器默认新标签页，面向独立开发者的一站式工作入口</li>
+                        <li><strong>时间显示</strong> 大字号数字时钟与完整中文日期（含星期），支持大小拖拽调节</li>
+                        <li><strong>多引擎搜索</strong> 集成 Google、百度、Bing、DuckDuckGo、Yahoo 五种搜索引擎，实时切换，支持搜索建议（Bing API）与历史记录</li>
+                        <li><strong>磁贴系统</strong> 可自定义的图标磁贴（Font Awesome 图标库 / 本地上传图片 / Emoji），支持拖拽排序、右键编辑删除、长按进入编辑模式</li>
+                        <li><strong>分类页面</strong> 多页面分类管理，可通过空白区域右键新建/删除分类，支持拖拽重排分类顺序，分类名称支持双击重命名</li>
+                        <li><strong>三套主题</strong> 亮色、晨雾、暗色三种视觉主题，右上角齿轮设置或右键菜单中切换</li>
+                        <li><strong>自定义背景</strong> 支持上传图片或视频作为背景，可调节遮罩透明度与视频帧率，一键重置默认背景</li>
+                        <li><strong>专注模式</strong> 偏右上角点击时间进入隐藏态——轻专注保留搜索仅隐藏分类和磁贴，深专注全部收起；再次点击时间恢复</li>
+                        <li><strong>分类按钮行</strong> 可选显隐的水平分类按钮栏，支持快捷切换页面</li>
+                        <li><strong>自动聚焦</strong> 新标签页打开时自动聚焦搜索框（可配置开关），支持 / 键快捷聚焦</li>
+                        <li><strong>分类记忆</strong> 记住上次离开时的分类页面，下次打开自动恢复（可配置开关）</li>
+                        <li><strong>快捷方式调节</strong> 设置面板中可切换磁贴大小（小/标准/大）和每排数量（6/8个）</li>
+                        <li><strong>DevHome 开发工作台</strong> 右键打开独立工作台面板，展示当前焦点项目、Inbox 收件箱、项目列表与资源入口，支持搜索项目、资源和命令</li>
+                        <li><strong>Popup 预览模式</strong> 在工作台面板中内置 Popup 快速操作预览页，可在一处查看书签、历史、下载等核心能力</li>
+                        <li><strong>数据备份</strong> 支持导出全部配置到 JSON 文件备份，支持导入恢复（覆盖当前配置）</li>
+                        <li><strong>键盘快捷键</strong> / 聚焦搜索、Esc 退出/关闭面板、Ctrl+B 打开弹窗、Ctrl+K 打开工作台、Alt+1~5 切换搜索引擎、1~5 切换搜索引擎、Enter 执行搜索、Tab 切换页面</li>
+                        <li><strong>扩展弹窗</strong> 点击工具栏图标或 Ctrl+B 打开 Popup，支持综合搜索、书签管理、历史记录查看、下载管理，带键盘导航</li>
+                        <li><strong>Popup 设置</strong> 弹窗内可配置默认标签页、主题色、书签排序方式、日期折叠分组、删除确认等</li>
+                        <li><strong>浏览器集成</strong> 利用 Chrome storage、bookmarks、history、downloads、tabs API 实现数据同步与功能集成</li>
+                        <li><strong>视觉效果</strong> CSS 自定义属性体系、毛玻璃面板、网格背景、渐变动画过渡、响应式布局支持</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 隐藏的背景文件上传 -->
+    <input type="file" id="bgInput" accept="image/*,video/*" hidden>
+    <input type="file" id="importInput" accept=".json" hidden>
+
+    <!-- 上传/编辑磁贴弹窗 -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal" id="tileModal">
+            <div class="modal-header">
+                <h3 id="modalTitle">上传磁贴</h3>
+                <button class="modal-close" id="modalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>图标类型</label>
+                    <div class="icon-type-tabs">
+                        <button class="icon-type-tab active" data-type="fa">图标库</button>
+                        <button class="icon-type-tab" data-type="image">上传图片</button>
+                        <button class="icon-type-tab" data-type="emoji">Emoji</button>
+                    </div>
+                </div>
+                <div class="form-group" id="faGroup">
+                    <label>Font Awesome 图标类名</label>
+                    <input type="text" id="faInput" placeholder="例如: fab fa-github" class="form-input">
+                    <div class="fa-preview" id="faPreview"></div>
+                </div>
+                <div class="form-group hidden" id="imageGroup">
+                    <label>上传图标图片</label>
+                    <div class="image-upload-area" id="imageUploadArea">
+                        <input type="file" id="imageInput" accept="image/*" hidden>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="2" y="3" width="20" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/><circle cx="8.5" cy="9.5" r="2" stroke="currentColor" stroke-width="1.5"/><path d="M2 19l5-5 4 4 4-4 7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>点击选择图片</span>
+                    </div>
+                    <img id="imagePreview" class="image-preview hidden" alt="预览">
+                </div>
+                <div class="form-group hidden" id="emojiGroup">
+                    <label>Emoji 图标</label>
+                    <input type="text" id="emojiInput" placeholder="例如: 🚀" class="form-input emoji-input" maxlength="4">
+                </div>
+                <div class="form-group">
+                    <label>名称</label>
+                    <input type="text" id="labelInput" placeholder="磁贴名称" class="form-input" maxlength="20">
+                </div>
+                <div class="form-group">
+                    <label>网址</label>
+                    <input type="text" id="urlInput" placeholder="https://..." class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>图标颜色</label>
+                    <input type="color" id="colorInput" value="#4a9eff" class="form-color">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-cancel" id="modalCancel">取消</button>
+                <button class="btn btn-save" id="modalSave">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 搜索引擎下拉弹窗（body 直接子级，避免层叠上下文限制）-->
+    <div class="engine-dropdown" id="engineDropdown">
+        <div class="engine-option" data-engine="google" data-url="https://www.google.com/search?q=">
+            <svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="8" y="11.5" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor">G</text></svg><span>Google</span>
+        </div>
+        <div class="engine-option" data-engine="baidu" data-url="https://www.baidu.com/s?wd=">
+            <span class="engine-badge" aria-hidden="true">百</span><span>百度</span>
+        </div>
+        <div class="engine-option" data-engine="bing" data-url="https://www.bing.com/search?q=">
+            <svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="8" y="11.5" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor">B</text></svg><span>Bing</span>
+        </div>
+        <div class="engine-option" data-engine="duckduckgo" data-url="https://duckduckgo.com/?q=">
+            <svg width="16" height="16" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>DuckDuckGo</span>
+        </div>
+        <div class="engine-option" data-engine="yahoo" data-url="https://search.yahoo.com/search?p=">
+            <svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="8" y="11.5" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor">Y</text></svg><span>Yahoo</span>
+        </div>
+    </div>
+
+    <!-- v2 外部依赖：marked.js（Markdown 渲染） + dayjs（日期处理） -->
+    <script src="js/lib/marked.min.js" defer></script>
+    <script src="js/lib/dayjs.min.js" defer></script>
+
+    <script src="js/config.js" defer></script>
+    <script src="js/storage.js" defer></script>
+    <script src="js/storageV2.js" defer></script>
+    <script src="js/fileConfig.js" defer></script>
+    <script src="js/state.js" defer></script>
+    <script src="js/utils.js" defer></script>
+    <script src="js/favicon.js" defer></script>
+    <script src="js/theme.js" defer></script>
+    <script src="js/pageManager.js" defer></script>
+    <script src="js/tiles.js" defer></script>
+    <script src="js/categoryUI.js" defer></script>
+    <script src="js/ui.js" defer></script>
+    <script src="js/search.js" defer></script>
+    <script src="js/notes.js" defer></script>
+    <script src="js/export.js" defer></script>
+    <script src="js/workbench.js" defer></script>
+    <script src="js/events.js" defer></script>
+    <script src="js/main.js" defer></script>
+    <script src="js/matrix-bg.js"></script>
+
+    <!-- 自定义确认弹窗（暖纸风格，图标左置） -->
+    <div class="wb-confirm-overlay" id="wbConfirmOverlay">
+        <div class="wb-confirm-dialog">
+            <div class="wb-confirm-header">
+                <svg class="wb-confirm-icon" width="20" height="20" viewBox="0 0 32 32" fill="none">
+                    <circle cx="16" cy="16" r="14" stroke="#c0692a" stroke-width="2"/>
+                    <path d="M16 10v10M16 23v1" stroke="#c0692a" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <h3 class="wb-confirm-title" id="wbConfirmTitle">确认操作</h3>
+            </div>
+            <p class="wb-confirm-message" id="wbConfirmMessage"></p>
+            <div class="wb-confirm-actions">
+                <button class="wb-confirm-btn wb-confirm-cancel" id="wbConfirmCancel">取消</button>
+                <button class="wb-confirm-btn wb-confirm-ok" id="wbConfirmOk">确定</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,346 @@
+/* DevHome Workbench - base.css */
+
+/* ===== CSS Variables & Design Tokens ===== */
+/* ===== 聚焦过渡遮罩 ===== */
+.focus-overlay { display: none; }
+body.focus-transition .focus-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: #071b26;
+    z-index: 9999;
+    /* CSS animation 兜底：0.8s 后自动淡出，即使 JS 崩溃也能恢复 */
+    animation: focusFadeOut 0.3s ease 0.8s forwards;
+}
+/* JS 提前触发：页面就绪后立即淡出 */
+body.focus-transition .focus-overlay.ready {
+    animation: focusFadeOut 0.3s ease 0.05s forwards;
+}
+@keyframes focusFadeOut {
+    to { opacity: 0; visibility: hidden; }
+}
+
+:root {
+    --bg-primary: #071b26;
+    --bg-secondary: rgba(20, 48, 63, 0.78);
+    --bg-tertiary: rgba(30, 65, 82, 0.72);
+    --text-primary: #edf8f7;
+    --text-secondary: #a8c4c9;
+    --text-tertiary: #6f8c94;
+    --accent-primary: #55e6d2;
+    --accent-hover: #7ad7ff;
+    --devhome-green: #47f0a2;
+    --devhome-cyan: #7ad7ff;
+    --devhome-amber: #ffcc66;
+    --border-color: rgba(153, 220, 226, 0.16);
+    --glass-bg: rgba(34, 75, 94, 0.48);
+    --glass-bg-hover: rgba(47, 100, 122, 0.62);
+    --glass-border: rgba(153, 220, 226, 0.18);
+    --glass-border-strong: rgba(85, 230, 210, 0.36);
+    --devhome-grid-line: rgba(181, 235, 241, 0.045);
+    --page-bg:
+        radial-gradient(circle at 18% 12%, rgba(71, 240, 162, 0.16), transparent 30%),
+        radial-gradient(circle at 78% 18%, rgba(122, 215, 255, 0.16), transparent 34%),
+        radial-gradient(circle at 52% 82%, rgba(48, 126, 153, 0.18), transparent 42%),
+        linear-gradient(135deg, #071820 0%, #12384b 48%, #071923 100%);
+    --page-overlay:
+        radial-gradient(circle at 18% 12%, rgba(71, 240, 162, 0.10), transparent 30%),
+        radial-gradient(circle at 82% 18%, rgba(122, 215, 255, 0.10), transparent 34%),
+        linear-gradient(135deg, rgba(7, 24, 32, 0.54) 0%, rgba(8, 28, 38, 0.68) 100%);
+    --panel-bg-strong: rgba(9, 31, 42, 0.92);
+    --panel-bg-elevated: rgba(18, 20, 22, 0.92);
+    --modal-overlay-bg: rgba(0, 0, 0, 0.7);
+    --modal-bg: rgba(9, 31, 42, 0.94);
+    --devhome-surface:
+        radial-gradient(circle at 12% 10%, rgba(71, 240, 162, 0.12), transparent 30%),
+        radial-gradient(circle at 82% 18%, rgba(122, 215, 255, 0.10), transparent 32%),
+        linear-gradient(135deg, rgba(7, 24, 32, 0.88), rgba(14, 55, 75, 0.90));
+    --devhome-card-bg: rgba(34, 75, 94, 0.34);
+    --danger: #ff4757;
+    --danger-hover: #ff6b81;
+    /* doc-command 风格变量 */
+    --doc-prompt-color: #47f0a2;
+    --doc-prompt-dim: rgba(71, 240, 162, 0.58);
+    --doc-kbd-bg: rgba(255, 255, 255, 0.07);
+    --doc-kbd-border: rgba(255, 255, 255, 0.14);
+    --doc-kbd-text: rgba(237, 248, 247, 0.68);
+    --doc-separator: rgba(153, 220, 226, 0.12);
+    --doc-mono-font: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+    --spacing-2xl: 48px;
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-size-xs: 11px;
+    --font-size-sm: 13px;
+    --font-size-md: 15px;
+    --font-size-lg: 18px;
+    --font-size-xl: 24px;
+    --font-size-2xl: 36px;
+    --font-size-time: clamp(72px, 15vw, 160px);
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
+    --radius-xl: 28px;
+    --radius-full: 9999px;
+    --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --shortcut-container: 80px;
+    --shortcut-icon: 48px;
+    --shortcut-gap: 10px;
+    --shortcut-radius: 16px;
+    --shortcut-label-size: 11px;
+    --shortcut-label-bottom: 5px;
+    --shortcut-add-icon: 24px;
+    --shortcut-columns: 6;
+    --daily-content-top: 78px;
+    --z-trash: 1000;
+    --z-context-menu: 2700;
+    --z-modal: 3000;
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    font-family: var(--font-family);
+    background: var(--page-bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    overflow-x: hidden;
+    transform: translateZ(0);
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -3;
+    pointer-events: none;
+    background-image:
+        linear-gradient(var(--devhome-grid-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--devhome-grid-line) 1px, transparent 1px);
+    background-size: 42px 42px;
+    mask-image: radial-gradient(circle at 50% 30%, black, transparent 78%);
+}
+
+/* 背景容器 */
+#bgContainer {
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    overflow: hidden;
+}
+
+/* 背景图片/视频 */
+#bgImage, #bgVideo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 1;
+    transition: opacity 0.5s ease;
+}
+
+/* 背景遮罩 */
+#bgOverlay {
+    position: absolute;
+    inset: 0;
+    background: var(--page-overlay);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+}
+
+/* 隐藏用于触发动作的系统原生文件上传框 */
+#bgInput, #imageInput {
+    display: none;
+}
+
+/* ===== doc-command 风格全局类 ===== */
+.doc-prompt {
+    color: var(--doc-prompt-color);
+    font-family: var(--doc-mono-font);
+    font-weight: 400;
+    user-select: none;
+    pointer-events: none;
+    line-height: 1;
+}
+
+.doc-kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 1px 6px;
+    border-radius: 5px;
+    background: var(--doc-kbd-bg);
+    border: 1px solid var(--doc-kbd-border);
+    color: var(--doc-kbd-text);
+    font-family: var(--doc-mono-font);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.doc-separator {
+    width: 100%;
+    height: 1px;
+    background: var(--doc-separator);
+    border: none;
+    margin: 12px 0;
+}
+
+.doc-cmd-wrapper {
+    position: relative;
+}
+
+.doc-cmd-wrapper .doc-prompt {
+    flex-shrink: 0;
+    font-size: 18px;
+    margin-right: 2px;
+}
+
+/* doc-style 表单和面板修饰 */
+.doc-section-title {
+    font-family: var(--doc-mono-font);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--doc-prompt-dim);
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.doc-section-title::before {
+    content: '#';
+    color: var(--doc-prompt-color);
+    font-weight: 700;
+}
+
+.doc-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(71, 240, 162, 0.10);
+    border: 1px solid rgba(71, 240, 162, 0.20);
+    color: var(--doc-prompt-color);
+    font-family: var(--doc-mono-font);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+.doc-code {
+    font-family: var(--doc-mono-font);
+    font-size: 0.9em;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--accent-primary);
+}
+
+/* ===== 文件配置警告条 ===== */
+.config-warning-bar {
+    width: 100%;
+    max-width: 1200px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: rgba(255, 243, 205, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    border-radius: var(--radius-sm);
+    color: #856404;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    z-index: 100;
+    transition: opacity 0.3s ease;
+}
+.config-warning-bar--error {
+    background: rgba(248, 215, 218, 0.92);
+    border-color: rgba(245, 198, 203, 0.5);
+    color: #721c24;
+}
+.config-warning-bar--error svg circle {
+    stroke: #721c24;
+}
+.config-warning-bar--error svg path {
+    stroke: #721c24;
+}
+.config-select-dir-btn {
+    margin-left: auto;
+    flex-shrink: 0;
+    padding: 5px 14px;
+    border: 1px solid var(--glass-border-strong);
+    border-radius: var(--radius-full);
+    background: var(--devhome-green);
+    color: #071b26;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition-fast), transform var(--transition-fast);
+}
+.config-select-dir-btn:hover {
+    background: #5fffb8;
+    transform: scale(1.04);
+}
+.config-select-dir-btn:active {
+    transform: scale(0.98);
+}
+
+/* 文件同步 Toast */
+.file-config-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--devhome-card-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    color: var(--text-primary);
+    padding: 10px 24px;
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-sm);
+    z-index: 9999;
+    border: 1px solid var(--glass-border);
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+.file-config-toast--success {
+    border-color: var(--devhome-green);
+    color: var(--devhome-green);
+}
+
+/* ===== Container ===== */
+.container {
+    width: 100%;
+    max-width: 1200px;
+    /* 日常首页固定顶部起点 = 快捷方式数量变化时，时间和搜索栏不再跟随容器居中下移。 */
+    padding: var(--daily-content-top) var(--spacing-md) var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+

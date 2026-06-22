@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevHome Workbench - 侧边栏</title>
+    <link rel="stylesheet" href="css/sidepanel.css">
+</head>
+<body>
+    <div class="sp-container">
+        <!-- 头部 -->
+        <header class="sp-header">
+            <h1>工作台</h1>
+            <span class="sp-version">v2.0</span>
+        </header>
+
+        <!-- 快速捕获 -->
+        <section class="sp-section">
+            <div class="sp-section-title">快速捕获</div>
+            <input type="text" class="sp-capture-input" id="spCaptureInput"
+                   placeholder="记录想法... 回车保存" autocomplete="off">
+        </section>
+
+        <!-- 最近捕获 -->
+        <section class="sp-section">
+            <div class="sp-section-title">最近捕获</div>
+            <div class="sp-list" id="spCaptureList"></div>
+        </section>
+
+        <!-- 最近笔记 -->
+        <section class="sp-section">
+            <div class="sp-section-title">最近笔记</div>
+            <div class="sp-list" id="spNotesList"></div>
+        </section>
+
+        <!-- 番茄钟状态条 -->
+        <footer class="sp-pomodoro-bar" id="spPomodoroBar">
+            <div class="sp-pomodoro-icon">🍅</div>
+            <div class="sp-pomodoro-time" id="spPomodoroTime">--:--</div>
+            <div class="sp-pomodoro-label" id="spPomodoroLabel">未开始</div>
+            <button class="sp-pomodoro-toggle" id="spPomodoroToggle" title="暂停/继续">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <rect x="3" y="2" width="3" height="10" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                    <rect x="8" y="2" width="3" height="10" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+            </button>
+        </footer>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/storageV2.js"></script>
+    <script src="js/sidepanel.js"></script>
+</body>
+</html>

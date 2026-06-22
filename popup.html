@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevHome Workbench</title>
+    <style>
+        :root {
+            --bg: #f5f0e8;
+            --bg-card: #faf7f2;
+            --bg-hover: #e8e0d4;
+            --accent: #c0692a;
+            --accent-dim: rgba(192,105,42,0.08);
+            --text: #2d2820;
+            --text-secondary: #6e6860;
+            --text-tertiary: #9a948c;
+            --border: rgba(0,0,0,0.06);
+            --radius: 8px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            width: 380px;
+            min-height: 200px;
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            font-size: 14px;
+            padding: 16px;
+        }
+        .popup-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .popup-header h1 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text);
+        }
+        .popup-header .version {
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+        .popup-search {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--bg-card);
+            color: var(--text);
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            margin-bottom: 12px;
+        }
+        .popup-search:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-dim);
+        }
+        .popup-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .popup-btn {
+            flex: 1;
+            min-width: 80px;
+            padding: 8px 14px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-family: inherit;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.15s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .popup-btn:hover {
+            background: var(--bg-hover);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .popup-btn.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+            font-weight: 600;
+        }
+        .popup-btn.primary:hover {
+            opacity: 0.9;
+        }
+        .popup-shortcuts {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+        .popup-shortcuts .kbd-group {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .popup-shortcuts kbd {
+            padding: 2px 8px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--bg-card);
+            font-size: 11px;
+            color: var(--text-tertiary);
+            font-family: 'SF Mono', 'Consolas', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="popup-header">
+        <h1>DevHome Workbench</h1>
+        <span class="version">v2.0.0</span>
+    </div>
+
+    <input type="text" class="popup-search" id="popupSearch"
+           placeholder="搜索或输入网址... (Enter 在新标签页搜索)"
+           autofocus>
+
+    <div class="popup-actions">
+        <button class="popup-btn primary" id="btnNewTab">打开工作台</button>
+        <button class="popup-btn" id="btnSidePanel">侧边栏</button>
+    </div>
+
+    <div class="popup-shortcuts">
+        <div class="kbd-group">
+            <kbd>Ctrl+B</kbd> 弹窗 &nbsp;
+            <kbd>Ctrl+Shift+S</kbd> 剪藏 &nbsp;
+            <kbd>Ctrl+Shift+D</kbd> 侧边栏
+        </div>
+    </div>
+
+    <script>
+        var searchInput = document.getElementById('popupSearch');
+        searchInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && searchInput.value.trim()) {
+                var query = searchInput.value.trim();
+                var url = query.includes('.') && !query.includes(' ')
+                    ? (query.startsWith('http') ? query : 'https://' + query)
+                    : 'https://www.google.com/search?q=' + encodeURIComponent(query);
+                chrome.tabs.create({ url: url });
+            }
+        });
+
+        document.getElementById('btnNewTab').addEventListener('click', function () {
+            chrome.tabs.create({ url: 'index.html' });
+        });
+
+        document.getElementById('btnSidePanel').addEventListener('click', function () {
+            chrome.sidePanel.open({ windowId: chrome.windows.WINDOW_ID_CURRENT });
+        });
+    </script>
+</body>
+</html>
