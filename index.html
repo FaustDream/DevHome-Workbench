@@ -9,8 +9,9 @@
     <link rel="stylesheet" href="css/tiles.css">
     <link rel="stylesheet" href="css/overlays.css">
     <link rel="stylesheet" href="css/workbench.css">
-    <link rel="stylesheet" href="css/workbench-v2.css">
-    <link rel="stylesheet" href="css/pixel-theme.css">
+    <!-- 主题样式：日常模式（像素主题）默认启用，专注模式（暖纸主题）初始通过 media 禁用 -->
+    <link id="theme-pixel" rel="stylesheet" href="css/themes/pixel-theme.css">
+    <link id="theme-warm-paper" rel="stylesheet" href="css/themes/warm-paper.css" media="not all">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://api.xinac.net">
@@ -200,7 +201,7 @@
                         </div>
                         <div class="wb-notes-filters" id="wbNotesFilters">
                             <button class="wb-filter-chip always" data-filter="all">全部</button>
-                            <button class="wb-filter-chip" data-filter="uncategorized">📌 未分类</button>
+                            <button class="wb-filter-chip always" data-filter="uncategorized">📌 未分类</button>
                             <button class="wb-filter-chip" data-filter="note">📝 笔记</button>
                             <button class="wb-filter-chip" data-filter="capture">⚡ 捕获</button>
                             <button class="wb-filter-chip" data-filter="idea">💡 想法</button>

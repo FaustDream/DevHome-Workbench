@@ -79,6 +79,31 @@ window.DevHome = window.DevHome || {};
             });
         }
 
+        // 切换主题：禁用像素主题（通过 setAttribute 确保可靠性），启用暖纸主题
+        var pixelLink = document.getElementById('theme-pixel');
+        var warmPaperLink = document.getElementById('theme-warm-paper');
+        if (pixelLink) pixelLink.setAttribute('media', 'not all');
+        if (warmPaperLink) warmPaperLink.media = 'all';
+
+        // 隐藏日常模式专属元素（Matrix 数字雨 canvas 由 JS 内联样式控制，需 JS 显式隐藏）
+        var matrixCanvas = document.getElementById('matrixCanvas');
+        if (matrixCanvas) matrixCanvas.style.display = 'none';
+        var bgContainer = document.getElementById('bgContainer');
+        if (bgContainer) bgContainer.style.display = 'none';
+
+        // 立即切换状态和 UI — 不等异步数据，否则用户看到白屏
+        state.workbenchVisible = true;
+        state.currentDevhomeMode = 'workbench';
+        state._quadrantFilter = 'active';
+        state.workbench = ns.getWorkbenchState();  // 先用 localStorage 兜底数据
+        if (dom.devhomeStage) dom.devhomeStage.classList.add('visible');
+        if (dom.container) dom.container.classList.add('devhome-dimmed');
+        ns.renderQuadrantBoard();
+        ns.renderCaptures();
+        ns.switchWbTab('dashboard');
+        ns.updateContextMenuLabel();
+
+        // 异步加载 v2 格式的任务数据，覆盖兜底数据（如果有更新的话）
         storageV2.get(storageV2.KEYS.TASKS, null).then(function (v2Tasks) {
             if (v2Tasks && v2Tasks.length > 0) {
                 var quadrants = { q1: { tasks: [] }, q2: { tasks: [] }, q3: { tasks: [] }, q4: { tasks: [] } };
@@ -86,19 +111,10 @@ window.DevHome = window.DevHome || {};
                     if (quadrants[t.quadrant]) quadrants[t.quadrant].tasks.push(t);
                 });
                 state.workbench = { quadrants: quadrants };
-            } else {
-                state.workbench = ns.getWorkbenchState();
+                ns.renderQuadrantBoard();
             }
-            state.workbenchVisible = true;
-            state.currentDevhomeMode = 'workbench';
-            state._quadrantFilter = 'active';
-            document.body.classList.add('workbench-mode');
-            ns.renderQuadrantBoard();
-            ns.renderCaptures();
-            if (dom.devhomeStage) dom.devhomeStage.classList.add('visible');
-            if (dom.container) dom.container.classList.add('devhome-dimmed');
-            ns.switchWbTab('dashboard');
-            ns.updateContextMenuLabel();
+        }).catch(function () {
+            // v2 数据加载失败不影响使用，localStorage 兜底已在上面加载
         });
     };
 
@@ -107,11 +123,23 @@ window.DevHome = window.DevHome || {};
         // 幂等性保护：已退出则忽略
         if (state.currentDevhomeMode === 'daily') return;
 
+        // 切换主题：恢复像素主题（移除 media 属性 = 默认 all），禁用暖纸主题
+        var pixelLink = document.getElementById('theme-pixel');
+        var warmPaperLink = document.getElementById('theme-warm-paper');
+        if (pixelLink) pixelLink.removeAttribute('media');
+        if (warmPaperLink) warmPaperLink.media = 'not all';
+
+        // 恢复日常模式专属元素
+        var matrixCanvas = document.getElementById('matrixCanvas');
+        if (matrixCanvas) matrixCanvas.style.display = 'block';
+        // bgContainer 由 pixel-theme.css 控制显隐，移除内联样式让 CSS 接管
+        var bgContainer = document.getElementById('bgContainer');
+        if (bgContainer) bgContainer.style.display = '';
+
         state.currentDevhomeMode = 'daily';
         state.workbenchVisible = false;
         if (dom.devhomeStage) dom.devhomeStage.classList.remove('visible');
         if (dom.container) dom.container.classList.remove('devhome-dimmed');
-        document.body.classList.remove('workbench-mode');
 
         // 恢复之前保存的分类页
         if (typeof state._savedPageIndex === 'number' && state._savedPageIndex !== state.currentPage) {

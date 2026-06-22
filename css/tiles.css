@@ -21,10 +21,11 @@
     backdrop-filter: blur(18px) saturate(140%);
     -webkit-backdrop-filter: blur(18px) saturate(140%);
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
     transform: translate(-50%, 8px) scale(0.98);
     transform-origin: bottom center;
-    transition: opacity var(--transition-fast), transform var(--transition-fast);
+    transition: opacity var(--transition-fast), transform var(--transition-fast), visibility var(--transition-fast);
     z-index: 20;
 }
 
@@ -58,6 +59,7 @@
 
 .page-indicator.category-menu-open .category-popover {
     opacity: 1;
+    visibility: visible;
     pointer-events: auto;
     transform: translate(-50%, 0) scale(1);
 }

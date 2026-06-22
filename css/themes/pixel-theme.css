@@ -1,6 +1,7 @@
 /* ============================================
    DevHome Workbench - Pixel / 8-bit / CMD Theme
    像素风格 + 命令行风格主题
+   日常模式专属，通过 <link> 标签动态加载/卸载
    ============================================ */
 
 /* ===== 像素字体 ===== */
@@ -55,18 +56,20 @@
     --px-radius-sm: 2px;
 }
 
-/* ===== Matrix 数字雨背景 + 面板透明 ===== */
-/* canvas 位置/尺寸由 JS 内联样式控制，CSS 不做约束 */
+/* ===== 设置面板：日常模式区段可见 ===== */
+.settings-section[data-mode="daily"] { display: block; }
+.settings-section[data-mode="workbench"] { display: none; }
+.settings-section[data-mode="common"] { display: block; }
 
-/* 强制 body 背景纯黑，让数字雨 canvas 能透出来 */
-/* html 背景由下方全局覆盖块统一设置 */
-/* 禁用 base.css 的网格线伪元素，避免干扰数字雨 */
+/* 隐藏专注模式专属元素（仅 warm-paper.css 加载时由该文件覆盖为可见） */
+#wbConfirmOverlay { display: none; }
+
+/* ===== 强制 body 背景纯黑，让数字雨 canvas 能透出来 ===== */
 body::before {
     display: none !important;
 }
 
 /* 所有面板使用半透明背景，让数字雨穿透 */
-
 .time-display {
     background: rgba(26, 26, 46, 0.75);
 }
@@ -147,7 +150,6 @@ body::before {
 }
 
 .devhome-stage {
-    /* 与日常模式共用透明背景，让数字雨穿透 */
     background: transparent;
 }
 
@@ -339,15 +341,6 @@ body::before {
 
 .search-input::placeholder {
     color: var(--px-text-dim);
-}
-
-/* 光标闪烁 */
-.search-input {
-    animation: blink 1s step-end infinite;
-}
-
-@keyframes blink {
-    50% { border-right-color: transparent; }
 }
 
 /* CMD 快捷键 */
@@ -638,10 +631,6 @@ body::before {
     color: var(--px-bg-primary);
 }
 
-.category-popover-count {
-    display: none;
-}
-
 .category-popover-input {
     background: var(--px-bg-primary);
     color: var(--px-text-primary);
@@ -750,7 +739,6 @@ body::before {
 }
 
 /* ===== 设置面板 ===== */
-/* settings-overlay 保持透明，让数字雨背景透出 */
 .settings-overlay,
 .modal-overlay,
 .changelog-overlay {
@@ -890,8 +878,6 @@ body::before {
 }
 
 /* ===== 四象限工作台面板 ===== */
-/* .devhome-stage 样式的透明背景已在第 151 行定义，此处不再重复 */
-
 .quadrant-board {
     background: var(--px-bg-panel);
     border: 4px solid var(--px-border-light);
@@ -1439,24 +1425,7 @@ body::before {
     color: var(--px-bg-primary);
 }
 
-/* ===== 专注模式渲染重置（最小必要：仅恢复渲染管道） ===== */
-/* 隐藏日常模式扫描线 */
-body.workbench-mode::after { display: none !important; }
-
-/* 恢复所有元素的正常渲染（去掉像素化） */
-body.workbench-mode,
-body.workbench-mode * {
-    image-rendering: auto !important;
-    -webkit-font-smoothing: antialiased !important;
-    -moz-osx-font-smoothing: grayscale !important;
-    text-rendering: optimizeLegibility !important;
-}
-
-/* 基础底色 + 系统字体（workbench-v2.css 会覆盖具体组件样式） */
-body.workbench-mode {
-    background: #f5f0e8 !important;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif !important;
-}
+/* ===== 响应式 ===== */
 @media (max-width: 768px) {
     .time-main {
         font-size: 36px;

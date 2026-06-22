@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Theme Test — 像素主题样式预览</title>
+    <!-- 引入基础布局 CSS（仅容器/网格线） -->
+    <link rel="stylesheet" href="../css/base.css">
+    <!-- 引入像素主题（核心样式） -->
+    <link rel="stylesheet" href="../css/themes/pixel-theme.css">
+    <style>
+        /* ===== 测试页专属：覆盖扩展专属行为，保证独立可运行 ===== */
+        .test-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 60px 20px 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+            position: relative;
+            z-index: 1;
+        }
+        .test-header {
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        .test-header h1 {
+            font-family: var(--px-font-display);
+            font-size: 14px;
+            color: var(--px-text-primary);
+            margin: 0 0 8px;
+            text-shadow: 2px 2px 0 var(--px-border-dark);
+        }
+        .test-header p {
+            font-family: var(--px-font-mono);
+            font-size: 18px;
+            color: var(--px-text-dim);
+            margin: 0;
+        }
+        /* 测试分区标题 */
+        .test-section-title {
+            font-family: var(--px-font-display);
+            font-size: 10px;
+            color: var(--px-text-cyan);
+            width: 100%;
+            padding: 8px 0;
+            border-bottom: 2px solid var(--px-border-dark);
+            margin-bottom: 4px;
+        }
+        .test-section-title::before {
+            content: '>';
+            margin-right: 8px;
+        }
+        /* 示例磁贴行 */
+        .test-tiles-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+        }
+        /* 模拟按钮组 */
+        .test-btn-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        /* 颜色色板展示 */
+        .test-palette {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            width: 100%;
+            justify-content: center;
+        }
+        .test-swatch {
+            width: 56px;
+            height: 56px;
+            border: 2px solid var(--px-border-dim);
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            font-family: var(--px-font-mono);
+            font-size: 9px;
+            padding-bottom: 4px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <!-- 极简数字雨 Canvas（测试用简化版） -->
+    <canvas id="matrixCanvas"></canvas>
+
+    <div class="test-container">
+
+        <!-- ===== 页头 ===== -->
+        <div class="test-header">
+            <h1>Pixel Theme Test</h1>
+            <p>像素主题 · 样式完整性预览</p>
+        </div>
+
+        <!-- ===== 1. 色板 ===== -->
+        <div class="test-section-title">色板 / Palette</div>
+        <div class="test-palette">
+            <div class="test-swatch" style="background:#0c0c0c;color:#00ff41;">bg</div>
+            <div class="test-swatch" style="background:#1a1a2e;color:#00ff41;">sbg</div>
+            <div class="test-swatch" style="background:#0f0f23;color:#00ff41;">pnl</div>
+            <div class="test-swatch" style="background:#00ff41;color:#000;">#00ff41</div>
+            <div class="test-swatch" style="background:#00cc33;color:#000;">#00cc33</div>
+            <div class="test-swatch" style="background:#008f11;color:#fff;">#008f11</div>
+            <div class="test-swatch" style="background:#003b00;color:#fff;">#003b00</div>
+            <div class="test-swatch" style="background:#00ffff;color:#000;">cyan</div>
+            <div class="test-swatch" style="background:#ffb000;color:#000;">amber</div>
+            <div class="test-swatch" style="background:#ff00ff;color:#000;">magnt</div>
+            <div class="test-swatch" style="background:#ffff00;color:#000;">yello</div>
+            <div class="test-swatch" style="background:#ff4136;color:#fff;">red</div>
+        </div>
+
+        <!-- ===== 2. 时间显示 ===== -->
+        <div class="test-section-title">时间 / Time</div>
+        <div class="time-display" style="margin:0 auto;">
+            <div class="time-main">20:34</div>
+            <div class="date-display">2026年6月22日 星期一</div>
+        </div>
+
+        <!-- ===== 3. 搜索框 ===== -->
+        <div class="test-section-title">搜索 / Search</div>
+        <div class="search-container" style="width:100%;max-width:700px;">
+            <div class="search-wrapper doc-cmd-wrapper">
+                <span class="doc-prompt">&gt;</span>
+                <input type="text" class="search-input doc-cmd-input" placeholder="搜索或输入命令..." autocomplete="off">
+                <kbd class="doc-kbd">Enter</kbd>
+            </div>
+        </div>
+
+        <!-- ===== 4. 分类按钮 ===== -->
+        <div class="test-section-title">分类 / Categories</div>
+        <div class="cat-row" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:100%;">
+            <button class="cat-btn active">常用</button>
+            <button class="cat-btn">工作</button>
+            <button class="cat-btn">学习</button>
+            <button class="cat-btn">娱乐</button>
+            <button class="cat-btn">AI</button>
+            <button class="cat-add-btn">+</button>
+        </div>
+
+        <!-- ===== 5. 磁贴 ===== -->
+        <div class="test-section-title">磁贴 / Tiles</div>
+        <div class="test-tiles-row">
+            <div class="tile">
+                <div class="tile-icon-wrap"><span class="tile-emoji">🚀</span></div>
+                <div class="tile-label">启动</div>
+            </div>
+            <div class="tile">
+                <div class="tile-icon-wrap"><span class="tile-emoji">🐙</span></div>
+                <div class="tile-label">GitHub</div>
+            </div>
+            <div class="tile">
+                <div class="tile-icon-wrap"><span class="tile-emoji">📝</span></div>
+                <div class="tile-label">笔记</div>
+            </div>
+            <div class="tile">
+                <div class="tile-icon-wrap"><span class="tile-emoji">🎨</span></div>
+                <div class="tile-label">设计</div>
+            </div>
+            <div class="tile">
+                <div class="tile-icon-wrap"><span class="tile-emoji">📦</span></div>
+                <div class="tile-label">资源</div>
+            </div>
+            <div class="add-tile-btn">+</div>
+        </div>
+
+        <!-- ===== 6. 页面指示器 ===== -->
+        <div class="test-section-title">页面指示器 / Page Indicator</div>
+        <div class="page-indicator" style="display:inline-flex;margin:0 auto;">
+            <button class="page-btn" disabled>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 2L4 6l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="page-info"><span class="page-name">第1页</span></div>
+            <button class="page-btn">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+        </div>
+
+        <!-- ===== 7. 按钮样式 ===== -->
+        <div class="test-section-title">按钮 / Buttons</div>
+        <div class="test-btn-row">
+            <button class="btn btn-save">保存</button>
+            <button class="btn btn-cancel">取消</button>
+            <button class="quadrant-primary-btn">提交任务</button>
+            <button class="quadrant-mini-btn">清空历史</button>
+            <button class="quadrant-filter-btn">活跃</button>
+        </div>
+
+        <!-- ===== 8. 设置面板模拟 ===== -->
+        <div class="test-section-title">设置 / Settings</div>
+        <div class="settings-panel" style="position:static;width:100%;max-width:500px;margin:0 auto;">
+            <header class="settings-panel-header">
+                <div>
+                    <span class="settings-eyebrow">Settings</span>
+                    <h2>功能设置</h2>
+                </div>
+                <button class="settings-close-btn">&times;</button>
+            </header>
+            <section class="settings-section">
+                <span class="doc-section-title">外观</span>
+                <button type="button" class="settings-row-btn">上传背景</button>
+                <button type="button" class="settings-row-btn">重置背景</button>
+            </section>
+            <section class="settings-section">
+                <span class="doc-section-title">快捷方式</span>
+                <div class="shortcut-size-options" style="display:flex;gap:8px;">
+                    <button class="shortcut-size-btn">小</button>
+                    <button class="shortcut-size-btn active">标准</button>
+                    <button class="shortcut-size-btn">大</button>
+                </div>
+            </section>
+            <section class="settings-section">
+                <span class="doc-section-title">关于</span>
+                <button type="button" class="settings-row-btn">更新说明</button>
+            </section>
+        </div>
+
+        <!-- ===== 9. 弹窗 ===== -->
+        <div class="test-section-title">弹窗 / Modal</div>
+        <div class="modal" style="position:static;width:100%;max-width:400px;margin:0 auto;">
+            <div class="modal-header">
+                <h3>上传磁贴</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>名称</label>
+                    <input type="text" class="form-input" placeholder="磁贴名称" maxlength="20">
+                </div>
+                <div class="form-group">
+                    <label>网址</label>
+                    <input type="text" class="form-input" placeholder="https://...">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-cancel">取消</button>
+                <button class="btn btn-save">保存</button>
+            </div>
+        </div>
+
+        <!-- ===== 10. 右键菜单 ===== -->
+        <div class="test-section-title">右键菜单 / Context Menu</div>
+        <div class="context-menu" style="position:static;width:100%;max-width:260px;margin:0 auto;">
+            <div class="context-menu-item">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7a5 5 0 019-3M12 7a5 5 0 01-9 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12 1v3H9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span>刷新</span>
+                <kbd class="doc-kbd ctx-kbd">F5</kbd>
+            </div>
+            <div class="context-menu-item">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                <span>新添磁贴</span>
+                <kbd class="doc-kbd ctx-kbd">Ctrl+N</kbd>
+            </div>
+            <div class="context-menu-divider"></div>
+            <div class="context-menu-item" style="background:var(--px-text-primary);color:var(--px-bg-primary);">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="2.5" width="11" height="8" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M5 13V10.5h4V13" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                <span>打开开发工作台</span>
+            </div>
+        </div>
+
+        <!-- ===== 11. 四象限面板 ===== -->
+        <div class="test-section-title">四象限 / Quadrants</div>
+        <div class="quadrant-board" style="position:static;width:100%;max-width:700px;margin:0 auto;">
+            <header class="quadrant-board-head">
+                <div>
+                    <span class="quadrant-eyebrow">Focus Mode</span>
+                    <h1>四象限任务</h1>
+                </div>
+                <div class="quadrant-board-actions">
+                    <button class="quadrant-filter-btn">活跃</button>
+                    <button class="quadrant-mini-btn">清空历史</button>
+                </div>
+            </header>
+            <div class="quadrant-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <section class="quadrant-card" style="min-width:0;">
+                    <div class="quadrant-head">
+                        <div class="quadrant-head-left">
+                            <span class="quadrant-dot" style="background:#ff6b6b;width:10px;height:10px;display:inline-block;"></span>
+                            <div><h2>重要且紧急</h2><span class="quadrant-subtitle">立即去做</span></div>
+                        </div>
+                        <span class="quadrant-count">2</span>
+                    </div>
+                    <div class="quadrant-task-list" style="min-height:40px;">
+                        <div class="quadrant-task"><span class="quadrant-task-title">修复登录页Bug</span></div>
+                        <div class="quadrant-task"><span class="quadrant-task-title">响应客户紧急需求</span></div>
+                    </div>
+                </section>
+                <section class="quadrant-card" style="min-width:0;">
+                    <div class="quadrant-head">
+                        <div class="quadrant-head-left">
+                            <span class="quadrant-dot" style="background:#47f0a2;width:10px;height:10px;display:inline-block;"></span>
+                            <div><h2>重要不紧急</h2><span class="quadrant-subtitle">计划去做</span></div>
+                        </div>
+                        <span class="quadrant-count">1</span>
+                    </div>
+                    <div class="quadrant-task-list" style="min-height:40px;">
+                        <div class="quadrant-task"><span class="quadrant-task-title">重构用户模块</span></div>
+                    </div>
+                </section>
+                <section class="quadrant-card" style="min-width:0;">
+                    <div class="quadrant-head">
+                        <div class="quadrant-head-left">
+                            <span class="quadrant-dot" style="background:#ffcc66;width:10px;height:10px;display:inline-block;"></span>
+                            <div><h2>紧急不重要</h2><span class="quadrant-subtitle">授权他人</span></div>
+                        </div>
+                        <span class="quadrant-count">0</span>
+                    </div>
+                    <div class="quadrant-task-list" style="min-height:40px;"></div>
+                </section>
+                <section class="quadrant-card" style="min-width:0;">
+                    <div class="quadrant-head">
+                        <div class="quadrant-head-left">
+                            <span class="quadrant-dot" style="background:#6f8c94;width:10px;height:10px;display:inline-block;"></span>
+                            <div><h2>不紧急不重要</h2><span class="quadrant-subtitle">尽量不做</span></div>
+                        </div>
+                        <span class="quadrant-count">0</span>
+                    </div>
+                    <div class="quadrant-task-list" style="min-height:40px;"></div>
+                </section>
+            </div>
+        </div>
+
+        <!-- ===== 12. 输入框 / 表单 ===== -->
+        <div class="test-section-title">输入框 / Form Inputs</div>
+        <div style="width:100%;max-width:400px;margin:0 auto;display:flex;flex-direction:column;gap:12px;">
+            <div class="form-group">
+                <label>文本输入</label>
+                <input type="text" class="form-input" placeholder="请输入内容...">
+            </div>
+            <div class="form-group">
+                <label>颜色选择</label>
+                <input type="color" class="form-color" value="#00ff41">
+            </div>
+        </div>
+
+        <!-- ===== 13. 滚动条可见区域 ===== -->
+        <div class="test-section-title">滚动条 / Scrollbar</div>
+        <div style="width:100%;max-width:400px;height:80px;overflow-y:scroll;margin:0 auto;
+                    background:var(--px-bg-panel);border:2px solid var(--px-border-dim);
+                    padding:8px;font-family:var(--px-font-mono);font-size:14px;color:var(--px-text-secondary);">
+            <p>Line 1: The quick brown fox jumps over the lazy dog.</p>
+            <p>Line 2: 敏捷的棕色狐狸跳过了懒狗。</p>
+            <p>Line 3: > cmd_test --pixel-mode --verbose</p>
+            <p>Line 4: [OK] All checks passed.</p>
+        </div>
+
+        <div style="text-align:center;padding:20px 0;
+                    font-family:var(--px-font-mono);font-size:14px;color:var(--px-text-dim);">
+            — 像素主题样式预览完毕 —
+        </div>
+    </div>
+
+    <!-- ===== 极简数字雨脚本（仅用于预览，不干扰正式环境） ===== -->
+    <script>
+    (function() {
+        var c = document.getElementById('matrixCanvas');
+        var ctx = c.getContext('2d');
+        var w, h, cols, drops;
+        var chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789';
+        function resize() {
+            w = c.width = window.innerWidth;
+            h = c.height = window.innerHeight;
+            var fs = 14;
+            cols = Math.floor(w / fs);
+            drops = [];
+            for (var i = 0; i < cols; i++) drops[i] = Math.random() * h / fs;
+        }
+        function draw() {
+            var fs = 14;
+            ctx.fillStyle = 'rgba(0,0,0,0.08)';
+            ctx.fillRect(0, 0, w, h);
+            ctx.font = fs + 'px monospace';
+            for (var i = 0; i < drops.length; i++) {
+                var ch = chars[Math.floor(Math.random() * chars.length)];
+                var x = i * fs;
+                var y = drops[i] * fs;
+                // 头部亮白绿
+                ctx.fillStyle = '#e0ffe0';
+                ctx.fillText(ch, x, y);
+                // 中部荧光绿
+                var dist = drops[i] % 15;
+                if (dist > 2) {
+                    ctx.fillStyle = '#00ff41';
+                    ctx.fillText(chars[Math.floor(Math.random()*chars.length)], x, y - fs * 2);
+                }
+                drops[i]++;
+                if (drops[i] * fs > h && Math.random() > 0.975) drops[i] = 0;
+            }
+            requestAnimationFrame(draw);
+        }
+        resize();
+        draw();
+        window.addEventListener('resize', resize);
+    })();
+    </script>
+</body>
+</html>

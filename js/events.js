@@ -526,47 +526,93 @@ window.DevHome = window.DevHome || {};
         // ===== 侧边栏筛选标签 — 长按进入删除模式 =====
         var filterLongPressTimer = null;
         var filterDeleteMode = false;
+        var filterLongPressTarget = null;
+        var filterSuppressNextClick = false; // 长按触发后跳过紧接着的 click
+
         function exitFilterDeleteMode() {
             filterDeleteMode = false;
+            filterSuppressNextClick = false;
             if (dom.wbNotesFilters) dom.wbNotesFilters.classList.remove('delete-mode');
-            // 移除动态添加的 ×
-            var dels = dom.wbNotesFilters.querySelectorAll('.filter-del');
-            dels.forEach(function (d) { d.remove(); });
+            if (dom.wbNotesFilters) {
+                var dels = dom.wbNotesFilters.querySelectorAll('.filter-del');
+                dels.forEach(function (d) { d.remove(); });
+            }
         }
+
         function enterFilterDeleteMode() {
             filterDeleteMode = true;
+            filterSuppressNextClick = true; // 长按触发，跳过紧接着的 click
             if (dom.wbNotesFilters) dom.wbNotesFilters.classList.add('delete-mode');
-            // 动态添加 × 到所有可删除的 chip
-            var chips = dom.wbNotesFilters.querySelectorAll('.wb-filter-chip:not(.always)');
-            chips.forEach(function (c) {
-                if (!c.querySelector('.filter-del')) {
-                    var span = document.createElement('span');
-                    span.className = 'filter-del';
-                    span.textContent = '×';
-                    c.appendChild(span);
-                }
-            });
+            if (dom.wbNotesFilters) {
+                var chips = dom.wbNotesFilters.querySelectorAll('.wb-filter-chip:not(.always)');
+                chips.forEach(function (c) {
+                    if (!c.querySelector('.filter-del')) {
+                        var span = document.createElement('span');
+                        span.className = 'filter-del';
+                        span.textContent = '×';
+                        c.appendChild(span);
+                    }
+                });
+            }
+        }
+
+        function cancelFilterLongPress() {
+            if (filterLongPressTimer) {
+                clearTimeout(filterLongPressTimer);
+                filterLongPressTimer = null;
+            }
+            filterLongPressTarget = null;
         }
 
         if (dom.wbNotesFilters) {
-            // mousedown：长按检测
-            dom.wbNotesFilters.addEventListener('mousedown', function (e) {
+            // pointerdown：长按检测（支持鼠标 + 触摸）
+            dom.wbNotesFilters.addEventListener('pointerdown', function (e) {
                 var chip = e.target.closest('.wb-filter-chip:not(.always)');
-                if (!chip || chip.classList.contains('always')) return;
+                if (!chip) return;
+                filterLongPressTarget = chip;
+                // 视觉反馈：轻微变暗提示正在长按
+                chip.style.opacity = '0.7';
                 filterLongPressTimer = setTimeout(function () {
+                    chip.style.opacity = '';  // 恢复
                     enterFilterDeleteMode();
-                }, 600);
+                    filterLongPressTarget = null;
+                }, 800);
             });
-            dom.wbNotesFilters.addEventListener('mouseup', function () {
-                clearTimeout(filterLongPressTimer);
-                filterLongPressTimer = null;
+
+            // pointerup：取消长按
+            dom.wbNotesFilters.addEventListener('pointerup', function (e) {
+                if (filterLongPressTarget) {
+                    filterLongPressTarget.style.opacity = '';
+                }
+                cancelFilterLongPress();
             });
-            dom.wbNotesFilters.addEventListener('mouseleave', function () {
-                clearTimeout(filterLongPressTimer);
-                filterLongPressTimer = null;
+
+            // pointerleave：取消长按（鼠标离开容器）
+            dom.wbNotesFilters.addEventListener('pointerleave', function () {
+                if (filterLongPressTarget) {
+                    filterLongPressTarget.style.opacity = '';
+                }
+                cancelFilterLongPress();
+            });
+
+            // pointermove：移动超过阈值则取消（防误触拖拽）
+            dom.wbNotesFilters.addEventListener('pointermove', function (e) {
+                if (!filterLongPressTimer || !filterLongPressTarget) return;
+                // 计算移动距离，超过 5px 则取消
+                var dx = e.clientX - (filterLongPressTarget.getBoundingClientRect().left + filterLongPressTarget.offsetWidth / 2);
+                var dy = e.clientY - (filterLongPressTarget.getBoundingClientRect().top + filterLongPressTarget.offsetHeight / 2);
+                if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+                    filterLongPressTarget.style.opacity = '';
+                    cancelFilterLongPress();
+                }
             });
 
             dom.wbNotesFilters.addEventListener('click', function (e) {
+                // 长按刚触发删除模式：跳过紧接着的 click（按钮释放触发），只清除标记
+                if (filterSuppressNextClick) {
+                    filterSuppressNextClick = false;
+                    return;
+                }
                 // 删除模式：点击 ×
                 var delBtn = e.target.closest('.filter-del');
                 if (delBtn && filterDeleteMode) {
@@ -583,8 +629,22 @@ window.DevHome = window.DevHome || {};
                     });
                     return;
                 }
-                // 删除模式：点击 chip 本身 → 退出删除模式
+                // 删除模式：点击 chip 本身 → 重命名（自定义标签）/ 退出（内置标签）
                 if (filterDeleteMode) {
+                    var chipClicked = e.target.closest('.wb-filter-chip');
+                    if (chipClicked && chipClicked.classList.contains('custom')) {
+                        var filterKey = chipClicked.dataset.filter;
+                        var oldText = chipClicked.textContent.replace('×', '').trim();
+                        var newVal = prompt('重命名标签（可用 "emoji 名称" 格式）：', oldText);
+                        if (newVal && newVal.trim()) {
+                            var parsed = (function (input) {
+                                var m = input.match(/^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F?)\s*/u);
+                                if (m) return { icon: m[1], name: input.slice(m[0].length).trim() || input };
+                                return { icon: '', name: input.trim() };
+                            })(newVal.trim());
+                            ns.renameFilter(filterKey, parsed.icon || '', parsed.name);
+                        }
+                    }
                     exitFilterDeleteMode();
                     return;
                 }
@@ -610,7 +670,7 @@ window.DevHome = window.DevHome || {};
         // 新增自定义标签分类
         if (dom.wbFilterAddBtn) {
             dom.wbFilterAddBtn.addEventListener('click', function () {
-                var name = prompt('输入新标签名称（如"设计"）：');
+                var name = prompt('输入新标签名称，支持 emoji 开头（如"🎨 设计" 或 "设计"）：');
                 if (!name || !name.trim()) return;
                 ns.addCustomFilter(name.trim());
             });

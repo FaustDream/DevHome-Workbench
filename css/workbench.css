@@ -7,9 +7,10 @@
 /* ===== 工作台容器 ===== */
 .container.devhome-dimmed {
     opacity: 0;
+    visibility: hidden;
     transform: translateY(12px) scale(0.98);
     pointer-events: none;
-    transition: opacity var(--transition-normal), transform var(--transition-normal);
+    transition: opacity var(--transition-normal), transform var(--transition-normal), visibility var(--transition-normal);
 }
 
 .devhome-stage {

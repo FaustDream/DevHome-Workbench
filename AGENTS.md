@@ -193,9 +193,212 @@
 [用树状图展示拆分后的物理目录，展示如何避免文件爆炸]
 ```
 
+## 10. 样式解耦规则（CSS 隔离铁律）
+
+本项目包含 **多种视觉模式**（日常像素主题、专注暖纸主题等），样式混用是高危问题。以下规则是强制性的。
+
+### 10.1 模式样式互斥原则
+
+不同视觉模式的样式**不得**在同一 CSS 文件中通过选择器优先级争夺同一套 class 名。
+
+| ✅ 正确做法 | ❌ 错误做法（当前反模式） |
+|-------------|--------------------------|
+| 每个模式独占一个 CSS 文件，通过动态加载/卸载 `<link>` 切换 | 多个 CSS 文件同时加载，用 `!important` 覆盖 |
+| 模式专属 class 使用唯一前缀（如 `px-`、`wb-`） | 同一 class（`.tile`、`.settings-panel`）在多个文件中重复定义 |
+| CSS 变量每个模式独立命名空间（`--px-*`、`--wb-*`、`--base-*`） | 在模式 CSS 中覆写其他模式的 CSS 变量 |
+
+### 10.2 新增模式时必须遵守的检查清单
+
+在创建新主题/模式或修改现有样式时，**必须逐条确认**：
+
+1. **新组件 class 必须带命名空间前缀**
+   - 像素主题：`px-` 前缀
+   - 工作台 v2：`wb-` 前缀
+   - 基础布局：无前缀（仅限 `base.css` 中的布局类，不含颜色/字体）
+
+2. **禁止在模式 CSS 中重写其他模式的 CSS 变量**
+   - 不得出现 `body.workbench-mode { --px-text-primary: #xxx; }` 这类代码
+   - 正确做法：让 JS 切换 `<link>` 标签，或不引用那套变量
+
+3. **禁止对同一伪元素（`::before`、`::after`）在多处重复定义**
+   - 每个伪元素最多在 **一个文件中定义一次**
+   - 若需模式切换效果，通过 class 限定：`body.pixel-mode::after { ... }`、`body:not(.pixel-mode)::after { content: none; }`
+
+4. **新增 CSS 文件前，先判断模式归属**
+   - 属于某个模式 → 文件置于 `css/themes/<mode-name>/` 目录下
+   - 属于所有模式共享的基础布局 → 放在 `css/base.css`
+   - 属于特定功能模块 → 放在 `css/modules/<module-name>.css`
+
+5. **禁止在 CSS 中泛滥使用 `!important`**
+   - 如果新增样式需要 `!important` 才能生效，说明存在样式优先级冲突，**必须定位并修复冲突源**，而不是继续加 `!important`
+   - 现有 `!important` 是历史债务，新增代码原则上不允许再引入
+
+### 10.3 目录结构规范
+
+```
+css/
+├── base.css              # 仅包含：reset、CSS 变量、布局容器、通用隐蔽类 .hidden
+├── modules/              # 功能模块样式（所有模式共享的结构性样式，不含颜色/字体）
+│   ├── time-search.css
+│   ├── tiles.css
+│   ├── overlays.css
+│   └── workbench.css
+├── themes/               # 每个主题独立一个文件，通过 JS 动态加载（互斥）
+│   ├── pixel-theme.css   # 仅限 body.pixel-mode 或通过 <link> 切换
+│   └── warm-paper.css    # 仅限 body.workbench-mode 或通过 <link> 切换
+└── sidepanel.css         # 完全独立的页面样式（使用 sp- 前缀命名空间）
+```
+
+### 10.4 共享组件（弹窗 / 菜单 / 面板）的模式隔离规范
+
+弹窗（`.modal`）、设置面板（`.settings-panel`）、右键菜单（`.context-menu`）、搜索建议（`.search-suggestions`）等组件是**两种模式共用的 DOM 结构**，但需要不同的视觉表现。这是样式解耦最核心也最容易出错的场景。
+
+#### 核心原则：结构层与主题层分离
+
+共享组件的 CSS 必须拆为两层，**不可混在一个文件的同一选择器里**：
+
+```
+┌─────────────────────────────────────────────┐
+│  modules/overlays.css  ← 结构层（始终加载）    │
+│  只定义：position, display, width, height,    │
+│  padding, z-index, gap, overflow, flex 布局   │
+│  禁止：color, background, border, font,       │
+│  box-shadow, border-radius                   │
+└─────────────────────────────────────────────┘
+                      ↓ 通过 CSS 变量桥接
+┌─────────────────────────────────────────────┐
+│  themes/pixel-theme.css    ← 主题层（二选一）  │
+│  定义：--modal-bg, --modal-border,            │
+│  --modal-text, --modal-shadow, --modal-radius │
+│  → 只定变量，不定布局                          │
+└─────────────────────────────────────────────┘
+┌─────────────────────────────────────────────┐
+│  themes/warm-paper.css     ← 主题层（二选一）  │
+│  同样的变量名，不同的值                        │
+│  → 只定变量，不定布局                          │
+└─────────────────────────────────────────────┘
+```
+
+#### 当前项目共享组件清单及归属
+
+| 组件 | DOM 选择器 | 当前问题 |
+|------|-----------|---------|
+| 磁贴编辑弹窗 | `.modal-overlay`, `.modal` | 颜色/边框在 `overlays.css`、`pixel-theme.css`、`workbench-v2.css` 三处定义 |
+| 设置面板 | `.settings-overlay`, `.settings-panel` | 同上，三处重复定义 |
+| 更新说明弹窗 | `.changelog-overlay`, `.changelog-modal` | 同上 |
+| 右键菜单 | `.context-menu`, `.context-menu-item` | 同上 |
+| 搜索建议面板 | `.search-suggestions`, `.suggestion-item` | 同上 |
+| 引擎下拉 | `.engine-dropdown`, `.engine-option` | 同上 |
+| 分类浮窗 | `.category-popover`, `.category-popover-item` | 同上 |
+| 表单元素 | `.form-input`, `.form-group label`, `.btn` | 同上 |
+
+#### 正确写法示例：弹窗组件
+
+**❌ 错误写法（当前）**：三个文件分别定义同一组件的颜色
+```css
+/* overlays.css */
+.modal {
+    background: rgba(30, 30, 50, 0.95);  /* ← 颜色混在结构文件里 */
+    border-radius: 16px;
+}
+
+/* pixel-theme.css */
+.modal {
+    background: var(--px-bg-panel);       /* ← 又定义一遍 */
+    border: 4px solid var(--px-border-light);
+    border-radius: 0;
+}
+
+/* workbench-v2.css */
+body.workbench-mode .modal {
+    background: var(--wb-bg-card) !important;  /* ← !important 再盖一遍 */
+    border-radius: 12px !important;
+}
+```
+
+**✅ 正确写法**：结构文件只写布局，主题文件只写变量
+
+```css
+/* css/modules/overlays.css — 结构层 */
+.modal {
+    /* 只有布局 */
+    position: relative;
+    width: min(480px, calc(100vw - 48px));
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 24px;
+    z-index: 2700;
+    
+    /* 颜色全部通过语义变量引用 */
+    background: var(--modal-bg);
+    border: var(--modal-border, none);
+    border-radius: var(--modal-radius);
+    box-shadow: var(--modal-shadow);
+    color: var(--modal-text);
+}
+
+/* css/themes/pixel-theme.css — 像素主题变量 */
+:root, body.pixel-mode {
+    --modal-bg: var(--px-bg-panel);
+    --modal-border: 4px solid var(--px-border-light);
+    --modal-radius: 0px;
+    --modal-shadow: var(--px-shadow);
+    --modal-text: var(--px-text-primary);
+}
+
+/* css/themes/warm-paper.css — 暖纸主题变量（通过 JS 动态切换加载） */
+:root, body.workbench-mode {
+    --modal-bg: var(--wb-bg-card);
+    --modal-border: 1px solid var(--wb-border);
+    --modal-radius: 12px;
+    --modal-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    --modal-text: var(--wb-text);
+}
+```
+
+#### 共享组件标准化变量名清单
+
+所有跨模式共享组件统一使用以下语义变量名，禁止直接用主题专属变量（如 `--px-*`、`--wb-*`）写在模块 CSS 中：
+
+| 语义变量名 | 用途 | 示例值（像素） | 示例值（暖纸） |
+|-----------|------|--------------|--------------|
+| `--overlay-bg` | 遮罩层背景 | `rgba(12,12,12,0.95)` | `rgba(245,240,232,0.6)` |
+| `--panel-bg` | 弹窗/面板背景 | `#0f0f23` | `#faf7f2` |
+| `--panel-border` | 弹窗/面板边框 | `4px solid #00ff41` | `1px solid rgba(0,0,0,0.06)` |
+| `--panel-radius` | 弹窗/面板圆角 | `0px` | `12px` |
+| `--panel-shadow` | 弹窗/面板阴影 | `4px 4px 0 #003b00` | `0 2px 20px rgba(0,0,0,0.06)` |
+| `--panel-text` | 弹窗/面板文字色 | `#00ff41` | `#2d2820` |
+| `--panel-text-secondary` | 面板次要文字色 | `#008f11` | `#6e6860` |
+| `--menu-bg` | 右键菜单/下拉背景 | `#0f0f23` | `#faf7f2` |
+| `--menu-item-hover` | 菜单项 hover 背景 | `#1a1a2e` | `#e8e0d4` |
+| `--input-bg` | 输入框背景 | `#1a1a2e` | `#f5f0e8` |
+| `--input-border` | 输入框边框 | `2px solid #008f11` | `1px solid rgba(0,0,0,0.06)` |
+| `--input-focus` | 输入框聚焦边框 | `2px solid #00ff41` | `1px solid rgba(192,105,42,0.3)` |
+| `--btn-primary-bg` | 主按钮背景 | `#00ff41` | `#c0692a` |
+| `--btn-primary-text` | 主按钮文字色 | `#0c0c0c` | `#faf7f2` |
+| `--btn-secondary-bg` | 次按钮背景 | `#1a1a2e` | `#f5f0e8` |
+| `--divider-color` | 分割线颜色 | `#003b00` | `rgba(0,0,0,0.06)` |
+
+> **关键规则**：模块 CSS 文件中引用这些语义变量（如 `background: var(--panel-bg)`），各主题文件只负责给这些变量赋值。这样新增第三种主题时，只需加一个主题文件，定义同样的变量即可，**零行模块 CSS 需要修改**。
+
+### 10.5 解决当前冲突的迁移路径（参考）
+
+当前 `workbench-v2.css` 通过 `body.workbench-mode` + 全局 `!important` 覆盖像素主题。重构方向：
+
+1. 将 `workbench-v2.css` 重命名为 `css/themes/warm-paper.css`，去掉全量覆盖逻辑，改为只定义语义 CSS 变量
+2. `pixel-theme.css` 全局选择器改为 `body.pixel-mode` 限定，不再对裸 `html,body` 做全局覆盖，改为只定义语义 CSS 变量
+3. JS 中 `enterFocusMode()` 改为卸载 `<link>` 引入的像素主题、加载暖纸主题，而非加 class
+4. 共享的模块样式（overlays、tiles 等）改为使用语义 CSS 变量（`--panel-bg` 而非 `var(--px-bg-panel)`）
+5. 迁移顺序建议：先建语义变量体系 → 改模块 CSS 引用 → 改主题 CSS 赋值 → 最后改 JS 切换逻辑
+
+---
+
 ## 版本更新
 - 一个小问题就更新一个小版本。版本加0.0.1，写好更新注释。
 - 多个问题就更新一个中版本。0.1.0，写好更新注释。
 - 一个大问题就更新一个大版本。1.0.0，写好更新注释。
 - 其中10个小版本升级成一个中版本，10个中版本升级成一个大版本。
 - 每次更新一个中版本或者大版本，原有的小版本或者中版本都开始从0计算。
+
+
+

@@ -300,14 +300,54 @@ window.DevHome = window.DevHome || {};
     };
 
     /** 新增自定义标签 */
-    ns.addCustomFilter = async function (name) {
+    ns.addCustomFilter = async function (name, icon) {
         var config = await ns.storageV2.get(ns.storageV2.KEYS.CONFIG, ns.DEFAULT_V2_CONFIG);
         var customTypes = config.customNoteTypes || [];
         var key = 'custom_' + Date.now();
-        customTypes.push({ key: key, icon: '🏷️', label: name });
+        // 自动解析 "🎨 设计" 格式，或 "设计" 使用默认图标
+        var parsed = parseIconAndName(name);
+        customTypes.push({
+            key: key,
+            icon: icon || parsed.icon || '🏷️',
+            label: parsed.name || name
+        });
         config.customNoteTypes = customTypes;
         await ns.storageV2.set(ns.storageV2.KEYS.CONFIG, config);
         await ns.renderCustomFilters();
+    };
+
+    /** 解析 "emoji 名称" 字符串，返回 { icon, name } */
+    function parseIconAndName(input) {
+        if (!input) return { icon: '🏷️', name: input };
+        // 检测是否以 emoji 开头
+        var emojiMatch = input.match(/^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F?)\s*/u);
+        if (emojiMatch) {
+            return {
+                icon: emojiMatch[1],
+                name: input.slice(emojiMatch[0].length).trim() || input
+            };
+        }
+        return { icon: '🏷️', name: input };
+    }
+
+    /** 重命名自定义标签 */
+    ns.renameFilter = async function (key, newIcon, newLabel) {
+        var config = await ns.storageV2.get(ns.storageV2.KEYS.CONFIG, ns.DEFAULT_V2_CONFIG);
+        var customTypes = config.customNoteTypes || [];
+        var found = false;
+        customTypes.forEach(function (t) {
+            if (t.key === key) {
+                if (newIcon) t.icon = newIcon;
+                if (newLabel) t.label = newLabel;
+                found = true;
+            }
+        });
+        if (!found) return;
+        config.customNoteTypes = customTypes;
+        await ns.storageV2.set(ns.storageV2.KEYS.CONFIG, config);
+        await ns.renderCustomFilters();
+        // 重渲染笔记列表以更新类型显示
+        ns.renderNotesList(state._notesFilter, state._notesSearch);
     };
 
     /** 删除筛选标签（对应笔记全部变"未分类"，文章保留） */
