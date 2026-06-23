@@ -374,6 +374,9 @@ body::before {
     box-shadow: none;
 }
 
+/* 专注模式：隐藏日常专属菜单项 */
+.ctx-daily-only { display: none !important; }
+
 /* ===== 搜索建议 / 引擎下拉 ===== */
 .search-suggestions,
 .engine-dropdown {
@@ -487,24 +490,10 @@ body::before {
    仅在加载 warm-paper.css 时生效，与日常模式完全互斥
    ================================================================ */
 
-/* ===== 自定义确认弹窗 ===== */
+/* ===== 自定义确认弹窗暖纸视觉 ===== */
 .wb-confirm-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 2800;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     background: rgba(0,0,0,0.3);
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
     transition: opacity 0.18s ease, visibility 0.18s ease;
-}
-.wb-confirm-overlay.visible {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
 }
 
 .wb-confirm-dialog {
@@ -1021,6 +1010,7 @@ body::before {
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
+    position: relative;
 }
 
 .wb-note-type-badge-editor {
@@ -1035,7 +1025,11 @@ body::before {
     background: var(--wb-accent-dim);
     font-weight: 600;
     user-select: none;
-    cursor: default;
+    cursor: pointer;
+    transition: all var(--wb-transition);
+}
+.wb-note-type-badge-editor:hover {
+    background: rgba(192,105,42,0.15);
 }
 .wb-note-type-badge-editor .badge-remove {
     display: inline-flex;
@@ -1054,6 +1048,103 @@ body::before {
 .wb-note-type-badge-editor .badge-remove:hover {
     opacity: 1;
     background: rgba(192,105,42,0.15);
+}
+
+/* 多类型 chip（在徽章区域内的每个小标签） */
+.wb-type-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 6px 2px 8px;
+    border-radius: 8px;
+    background: rgba(192,105,42,0.1);
+    color: var(--wb-accent);
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    border: 1px solid rgba(192,105,42,0.2);
+}
+.wb-type-chip-del {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    font-size: 9px;
+    opacity: 0.5;
+    transition: opacity 0.1s, background 0.1s;
+    margin-left: 2px;
+}
+.wb-type-chip:hover .wb-type-chip-del {
+    opacity: 0.8;
+}
+.wb-type-chip .wb-type-chip-del:hover {
+    opacity: 1;
+    background: rgba(192,105,42,0.2);
+}
+.badge-add {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--wb-accent-dim);
+    color: var(--wb-accent);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all var(--wb-transition);
+    margin-left: 2px;
+}
+.badge-add:hover {
+    background: rgba(192,105,42,0.2);
+    transform: scale(1.1);
+}
+
+/* ===== 类型选择弹出面板 ===== */
+.wb-note-type-picker {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 6px;
+    background: #faf7f2;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    z-index: 2750;
+    min-width: 140px;
+    padding: 4px;
+}
+.wb-type-picker-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.wb-type-picker-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--wb-text-secondary);
+    cursor: pointer;
+    transition: all var(--wb-transition);
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    white-space: nowrap;
+}
+.wb-type-picker-item:hover {
+    background: var(--wb-bg-hover);
+    color: var(--wb-text);
+}
+.wb-type-picker-item.active {
+    background: var(--wb-accent-dim);
+    color: var(--wb-accent);
+    font-weight: 600;
 }
 
 .wb-note-tags-input {
@@ -1773,4 +1864,340 @@ body::before {
     *, *::before, *::after {
         animation-duration: 0.01ms !important;
     }
+}
+
+/* ===== 自定义输入弹窗暖纸视觉 ===== */
+.wb-prompt-overlay {
+    background: rgba(0,0,0,0.3);
+    transition: opacity 0.18s ease, visibility 0.18s ease;
+}
+
+.wb-prompt-dialog {
+    background: #faf7f2;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 14px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    padding: 28px 28px 20px;
+    width: min(400px, calc(100vw - 48px));
+    animation: wbConfirmIn 0.2s ease;
+}
+
+.wb-prompt-input {
+    display: block;
+    width: 100%;
+    margin: 8px 0 20px 30px;
+    padding: 10px 14px;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    color: #1a1410;
+    background: #f5f0e8;
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+.wb-prompt-input:focus {
+    border-color: #c0692a;
+    box-shadow: 0 0 0 3px rgba(192,105,42,0.08);
+}
+
+/* ===== Toast 通知 ===== */
+.wb-toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 9999;
+    font-family: inherit;
+    pointer-events: none;
+    animation: toastIn 0.25s ease, toastOut 0.25s ease 2s forwards;
+    white-space: nowrap;
+}
+.wb-toast.info {
+    background: #faf7f2;
+    border: 1px solid rgba(0,0,0,0.08);
+    color: #4a443e;
+}
+.wb-toast.success {
+    background: #e8f5e9;
+    border: 1px solid rgba(46,204,113,0.2);
+    color: #27ae60;
+}
+.wb-toast.error {
+    background: #fde8e8;
+    border: 1px solid rgba(217,74,58,0.2);
+    color: #d94a3a;
+}
+@keyframes toastIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+@keyframes toastOut {
+    from { opacity: 1; }
+    to   { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+}
+
+/* ===== 笔记编辑器 - 格式工具栏 ===== */
+.wb-notes-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--wb-border);
+    flex-wrap: wrap;
+}
+.wb-toolbar-select {
+    padding: 4px 8px;
+    border: 1px solid var(--wb-border);
+    border-radius: 6px;
+    background: var(--wb-bg-card);
+    color: var(--wb-text-secondary);
+    font-size: 12px;
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+}
+.wb-toolbar-select:focus {
+    border-color: var(--wb-accent);
+}
+.wb-toolbar-btn {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--wb-border);
+    border-radius: 6px;
+    background: var(--wb-bg-card);
+    color: var(--wb-text-secondary);
+    cursor: pointer;
+    font-size: 13px;
+    font-family: inherit;
+    transition: all var(--wb-transition);
+}
+.wb-toolbar-btn:hover {
+    border-color: var(--wb-accent);
+    color: var(--wb-accent);
+    background: var(--wb-accent-dim);
+}
+.wb-toolbar-btn.active {
+    background: var(--wb-accent-dim);
+    border-color: var(--wb-accent);
+    color: var(--wb-accent);
+}
+.wb-toolbar-sep {
+    width: 1px;
+    height: 20px;
+    background: var(--wb-border);
+    margin: 0 4px;
+    flex-shrink: 0;
+}
+/* 工具栏颜色按钮 */
+#wbToolbarColor { font-size: 14px; }
+
+/* ===== 笔记编辑器 - contenteditable 富文本区 ===== */
+.wb-note-editable {
+    width: 100%;
+    height: 100%;
+    border: 1px solid var(--wb-border);
+    border-radius: var(--wb-radius);
+    background: var(--wb-bg-card);
+    color: var(--wb-text);
+    font-size: 16px;
+    font-family: 'Georgia', 'Songti SC', 'Noto Serif SC', serif;
+    line-height: 1.8;
+    padding: 16px;
+    outline: none;
+    overflow-y: auto;
+    word-break: break-word;
+}
+.wb-note-editable:focus {
+    border-color: var(--wb-border-active);
+}
+.wb-note-editable:empty::before {
+    content: attr(placeholder);
+    color: var(--wb-text-tertiary);
+    pointer-events: none;
+}
+.wb-note-editable h1 { font-size: 28px; font-weight: 700; margin: 16px 0 8px; line-height: 1.3; color: var(--wb-text); }
+.wb-note-editable h2 { font-size: 22px; font-weight: 700; margin: 14px 0 6px; line-height: 1.3; color: var(--wb-text); }
+.wb-note-editable h3 { font-size: 18px; font-weight: 600; margin: 12px 0 4px; line-height: 1.4; color: var(--wb-text); }
+.wb-note-editable h4 { font-size: 16px; font-weight: 600; margin: 10px 0 4px; line-height: 1.4; color: var(--wb-text); }
+.wb-note-editable h5 { font-size: 14px; font-weight: 600; margin: 8px 0 4px; line-height: 1.5; color: var(--wb-text-secondary); }
+.wb-note-editable h6 { font-size: 13px; font-weight: 600; margin: 8px 0 4px; line-height: 1.5; color: var(--wb-text-tertiary); }
+.wb-note-editable p { margin: 0 0 8px; }
+.wb-note-editable ul, .wb-note-editable ol { padding-left: 24px; margin: 4px 0 8px; }
+.wb-note-editable li { margin: 2px 0; }
+.wb-note-editable blockquote {
+    border-left: 3px solid var(--wb-accent);
+    padding: 4px 12px;
+    margin: 8px 0;
+    color: var(--wb-text-secondary);
+    background: var(--wb-accent-dim);
+    border-radius: 0 6px 6px 0;
+}
+.wb-note-editable pre {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 14px 16px;
+    border-radius: 8px;
+    font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    overflow-x: auto;
+    margin: 8px 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.wb-note-editable pre::before {
+    content: attr(data-lang);
+    display: block;
+    font-size: 10px;
+    color: #888;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ===== 颜色面板（工具栏 & 右键菜单共用） ===== */
+.wb-color-palette {
+    background: #faf7f2;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    padding: 8px;
+    display: none;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    min-width: 230px;
+}
+.wb-color-swatch {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.1s;
+    position: relative;
+}
+.wb-color-swatch:hover {
+    transform: scale(1.15);
+    border-color: rgba(0,0,0,0.2);
+}
+.wb-color-swatch::after {
+    content: attr(data-hex);
+    position: absolute;
+    bottom: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 9px;
+    color: var(--wb-text-tertiary);
+    white-space: nowrap;
+    display: none;
+}
+.wb-color-swatch:hover::after { display: block; }
+
+/* ===== 颜色选择子菜单（右键菜单内） ===== */
+.ctx-color-palette {
+    display: none;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    padding: 8px;
+    min-width: 190px;
+}
+.ctx-color-palette.visible {
+    display: grid;
+}
+.ctx-color-palette .wb-color-swatch {
+    width: 26px;
+    height: 26px;
+}
+
+/* ===== 编辑器右键菜单 ===== */
+#editorContextMenu {
+    z-index: 2820;
+}
+
+/* 代码块子菜单 */
+.ctx-code-lang-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--wb-text-secondary);
+    cursor: pointer;
+    transition: all var(--wb-transition);
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    white-space: nowrap;
+}
+.ctx-code-lang-item:hover {
+    background: var(--wb-bg-hover);
+    color: var(--wb-text);
+}
+
+/* ===== 笔记列表 - 日期分组头 ===== */
+.wb-note-date-group {
+    padding: 10px 12px 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--wb-accent);
+    letter-spacing: 0.02em;
+    border-bottom: 1px solid var(--wb-border);
+    margin-bottom: 4px;
+    text-transform: none;
+}
+
+/* ===== 笔记列表 - 日期标签徽章 ===== */
+.wb-note-date-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 500;
+    background: rgba(56, 132, 255, 0.12);
+    color: #2563eb;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+/* ===== 笔记列表 - 普通标签 chip ===== */
+.wb-note-tag-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 400;
+    background: var(--wb-bg-hover);
+    color: var(--wb-text-tertiary);
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+/* 笔记列表项 meta 行支持多标签换行 */
+.wb-note-list-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    color: var(--wb-text-tertiary);
+    flex-wrap: wrap;
+}
+
+/* 笔记列表标题文本（允许换行） */
+.wb-note-list-title-text {
+    white-space: normal;
+    word-break: break-word;
+    flex: 1;
+    min-width: 0;
 }

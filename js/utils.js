@@ -194,7 +194,7 @@ window.DevHome = window.DevHome || {};
             var cancelBtn = document.getElementById('wbConfirmCancel');
 
             if (!overlay || !titleEl || !messageEl || !okBtn || !cancelBtn) {
-                // 兜底：DOM 不存在时使用原生 confirm
+                // 兜底：DOM 不存在时使用原生 confirm（仅极端情况）
                 resolve(window.confirm(message));
                 return;
             }
@@ -228,6 +228,88 @@ window.DevHome = window.DevHome || {};
             document.addEventListener('keydown', onKeyDown);
             overlay.classList.add('visible');
         });
+    };
+
+    /* ===== 自定义输入弹窗（替代原生 prompt） ===== */
+    /**
+     * 显示暖纸主题输入弹窗
+     * @param {string} message - 提示消息（也作为 placeholder）
+     * @param {object} [opts] - 可选配置
+     * @param {string} [opts.title] - 标题，默认"请输入"
+     * @param {string} [opts.defaultValue] - 默认值
+     * @param {string} [opts.okLabel] - 确定按钮文字，默认"确定"
+     * @param {string} [opts.cancelLabel] - 取消按钮文字，默认"取消"
+     * @returns {Promise<string|null>} 输入的文本，取消返回 null
+     */
+    ns.showPrompt = function (message, opts) {
+        return new Promise(function (resolve) {
+            opts = opts || {};
+            var overlay = document.getElementById('wbPromptOverlay');
+            var titleEl = document.getElementById('wbPromptTitle');
+            var inputEl = document.getElementById('wbPromptInput');
+            var okBtn = document.getElementById('wbPromptOk');
+            var cancelBtn = document.getElementById('wbPromptCancel');
+
+            if (!overlay || !titleEl || !inputEl || !okBtn || !cancelBtn) {
+                // 兜底：DOM 不存在时使用原生 prompt（仅极端情况）
+                resolve(window.prompt(message, opts.defaultValue || ''));
+                return;
+            }
+
+            titleEl.textContent = opts.title || '请输入';
+            inputEl.placeholder = message || '';
+            inputEl.value = opts.defaultValue || '';
+
+            function cleanup() {
+                okBtn.removeEventListener('click', onOk);
+                cancelBtn.removeEventListener('click', onCancel);
+                overlay.removeEventListener('click', onClickOutside);
+                document.removeEventListener('keydown', onKeyDown);
+                overlay.classList.remove('visible');
+            }
+
+            function onOk() { 
+                var val = inputEl.value.trim();
+                cleanup(); 
+                resolve(val || null); 
+            }
+            function onCancel() { cleanup(); resolve(null); }
+            function onClickOutside(e) {
+                if (e.target === overlay) { cleanup(); resolve(null); }
+            }
+            function onKeyDown(e) {
+                if (e.key === 'Escape') { e.preventDefault(); cleanup(); resolve(null); }
+                if (e.key === 'Enter') { e.preventDefault(); var val = inputEl.value.trim(); cleanup(); resolve(val || null); }
+            }
+
+            okBtn.addEventListener('click', onOk);
+            cancelBtn.addEventListener('click', onCancel);
+            overlay.addEventListener('click', onClickOutside);
+            document.addEventListener('keydown', onKeyDown);
+            overlay.classList.add('visible');
+            // 聚焦输入框
+            setTimeout(function () { inputEl.focus(); }, 100);
+        });
+    };
+
+    /* ===== Toast 通知（替代原生 alert） ===== */
+    /**
+     * 显示自动消失的 toast 通知
+     * @param {string} message - 通知内容
+     * @param {string} [type] - 类型：'info' | 'success' | 'error'，默认 'info'
+     * @param {number} [duration] - 显示时长（毫秒），默认 2500
+     */
+    ns.showToast = function (message, type, duration) {
+        type = type || 'info';
+        duration = duration || 2500;
+        var toast = document.createElement('div');
+        toast.className = 'wb-toast ' + type;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        // 动画结束后移除
+        setTimeout(function () {
+            if (toast.parentNode) toast.parentNode.removeChild(toast);
+        }, duration + 300);
     };
 
 })(window.DevHome);

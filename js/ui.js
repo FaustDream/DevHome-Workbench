@@ -358,8 +358,8 @@ window.DevHome = window.DevHome || {};
 
     ns.saveTile = function () {
         var label = dom.labelInput.value.trim(), url = dom.urlInput.value.trim(), color = dom.colorInput.value;
-        if (!label || !url) { alert('请填写名称和网址'); return; }
-        if (!url.startsWith('http://') && !url.startsWith('https://')) { alert('网址必须以 http:// 或 https:// 开头'); return; }
+        if (!label || !url) { ns.showToast('请填写名称和网址', 'error'); return; }
+        if (!url.startsWith('http://') && !url.startsWith('https://')) { ns.showToast('网址必须以 http:// 或 https:// 开头', 'error'); return; }
         var tileData = { label: label, url: url, color: color, type: state.iconType };
         if (state.iconType === 'fa') {
             var iconVal = dom.faInput.value.trim();
@@ -382,5 +382,171 @@ window.DevHome = window.DevHome || {};
         else tileManager.add(tileData);
         ns.renderTiles(); ns.closeModal();
     }
+
+    /* ===== 20 种预定义颜色 ===== */
+    var PRESET_COLORS = [
+        '#1a1410', '#2d2820', '#4a443e', '#6e6860', '#8e8880',
+        '#c0692a', '#d94a3a', '#e74c3c', '#e67e22', '#f39c12',
+        '#27ae60', '#2ecc71', '#1abc9c', '#16a085', '#2980b9',
+        '#3498db', '#8e44ad', '#9b59b6', '#2c3e50', '#7f8c8d'
+    ];
+
+    /** 渲染颜色面板（工具栏和右键菜单共用） */
+    function renderColorPalette(container) {
+        if (!container) return;
+        container.innerHTML = PRESET_COLORS.map(function (hex) {
+            return '<div class="wb-color-swatch" data-hex="' + hex + '" style="background:' + hex + ';" title="' + hex + '"></div>';
+        }).join('');
+    }
+
+    /** 应用颜色到选中的 contenteditable 文本 */
+    function applyColorToSelection(hex) {
+        var sel = window.getSelection();
+        if (!sel.rangeCount) return;
+        // 确保 focus 在 contenteditable 上
+        var contentEl = dom.wbNoteContent;
+        if (!contentEl || !contentEl.contains(sel.anchorNode)) {
+            contentEl.focus();
+            return;
+        }
+        document.execCommand('foreColor', false, hex);
+    }
+
+    /* ===== 编辑器右键菜单 ===== */
+    ns.showEditorContextMenu = function (e) {
+        e.preventDefault(); e.stopPropagation();
+        var menu = document.getElementById('editorContextMenu');
+        if (!menu) { console.warn('[警告] editorContextMenu DOM 未找到'); return; }
+        console.log('[面板] 打开编辑器右键菜单 坐标(' + e.clientX + ',' + e.clientY + ')');
+        menu.classList.add('visible');
+        var menuRect = menu.getBoundingClientRect();
+        var posX = e.clientX + 8, posY = e.clientY + 8;
+        if (posX + menuRect.width > window.innerWidth - 8) posX = e.clientX - menuRect.width - 8;
+        if (posY + menuRect.height > window.innerHeight - 8) posY = e.clientY - menuRect.height - 8;
+        posX = Math.max(8, posX); posY = Math.max(8, posY);
+        menu.style.left = posX + 'px';
+        menu.style.top = posY + 'px';
+        setTimeout(function () { document.addEventListener('click', hideEditorMenu, { once: true }); }, 0);
+    };
+
+    function hideEditorMenu() {
+        var menu = document.getElementById('editorContextMenu');
+        if (menu) menu.classList.remove('visible');
+        ns.hideColorSubmenu();
+        ns.hideCodeLangMenu();
+    }
+
+    /** 编辑器右键菜单项处理 */
+    ns.handleEditorMenuAction = function (action) {
+        var contentEl = dom.wbNoteContent;
+        if (!contentEl) return;
+        contentEl.focus();
+        switch (action) {
+            case 'h1': document.execCommand('formatBlock', false, '<h1>'); break;
+            case 'h2': document.execCommand('formatBlock', false, '<h2>'); break;
+            case 'h3': document.execCommand('formatBlock', false, '<h3>'); break;
+            case 'h4': document.execCommand('formatBlock', false, '<h4>'); break;
+            case 'h5': document.execCommand('formatBlock', false, '<h5>'); break;
+            case 'h6': document.execCommand('formatBlock', false, '<h6>'); break;
+            case 'bold': document.execCommand('bold', false, null); break;
+            case 'italic': document.execCommand('italic', false, null); break;
+            case 'underline': document.execCommand('underline', false, null); break;
+        }
+        hideEditorMenu();
+    };
+
+    /* ===== 颜色子菜单 ===== */
+    ns.showColorSubmenu = function (anchorItem) {
+        var palette = document.getElementById('ctxColorPalette');
+        if (!palette) { console.warn('[警告] ctxColorPalette DOM 未找到'); return; }
+        console.log('[面板] 打开右键颜色子菜单');
+        renderColorPalette(palette);
+        palette.classList.add('visible');
+        var anchorRect = anchorItem.getBoundingClientRect();
+        palette.style.position = 'fixed';
+        palette.style.left = (anchorRect.right + 4) + 'px';
+        palette.style.top = anchorRect.top + 'px';
+        palette.style.zIndex = '2830';
+        // 防止右侧溢出
+        var palRect = palette.getBoundingClientRect();
+        if (palRect.right > window.innerWidth - 8) {
+            palette.style.left = (anchorRect.left - palRect.width - 4) + 'px';
+        }
+    };
+
+    ns.hideColorSubmenu = function () {
+        var palette = document.getElementById('ctxColorPalette');
+        if (palette) palette.classList.remove('visible');
+    };
+
+    /* ===== 代码语言子菜单 ===== */
+    var CODE_LANGUAGES = [
+        { key: '', label: '纯文本' },
+        { key: 'javascript', label: 'JavaScript' },
+        { key: 'typescript', label: 'TypeScript' },
+        { key: 'python', label: 'Python' },
+        { key: 'java', label: 'Java' },
+        { key: 'cpp', label: 'C++' },
+        { key: 'csharp', label: 'C#' },
+        { key: 'go', label: 'Go' },
+        { key: 'rust', label: 'Rust' },
+        { key: 'ruby', label: 'Ruby' },
+        { key: 'php', label: 'PHP' },
+        { key: 'swift', label: 'Swift' },
+        { key: 'kotlin', label: 'Kotlin' },
+        { key: 'sql', label: 'SQL' },
+        { key: 'html', label: 'HTML' },
+        { key: 'css', label: 'CSS' },
+        { key: 'json', label: 'JSON' },
+        { key: 'yaml', label: 'YAML' },
+        { key: 'bash', label: 'Bash' },
+        { key: 'markdown', label: 'Markdown' }
+    ];
+
+    ns.showCodeLangMenu = function (anchorItem) {
+        var menu = document.getElementById('ctxCodeLangMenu');
+        if (!menu) return;
+        menu.innerHTML = CODE_LANGUAGES.map(function (l) {
+            return '<div class="ctx-code-lang-item" data-lang="' + l.key + '">' + l.label + '</div>';
+        }).join('');
+        menu.classList.add('visible');
+        var anchorRect = anchorItem.getBoundingClientRect();
+        menu.style.position = 'fixed';
+        menu.style.left = (anchorRect.right + 4) + 'px';
+        menu.style.top = anchorRect.top + 'px';
+        menu.style.zIndex = '2830';
+        var menuRect = menu.getBoundingClientRect();
+        if (menuRect.right > window.innerWidth - 8) {
+            menu.style.left = (anchorRect.left - menuRect.width - 4) + 'px';
+        }
+        if (menuRect.bottom > window.innerHeight - 8) {
+            menu.style.top = (anchorRect.bottom - menuRect.height) + 'px';
+        }
+    };
+
+    ns.hideCodeLangMenu = function () {
+        var menu = document.getElementById('ctxCodeLangMenu');
+        if (menu) menu.classList.remove('visible');
+    };
+
+    /** 将选中文本包裹为代码块 */
+    ns.insertCodeBlock = function (lang) {
+        var contentEl = dom.wbNoteContent;
+        if (!contentEl) { console.warn('[警告] wbNoteContent 未找到，无法插入代码块'); return; }
+        console.log('[编辑] 插入代码块 语言=' + (lang || '纯文本'));
+        contentEl.focus();
+        var sel = window.getSelection();
+        var codeText = '';
+        if (sel.rangeCount && !sel.isCollapsed) {
+            codeText = sel.toString().trim();
+            sel.deleteFromDocument();
+        } else if (sel.isCollapsed) {
+            codeText = '// 在此编写代码...';
+        }
+        var langAttr = lang ? ' data-lang="' + lang + '"' : '';
+        var html = '<pre' + langAttr + '><code>' + (codeText || '') + '</code></pre>';
+        document.execCommand('insertHTML', false, html);
+        hideEditorMenu();
+    };
 
 })(window.DevHome);

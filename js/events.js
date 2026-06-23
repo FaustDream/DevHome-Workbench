@@ -200,6 +200,135 @@ window.DevHome = window.DevHome || {};
         // ===== 空白区域右键菜单 =====
         dom.blankContextMenu.addEventListener('click', function (e) { var item = e.target.closest('.context-menu-item'); if (item && item.dataset.action) ns.handleBlankMenuAction(item.dataset.action); });
 
+        // ===== 编辑器右键菜单 =====
+        var editorMenu = document.getElementById('editorContextMenu');
+        if (editorMenu) {
+            editorMenu.addEventListener('mousedown', function (e) {
+                if (e.target.closest('.ctx-has-submenu')) return;
+                var item = e.target.closest('.context-menu-item');
+                if (!item || !item.dataset.editorAction) return;
+                e.preventDefault();
+                console.log('[交互] 右键菜单 ' + item.dataset.editorAction + (state._savedSelection ? ' 恢复选区' : ''));
+                if (state._savedSelection) restoreSelection();
+                else console.warn('[警告] 右键菜单 restoreSelection 选区为空');
+                dom.wbNoteContent.focus();
+                ns.handleEditorMenuAction(item.dataset.editorAction);
+                saveSelection();
+                syncToolbarState();
+            });
+
+            // 颜色子菜单：hover 或 click 触发，阻止冒泡避免被全局关闭
+            var ctxColorItem = editorMenu.querySelector('#ctxColorSubmenu');
+            if (ctxColorItem) {
+                ctxColorItem.addEventListener('mouseenter', function () {
+                    ns.showColorSubmenu(ctxColorItem);
+                });
+                ctxColorItem.addEventListener('mouseleave', function () {
+                    setTimeout(function () {
+                        var palette = document.getElementById('ctxColorPalette');
+                        if (palette && !palette.matches(':hover') && !ctxColorItem.matches(':hover')) ns.hideColorSubmenu();
+                    }, 150);
+                });
+                ctxColorItem.addEventListener('click', function (e) {
+                    e.preventDefault(); e.stopPropagation();
+                    var palette = document.getElementById('ctxColorPalette');
+                    if (palette && palette.classList.contains('visible')) {
+                        ns.hideColorSubmenu();
+                    } else {
+                        ns.showColorSubmenu(ctxColorItem);
+                    }
+                });
+                ctxColorItem.addEventListener('mousedown', function (e) {
+                    e.preventDefault(); e.stopPropagation();
+                });
+                // 阻止子菜单上的 mouseleave 误关
+                var palette = document.getElementById('ctxColorPalette');
+                if (palette) {
+                    palette.addEventListener('mouseenter', function () {
+                        palette.classList.add('visible');
+                    });
+                    palette.addEventListener('mouseleave', function () {
+                        ns.hideColorSubmenu();
+                    });
+                    // 阻止颜色面板内的点击冒泡到 document（防止关闭菜单）
+                    palette.addEventListener('click', function (e) { e.stopPropagation(); });
+                    palette.addEventListener('mousedown', function (e) { e.stopPropagation(); });
+                    palette.addEventListener('mousedown', function (e) {
+                        var swatch = e.target.closest('.wb-color-swatch');
+                        if (swatch && swatch.dataset.hex) {
+                            e.preventDefault(); // 阻止失焦
+                            if (state._savedSelection) {
+                                var sel = window.getSelection();
+                                sel.removeAllRanges();
+                                sel.addRange(state._savedSelection);
+                            }
+                            dom.wbNoteContent.focus();
+                            document.execCommand('foreColor', false, swatch.dataset.hex);
+                            // 重新保存选区
+                            if (window.getSelection().rangeCount) {
+                                state._savedSelection = window.getSelection().getRangeAt(0).cloneRange();
+                            }
+                            ns.hideColorSubmenu();
+                            var em = document.getElementById('editorContextMenu');
+                            if (em) em.classList.remove('visible');
+                        }
+                    });
+                }
+            }
+
+            // 代码子菜单：hover 或 click 触发，阻止冒泡避免被全局关闭
+            var ctxCodeItem = editorMenu.querySelector('#ctxCodeSubmenu');
+            if (ctxCodeItem) {
+                ctxCodeItem.addEventListener('mouseenter', function () {
+                    ns.showCodeLangMenu(ctxCodeItem);
+                });
+                ctxCodeItem.addEventListener('mouseleave', function () {
+                    setTimeout(function () {
+                        var langMenu = document.getElementById('ctxCodeLangMenu');
+                        if (langMenu && !langMenu.matches(':hover') && !ctxCodeItem.matches(':hover')) ns.hideCodeLangMenu();
+                    }, 150);
+                });
+                ctxCodeItem.addEventListener('click', function (e) {
+                    e.preventDefault(); e.stopPropagation();
+                    var langMenu = document.getElementById('ctxCodeLangMenu');
+                    if (langMenu && langMenu.classList.contains('visible')) {
+                        ns.hideCodeLangMenu();
+                    } else {
+                        ns.showCodeLangMenu(ctxCodeItem);
+                    }
+                });
+                ctxCodeItem.addEventListener('mousedown', function (e) {
+                    e.preventDefault(); e.stopPropagation();
+                });
+                var langMenu = document.getElementById('ctxCodeLangMenu');
+                if (langMenu) {
+                    langMenu.addEventListener('mouseenter', function () {
+                        langMenu.classList.add('visible');
+                    });
+                    langMenu.addEventListener('mouseleave', function () {
+                        ns.hideCodeLangMenu();
+                    });
+                    langMenu.addEventListener('click', function (e) { e.stopPropagation(); });
+                    langMenu.addEventListener('mousedown', function (e) { e.stopPropagation(); });
+                    langMenu.addEventListener('mousedown', function (e) {
+                        var item = e.target.closest('.ctx-code-lang-item');
+                        if (!item) return;
+                        e.preventDefault();
+                        if (state._savedSelection) {
+                            var sel = window.getSelection();
+                            sel.removeAllRanges();
+                            sel.addRange(state._savedSelection);
+                        }
+                        dom.wbNoteContent.focus();
+                        ns.insertCodeBlock(item.dataset.lang);
+                        if (window.getSelection().rangeCount) {
+                            state._savedSelection = window.getSelection().getRangeAt(0).cloneRange();
+                        }
+                    });
+                }
+            }
+        }
+
         // ===== 设置面板 =====
         if (dom.settingsGearBtn) dom.settingsGearBtn.addEventListener('click', ns.openSettingsPanel);
         if (dom.settingsCloseBtn) dom.settingsCloseBtn.addEventListener('click', ns.closeSettingsPanel);
@@ -270,7 +399,18 @@ window.DevHome = window.DevHome || {};
             }
             // 可配置的专注模式快捷键
             if (ns.isFocusModeShortcut(e)) { e.preventDefault(); ns.toggleFocusMode(); }
-            if (document.activeElement !== dom.searchInput) {
+            // 仅在非编辑状态下拦截数字键切换搜索引擎
+            var activeEl = document.activeElement;
+            var isEditing = activeEl === dom.wbNoteTitle
+                || activeEl === dom.wbNoteContent
+                || activeEl === dom.wbNotesSearch
+                || activeEl === dom.wbCaptureInput
+                || activeEl === dom.wbMeAiApiKey
+                || activeEl === dom.wbMeAiEndpoint
+                || activeEl === dom.wbMeAiModel
+                || activeEl === dom.wbMeShortcutKey
+                || (activeEl && (activeEl.isContentEditable || activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT'));
+            if (!isEditing && activeEl !== dom.searchInput) {
                 var num = parseInt(e.key), engineKeys = Object.keys(engines);
                 if (num >= 1 && num <= engineKeys.length) { e.preventDefault(); ns.setEngine(engineKeys[num - 1]); dom.searchInput.focus(); }
             }
@@ -336,6 +476,16 @@ window.DevHome = window.DevHome || {};
         // ===== 右键菜单全局 =====
         document.addEventListener('contextmenu', function (e) {
             if (e.target.closest('.tile')) { e.preventDefault(); }
+            // 专注模式下的编辑器右键：保存选区后显示编辑器菜单
+            else if (dom.wbNoteContent && dom.wbNoteContent.contains(e.target) && state.currentDevhomeMode === 'workbench') {
+                // 保存当前选区以便工具栏按钮恢复
+                var sel = window.getSelection();
+                if (sel.rangeCount && dom.wbNoteContent.contains(sel.anchorNode)) {
+                    state._savedSelection = sel.getRangeAt(0).cloneRange();
+                }
+                e.preventDefault();
+                ns.showEditorContextMenu(e);
+            }
             else if (!e.target.closest('.search-container') && !e.target.closest('.engine-selector') && !e.target.closest('.engine-dropdown') && !e.target.closest('.modal')) {
                 e.preventDefault(); ns.showBlankContextMenu(e);
             }
@@ -345,7 +495,7 @@ window.DevHome = window.DevHome || {};
         dom.bgInput.addEventListener('change', function (e) {
             var file = e.target.files[0]; if (!file) return;
             if (file.type.startsWith('image/') || file.type.startsWith('video/')) ns.bgManager.upload(file);
-            else alert('请选择图片或视频文件');
+            else ns.showToast('请选择图片或视频文件', 'error');
             dom.bgInput.value = '';
         });
 
@@ -399,10 +549,10 @@ window.DevHome = window.DevHome || {};
                                 if (data.devhome) ns.devhomeStorage.set('workbench', data.devhome);
                                 await ns.tileManager.load();
                                 ns.renderTiles(); ns.updatePageIndicator();
-                                alert('备份导入成功！');
+                                ns.showToast('备份导入成功！', 'success');
                             }
-                        } else alert('无效的备份文件格式！');
-                    } catch (err) { alert('读取文件失败，请确保选择的是有效的 JSON 配置文件！'); }
+                        } else ns.showToast('无效的备份文件格式！', 'error');
+                    } catch (err) { ns.showToast('读取文件失败，请确保选择的是有效的 JSON 配置文件！', 'error'); }
                     dom.importInput.value = '';
                 };
                 reader.readAsText(file);
@@ -635,15 +785,16 @@ window.DevHome = window.DevHome || {};
                     if (chipClicked && chipClicked.classList.contains('custom')) {
                         var filterKey = chipClicked.dataset.filter;
                         var oldText = chipClicked.textContent.replace('×', '').trim();
-                        var newVal = prompt('重命名标签（可用 "emoji 名称" 格式）：', oldText);
-                        if (newVal && newVal.trim()) {
-                            var parsed = (function (input) {
-                                var m = input.match(/^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F?)\s*/u);
-                                if (m) return { icon: m[1], name: input.slice(m[0].length).trim() || input };
-                                return { icon: '', name: input.trim() };
-                            })(newVal.trim());
-                            ns.renameFilter(filterKey, parsed.icon || '', parsed.name);
-                        }
+                        ns.showPrompt('重命名标签（可用 "emoji 名称" 格式）：', { title: '重命名标签', defaultValue: oldText }).then(function (newVal) {
+                            if (newVal && newVal.trim()) {
+                                var parsed = (function (input) {
+                                    var m = input.match(/^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F?)\s*/u);
+                                    if (m) return { icon: m[1], name: input.slice(m[0].length).trim() || input };
+                                    return { icon: '', name: input.trim() };
+                                })(newVal.trim());
+                                ns.renameFilter(filterKey, parsed.icon || '', parsed.name);
+                            }
+                        });
                     }
                     exitFilterDeleteMode();
                     return;
@@ -670,9 +821,10 @@ window.DevHome = window.DevHome || {};
         // 新增自定义标签分类
         if (dom.wbFilterAddBtn) {
             dom.wbFilterAddBtn.addEventListener('click', function () {
-                var name = prompt('输入新标签名称，支持 emoji 开头（如"🎨 设计" 或 "设计"）：');
-                if (!name || !name.trim()) return;
-                ns.addCustomFilter(name.trim());
+                ns.showPrompt('输入新标签名称，支持 emoji 开头（如"🎨 设计" 或 "设计"）：', { title: '新增标签' }).then(function (name) {
+                    if (!name || !name.trim()) return;
+                    ns.addCustomFilter(name.trim());
+                });
             });
         }
         if (dom.wbNotesAddBtn) {
@@ -683,24 +835,47 @@ window.DevHome = window.DevHome || {};
                 });
             });
         }
-        // 编辑器类型徽章 × 点击 → 恢复默认"笔记"
+        // 编辑器类型徽章点击（支持多选）
         if (dom.wbNoteTypeBadge) {
             dom.wbNoteTypeBadge.addEventListener('click', function (e) {
-                if (!e.target.closest('.badge-remove')) return;
+                // 单个类型 chip 的 × 移除
+                var delChip = e.target.closest('.wb-type-chip-del');
+                if (delChip) {
+                    e.preventDefault(); e.stopPropagation();
+                    var typeKey = delChip.dataset.type;
+                    if (typeKey) ns.removeNoteType(typeKey);
+                    return;
+                }
+                // + 按钮 → 弹出选择器
+                if (e.target.closest('.badge-add')) {
+                    e.preventDefault(); e.stopPropagation();
+                    ns.toggleTypePicker();
+                    return;
+                }
+                // 徽章其他区域 → 弹出选择器
                 e.preventDefault(); e.stopPropagation();
-                state._currentNoteType = 'note';
-                ns.renderNoteTypeBadge('note');
-                // 触发自动保存
-                if (noteAutoSaveTimer) clearTimeout(noteAutoSaveTimer);
-                noteAutoSaveTimer = setTimeout(function () {
-                    if (state.currentNote) {
-                        ns.saveCurrentNote().then(function () {
-                            ns.renderNotesList(state._notesFilter, state._notesSearch);
-                        });
-                    }
-                }, 400);
+                ns.toggleTypePicker();
             });
         }
+        // 类型选择器内点击选项（多选 toggle）
+        var typePicker = document.getElementById('wbTypePickerList');
+        if (typePicker) {
+            typePicker.addEventListener('click', function (e) {
+                var item = e.target.closest('.wb-type-picker-item');
+                if (!item) return;
+                e.preventDefault(); e.stopPropagation();
+                var typeKey = item.dataset.type;
+                if (typeKey) ns.toggleNoteType(typeKey);
+            });
+        }
+        // 点击编辑器外部关闭类型选择器
+        document.addEventListener('click', function (e) {
+            var picker = document.getElementById('wbNoteTypePicker');
+            if (!picker || picker.style.display === 'none') return;
+            if (!e.target.closest('#wbNoteTypeBadge') && !e.target.closest('#wbNoteTypePicker')) {
+                ns.hideTypePicker();
+            }
+        });
         // 笔记标题/内容变更时自动保存
         var noteAutoSaveTimer = null;
         function autoSaveNote() {
@@ -713,8 +888,201 @@ window.DevHome = window.DevHome || {};
                 }
             }, 800);
         }
+        // 暴露给外部调用（类型选择器等需要触发保存的场景）
+        ns._triggerAutoSave = function () {
+            if (noteAutoSaveTimer) clearTimeout(noteAutoSaveTimer);
+            noteAutoSaveTimer = setTimeout(function () {
+                if (state.currentNote) {
+                    ns.saveCurrentNote().then(function () {
+                        ns.renderNotesList(state._notesFilter, state._notesSearch);
+                    });
+                }
+            }, 400);
+        };
         if (dom.wbNoteTitle) dom.wbNoteTitle.addEventListener('input', autoSaveNote);
-        if (dom.wbNoteContent) dom.wbNoteContent.addEventListener('input', autoSaveNote);
+        if (dom.wbNoteContent) {
+            dom.wbNoteContent.addEventListener('input', autoSaveNote);
+            // 同步格式工具栏的 heading 下拉框状态
+            dom.wbNoteContent.addEventListener('keyup', syncToolbarState);
+            dom.wbNoteContent.addEventListener('mouseup', syncToolbarState);
+        }
+
+        // 格式工具栏事件——必须用 mousedown 阻止失焦
+        var toolbarHeading = document.getElementById('wbToolbarHeading');
+        if (toolbarHeading) {
+            toolbarHeading.addEventListener('mousedown', function (e) {
+                var sel = window.getSelection();
+                if (sel.rangeCount && dom.wbNoteContent && dom.wbNoteContent.contains(sel.anchorNode)) {
+                    state._savedSelection = sel.getRangeAt(0).cloneRange();
+                    console.log('[交互] 打开标题下拉 已保存选区');
+                }
+            });
+            toolbarHeading.addEventListener('change', function () {
+                var val = toolbarHeading.value;
+                if (!val) return;
+                console.log('[编辑] 标题下拉 选中 ' + val);
+                dom.wbNoteContent.focus();
+                if (state._savedSelection) restoreSelection();
+                else console.warn('[警告] 标题下拉 restoreSelection 选区为空');
+                if (val !== 'p') {
+                    document.execCommand('formatBlock', false, '<' + val + '>');
+                } else {
+                    document.execCommand('formatBlock', false, '<p>');
+                }
+                toolbarHeading.value = '';
+                saveSelection();
+                syncToolbarState();
+            });
+        } else {
+            console.warn('[警告] 工具栏 dom#wbToolbarHeading 未找到');
+        }
+
+        var toolbarBold = document.getElementById('wbToolbarBold');
+        var toolbarItalic = document.getElementById('wbToolbarItalic');
+        var toolbarUnderline = document.getElementById('wbToolbarUnderline');
+        var toolbarUl = document.getElementById('wbToolbarUl');
+        var toolbarOl = document.getElementById('wbToolbarOl');
+        var toolbarColor = document.getElementById('wbToolbarColor');
+        var toolbarHighlight = document.getElementById('wbToolbarHighlight');
+        var colorPalette = document.getElementById('wbColorPalette');
+
+        // 保存/恢复选区辅助函数
+        function saveSelection() {
+            var sel = window.getSelection();
+            if (sel.rangeCount && dom.wbNoteContent && dom.wbNoteContent.contains(sel.anchorNode)) {
+                state._savedSelection = sel.getRangeAt(0).cloneRange();
+            }
+        }
+        function restoreSelection() {
+            if (!state._savedSelection) return;
+            var sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(state._savedSelection);
+        }
+        // 监听编辑器内选区变化并保存
+        if (dom.wbNoteContent) {
+            dom.wbNoteContent.addEventListener('mouseup', function () { saveSelection(); syncToolbarState(); });
+        }
+
+        if (toolbarBold) {
+            toolbarBold.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+                console.log('[交互] 工具栏 加粗' + (state._savedSelection ? ' 恢复选区' : ''));
+                if (state._savedSelection) restoreSelection();
+                else console.warn('[警告] 加粗 restoreSelection 选区为空');
+                dom.wbNoteContent.focus();
+                document.execCommand('bold', false, null);
+                saveSelection();
+                syncToolbarState();
+            });
+        }
+        if (toolbarItalic) {
+            toolbarItalic.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+                console.log('[交互] 工具栏 斜体');
+                if (state._savedSelection) restoreSelection();
+                dom.wbNoteContent.focus();
+                document.execCommand('italic', false, null);
+                saveSelection();
+            });
+        }
+        if (toolbarUnderline) {
+            toolbarUnderline.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+                console.log('[交互] 工具栏 下划线');
+                if (state._savedSelection) restoreSelection();
+                dom.wbNoteContent.focus();
+                document.execCommand('underline', false, null);
+                saveSelection();
+            });
+        }
+        if (toolbarUl) {
+            toolbarUl.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+                console.log('[交互] 工具栏 无序列表');
+                if (state._savedSelection) restoreSelection();
+                dom.wbNoteContent.focus();
+                document.execCommand('insertUnorderedList', false, null);
+                saveSelection();
+            });
+        }
+        if (toolbarOl) {
+            toolbarOl.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+                console.log('[交互] 工具栏 有序列表');
+                if (state._savedSelection) restoreSelection();
+                dom.wbNoteContent.focus();
+                document.execCommand('insertOrderedList', false, null);
+                saveSelection();
+            });
+        }
+        // 工具栏颜色按钮 → 弹出颜色面板
+        if (toolbarColor && colorPalette) {
+            toolbarColor.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+                var sel = window.getSelection();
+                if (sel.rangeCount && dom.wbNoteContent && dom.wbNoteContent.contains(sel.anchorNode)) {
+                    state._savedSelection = sel.getRangeAt(0).cloneRange();
+                }
+                var isVisible = colorPalette.style.display === 'grid';
+                if (isVisible) {
+                    console.log('[面板] 关闭颜色面板');
+                    colorPalette.style.display = 'none';
+                } else {
+                    var btnRect = toolbarColor.getBoundingClientRect();
+                    console.log('[面板] 打开颜色面板 坐标(' + Math.round(btnRect.left) + ',' + Math.round(btnRect.bottom) + ')');
+                    var colors = ['#1a1410', '#2d2820', '#4a443e', '#6e6860', '#8e8880',
+                        '#c0692a', '#d94a3a', '#e74c3c', '#e67e22', '#f39c12',
+                        '#27ae60', '#2ecc71', '#1abc9c', '#16a085', '#2980b9',
+                        '#3498db', '#8e44ad', '#9b59b6', '#2c3e50', '#7f8c8d'];
+                    colorPalette.innerHTML = colors.map(function (hex) {
+                        return '<div class="wb-color-swatch" data-hex="' + hex + '" style="background:' + hex + ';" title="' + hex + '"></div>';
+                    }).join('');
+                    colorPalette.style.position = 'fixed';
+                    colorPalette.style.top = (btnRect.bottom + 4) + 'px';
+                    colorPalette.style.left = btnRect.left + 'px';
+                    colorPalette.style.zIndex = '2800';
+                    colorPalette.style.display = 'grid';
+                }
+            });
+            // 颜色样本点击——用 mousedown 阻止失焦
+            colorPalette.addEventListener('mousedown', function (e) {
+                var swatch = e.target.closest('.wb-color-swatch');
+                if (!swatch || !swatch.dataset.hex) return;
+                e.preventDefault();
+                console.log('[编辑] 应用颜色 ' + swatch.dataset.hex + (state._savedSelection ? '' : ' 选区为空'));
+                if (state._savedSelection) restoreSelection();
+                else console.warn('[警告] 颜色 restoreSelection 选区为空');
+                dom.wbNoteContent.focus();
+                document.execCommand('foreColor', false, swatch.dataset.hex);
+                saveSelection();
+                colorPalette.style.display = 'none';
+                syncToolbarState();
+            });
+            document.addEventListener('click', function (e) {
+                if (colorPalette.style.display === 'grid' && !e.target.closest('#wbToolbarColor') && !e.target.closest('#wbColorPalette') && !e.target.closest('#wbToolbarHeading')) {
+                    colorPalette.style.display = 'none';
+                }
+            });
+        }
+        if (toolbarHighlight) {
+            toolbarHighlight.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+                console.log('[交互] 工具栏 高亮背景');
+                if (state._savedSelection) restoreSelection();
+                else console.warn('[警告] 高亮 restoreSelection 选区为空');
+                dom.wbNoteContent.focus();
+                document.execCommand('hiliteColor', false, '#fff3cd');
+                saveSelection();
+            });
+        }
+
+        // 同步工具栏按钮状态
+        function syncToolbarState() {
+            if (toolbarBold) toolbarBold.classList.toggle('active', document.queryCommandState('bold'));
+            if (toolbarItalic) toolbarItalic.classList.toggle('active', document.queryCommandState('italic'));
+            if (toolbarUnderline) toolbarUnderline.classList.toggle('active', document.queryCommandState('underline'));
+        }
 
         // ===== v2 日历事件 =====
         var calPrev = document.getElementById('wbCalendarPrev');
@@ -772,7 +1140,7 @@ window.DevHome = window.DevHome || {};
                 var apiKey = dom.wbMeAiApiKey ? dom.wbMeAiApiKey.value.trim() : '';
                 var endpoint = dom.wbMeAiEndpoint ? dom.wbMeAiEndpoint.value.trim() : '';
                 var model = dom.wbMeAiModel ? dom.wbMeAiModel.value.trim() : '';
-                if (!apiKey) { alert('请填写 API Key'); return; }
+                if (!apiKey) { ns.showToast('请填写 API Key', 'error'); return; }
                 var config = await ns.storageV2.get(ns.storageV2.KEYS.CONFIG, ns.DEFAULT_V2_CONFIG);
                 config.aiApi.apiKey = apiKey;
                 config.aiApi.endpoint = endpoint || ns.DEFAULT_V2_CONFIG.aiApi.endpoint;
@@ -837,7 +1205,7 @@ window.DevHome = window.DevHome || {};
                     alt: dom.wbMeShortcutAlt ? dom.wbMeShortcutAlt.checked : false,
                     key: dom.wbMeShortcutKey ? dom.wbMeShortcutKey.value.trim().toLowerCase() : 'k'
                 };
-                if (!sc.key) { alert('请输入快捷键字母'); return; }
+                if (!sc.key) { ns.showToast('请输入快捷键字母', 'error'); return; }
                 state._focusShortcut = sc;
                 var config = await ns.storageV2.get(ns.storageV2.KEYS.CONFIG, ns.DEFAULT_V2_CONFIG);
                 config.focusShortcut = sc;

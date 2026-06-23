@@ -344,3 +344,24 @@ body::before {
     gap: var(--spacing-md);
 }
 
+/* ===== 自定义弹窗基础布局（始终隐藏，JS 控制显隐） ===== */
+.wb-confirm-overlay,
+.wb-prompt-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+.wb-confirm-overlay { z-index: 2800; }
+.wb-prompt-overlay  { z-index: 2850; }
+.wb-confirm-overlay.visible,
+.wb-prompt-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+

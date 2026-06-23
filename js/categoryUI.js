@@ -216,7 +216,7 @@ window.DevHome = window.DevHome || {};
 
     ns.addNewPage = function () { tileManager.addNewPage(); ns.renderTiles(); ns.refreshCatRowIfVisible(); };
     ns.removeCurrentPage = function () {
-        if (state.totalPages <= 1) { alert('至少需要保留一个分类！'); return; }
+        if (state.totalPages <= 1) { ns.showToast('至少需要保留一个分类！', 'error'); return; }
         ns.deleteCategoryByIndex(state.currentPage);
     };
 
@@ -311,7 +311,7 @@ window.DevHome = window.DevHome || {};
     };
 
     ns.deleteCategoryByIndex = function (pageIndex) {
-        if (state.totalPages <= 1) { alert('至少需要保留一个分类！'); return; }
+        if (state.totalPages <= 1) { ns.showToast('至少需要保留一个分类！', 'error'); return; }
         if (pageIndex < 0 || pageIndex >= state.totalPages) return;
         var name = state.pageNames[pageIndex] || '第' + (pageIndex + 1) + '页';
         var page = tileManager.pagesData[pageIndex] || {};

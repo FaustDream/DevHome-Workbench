@@ -106,7 +106,7 @@ window.DevHome = window.DevHome || {};
         if (!dom.wbMeExportList) return;
         var checkboxes = dom.wbMeExportList.querySelectorAll('input[type="checkbox"]:checked');
         if (checkboxes.length === 0) {
-            alert('请至少选择一项内容');
+            ns.showToast('请至少选择一项内容', 'info');
             return;
         }
 
@@ -132,7 +132,15 @@ window.DevHome = window.DevHome || {};
                 if (n.sourceUrl) md += 'source: "' + n.sourceUrl + '"\n';
                 md += '---\n\n';
                 md += '# ' + (n.title || '无标题') + '\n\n';
-                md += (n.content || '') + '\n\n';
+                // 内容为 HTML（富文本），导出时转为纯文本
+                var content = n.content || '';
+                if (/<[a-zA-Z][^>]*>/.test(content) || /&[a-z]+;/.test(content)) {
+                    // HTML 内容：使用临时 DOM 提取纯文本
+                    var tmp = document.createElement('div');
+                    tmp.innerHTML = content;
+                    content = tmp.textContent || tmp.innerText || '';
+                }
+                md += content + '\n\n';
             } else if (item.type === 'capture') {
                 var c = item.data;
                 md += '---\n';

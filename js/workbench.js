@@ -608,7 +608,7 @@ window.DevHome = window.DevHome || {};
         var model = config.aiApi.model;
 
         if (!apiKey) {
-            alert('请先在下方填入 API Key');
+            ns.showToast('请先在下方填入 API Key', 'error');
             return;
         }
 
@@ -630,7 +630,7 @@ window.DevHome = window.DevHome || {};
         });
 
         if (!contentText.trim()) {
-            alert('今天还没有任何记录');
+            ns.showToast('今天还没有任何记录', 'info');
             return;
         }
 

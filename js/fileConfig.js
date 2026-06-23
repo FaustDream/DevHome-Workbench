@@ -453,7 +453,7 @@ window.DevHome = window.DevHome || {};
     /** 用户点击"选择目录"按钮的处理 */
     async function handleUserPickDir() {
         if (!isFileSystemAPISupported()) {
-            alert('当前浏览器不支持此功能，请使用 Chrome 或 Edge。');
+            ns.showToast('当前浏览器不支持此功能，请使用 Chrome 或 Edge。', 'error');
             return false;
         }
         try {

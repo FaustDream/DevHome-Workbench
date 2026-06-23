@@ -109,7 +109,6 @@ window.DevHome = window.DevHome || {};
         wbNoteTypeBadge: ns.$('#wbNoteTypeBadge'),
         wbCustomFilters: ns.$('#wbCustomFilters'),
         wbFilterAddBtn: ns.$('#wbFilterAddBtn'),
-        wbNoteTags: ns.$('#wbNoteTags'),
         wbNoteDeleteBtn: ns.$('#wbNoteDeleteBtn'),
         wbNoteContent: ns.$('#wbNoteContent'),
         wbNotesEmptyMsg: ns.$('#wbNotesEmptyMsg'),
