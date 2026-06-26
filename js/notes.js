@@ -34,11 +34,29 @@ window.DevHome = window.DevHome || {};
         return /^\d{4}-\d{2}-\d{2}$/.test(tag);
     }
 
+    /**
+     * 统计文本字数（中文每字计1 + 英文每词计1）
+     * @param {string} text - 可以是 HTML 或纯文本
+     * @returns {number} 中文字数 + 英文词数的总和
+     */
+    ns.countWords = function (text) {
+        var plain = String(text || '').replace(/<[^>]*>/g, '').trim();
+        if (!plain) return 0;
+        var chinese = (plain.match(/[\u4e00-\u9fff\u3400-\u4dbf]/g) || []).length;
+        var words = (plain.match(/[a-zA-Z0-9]+/g) || []).length;
+        return chinese + words;
+    };
+
     /* ===== 笔记数据读写 ===== */
 
-    /** 加载笔记列表 */
+    /** 加载笔记列表（加载后自动触发全量迁移） */
     ns.loadNotes = async function () {
         state.notes = await storageV2.get(storageV2.KEYS.NOTES, []);
+        // 全量迁移：为旧笔记补充 doc 和 wordCount 字段
+        ns.migrateAllNotes();
+        // 有迁移发生时保存一次
+        var hasNewFields = state.notes.some(function (n) { return n.doc && n.doc.type === 'doc'; });
+        if (hasNewFields) await ns.saveNotes();
     };
 
     /** 保存笔记列表 */
@@ -58,6 +76,8 @@ window.DevHome = window.DevHome || {};
             id: data.id || noteId(),
             title: data.title || '无标题',
             content: data.content || '',
+            doc: data.doc !== undefined ? data.doc : null,   // ProseMirror JSON，初始 null
+            wordCount: data.wordCount || 0,                    // 字数统计
             type: data.type || 'note',
             tags: userTags,
             sourceUrl: data.sourceUrl || '',
@@ -99,6 +119,8 @@ window.DevHome = window.DevHome || {};
         var cap = {
             id: captureId(),
             content: content.trim(),
+            doc: null,                 // 捕获不需要 ProseMirror 编辑
+            wordCount: 0,              // 保持数据结构一致
             tags: [],
             createdAt: Date.now()
         };
@@ -296,7 +318,7 @@ window.DevHome = window.DevHome || {};
         if (dom.wbNotesEditorEmpty) dom.wbNotesEditorEmpty.style.display = 'none';
         if (dom.wbNotesEditorActive) dom.wbNotesEditorActive.style.display = 'flex';
 
-        // 控制工具栏显隐：捕获模式隐藏
+        // 捕获模式：隐藏工具栏，标题只读
         var toolbar = document.getElementById('wbNotesToolbar');
         if (toolbar) toolbar.style.display = isCapture ? 'none' : 'flex';
 
@@ -309,63 +331,90 @@ window.DevHome = window.DevHome || {};
         // 渲染类型标签（支持多标签逗号分隔）
         state._currentNoteType = note.type || 'note';
         ns.renderNoteTypeBadge();
-        // 富文本内容（contenteditable div）
-        if (dom.wbNoteContent) {
-            var content = note.content || '';
-            // 如果内容是纯文本（没有 HTML 标签），转为 HTML
-            if (content.trim() && !/<[a-zA-Z][^>]*>/.test(content) && !/&[a-z]+;/.test(content)) {
-                dom.wbNoteContent.innerHTML = '<p>' + ns.escapeHtml(content).replace(/\n/g, '<br>') + '</p>';
-            } else {
-                dom.wbNoteContent.innerHTML = content || '';
+
+        // 笔记模式：使用 ProseMirror 编辑器（挂载到 #wbNoteContent）
+        if (!isCapture && dom.wbNoteContent && window.PM) {
+            // 确保旧数据有 doc 字段（迁移）
+            if (!note.doc || note.doc.type !== 'doc') {
+                ns.migrateNoteDoc(note);
             }
+            ns.pmCreateEditor(dom.wbNoteContent, note, {
+                onChange: function () {
+                    if (ns._triggerAutoSave) ns._triggerAutoSave();
+                }
+            });
+        } else if (isCapture && dom.wbNoteContent) {
+            // 捕获模式：仍用 contenteditable（保持简单）
+            dom.wbNoteContent.setAttribute('contenteditable', 'true');
+            dom.wbNoteContent.innerHTML = ns.escapeHtml(note.content || '').replace(/\n/g, '<br>');
         }
+
         ns.renderNotesList(state._notesFilter, state._notesSearch);
     };
 
     /** 关闭笔记编辑器 */
     ns.closeNoteEditor = function () {
+        // 销毁 ProseMirror 编辑器实例
+        if (ns.pmDestroyEditor) ns.pmDestroyEditor();
         state.currentNote = null;
         if (dom.wbNotesEditorEmpty) dom.wbNotesEditorEmpty.style.display = 'flex';
         if (dom.wbNotesEditorActive) dom.wbNotesEditorActive.style.display = 'none';
         ns.renderNotesList(state._notesFilter, state._notesSearch);
     };
 
-    /** 保存当前编辑的笔记/捕获（contenteditable 版本） */
+    /** 保存当前编辑的笔记/捕获（ProseMirror + contenteditable 兼容） */
     ns.saveCurrentNote = async function () {
         if (!state.currentNote) return;
         var isCapture = state.currentNote._kind === 'capture' || state.currentNote.type === 'capture';
-        // 获取富文本内容（innerHTML）
-        var content = dom.wbNoteContent ? dom.wbNoteContent.innerHTML : '';
 
-        // 捕获类型：只更新内容
+        // 捕获类型：仍用 contenteditable innerHTML
         if (isCapture) {
-            await ns.updateCapture(state.currentNote.id, content);
+            var capContent = dom.wbNoteContent ? dom.wbNoteContent.innerHTML : '';
+            await ns.updateCapture(state.currentNote.id, capContent);
             ns.renderCaptures();
             ns.renderNotesList(state._notesFilter, state._notesSearch);
             return;
         }
 
+        // 笔记模式：使用 ProseMirror API 获取内容
         var title = dom.wbNoteTitle ? dom.wbNoteTitle.value.trim() : '';
-        // 多标签逗号分隔（如 "note,idea"）
         var type = state._currentNoteType || 'note';
-        // 只保留日期标签，不再从输入框读取用户标签
+        // 只保留日期标签
         var existingDateTags = (state.currentNote.tags || []).filter(function (t) { return /^\d{4}-\d{2}-\d{2}$/.test(t); });
         if (existingDateTags.length === 0) {
             existingDateTags = [dateTag(state.currentNote.createdAt || Date.now())];
         }
-        var tags = existingDateTags;
+
+        // 从 ProseMirror 获取文档数据
+        var docJSON = null;
+        var docHTML = '';
+        var wordCount = 0;
+
+        if (ns.pmIsActive && ns.pmIsActive()) {
+            docJSON = ns.pmGetDocJSON();
+            docHTML = ns.pmGetDocHTML();
+            wordCount = ns.pmGetWordCount();
+        } else {
+            // 回退：从 contenteditable 获取
+            docHTML = dom.wbNoteContent ? dom.wbNoteContent.innerHTML : '';
+            wordCount = ns.countWords(docHTML);
+            // 无 ProseMirror 时不写 doc 字段（避免覆盖已有）
+            docJSON = state.currentNote.doc || null;
+        }
 
         await ns.updateNote(state.currentNote.id, {
             title: title || '无标题',
-            content: content,
+            content: docHTML,        // 保留 HTML（向后兼容列表搜索）
+            doc: docJSON,            // ProseMirror JSON（新增）
+            wordCount: wordCount,    // 字数统计（新增）
             type: type,
-            tags: tags
+            tags: existingDateTags
         });
 
         // 更新当前引用
         var updated = state.notes.find(function (n) { return n.id === state.currentNote.id; });
         if (updated) state.currentNote = updated;
-        console.log('[编辑] 保存笔记 id=' + state.currentNote.id + ' 类型=' + type);
+        console.log('[编辑] 保存笔记 id=' + state.currentNote.id + ' 类型=' + type + ' 字数=' + wordCount);
     };
 
     /* ===== 暴露 API ===== */
@@ -592,6 +641,121 @@ window.DevHome = window.DevHome || {};
         ns.renderNoteTypeBadge();
         ns.hideTypePicker();
         if (ns._triggerAutoSave) ns._triggerAutoSave();
+    };
+
+    /* ===== ProseMirror 数据迁移 ===== */
+
+    /**
+     * 静默给单条笔记补 doc 字段（HTML → ProseMirror JSON）
+     * - 如果 note.doc 已存在且 type === 'doc'，跳过
+     * - 空内容生成空文档（含一个空段落）
+     * - 有 HTML 内容时用 ProseMirror DOMParser 解析
+     * - 同时计算 wordCount
+     * @param {object} note - 笔记对象
+     * @returns {object} note（已修改）
+     */
+    ns.migrateNoteDoc = function (note) {
+        // 已迁移跳过
+        if (note.doc && note.doc.type === 'doc') return note;
+
+        // 无 ProseMirror 时，只补字段不做解析
+        var PM = window.PM;
+        if (!PM) {
+            console.warn('[迁移] ProseMirror 未加载，跳过 HTML 解析，仅补充空 doc');
+            note.doc = { type: 'doc', content: [{ type: 'paragraph', content: [] }] };
+            note.wordCount = note.wordCount || ns.countWords(note.content);
+            return note;
+        }
+
+        // 空内容 → 空文档
+        if (!note.content || !note.content.trim()) {
+            note.doc = { type: 'doc', content: [{ type: 'paragraph', content: [] }] };
+            note.wordCount = 0;
+            return note;
+        }
+
+        // HTML → ProseMirror JSON（使用 DOMParser）
+        try {
+            var div = document.createElement('div');
+            div.innerHTML = note.content;
+            // 使用内置 Schema（与 proseMirrorEditor.js 一致）
+            var schema = ns._getMigrationSchema(PM);
+            var parser = PM.DOMParser.fromSchema(schema);
+            var doc = parser.parse(div);
+            note.doc = doc.toJSON();
+        } catch (e) {
+            // 解析失败时将 HTML 作为纯文本存入段落
+            console.warn('[迁移] DOMParser 解析失败，回退为纯文本段落 id=' + note.id, e.message);
+            var plainText = (note.content || '').replace(/<[^>]*>/g, '').trim();
+            note.doc = {
+                type: 'doc',
+                content: [{ type: 'paragraph', content: plainText ? [{ type: 'text', text: plainText }] : [] }]
+            };
+        }
+
+        note.wordCount = ns.countWords(note.content);
+        return note;
+    };
+
+    /** 获取迁移用 Schema（轻量版，仅含 block 节点，不需要所有 marks） */
+    ns._getMigrationSchema = function (PM) {
+        if (ns._migrationSchema) return ns._migrationSchema;
+        ns._migrationSchema = new PM.Schema({
+            nodes: {
+                doc: { content: 'block+' },
+                paragraph: { group: 'block', content: 'inline*', parseDOM: [{ tag: 'p' }], toDOM: function () { return ['p', 0]; } },
+                heading: { group: 'block', content: 'inline*', attrs: { level: { default: 1 } },
+                    parseDOM: [
+                        { tag: 'h1', attrs: { level: 1 } }, { tag: 'h2', attrs: { level: 2 } },
+                        { tag: 'h3', attrs: { level: 3 } }, { tag: 'h4', attrs: { level: 4 } },
+                        { tag: 'h5', attrs: { level: 5 } }, { tag: 'h6', attrs: { level: 6 } }
+                    ],
+                    toDOM: function (node) { return ['h' + node.attrs.level, 0]; } },
+                code_block: { group: 'block', content: 'text*', attrs: { language: { default: '' } }, isolating: true,
+                    parseDOM: [{ tag: 'pre', getAttrs: function (dom) { return { language: dom.getAttribute('data-lang') || '' }; } }],
+                    toDOM: function (node) { return ['pre', { 'data-lang': node.attrs.language }, ['code', 0]]; } },
+                bullet_list: { group: 'block', content: 'list_item+', parseDOM: [{ tag: 'ul' }], toDOM: function () { return ['ul', 0]; } },
+                ordered_list: { group: 'block', content: 'list_item+', attrs: { order: { default: 1 } }, parseDOM: [{ tag: 'ol' }], toDOM: function () { return ['ol', 0]; } },
+                list_item: { content: 'paragraph+', parseDOM: [{ tag: 'li' }], toDOM: function () { return ['li', 0]; } },
+                blockquote: { group: 'block', content: 'block+', parseDOM: [{ tag: 'blockquote' }], toDOM: function () { return ['blockquote', 0]; } },
+                horizontal_rule: { group: 'block', parseDOM: [{ tag: 'hr' }], toDOM: function () { return ['hr']; } },
+                text: { group: 'inline' }
+            },
+            marks: {
+                em: { parseDOM: [{ tag: 'em' }, { tag: 'i' }], toDOM: function () { return ['em', 0]; } },
+                strong: { parseDOM: [{ tag: 'strong' }, { tag: 'b' }], toDOM: function () { return ['strong', 0]; } },
+                underline: { parseDOM: [{ tag: 'u' }], toDOM: function () { return ['u', 0]; } },
+                link: { attrs: { href: { default: '' } }, parseDOM: [{ tag: 'a[href]', getAttrs: function (dom) { return { href: dom.getAttribute('href') }; } }], toDOM: function (node) { return ['a', { href: node.attrs.href }, 0]; } },
+                code: { parseDOM: [{ tag: 'code' }], toDOM: function () { return ['code', 0]; } }
+            }
+        });
+        return ns._migrationSchema;
+    };
+
+    /**
+     * 全量迁移：遍历所有笔记，为无 doc 的笔记补 doc 字段
+     * 在 loadNotes() 完成后调用
+     */
+    ns.migrateAllNotes = function () {
+        var migrated = 0;
+        // 为笔记补充 doc/wordCount
+        (state.notes || []).forEach(function (note) {
+            if (!note.doc || note.doc.type !== 'doc') {
+                ns.migrateNoteDoc(note);
+                migrated++;
+            }
+            if (note.wordCount === undefined) {
+                note.wordCount = ns.countWords(note.content || '');
+            }
+        });
+        // 为捕获补充 doc/wordCount（保持数据结构一致）
+        (state.captures || []).forEach(function (cap) {
+            if (cap.doc === undefined) cap.doc = null;
+            if (cap.wordCount === undefined) cap.wordCount = 0;
+        });
+        if (migrated > 0) {
+            console.log('[迁移] 全量迁移完成，迁移了 ' + migrated + ' 条笔记');
+        }
     };
 
 })(window.DevHome);

@@ -200,7 +200,7 @@ window.DevHome = window.DevHome || {};
         // ===== 空白区域右键菜单 =====
         dom.blankContextMenu.addEventListener('click', function (e) { var item = e.target.closest('.context-menu-item'); if (item && item.dataset.action) ns.handleBlankMenuAction(item.dataset.action); });
 
-        // ===== 编辑器右键菜单 =====
+        // ===== 编辑器右键菜单（精简版：代码块 + 引用块 + 复制粘贴） =====
         var editorMenu = document.getElementById('editorContextMenu');
         if (editorMenu) {
             editorMenu.addEventListener('mousedown', function (e) {
@@ -208,75 +208,22 @@ window.DevHome = window.DevHome || {};
                 var item = e.target.closest('.context-menu-item');
                 if (!item || !item.dataset.editorAction) return;
                 e.preventDefault();
-                console.log('[交互] 右键菜单 ' + item.dataset.editorAction + (state._savedSelection ? ' 恢复选区' : ''));
-                if (state._savedSelection) restoreSelection();
-                else console.warn('[警告] 右键菜单 restoreSelection 选区为空');
-                dom.wbNoteContent.focus();
-                ns.handleEditorMenuAction(item.dataset.editorAction);
-                saveSelection();
-                syncToolbarState();
+                console.log('[交互] 右键菜单 ' + item.dataset.editorAction);
+
+                var action = item.dataset.editorAction;
+                if (action === 'blockquote' && ns._executeBubbleAction) {
+                    ns._executeBubbleAction('blockquote');
+                } else if (action === 'copy') {
+                    document.execCommand('copy');
+                } else if (action === 'paste') {
+                    document.execCommand('paste');
+                }
+                // 隐藏菜单
+                var em = document.getElementById('editorContextMenu');
+                if (em) em.classList.remove('visible');
             });
 
-            // 颜色子菜单：hover 或 click 触发，阻止冒泡避免被全局关闭
-            var ctxColorItem = editorMenu.querySelector('#ctxColorSubmenu');
-            if (ctxColorItem) {
-                ctxColorItem.addEventListener('mouseenter', function () {
-                    ns.showColorSubmenu(ctxColorItem);
-                });
-                ctxColorItem.addEventListener('mouseleave', function () {
-                    setTimeout(function () {
-                        var palette = document.getElementById('ctxColorPalette');
-                        if (palette && !palette.matches(':hover') && !ctxColorItem.matches(':hover')) ns.hideColorSubmenu();
-                    }, 150);
-                });
-                ctxColorItem.addEventListener('click', function (e) {
-                    e.preventDefault(); e.stopPropagation();
-                    var palette = document.getElementById('ctxColorPalette');
-                    if (palette && palette.classList.contains('visible')) {
-                        ns.hideColorSubmenu();
-                    } else {
-                        ns.showColorSubmenu(ctxColorItem);
-                    }
-                });
-                ctxColorItem.addEventListener('mousedown', function (e) {
-                    e.preventDefault(); e.stopPropagation();
-                });
-                // 阻止子菜单上的 mouseleave 误关
-                var palette = document.getElementById('ctxColorPalette');
-                if (palette) {
-                    palette.addEventListener('mouseenter', function () {
-                        palette.classList.add('visible');
-                    });
-                    palette.addEventListener('mouseleave', function () {
-                        ns.hideColorSubmenu();
-                    });
-                    // 阻止颜色面板内的点击冒泡到 document（防止关闭菜单）
-                    palette.addEventListener('click', function (e) { e.stopPropagation(); });
-                    palette.addEventListener('mousedown', function (e) { e.stopPropagation(); });
-                    palette.addEventListener('mousedown', function (e) {
-                        var swatch = e.target.closest('.wb-color-swatch');
-                        if (swatch && swatch.dataset.hex) {
-                            e.preventDefault(); // 阻止失焦
-                            if (state._savedSelection) {
-                                var sel = window.getSelection();
-                                sel.removeAllRanges();
-                                sel.addRange(state._savedSelection);
-                            }
-                            dom.wbNoteContent.focus();
-                            document.execCommand('foreColor', false, swatch.dataset.hex);
-                            // 重新保存选区
-                            if (window.getSelection().rangeCount) {
-                                state._savedSelection = window.getSelection().getRangeAt(0).cloneRange();
-                            }
-                            ns.hideColorSubmenu();
-                            var em = document.getElementById('editorContextMenu');
-                            if (em) em.classList.remove('visible');
-                        }
-                    });
-                }
-            }
-
-            // 代码子菜单：hover 或 click 触发，阻止冒泡避免被全局关闭
+            // 代码子菜单：hover 或 click 触发
             var ctxCodeItem = editorMenu.querySelector('#ctxCodeSubmenu');
             if (ctxCodeItem) {
                 ctxCodeItem.addEventListener('mouseenter', function () {
@@ -314,20 +261,22 @@ window.DevHome = window.DevHome || {};
                         var item = e.target.closest('.ctx-code-lang-item');
                         if (!item) return;
                         e.preventDefault();
-                        if (state._savedSelection) {
-                            var sel = window.getSelection();
-                            sel.removeAllRanges();
-                            sel.addRange(state._savedSelection);
+                        if (ns._executeBubbleAction) {
+                            ns._executeBubbleAction('codeBlock', item.dataset.lang);
                         }
-                        dom.wbNoteContent.focus();
-                        ns.insertCodeBlock(item.dataset.lang);
-                        if (window.getSelection().rangeCount) {
-                            state._savedSelection = window.getSelection().getRangeAt(0).cloneRange();
-                        }
+                        var em = document.getElementById('editorContextMenu');
+                        if (em) em.classList.remove('visible');
+                        ns.hideCodeLangMenu();
                     });
                 }
             }
         }
+
+        // ===== 气泡工具栏事件 =====
+        bindBubbleToolbar();
+
+        // ===== 旧工具栏按钮事件延迟绑定（兼容回退） =====
+        _bindLegacyToolbarEvents();
 
         // ===== 设置面板 =====
         if (dom.settingsGearBtn) dom.settingsGearBtn.addEventListener('click', ns.openSettingsPanel);
@@ -1219,5 +1168,110 @@ window.DevHome = window.DevHome || {};
         function applyShortcutSizeFn(size) { ns.applyShortcutSize(size); }
         function applyShortcutColumnsFn(cols) { ns.applyShortcutColumns(cols); }
     };
+
+    /* ===== 气泡工具栏事件 ===== */
+
+    /** 绑定气泡工具栏按钮事件 */
+    function bindBubbleToolbar() {
+        var toolbar = document.getElementById('wbBubbleToolbar');
+        if (!toolbar) return;
+
+        // 按钮 mousedown 事件（阻止失焦，执行 PM 命令）
+        toolbar.addEventListener('mousedown', function (e) {
+            var btn = e.target.closest('[data-pm-action]');
+            if (!btn) return;
+            e.preventDefault();
+
+            var action = btn.dataset.pmAction;
+            if (action === 'color') {
+                // 颜色按钮：切换颜色面板
+                toggleBubbleColorPalette(btn);
+                return;
+            }
+
+            var value = btn.value || null;
+            if (ns._executeBubbleAction) {
+                ns._executeBubbleAction(action, value);
+            }
+        });
+
+        // 标题下拉 change 事件
+        var headingSel = toolbar.querySelector('[data-pm-action="heading"]');
+        if (headingSel) {
+            headingSel.addEventListener('change', function () {
+                if (ns._executeBubbleAction) {
+                    ns._executeBubbleAction('heading', headingSel.value || null);
+                }
+            });
+            headingSel.addEventListener('mousedown', function (e) {
+                e.stopPropagation();
+            });
+        }
+
+        // 颜色面板点击
+        var colorPalette = document.getElementById('wbColorPalette');
+        if (colorPalette) {
+            colorPalette.addEventListener('mousedown', function (e) {
+                var swatch = e.target.closest('.wb-color-swatch');
+                if (!swatch || !swatch.dataset.hex) return;
+                e.preventDefault();
+                if (ns._executeBubbleAction) {
+                    ns._executeBubbleAction('color', swatch.dataset.hex);
+                }
+                var palette = document.getElementById('wbColorPalette');
+                if (palette) palette.style.display = 'none';
+            });
+        }
+    }
+
+    /** 切换气泡颜色面板显隐 */
+    function toggleBubbleColorPalette(anchorBtn) {
+        var palette = document.getElementById('wbColorPalette');
+        if (!palette) return;
+        if (palette.style.display === 'grid') {
+            palette.style.display = 'none';
+            return;
+        }
+        // 渲染颜色面板
+        ns._renderColorPalette && ns._renderColorPalette(palette);
+        palette.style.display = 'grid';
+        var anchorRect = anchorBtn.getBoundingClientRect();
+        palette.style.position = 'fixed';
+        palette.style.left = Math.max(8, anchorRect.left) + 'px';
+        palette.style.top = (anchorRect.bottom + 4) + 'px';
+        palette.style.zIndex = '3000';
+        // 关闭监听
+        setTimeout(function () {
+            document.addEventListener('click', function hide() {
+                palette.style.display = 'none';
+                document.removeEventListener('click', hide);
+            }, { once: true });
+        }, 0);
+    }
+
+    /** 旧工具栏事件兼容回退（当气泡工具栏不可用时） */
+    function _bindLegacyToolbarEvents() {
+        var toolbar = document.getElementById('wbNotesToolbar');
+        if (!toolbar) return;
+
+        function execPMAction(action, value) {
+            if (ns._executeBubbleAction) ns._executeBubbleAction(action, value);
+        }
+
+        toolbar.addEventListener('mousedown', function (e) {
+            var btn = e.target.closest('[data-pm-action]');
+            if (!btn) return;
+            e.preventDefault();
+            execPMAction(btn.dataset.pmAction, btn.value || null);
+        });
+
+        var headingSel = toolbar.querySelector('[data-pm-action="heading"]');
+        if (headingSel) {
+            headingSel.addEventListener('change', function () {
+                execPMAction('heading', headingSel.value || null);
+            });
+            headingSel.addEventListener('mousedown', function (e) { e.stopPropagation(); });
+        }
+    }
 
 })(window.DevHome);

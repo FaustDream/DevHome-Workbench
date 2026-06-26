@@ -1,0 +1,22 @@
+{
+  "name": "devhome-workbench",
+  "version": "2.1.0",
+  "private": true,
+  "description": "DevHome Workbench - Chrome 新标签页扩展",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --experimental-vm-modules tests/prosemirror-tests.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "prosemirror-model": "^1.24.0",
+    "prosemirror-state": "^1.4.3",
+    "prosemirror-view": "^1.37.1",
+    "prosemirror-schema-basic": "^1.2.3",
+    "prosemirror-inputrules": "^1.4.0",
+    "prosemirror-keymap": "^1.2.2",
+    "prosemirror-commands": "^1.6.2",
+    "prosemirror-history": "^1.4.1",
+    "highlight.js": "^11.11.0"
+  }
+}

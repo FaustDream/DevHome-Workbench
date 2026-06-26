@@ -1941,63 +1941,178 @@ body::before {
     to   { opacity: 0; transform: translateX(-50%) translateY(-8px); }
 }
 
-/* ===== 笔记编辑器 - 格式工具栏 ===== */
-.wb-notes-toolbar {
+/* ===== 气泡工具栏（选中文字时浮现，替换旧常驻工具栏） ===== */
+.wb-bubble-toolbar {
+    position: fixed;
     display: flex;
     align-items: center;
-    gap: 4px;
-    padding: 6px 0;
-    border-bottom: 1px solid var(--wb-border);
-    flex-wrap: wrap;
-}
-.wb-toolbar-select {
-    padding: 4px 8px;
+    gap: 2px;
+    padding: 4px 6px;
+    background: var(--wb-bg-card);
     border: 1px solid var(--wb-border);
-    border-radius: 6px;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    z-index: 2900;
+    flex-wrap: nowrap;
+    user-select: none;
+}
+/* 底部三角箭头 */
+.wb-bubble-toolbar::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid var(--wb-bg-card);
+}
+.wb-bubble-toolbar select {
+    padding: 3px 6px;
+    border: 1px solid var(--wb-border);
+    border-radius: 4px;
     background: var(--wb-bg-card);
     color: var(--wb-text-secondary);
-    font-size: 12px;
+    font-size: 11px;
     font-family: inherit;
     outline: none;
     cursor: pointer;
 }
-.wb-toolbar-select:focus {
-    border-color: var(--wb-accent);
-}
-.wb-toolbar-btn {
-    width: 30px;
-    height: 30px;
+.wb-bubble-toolbar button {
+    width: 26px;
+    height: 26px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid var(--wb-border);
-    border-radius: 6px;
-    background: var(--wb-bg-card);
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
     color: var(--wb-text-secondary);
     cursor: pointer;
-    font-size: 13px;
+    font-size: 12px;
     font-family: inherit;
     transition: all var(--wb-transition);
 }
-.wb-toolbar-btn:hover {
-    border-color: var(--wb-accent);
-    color: var(--wb-accent);
+.wb-bubble-toolbar button:hover {
     background: var(--wb-accent-dim);
-}
-.wb-toolbar-btn.active {
-    background: var(--wb-accent-dim);
-    border-color: var(--wb-accent);
+    border-color: var(--wb-border);
     color: var(--wb-accent);
 }
-.wb-toolbar-sep {
+.wb-bubble-toolbar button.active {
+    background: var(--wb-accent-dim);
+    border-color: var(--wb-accent);
+    color: var(--wb-accent);
+}
+.wb-bubble-toolbar .wb-bubble-sep {
     width: 1px;
-    height: 20px;
+    height: 18px;
     background: var(--wb-border);
-    margin: 0 4px;
+    margin: 0 2px;
     flex-shrink: 0;
 }
-/* 工具栏颜色按钮 */
-#wbToolbarColor { font-size: 14px; }
+.wb-bubble-toolbar .wb-color-palette {
+    position: fixed;
+    display: grid;
+    grid-template-columns: repeat(4, 28px);
+    gap: 4px;
+    padding: 8px;
+    background: var(--wb-bg-card);
+    border: 1px solid var(--wb-border);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    z-index: 3000;
+}
+.wb-bubble-toolbar .wb-color-swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    border: 1px solid var(--wb-border);
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+.wb-bubble-toolbar .wb-color-swatch:hover {
+    transform: scale(1.15);
+    border-color: var(--wb-accent);
+}
+
+/* ===== 代码块 NodeView 样式 ===== */
+.wb-codeblock {
+    margin: 12px 0;
+    border-radius: 8px;
+    border: 1px solid var(--wb-border);
+    overflow: hidden;
+    font-family: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
+}
+.wb-codeblock-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    background: var(--wb-bg-card);
+    border-bottom: 1px solid var(--wb-border);
+}
+.wb-codeblock-lang {
+    padding: 2px 8px;
+    border: 1px solid var(--wb-border);
+    border-radius: 4px;
+    background: var(--wb-bg-card);
+    color: var(--wb-text-secondary);
+    font-size: 11px;
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+}
+.wb-codeblock-copy {
+    padding: 2px 8px;
+    border: 1px solid var(--wb-border);
+    border-radius: 4px;
+    background: var(--wb-bg-card);
+    color: var(--wb-text-secondary);
+    cursor: pointer;
+    font-size: 12px;
+    transition: all var(--wb-transition);
+}
+.wb-codeblock-copy:hover {
+    border-color: var(--wb-accent);
+    color: var(--wb-accent);
+}
+.wb-codeblock-pre {
+    margin: 0;
+    padding: 14px 16px;
+    background: #1e1e2e;
+    overflow-x: auto;
+    cursor: default;
+}
+.wb-codeblock-pre code {
+    font-size: 13px;
+    line-height: 1.6;
+}
+.wb-codeblock-textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 12px 16px;
+    border: none;
+    background: #1e1e2e;
+    color: #c9d1d9;
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1.6;
+    resize: vertical;
+    outline: none;
+}
+
+/* ===== 字数统计样式 ===== */
+.wb-note-word-count {
+    text-align: right;
+    color: var(--wb-text-tertiary);
+    font-size: 11px;
+    padding: 4px 8px 8px;
+    border-top: 1px solid var(--wb-border);
+    margin-top: 8px;
+    user-select: none;
+}
 
 /* ===== 笔记编辑器 - contenteditable 富文本区 ===== */
 .wb-note-editable {
@@ -2040,26 +2155,7 @@ body::before {
     background: var(--wb-accent-dim);
     border-radius: 0 6px 6px 0;
 }
-.wb-note-editable pre {
-    background: #1e1e1e;
-    color: #d4d4d4;
-    padding: 14px 16px;
-    border-radius: 8px;
-    font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
-    font-size: 13px;
-    line-height: 1.5;
-    overflow-x: auto;
-    margin: 8px 0;
-    white-space: pre-wrap;
-    word-break: break-word;
-}
-.wb-note-editable pre::before {
-    content: attr(data-lang);
-    display: block;
-    font-size: 10px;
-    color: #888;
-    margin-bottom: 6px;
-    text-transform: uppercase;
+/* 代码块由 ProseMirror NodeView 渲染，不再使用 contenteditable pre 样式 */
     letter-spacing: 0.05em;
 }
 

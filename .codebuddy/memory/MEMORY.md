@@ -6,6 +6,37 @@
 - 双模式：日常像素主题 + 专注暖纸主题
 - 开发工作台采用艾森豪威尔四象限矩阵
 
+## 2026-06-24 记录功能 ProseMirror 迁移
+
+### 决策汇总
+- **编辑引擎**：ProseMirror 替换 contenteditable+execCommand
+- **依赖加载**：esbuild 打包 `js/lib/pm.bundle.js` (467KB) + `js/lib/hljs.bundle.js` (245KB)
+- **代码块**：ProseMirror NodeView + highlight.js 语法高亮 + 内嵌工具栏（语言下拉+复制按钮+双击编辑）
+- **标题**：保留独立输入框
+- **工具栏**：气泡式（选中文字时浮现），替换常驻顶部
+- **右键菜单**：精简保留（代码块+引用块+复制粘贴），去掉 B/I/U/颜色
+- **Markdown 快捷键**：启用（`#`标题、` ``` `代码块、`-`列表、`>`引用、`**`加粗等）
+- **存储格式**：全量迁移 HTML→ProseMirror JSON（`doc` 字段），通过 DOMParser 转换旧数据
+- **列表预览**：纯标题+标签+时间，不显示内容摘要
+- **字数统计**：保存时自动计算存入 `wordCount` 字段（中文每字+英文每词）
+
+### 执行进度
+- **Phase 0 完成**：esbuild 构建 `pm.bundle.js` + `hljs.bundle.js`，引入 `index.html`，添加 `css/hljs-theme.css`
+- **Phase 1 完成**：数据模型升级——`doc`/`wordCount` 字段、`migrateNoteDoc()`、`migrateAllNotes()`、`countWords()`
+- **Phase 2 完成**：`js/proseMirrorEditor.js` 编辑器模块——Schema、插件、输入规则、键盘映射、完整生命周期 API
+- **Phase 3 完成**：CodeBlockView NodeView——语言下拉、复制按钮、双击编辑、highlight.js 高亮
+- **Phase 4 完成**：气泡工具栏——选中文字浮现、按钮事件、选区同步、颜色面板
+- **Phase 5 完成**：右键菜单精简——移除 B/I/U/标题/颜色，保留代码块+引用块+复制粘贴
+- **Phase 6 完成**：字数统计 CSS
+- **Phase 7 完成**：CSS 清理——删除旧工具栏/旧 pre 样式，新增气泡工具栏+代码块 NodeView+字数统计样式
+- **Phase 8 待实现**：Markdown 导出适配
+- **Stage 1 持续**：`tests/prosemirror-tests.mjs` 44 条单元测试全部通过（7 组）
+- **新增文件**：`package.json`、`build.mjs`、`js/lib/pm.bundle.js`、`js/lib/hljs.bundle.js`、`css/hljs-theme.css`、`tests/prosemirror-tests.mjs`、`js/proseMirrorEditor.js`
+- **修改文件**：`index.html`（bundle引入+hljs主题+bubble工具栏+精简右键菜单+字数计数）、`js/notes.js`（数据模型+迁移+编辑器接口）、`js/events.js`（气泡工具栏事件+右键菜单精简）、`js/ui.js`（移除旧菜单项+颜色面板+保留代码子菜单）、`css/themes/warm-paper.css`（删除旧样式+新样式）
+
+### 实现计划
+- `docs/prosemirror-migration-plan.md` — 完整实现计划（8 个 Phase，14 个文件涉及，9 组测试）
+
 ## 2026-06-23 专注模式全面改造
 
 ### 1. 禁止原生弹窗（AGENTS.md §10 + 全量替换）

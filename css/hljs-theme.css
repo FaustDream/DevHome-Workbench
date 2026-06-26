@@ -1,0 +1,91 @@
+/* highlight.js 主题 - 适配暖纸主题背景的柔和深色风格 */
+/* 基于 github-dark 调色，降低对比度以适配暖纸 (#faf7f2) 背景 */
+
+.hljs {
+    display: block;
+    overflow-x: auto;
+    padding: 0.5em;
+    color: #c9d1d9;
+    background: #1e1e2e;
+}
+
+.hljs-comment,
+.hljs-quote {
+    color: #6a9955;
+    font-style: italic;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-type {
+    color: #c586c0;
+}
+
+.hljs-string,
+.hljs-addition {
+    color: #ce9178;
+}
+
+.hljs-number,
+.hljs-literal {
+    color: #b5cea8;
+}
+
+.hljs-title,
+.hljs-section,
+.hljs-selector-id {
+    color: #569cd6;
+}
+
+.hljs-built_in,
+.hljs-attr {
+    color: #dcdcaa;
+}
+
+.hljs-variable,
+.hljs-template-variable,
+.hljs-attribute {
+    color: #9cdcfe;
+}
+
+.hljs-name,
+.hljs-selector-class,
+.hljs-selector-attr,
+.hljs-selector-pseudo {
+    color: #d7ba7d;
+}
+
+.hljs-deletion,
+.hljs-meta {
+    color: #f44747;
+}
+
+.hljs-regexp,
+.hljs-link {
+    color: #d16969;
+}
+
+.hljs-symbol,
+.hljs-bullet {
+    color: #79c0ff;
+}
+
+.hljs-emphasis {
+    font-style: italic;
+}
+
+.hljs-strong {
+    font-weight: bold;
+}
+
+.hljs-tag {
+    color: #808080;
+}
+
+.hljs-code {
+    color: #c9d1d9;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+    padding: 0.1em 0.3em;
+    font-family: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
+}

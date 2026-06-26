@@ -436,47 +436,33 @@ window.DevHome = window.DevHome || {};
         ns.hideCodeLangMenu();
     }
 
-    /** 编辑器右键菜单项处理 */
+    /** 编辑器右键菜单项处理（精简版：仅 blockquote/copy/paste，其余由气泡工具栏 + PM 快捷键覆盖） */
     ns.handleEditorMenuAction = function (action) {
-        var contentEl = dom.wbNoteContent;
-        if (!contentEl) return;
-        contentEl.focus();
-        switch (action) {
-            case 'h1': document.execCommand('formatBlock', false, '<h1>'); break;
-            case 'h2': document.execCommand('formatBlock', false, '<h2>'); break;
-            case 'h3': document.execCommand('formatBlock', false, '<h3>'); break;
-            case 'h4': document.execCommand('formatBlock', false, '<h4>'); break;
-            case 'h5': document.execCommand('formatBlock', false, '<h5>'); break;
-            case 'h6': document.execCommand('formatBlock', false, '<h6>'); break;
-            case 'bold': document.execCommand('bold', false, null); break;
-            case 'italic': document.execCommand('italic', false, null); break;
-            case 'underline': document.execCommand('underline', false, null); break;
+        if (action === 'blockquote' && ns._executeBubbleAction) {
+            ns._executeBubbleAction('blockquote');
+        } else if (action === 'copy') {
+            document.execCommand('copy');
+        } else if (action === 'paste') {
+            document.execCommand('paste');
         }
         hideEditorMenu();
     };
 
-    /* ===== 颜色子菜单 ===== */
-    ns.showColorSubmenu = function (anchorItem) {
-        var palette = document.getElementById('ctxColorPalette');
-        if (!palette) { console.warn('[警告] ctxColorPalette DOM 未找到'); return; }
-        console.log('[面板] 打开右键颜色子菜单');
-        renderColorPalette(palette);
-        palette.classList.add('visible');
-        var anchorRect = anchorItem.getBoundingClientRect();
-        palette.style.position = 'fixed';
-        palette.style.left = (anchorRect.right + 4) + 'px';
-        palette.style.top = anchorRect.top + 'px';
-        palette.style.zIndex = '2830';
-        // 防止右侧溢出
-        var palRect = palette.getBoundingClientRect();
-        if (palRect.right > window.innerWidth - 8) {
-            palette.style.left = (anchorRect.left - palRect.width - 4) + 'px';
-        }
-    };
+    /* ===== 颜色面板渲染（气泡工具栏用） ===== */
 
-    ns.hideColorSubmenu = function () {
-        var palette = document.getElementById('ctxColorPalette');
-        if (palette) palette.classList.remove('visible');
+    /**
+     * 渲染 20 色颜色面板到指定容器
+     * @param {Element} container
+     */
+    ns._renderColorPalette = function (container) {
+        var COLORS_20 = [
+            '#000000', '#434343', '#666666', '#999999', '#b7b7b7', '#cccccc', '#d9d9d9', '#efefef',
+            '#980000', '#ff0000', '#ff9900', '#ffff00', '#00ff00', '#00ffff', '#4a86e8', '#0000ff',
+            '#9900ff', '#ff00ff', '#e6b8af', '#f4cccc'
+        ];
+        container.innerHTML = COLORS_20.map(function (c) {
+            return '<div class="wb-color-swatch" data-hex="' + c + '" style="background:' + c + ';" title="' + c + '"></div>';
+        }).join('');
     };
 
     /* ===== 代码语言子菜单 ===== */
@@ -529,24 +515,12 @@ window.DevHome = window.DevHome || {};
         if (menu) menu.classList.remove('visible');
     };
 
-    /** 将选中文本包裹为代码块 */
+    /** 插入代码块（使用 ProseMirror API） */
     ns.insertCodeBlock = function (lang) {
-        var contentEl = dom.wbNoteContent;
-        if (!contentEl) { console.warn('[警告] wbNoteContent 未找到，无法插入代码块'); return; }
-        console.log('[编辑] 插入代码块 语言=' + (lang || '纯文本'));
-        contentEl.focus();
-        var sel = window.getSelection();
-        var codeText = '';
-        if (sel.rangeCount && !sel.isCollapsed) {
-            codeText = sel.toString().trim();
-            sel.deleteFromDocument();
-        } else if (sel.isCollapsed) {
-            codeText = '// 在此编写代码...';
+        if (ns._executeBubbleAction) {
+            ns._executeBubbleAction('codeBlock', lang || '');
+            hideEditorMenu();
         }
-        var langAttr = lang ? ' data-lang="' + lang + '"' : '';
-        var html = '<pre' + langAttr + '><code>' + (codeText || '') + '</code></pre>';
-        document.execCommand('insertHTML', false, html);
-        hideEditorMenu();
     };
 
 })(window.DevHome);

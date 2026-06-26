@@ -19,6 +19,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="icons/icon16.png">
+    <!-- highlight.js 代码高亮主题（适配暖纸背景） -->
+    <link id="theme-hljs" rel="stylesheet" href="css/hljs-theme.css">
 </head>
 <body>
     <!-- Matrix 数字雨背景 -->
@@ -232,31 +234,28 @@
                                     </div>
                                 </div>
                             </div>
-                            <!-- 格式工具栏 -->
-                            <div class="wb-notes-toolbar" id="wbNotesToolbar">
-                                <select class="wb-toolbar-select" id="wbToolbarHeading" title="标题级别">
+                            <!-- 气泡工具栏（选中文字时浮现，替换旧常驻工具栏） -->
+                            <div class="wb-bubble-toolbar" id="wbBubbleToolbar" style="display:none;">
+                                <select data-pm-action="heading" title="标题级别">
                                     <option value="">正文</option>
-                                    <option value="h1">标题 1</option>
-                                    <option value="h2">标题 2</option>
-                                    <option value="h3">标题 3</option>
-                                    <option value="h4">标题 4</option>
-                                    <option value="h5">标题 5</option>
-                                    <option value="h6">标题 6</option>
+                                    <option value="1">H1</option>
+                                    <option value="2">H2</option>
+                                    <option value="3">H3</option>
                                 </select>
-                                <span class="wb-toolbar-sep"></span>
-                                <button class="wb-toolbar-btn" id="wbToolbarBold" title="加粗 (Ctrl+B)"><strong>B</strong></button>
-                                <button class="wb-toolbar-btn" id="wbToolbarItalic" title="斜体 (Ctrl+I)"><em>I</em></button>
-                                <button class="wb-toolbar-btn" id="wbToolbarUnderline" title="下划线 (Ctrl+U)"><u>U</u></button>
-                                <span class="wb-toolbar-sep"></span>
-                                <button class="wb-toolbar-btn" id="wbToolbarUl" title="无序列表">•≡</button>
-                                <button class="wb-toolbar-btn" id="wbToolbarOl" title="有序列表">1.</button>
-                                <span class="wb-toolbar-sep"></span>
-                                <button class="wb-toolbar-btn" id="wbToolbarColor" title="文字颜色">🎨</button>
-                                <button class="wb-toolbar-btn" id="wbToolbarHighlight" title="高亮背景" style="background:#fff3cd;">🖍</button>
+                                <span class="wb-bubble-sep"></span>
+                                <button data-pm-action="bold" title="加粗 (Ctrl+B)"><strong>B</strong></button>
+                                <button data-pm-action="italic" title="斜体 (Ctrl+I)"><em>I</em></button>
+                                <button data-pm-action="underline" title="下划线 (Ctrl+U)"><u>U</u></button>
+                                <span class="wb-bubble-sep"></span>
+                                <button data-pm-action="bulletList" title="无序列表">•≡</button>
+                                <button data-pm-action="orderedList" title="有序列表">1.</button>
+                                <span class="wb-bubble-sep"></span>
+                                <button data-pm-action="color" title="文字颜色" id="wbBubbleColorBtn">🎨</button>
                                 <div class="wb-color-palette" id="wbColorPalette" style="display:none;"></div>
                             </div>
-                            <div class="wb-notes-editor-body">
-                                <div id="wbNoteContent" contenteditable="true" class="wb-note-editable" placeholder="在此编写内容..."></div>
+                            <div class="wb-notes-editor-body" id="wbNoteEditorBody">
+                                <div id="wbNoteContent" class="wb-note-editable" placeholder="在此编写内容..."></div>
+                                <div class="wb-note-word-count" id="wbNoteWordCount">0 字</div>
                             </div>
                         </div>
                     </div>
@@ -388,29 +387,23 @@
         </div>
     </div>
 
-    <!-- 编辑器选中文本右键菜单（专注模式） -->
+    <!-- 编辑器右键菜单（专注模式，已精简：去掉 B/I/U/标题/颜色，气泡工具栏覆盖） -->
     <div class="context-menu" id="editorContextMenu">
-        <div class="context-menu-item" data-editor-action="h1"><span>标题 1</span></div>
-        <div class="context-menu-item" data-editor-action="h2"><span>标题 2</span></div>
-        <div class="context-menu-item" data-editor-action="h3"><span>标题 3</span></div>
-        <div class="context-menu-divider"></div>
-        <div class="context-menu-item" data-editor-action="bold"><span><strong>加粗</strong></span><kbd class="doc-kbd ctx-kbd">Ctrl+B</kbd></div>
-        <div class="context-menu-item" data-editor-action="italic"><span><em>斜体</em></span><kbd class="doc-kbd ctx-kbd">Ctrl+I</kbd></div>
-        <div class="context-menu-item" data-editor-action="underline"><span><u>下划线</u></span></div>
-        <div class="context-menu-divider"></div>
-        <div class="context-menu-item ctx-has-submenu" id="ctxColorSubmenu" data-submenu="color">
-            <span>🎨 文字颜色</span>
+        <div class="context-menu-item ctx-has-submenu" id="ctxCodeSubmenu" data-submenu="code">
+            <span>&lt;/&gt; 插入代码块</span>
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none" class="ctx-sub-arrow"><path d="M3 2l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </div>
+        <div class="context-menu-item" data-editor-action="blockquote">
+            <span>❝ 引用块</span>
+        </div>
         <div class="context-menu-divider"></div>
-        <div class="context-menu-item ctx-has-submenu" id="ctxCodeSubmenu" data-submenu="code">
-            <span>&lt;/&gt; 代码块</span>
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" class="ctx-sub-arrow"><path d="M3 2l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div class="context-menu-item" data-editor-action="copy">
+            <span>📋 复制</span><kbd class="doc-kbd ctx-kbd">Ctrl+C</kbd>
+        </div>
+        <div class="context-menu-item" data-editor-action="paste">
+            <span>📄 粘贴</span><kbd class="doc-kbd ctx-kbd">Ctrl+V</kbd>
         </div>
     </div>
-
-    <!-- 颜色选择子菜单 -->
-    <div class="context-menu ctx-submenu ctx-color-palette" id="ctxColorPalette"></div>
 
     <!-- 代码语言子菜单 -->
     <div class="context-menu ctx-submenu" id="ctxCodeLangMenu"></div>
@@ -606,6 +599,46 @@
             <div class="changelog-body" id="changelogBody">
                 <div class="changelog-entry">
                     <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.1.0</span>
+                        <span class="changelog-date">2026-06-23</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>富文本编辑器</strong> contenteditable 替代 textarea，工具栏支持标题1-6、加粗、斜体、下划线、有序/无序列表、20色颜色面板、高亮背景</li>
+                        <li><strong>代码块</strong> 右键菜单支持插入代码块，20种编程语言标签</li>
+                        <li><strong>类型多选</strong> 文章可同时归属多个类型（笔记/想法/Bug/会议/剪藏），类型徽章支持 chip 化增删</li>
+                        <li><strong>日期标签</strong> 新建文章自动附加年月日标签，侧边栏按日期分组（今天/昨天/周几）</li>
+                        <li><strong>右键菜单</strong> 专注模式下隐藏磁贴/分类操作；编辑器内右键弹出格式菜单（标题/加粗/颜色/代码块）</li>
+                        <li><strong>禁止原生弹窗</strong> 全部 alert/prompt 替换为主题化组件，新增 showPrompt / showToast</li>
+                        <li><strong>交互日志</strong> 所有可点击功能输出控制台日志，标记 [交互][面板][编辑][警告] 前缀便于排查</li>
+                        <li><strong>修复</strong> 编辑器内数字键被误拦截切换搜索引擎</li>
+                        <li><strong>修复</strong> 自定义弹窗在日常模式下裸露显示</li>
+                        <li><strong>修复</strong> 工具栏按钮点击后选区丢失导致格式无效</li>
+                        <li><strong>修复</strong> 颜色面板被 overflow:hidden 裁剪不可见</li>
+                        <li><strong>导航</strong> Tab"总览"更名为"工作台"</li>
+                    </ul>
+                </div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.0.0</span>
+                        <span class="changelog-date">2026-06-22</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>核心重构</strong> 双模式架构：日常像素主题 + 专注暖纸主题，通过 CSS &lt;link&gt; 动态切换互不污染</li>
+                        <li><strong>多 Tab 工作台</strong> 专注模式下顶部导航栏：总览（快速捕获 + 四象限）/ 记录（笔记编辑）/ 日历（月视图）/ 番茄钟</li>
+                        <li><strong>四象限任务</strong> 艾森豪威尔矩阵，支持任务增删、拖拽移动、完成/取消标记、活跃/全部筛选</li>
+                        <li><strong>笔记系统</strong> Markdown 编辑 + 预览，笔记/捕获混合列表，类型筛选，全文搜索，自动保存</li>
+                        <li><strong>番茄钟</strong> 预设/自定义时长、默认/专注模式、休息时长、进度环、今日历史</li>
+                        <li><strong>日历视图</strong> 月度日历，标记有内容的日期，点击查看当日笔记和捕获</li>
+                        <li><strong>网页剪藏</strong> 右键菜单 + Ctrl+Shift+S 快捷键，自动保存为剪藏类型笔记</li>
+                        <li><strong>AI 每日总结</strong> 腾讯混元 API，设置面板配置 Key/端点/模型，生成后一键保存为笔记</li>
+                        <li><strong>导出中心</strong> 设置面板中按类型筛选，全选/导出选中为 Markdown 文件</li>
+                        <li><strong>行为追踪</strong> 连续打卡、完成任务数、番茄钟数、专注分钟、笔记数统计</li>
+                        <li><strong>数据存储</strong> chrome.storage.local 主存储 + localStorage 缓存 + 文件同步（可选）</li>
+                        <li><strong>快捷键</strong> 可配置专注模式快捷键，Esc 退出，Ctrl+Shift+S 剪藏</li>
+                    </ul>
+                </div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">
                         <span class="changelog-version-tag">v1.3.1</span>
                         <span class="changelog-date">2026-06-17</span>
                     </div>
@@ -778,6 +811,10 @@
     <!-- v2 外部依赖：marked.js（Markdown 渲染） + dayjs（日期处理） -->
     <script src="js/lib/marked.min.js" defer></script>
     <script src="js/lib/dayjs.min.js" defer></script>
+    <!-- ProseMirror 编辑器引擎 bundle -->
+    <script src="js/lib/pm.bundle.js" defer></script>
+    <!-- highlight.js 代码高亮 bundle（20 种语言） -->
+    <script src="js/lib/hljs.bundle.js" defer></script>
 
     <script src="js/config.js" defer></script>
     <script src="js/storage.js" defer></script>
@@ -792,6 +829,7 @@
     <script src="js/categoryUI.js" defer></script>
     <script src="js/ui.js" defer></script>
     <script src="js/search.js" defer></script>
+    <script src="js/proseMirrorEditor.js" defer></script>
     <script src="js/notes.js" defer></script>
     <script src="js/export.js" defer></script>
     <script src="js/workbench.js" defer></script>
