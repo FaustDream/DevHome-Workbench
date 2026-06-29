@@ -68,6 +68,14 @@ window.DevHome = window.DevHome || {};
         } catch (e) {
             console.warn('[StorageV2] 写入失败:', e);
         }
+
+        // 所有持久化数据变更时标记对应文件脏，触发 1 秒防抖写盘
+        var keyToCategory = { notes: 'notes', captures: 'captures', tasks: 'tasks',
+            pomodoro_sessions: 'pomodoro', behavior: 'behavior', config: 'config' };
+        var category = keyToCategory[key];
+        if (category && ns.fileConfig && typeof ns.fileConfig.markDirty === 'function') {
+            ns.fileConfig.markDirty(category);
+        }
     }
 
     /**

@@ -2,40 +2,73 @@
  * DevHome Workbench - 文件系统配置管理
  *
  * 核心职责：
- *   1. 通过 File System Access API 管理配置目录和 devhome-config.json
+ *   1. 通过 File System Access API 管理配置目录，按数据类别分目录存储
  *   2. Handle 持久化到 IndexedDB，支持跨会话恢复
  *   3. localStorage ↔ 文件双向同步（启动读盘、变更防抖写盘）
  *   4. 权限失效检测、警告条控制、扩展图标角标管理
  *
+ * 目录结构：
+ *   config_dir/
+ *   ├── manifest.json          # 版本标识（用于检测旧格式）
+ *   ├── notes/
+ *   │   └── data.json          # 笔记列表
+ *   ├── captures/
+ *   │   └── data.json          # 快速捕获列表
+ *   ├── tasks/
+ *   │   └── data.json          # 四象限任务
+ *   ├── tiles/
+ *   │   └── data.json          # 磁贴、分类、设置
+ *   ├── pomodoro/
+ *   │   └── data.json          # 番茄钟记录
+ *   ├── behavior/
+ *   │   └── data.json          # 行为追踪数据
+ *   └── config/
+ *       └── app.json           # 应用配置（AI、快捷键、自定义标签等）
+ *
  * 设计决策：
  *   - File System Access API（showDirectoryPicker），零外部依赖
- *   - 单文件 devhome-config.json 全量存储（不含搜索历史）
+ *   - 按数据类别分目录，便于浏览和手动备份恢复
  *   - localStorage 保留作运行时缓存，3 秒防抖双写到文件
  *   - IndexedDB 存 DirectoryHandle，失效时黄色警告条提醒
+ *   - 兼容旧版单文件 devhome-config.json 格式并自动迁移
  */
 window.DevHome = window.DevHome || {};
 (function (ns) {
     'use strict';
 
     /* ===== 常量 ===== */
-    var CONFIG_FILE_NAME = 'devhome-config.json';
+    var MANIFEST_FILE = 'manifest.json';
+    var MANIFEST_VERSION = 2;
+    var OLD_CONFIG_FILE = 'devhome-config.json'; // 旧版单文件格式，迁移后删除
     var INDEXEDDB_NAME = 'DevHomeFileConfig';
     var INDEXEDDB_STORE = 'handles';
     var HANDLE_KEY = 'directoryHandle';
-    var SYNC_VERSION = 1;
-    var WRITE_DEBOUNCE_MS = 3000;
+    var WRITE_DEBOUNCE_MS = 1000;  // 1 秒防抖，减少数据丢失窗口
+
+    /** 数据类别 → 子目录 + 文件名 映射 */
+    var DATA_LAYOUT = {
+        notes:      { dir: 'notes',    file: 'data.json', desc: '笔记' },
+        captures:   { dir: 'captures', file: 'data.json', desc: '快速捕获' },
+        tasks:      { dir: 'tasks',    file: 'data.json', desc: '四象限任务' },
+        tiles:      { dir: 'tiles',    file: 'data.json', desc: '磁贴与分类' },
+        pomodoro:   { dir: 'pomodoro', file: 'data.json', desc: '番茄钟记录' },
+        behavior:   { dir: 'behavior', file: 'data.json', desc: '行为追踪' },
+        config:     { dir: 'config',   file: 'app.json',  desc: '应用配置' }
+    };
+
+    /** localStorage 缓存键前缀（用于收集数据） */
+    var CACHE_PREFIX = 'devhome_v2_cache_';
 
     /* ===== 内部状态 ===== */
     var dirHandle = null;        // FileSystemDirectoryHandle
-    var fileHandle = null;       // FileSystemFileHandle
     var isReady = false;         // 配置目录是否已就绪
-    var isDirty = false;         // 是否有未同步的变更
+    var dirtyCategories = {};    // { category: true } — 按类别追踪脏数据，避免全量写入
     var writeTimer = null;       // 防抖计时器
     var syncInProgress = false;  // 是否正在写入
     var lastSyncTime = 0;        // 上次同步时间戳
     var lastSyncError = null;    // 上次同步错误信息
     var dirHandleDB = null;      // IndexedDB 连接
-    var writePermissionPending = false; // write 权限是否待授权（read 已就绪但 readwrite 失败）
+    var writePermissionPending = false; // write 权限是否待授权
 
     /* ===== 浏览器兼容性检测 ===== */
     function isFileSystemAPISupported() {
@@ -97,7 +130,6 @@ window.DevHome = window.DevHome || {};
 
     /* ===== 权限检测 ===== */
 
-    /** 验证 DirectoryHandle 权限是否有效（尝试请求读写权限） */
     async function verifyPermission(handle, withWrite) {
         var opts = { mode: withWrite ? 'readwrite' : 'read' };
         try {
@@ -109,124 +141,416 @@ window.DevHome = window.DevHome || {};
         }
     }
 
-    /* ===== 文件读写 ===== */
+    /* ===== 分类文件读写 ===== */
 
-    /** 从配置目录读取 devhome-config.json */
-    async function readConfigFile() {
+    /** 从子目录读取一个数据文件 */
+    async function readCategoryFile(category) {
         if (!dirHandle) return null;
+        var layout = DATA_LAYOUT[category];
+        if (!layout) return null;
         try {
-            fileHandle = await dirHandle.getFileHandle(CONFIG_FILE_NAME, { create: false });
+            var subDir = await dirHandle.getDirectoryHandle(layout.dir, { create: false });
+            var fileHandle = await subDir.getFileHandle(layout.file, { create: false });
             var file = await fileHandle.getFile();
             var text = await file.text();
             return JSON.parse(text);
         } catch (e) {
             if (e.name === 'NotFoundError') return null;
-            throw e; // 权限或其他错误向上抛
+            throw e;
         }
     }
 
-    /** 将数据写入 devhome-config.json */
-    async function writeConfigFile(data) {
+    /** 将数据写入子目录文件 */
+    async function writeCategoryFile(category, data) {
         if (!dirHandle) throw new Error('目录未授权');
-        fileHandle = await dirHandle.getFileHandle(CONFIG_FILE_NAME, { create: true });
+        var layout = DATA_LAYOUT[category];
+        if (!layout) throw new Error('未知数据类别: ' + category);
+        var subDir = await dirHandle.getDirectoryHandle(layout.dir, { create: true });
+        var fileHandle = await subDir.getFileHandle(layout.file, { create: true });
         var writable = await fileHandle.createWritable();
-        var json = JSON.stringify(data, null, 2);
-        await writable.write(json);
+        await writable.write(JSON.stringify(data, null, 2));
         await writable.close();
-        lastSyncTime = Date.now();
-        lastSyncError = null;
+    }
+
+    /** 写入 manifest.json */
+    async function writeManifest() {
+        if (!dirHandle) return;
+        var fileHandle = await dirHandle.getFileHandle(MANIFEST_FILE, { create: true });
+        var writable = await fileHandle.createWritable();
+        await writable.write(JSON.stringify({
+            version: MANIFEST_VERSION,
+            app: 'DevHome Workbench',
+            updatedAt: new Date().toISOString()
+        }, null, 2));
+        await writable.close();
+    }
+
+    /** 读取 manifest.json */
+    async function readManifest() {
+        if (!dirHandle) return null;
+        try {
+            var fileHandle = await dirHandle.getFileHandle(MANIFEST_FILE, { create: false });
+            var file = await fileHandle.getFile();
+            return JSON.parse(await file.text());
+        } catch (e) {
+            if (e.name === 'NotFoundError') return null;
+            throw e;
+        }
+    }
+
+    /* ===== 旧版格式兼容 ===== */
+
+    /** 读取旧版 devhome-config.json（v1 单文件格式） */
+    async function readOldConfigFile() {
+        if (!dirHandle) return null;
+        try {
+            var fileHandle = await dirHandle.getFileHandle(OLD_CONFIG_FILE, { create: false });
+            var file = await fileHandle.getFile();
+            var text = await file.text();
+            var data = JSON.parse(text);
+            // 检查是否是旧格式（有 syncVersion 字段且 = 1）
+            if (data.syncVersion) return data;
+            return null;
+        } catch (e) {
+            if (e.name === 'NotFoundError') return null;
+            throw e;
+        }
+    }
+
+    /** 删除旧版 devhome-config.json */
+    async function deleteOldConfigFile() {
+        if (!dirHandle) return;
+        try {
+            await dirHandle.removeEntry(OLD_CONFIG_FILE);
+            console.log('[FileConfig] 已删除旧版配置文件 devhome-config.json');
+        } catch (e) {
+            if (e.name !== 'NotFoundError') console.warn('[FileConfig] 删除旧配置文件失败:', e);
+        }
     }
 
     /* ===== 数据收集与恢复 ===== */
 
-    /** 收集所有需要持久化的数据，组装为统一 JSON 结构 */
+    /**
+     * 收集所有需要持久化的数据，按类别组织
+     * @returns {object} { notes, captures, tasks, tiles, pomodoro, behavior, config }
+     */
     var collectAllData = ns.fileConfig_collectAllData = function () {
-        var data = { syncVersion: SYNC_VERSION, updatedAt: new Date().toISOString() };
+        var result = {};
 
-        // 磁贴与分类数据
+        // 笔记数据
+        try {
+            var notesRaw = localStorage.getItem(CACHE_PREFIX + 'notes');
+            result.notes = notesRaw ? JSON.parse(notesRaw) : [];
+        } catch (_) { result.notes = []; }
+
+        // 快速捕获数据
+        try {
+            var capturesRaw = localStorage.getItem(CACHE_PREFIX + 'captures');
+            result.captures = capturesRaw ? JSON.parse(capturesRaw) : [];
+        } catch (_) { result.captures = []; }
+
+        // 四象限任务（优先 v2/tasks，回退 devhome_workbench）
+        try {
+            var tasksRaw = localStorage.getItem(CACHE_PREFIX + 'tasks');
+            if (tasksRaw) {
+                result.tasks = JSON.parse(tasksRaw);
+            } else {
+                var wbRaw = localStorage.getItem('devhome_workbench');
+                var wbData = wbRaw ? JSON.parse(wbRaw) : null;
+                // 从旧格式提取任务
+                var tasks = [];
+                if (wbData && wbData.quadrants) {
+                    ['q1', 'q2', 'q3', 'q4'].forEach(function (q) {
+                        var qt = wbData.quadrants[q];
+                        if (qt && qt.tasks) {
+                            qt.tasks.forEach(function (t) {
+                                tasks.push({
+                                    id: t.id || ('task_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7)),
+                                    title: t.title || '',
+                                    description: t.description || '',
+                                    quadrant: q,
+                                    status: t.status || (t.completed ? 'completed' : 'active'),
+                                    noteId: null,
+                                    pomodoroCount: 0,
+                                    createdAt: t.createdAt || Date.now(),
+                                    completedAt: t.completedAt || (t.completed ? Date.now() : null),
+                                    cancelledAt: t.cancelledAt || null
+                                });
+                            });
+                        }
+                    });
+                }
+                result.tasks = tasks;
+            }
+        } catch (_) { result.tasks = []; }
+
+        // 磁贴与分类 + 设置（合并为 tiles 类别）
+        result.tiles = {};
         try {
             var pagesRaw = localStorage.getItem('tabpage_pages');
-            data.pages = pagesRaw ? JSON.parse(pagesRaw) : [];
-        } catch (_) { data.pages = []; }
+            result.tiles.pages = pagesRaw ? JSON.parse(pagesRaw) : [];
+        } catch (_) { result.tiles.pages = []; }
         try {
             var pageNamesRaw = localStorage.getItem('tabpage_page_names');
-            data.pageNames = pageNamesRaw ? JSON.parse(pageNamesRaw) : [];
-        } catch (_) { data.pageNames = []; }
-
-        // 工作台数据
-        try {
-            var wbRaw = localStorage.getItem('devhome_workbench');
-            data.workbench = wbRaw ? JSON.parse(wbRaw) : null;
-        } catch (_) { data.workbench = null; }
-
-        // 页面设置（tabpage_ 前缀 + popup 设置）
-        data.settings = {};
-        var pageSettingsMap = [
+            result.tiles.pageNames = pageNamesRaw ? JSON.parse(pageNamesRaw) : [];
+        } catch (_) { result.tiles.pageNames = []; }
+        result.tiles.settings = {};
+        [
             'shortcut_size', 'shortcut_columns', 'auto_focus', 'category_memory',
             'last_page', 'cat_row', 'engine', 'bg', 'char_size', 'flow_speed',
             'char_density'
-        ];
-        pageSettingsMap.forEach(function (key) {
+        ].forEach(function (key) {
             try {
                 var val = localStorage.getItem('tabpage_' + key);
-                if (val !== null) data.settings[key] = JSON.parse(val);
-            } catch (_) { /* 跳过损坏的项 */ }
+                if (val !== null) result.tiles.settings[key] = JSON.parse(val);
+            } catch (_) { /* 跳过 */ }
         });
-
-        // 弹窗设置
         try {
             var popupRaw = localStorage.getItem('devhome_ext_settings');
-            data.popupSettings = popupRaw ? JSON.parse(popupRaw) : null;
-        } catch (_) { data.popupSettings = null; }
+            result.tiles.popupSettings = popupRaw ? JSON.parse(popupRaw) : null;
+        } catch (_) { result.tiles.popupSettings = null; }
 
-        return data;
+        // 番茄钟记录
+        try {
+            var pomoRaw = localStorage.getItem(CACHE_PREFIX + 'pomodoro_sessions');
+            result.pomodoro = pomoRaw ? JSON.parse(pomoRaw) : [];
+        } catch (_) { result.pomodoro = []; }
+
+        // 行为追踪数据
+        try {
+            var behaviorRaw = localStorage.getItem(CACHE_PREFIX + 'behavior');
+            result.behavior = behaviorRaw ? JSON.parse(behaviorRaw) : null;
+        } catch (_) { result.behavior = null; }
+
+        // 应用配置（AI、快捷键、自定义标签等）
+        try {
+            var configRaw = localStorage.getItem(CACHE_PREFIX + 'config');
+            result.config = configRaw ? JSON.parse(configRaw) : null;
+        } catch (_) { result.config = null; }
+
+        return result;
     };
 
-    /** 将配置文件数据恢复到 localStorage */
-    var restoreAllData = ns.fileConfig_restoreAllData = function (configData) {
+    /**
+     * 将分类数据恢复到 localStorage 和 chrome.storage.local
+     * @param {object} configData - collectAllData 的返回值
+     */
+    var restoreAllData = ns.fileConfig_restoreAllData = async function (configData) {
         if (!configData) return;
 
-        // 磁贴数据
-        if (Array.isArray(configData.pages)) {
-            localStorage.setItem('tabpage_pages', JSON.stringify(configData.pages));
-        }
-        if (Array.isArray(configData.pageNames)) {
-            localStorage.setItem('tabpage_page_names', JSON.stringify(configData.pageNames));
-        }
-
-        // 工作台数据
-        if (configData.workbench) {
-            localStorage.setItem('devhome_workbench', JSON.stringify(configData.workbench));
-        }
-
-        // 页面设置
-        if (configData.settings) {
-            Object.keys(configData.settings).forEach(function (key) {
-                localStorage.setItem('tabpage_' + key, JSON.stringify(configData.settings[key]));
-            });
+        // 磁贴与设置
+        if (configData.tiles) {
+            var t = configData.tiles;
+            if (Array.isArray(t.pages)) localStorage.setItem('tabpage_pages', JSON.stringify(t.pages));
+            if (Array.isArray(t.pageNames)) localStorage.setItem('tabpage_page_names', JSON.stringify(t.pageNames));
+            if (t.settings) {
+                Object.keys(t.settings).forEach(function (key) {
+                    localStorage.setItem('tabpage_' + key, JSON.stringify(t.settings[key]));
+                });
+            }
+            if (t.popupSettings) localStorage.setItem('devhome_ext_settings', JSON.stringify(t.popupSettings));
         }
 
-        // 弹窗设置
-        if (configData.popupSettings) {
-            localStorage.setItem('devhome_ext_settings', JSON.stringify(configData.popupSettings));
+        // 笔记 → chrome.storage.local
+        if (Array.isArray(configData.notes)) {
+            try {
+                await ns.storageV2.set(ns.storageV2.KEYS.NOTES, configData.notes);
+                console.log('[FileConfig] 恢复了 ' + configData.notes.length + ' 条笔记');
+            } catch (e) {
+                try { localStorage.setItem(CACHE_PREFIX + 'notes', JSON.stringify(configData.notes)); } catch (_) {}
+                console.warn('[FileConfig] 笔记恢复失败，已降级到缓存:', e);
+            }
+        }
+
+        // 捕获 → chrome.storage.local
+        if (Array.isArray(configData.captures)) {
+            try {
+                await ns.storageV2.set(ns.storageV2.KEYS.CAPTURES, configData.captures);
+                console.log('[FileConfig] 恢复了 ' + configData.captures.length + ' 条捕获');
+            } catch (e) {
+                try { localStorage.setItem(CACHE_PREFIX + 'captures', JSON.stringify(configData.captures)); } catch (_) {}
+                console.warn('[FileConfig] 捕获恢复失败，已降级到缓存:', e);
+            }
+        }
+
+        // 任务 → chrome.storage.local
+        if (Array.isArray(configData.tasks)) {
+            try {
+                await ns.storageV2.set(ns.storageV2.KEYS.TASKS, configData.tasks);
+                console.log('[FileConfig] 恢复了 ' + configData.tasks.length + ' 条任务');
+            } catch (e) {
+                try { localStorage.setItem(CACHE_PREFIX + 'tasks', JSON.stringify(configData.tasks)); } catch (_) {}
+                console.warn('[FileConfig] 任务恢复失败，已降级到缓存:', e);
+            }
+        }
+
+        // 番茄钟 → chrome.storage.local
+        if (Array.isArray(configData.pomodoro)) {
+            try {
+                await ns.storageV2.set(ns.storageV2.KEYS.POMODORO_SESSIONS, configData.pomodoro);
+                console.log('[FileConfig] 恢复了 ' + configData.pomodoro.length + ' 条番茄钟记录');
+            } catch (e) {
+                try { localStorage.setItem(CACHE_PREFIX + 'pomodoro_sessions', JSON.stringify(configData.pomodoro)); } catch (_) {}
+            }
+        }
+
+        // 行为追踪 → chrome.storage.local
+        if (configData.behavior) {
+            try {
+                await ns.storageV2.set(ns.storageV2.KEYS.BEHAVIOR, configData.behavior);
+                console.log('[FileConfig] 恢复了行为追踪数据');
+            } catch (e) {
+                try { localStorage.setItem(CACHE_PREFIX + 'behavior', JSON.stringify(configData.behavior)); } catch (_) {}
+            }
+        }
+
+        // 应用配置（包含自定义标签分类等）→ chrome.storage.local
+        if (configData.config) {
+            try {
+                await ns.storageV2.set(ns.storageV2.KEYS.CONFIG, configData.config);
+                var customTypes = configData.config.customNoteTypes;
+                if (Array.isArray(customTypes) && customTypes.length > 0) {
+                    console.log('[FileConfig] 恢复了应用配置（含 ' + customTypes.length + ' 个自定义标签）');
+                } else {
+                    console.log('[FileConfig] 恢复了应用配置');
+                }
+            } catch (e) {
+                try { localStorage.setItem(CACHE_PREFIX + 'config', JSON.stringify(configData.config)); } catch (_) {}
+                console.warn('[FileConfig] 配置恢复失败，已降级到缓存:', e);
+            }
         }
     };
 
     /* ===== 是否有本地缓存数据 ===== */
     function hasLocalData() {
         return localStorage.getItem('tabpage_pages') !== null ||
-               localStorage.getItem('devhome_workbench') !== null;
+               localStorage.getItem(CACHE_PREFIX + 'notes') !== null ||
+               localStorage.getItem(CACHE_PREFIX + 'tasks') !== null;
     }
 
-    /* ===== 迁移：localStorage → 文件 ===== */
-    async function migrateLocalStorageToFile() {
+    /* ===== 分类文件写入（全量） ===== */
+
+    /** 将所有类别数据写入对应子目录文件 */
+    async function writeAllCategoryFiles() {
         var data = collectAllData();
-        await writeConfigFile(data);
+        var categories = Object.keys(DATA_LAYOUT);
+
+        for (var i = 0; i < categories.length; i++) {
+            var cat = categories[i];
+            if (data[cat] !== undefined) {
+                try {
+                    await writeCategoryFile(cat, data[cat]);
+                } catch (e) {
+                    console.warn('[FileConfig] 写入 ' + DATA_LAYOUT[cat].desc + ' 失败:', e);
+                    // 继续写入其他类别，不因一个失败而中断
+                }
+            }
+        }
+
+        await writeManifest();
+        lastSyncTime = Date.now();
+        lastSyncError = null;
+    }
+
+    /** 从子目录读取所有类别数据 */
+    async function readAllCategoryFiles() {
+        var data = {};
+        var categories = Object.keys(DATA_LAYOUT);
+        var hasAny = false;
+
+        for (var i = 0; i < categories.length; i++) {
+            var cat = categories[i];
+            try {
+                var catData = await readCategoryFile(cat);
+                if (catData !== null) {
+                    data[cat] = catData;
+                    hasAny = true;
+                }
+            } catch (e) {
+                console.warn('[FileConfig] 读取 ' + DATA_LAYOUT[cat].desc + ' 失败:', e);
+            }
+        }
+
+        return hasAny ? data : null;
+    }
+
+    /* ===== 迁移：旧版单文件格式 → 新版分类目录 ===== */
+
+    /** 将旧版 devhome-config.json 迁移到新的分类目录结构 */
+    async function migrateFromOldFormat(oldData) {
+        console.log('[FileConfig] 检测到旧版配置文件，开始迁移...');
+
+        // 将旧格式数据拆分为新格式各类别
+        var newData = {};
+
+        // notes 和 captures 在旧格式中已存在
+        if (Array.isArray(oldData.notes)) newData.notes = oldData.notes;
+        if (Array.isArray(oldData.captures)) newData.captures = oldData.captures;
+
+        // tiles：合并 pages, pageNames, settings, popupSettings
+        newData.tiles = {
+            pages: Array.isArray(oldData.pages) ? oldData.pages : [],
+            pageNames: Array.isArray(oldData.pageNames) ? oldData.pageNames : [],
+            settings: oldData.settings || {},
+            popupSettings: oldData.popupSettings || null
+        };
+
+        // tasks：从旧格式 workbench 提取
+        var tasks = [];
+        if (oldData.workbench && oldData.workbench.quadrants) {
+            ['q1', 'q2', 'q3', 'q4'].forEach(function (q) {
+                var qt = oldData.workbench.quadrants[q];
+                if (qt && qt.tasks) {
+                    qt.tasks.forEach(function (t) {
+                        tasks.push({
+                            id: t.id || ('task_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7)),
+                            title: t.title || '',
+                            description: t.description || '',
+                            quadrant: q,
+                            status: t.status || (t.completed ? 'completed' : 'active'),
+                            noteId: null,
+                            pomodoroCount: 0,
+                            createdAt: t.createdAt || Date.now(),
+                            completedAt: t.completedAt || (t.completed ? Date.now() : null),
+                            cancelledAt: t.cancelledAt || null
+                        });
+                    });
+                }
+            });
+        }
+        newData.tasks = tasks;
+
+        // 其他类别初始化为空
+        newData.pomodoro = [];
+        newData.behavior = null;
+        newData.config = null;
+
+        // 写入新格式
+        var categories = Object.keys(DATA_LAYOUT);
+        for (var i = 0; i < categories.length; i++) {
+            var cat = categories[i];
+            if (newData[cat] !== undefined) {
+                try {
+                    await writeCategoryFile(cat, newData[cat]);
+                } catch (e) {
+                    console.warn('[FileConfig] 迁移写入 ' + DATA_LAYOUT[cat].desc + ' 失败:', e);
+                }
+            }
+        }
+        await writeManifest();
+
+        // 删除旧文件
+        await deleteOldConfigFile();
+
+        // 恢复数据
+        await restoreAllData(newData);
+
+        console.log('[FileConfig] 旧格式迁移完成');
+        return newData;
     }
 
     /* ===== 警告条 ===== */
 
-    /** 新标签页顶部警告条 */
     function showWarningBar(message, isError) {
         var bar = document.getElementById('configWarningBar');
         var text = document.getElementById('configWarningText');
@@ -248,29 +572,35 @@ window.DevHome = window.DevHome || {};
         }
     }
 
-    /** 扩展图标角标 */
     function updateBadge(text, color) {
         try {
             if (typeof chrome !== 'undefined' && chrome.action) {
                 chrome.action.setBadgeText({ text: text || '' });
                 if (color) chrome.action.setBadgeBackgroundColor({ color: color });
             }
-        } catch (_) { /* popup 不破坏新标签页逻辑 */ }
+        } catch (_) { /* 不破坏新标签页逻辑 */ }
     }
 
     /* ===== 同步逻辑 ===== */
 
-    /** 标记数据脏，触发防抖写盘 */
-    function markDirty() {
+    /**
+     * 标记数据脏，触发防抖写盘
+     * @param {string} [category] - 可选，指定变更的数据类别；不传则标记全部类别
+     */
+    function markDirty(category) {
         if (!isReady) return;
-        isDirty = true;
+        if (category) {
+            dirtyCategories[category] = true;
+        } else {
+            // 无参数 → 标记全部类别（兼容 storage.js 旧调用）
+            Object.keys(DATA_LAYOUT).forEach(function (k) { dirtyCategories[k] = true; });
+        }
         if (writeTimer) clearTimeout(writeTimer);
         writeTimer = setTimeout(function () { syncToFile(false); }, WRITE_DEBOUNCE_MS);
     }
 
-    /** 尝试重新获取 write 权限（在已有 handle 且具备用户手势的上下文中调用） */
     async function tryRecoverWritePermission() {
-        if (!dirHandle || !writePermissionPending) return true; // 无需恢复
+        if (!dirHandle || !writePermissionPending) return true;
         try {
             var opts = { mode: 'readwrite' };
             if (await dirHandle.queryPermission(opts) === 'granted') {
@@ -291,29 +621,48 @@ window.DevHome = window.DevHome || {};
         }
     }
 
-    /** 将当前数据同步写入文件 */
+    /** 仅写入标记为脏的类别（force=true 时写全部） */
     async function syncToFile(force) {
         if (!isReady || syncInProgress) return;
-        if (!force && !isDirty) return;
         if (!dirHandle) return;
 
-        // 如果 write 权限待授权，尝试静默恢复（可能仍无用户手势，会失败）
+        // 确定需要写入的类别
+        var categories;
+        if (force) {
+            // 强制全部写入
+            categories = Object.keys(DATA_LAYOUT);
+        } else {
+            categories = Object.keys(dirtyCategories);
+            if (categories.length === 0) return; // 没有脏数据
+        }
+
         if (writePermissionPending) {
             try {
                 var recovered = await tryRecoverWritePermission();
                 if (!recovered) {
                     console.warn('[FileConfig] 写入跳过：write 权限待用户授权');
-                    return; // 静默跳过，等用户下次点击时恢复
+                    return;
                 }
-            } catch (_) {
-                return; // 恢复失败，静默跳过
-            }
+            } catch (_) { return; }
         }
 
         syncInProgress = true;
         try {
-            await migrateLocalStorageToFile();
-            isDirty = false;
+            var data = collectAllData();
+            // 仅写入脏类别（或 force 时写全部）
+            for (var i = 0; i < categories.length; i++) {
+                var cat = categories[i];
+                if (data[cat] !== undefined) {
+                    try {
+                        await writeCategoryFile(cat, data[cat]);
+                    } catch (e) {
+                        console.warn('[FileConfig] 写入 ' + DATA_LAYOUT[cat].desc + ' 失败:', e);
+                    }
+                }
+            }
+            await writeManifest();
+            dirtyCategories = {};   // 清空脏标记
+            lastSyncTime = Date.now();
             lastSyncError = null;
         } catch (e) {
             lastSyncError = e.message || '写入失败';
@@ -323,22 +672,31 @@ window.DevHome = window.DevHome || {};
         }
     }
 
+    /**
+     * 页面关闭/刷新时尝试强制刷盘
+     * 清除防抖定时器，fire-and-forget 异步写入（不阻塞页面关闭）。
+     * 即便写入未完成，localStorage 数据仍在，下次启动可恢复。
+     */
+    function _onBeforeUnload() {
+        if (writeTimer) {
+            clearTimeout(writeTimer);
+            writeTimer = null;
+        }
+        // 标记全部类别为脏，确保写入完整
+        Object.keys(DATA_LAYOUT).forEach(function (k) { dirtyCategories[k] = true; });
+        syncToFile(true); // fire-and-forget，不 await
+    }
+
+    // 注册 beforeunload 监听（仅一次）
+    if (typeof window !== 'undefined') {
+        window.addEventListener('beforeunload', _onBeforeUnload);
+    }
+
     /* ===== 启动入口 ===== */
 
-    /**
-     * 初始化文件配置系统
-     *
-     * 关键设计：启动阶段仅验证 read 权限，避免 requestPermission(readwrite) 在无用户手势
-     * 上下文中失败（Chrome 仅在首个标签页关闭后恢复 readwrite 权限时可能抛出
-     * NotAllowedError）。write 权限延迟到实际写入时再请求（如用户点击保存时具备手势）。
-     *
-     * @returns {Promise<{ready: boolean, needsMigration: boolean, existingData: boolean, dirName: string}>}
-     */
     async function init() {
-        // 浏览器不支持 File System Access API
         if (!isFileSystemAPISupported()) {
             console.warn('[FileConfig] 当前浏览器不支持 File System Access API，回退到 localStorage 模式');
-            // 不阻塞，直接标记就绪（用 localStorage 原生模式）
             isReady = true;
             hideWarningBar();
             updateBadge('', '#e74c3c');
@@ -346,17 +704,12 @@ window.DevHome = window.DevHome || {};
         }
 
         try {
-            // 1. 尝试从 IndexedDB 恢复 DirectoryHandle
             var handle = await loadHandleFromDB();
             if (handle) {
-                // 2. 先验证 read 权限（不需要用户手势，从 IndexedDB 恢复后通常自动 granted）
                 var readPermitted = await verifyPermission(handle, false);
                 if (!readPermitted) {
-                    // read 权限也失败 → handle 确实失效了，清理
                     dirHandle = null;
-                    fileHandle = null;
                     await clearHandleFromDB();
-                    // 如果 localStorage 有数据，降级为 localStorage 模式，不阻塞
                     if (hasLocalData()) {
                         isReady = true;
                         hideWarningBar();
@@ -370,79 +723,95 @@ window.DevHome = window.DevHome || {};
                 }
 
                 dirHandle = handle;
-
-                // 3. 验证 write 权限（可能因无用户手势而失败，不阻塞启动）
                 var writePermitted = await verifyPermission(handle, true);
                 writePermissionPending = !writePermitted;
 
-                // 4. 读取配置文件（仅需 read 权限）
-                var configData = null;
-                try {
-                    configData = await readConfigFile();
-                } catch (readErr) {
-                    console.warn('[FileConfig] 读取配置文件失败:', readErr);
-                }
+                // 检查 manifest.json 判断是否为新格式
+                var manifest = await readManifest();
 
-                if (configData) {
-                    // 文件存在 → 恢复到 localStorage
-                    restoreAllData(configData);
-                    isReady = true;
-                    updateBadge('', writePermitted ? '#e74c3c' : '#ffcc66');
-                    hideWarningBar();
-                    if (!writePermitted) {
-                        // write 权限待授权，显示非错误级别提示
-                        showWarningBar(
-                            '配置已从 "' + dirHandle.name + '" 读取，点击授权写入权限以启用自动同步',
-                            false
-                        );
-                    }
-                    return { ready: true, needsMigration: false, existingData: true, dirName: dirHandle.name };
-                } else {
-                    // 目录有效但无配置文件
-                    var hasLocalDataNow = hasLocalData();
-                    if (writePermitted) {
-                        if (hasLocalDataNow) {
-                            await migrateLocalStorageToFile();
-                            showToast('已将 ' + getPageCount() + ' 个分类的配置迁移到文件', 'success');
-                        } else {
-                            // 新用户，写入默认数据
-                            await migrateLocalStorageToFile();
+                if (manifest && manifest.version >= 2) {
+                    // 新格式：从各子目录读取
+                    var categoryData = await readAllCategoryFiles();
+                    if (categoryData) {
+                        await restoreAllData(categoryData);
+                        isReady = true;
+                        updateBadge('', writePermitted ? '#e74c3c' : '#ffcc66');
+                        hideWarningBar();
+                        if (!writePermitted) {
+                            showWarningBar(
+                                '配置已从 "' + dirHandle.name + '" 读取，点击授权写入权限以启用自动同步',
+                                false
+                            );
                         }
+                        return { ready: true, needsMigration: false, existingData: true, dirName: dirHandle.name };
+                    } else {
+                        // 有 manifest 但无可读数据文件
+                        var hasLocal = hasLocalData();
+                        if (writePermitted && hasLocal) {
+                            await writeAllCategoryFiles();
+                            showToast('已将本地数据同步到配置目录', 'success');
+                        }
+                        isReady = true;
+                        updateBadge('', writePermitted ? '#e74c3c' : '#ffcc66');
+                        hideWarningBar();
+                        return { ready: true, needsMigration: hasLocal, existingData: hasLocal, dirName: dirHandle.name };
                     }
-                    isReady = true;
-                    updateBadge('', writePermitted ? '#e74c3c' : '#ffcc66');
-                    hideWarningBar();
-                    if (!writePermitted && hasLocalDataNow) {
-                        showWarningBar(
-                            '配置目录 "' + dirHandle.name + '" 需要写入权限才能自动同步，请点击重新授权',
-                            false
-                        );
+                } else {
+                    // 无 manifest → 可能为旧格式
+                    var oldData = await readOldConfigFile();
+                    if (oldData) {
+                        // 旧格式 → 迁移
+                        await migrateFromOldFormat(oldData);
+                        isReady = true;
+                        updateBadge('', writePermitted ? '#e74c3c' : '#ffcc66');
+                        hideWarningBar();
+                        return { ready: true, needsMigration: false, existingData: true, dirName: dirHandle.name };
+                    } else {
+                        // 目录为空 → 检查是否有新格式数据
+                        var catData = await readAllCategoryFiles();
+                        if (catData) {
+                            await restoreAllData(catData);
+                            isReady = true;
+                            updateBadge('', writePermitted ? '#e74c3c' : '#ffcc66');
+                            hideWarningBar();
+                            return { ready: true, needsMigration: false, existingData: true, dirName: dirHandle.name };
+                        }
+
+                        // 完全空目录
+                        var hasLocalNow = hasLocalData();
+                        if (writePermitted && hasLocalNow) {
+                            await writeAllCategoryFiles();
+                            showToast('已将 ' + getCategorySummary() + ' 同步到配置目录', 'success');
+                        }
+                        isReady = true;
+                        updateBadge('', writePermitted ? '#e74c3c' : '#ffcc66');
+                        hideWarningBar();
+                        if (!writePermitted && hasLocalNow) {
+                            showWarningBar(
+                                '配置目录 "' + dirHandle.name + '" 需要写入权限才能自动同步，请点击重新授权',
+                                false
+                            );
+                        }
+                        return { ready: true, needsMigration: hasLocalNow, existingData: hasLocalNow, dirName: dirHandle.name };
                     }
-                    return { ready: true, needsMigration: hasLocalDataNow, existingData: hasLocalDataNow, dirName: dirHandle.name };
                 }
             }
 
-            // 5. IndexedDB 无 handle
-            //    设计决策：FileSystemDirectoryHandle 在 Chrome 扩展新标签页全部关闭后无法从
-            //    IndexedDB 跨会话恢复（结构化克隆限制），因此文件配置仅作为"增强备份"，不阻塞
-            //    正常使用。localStorage 是可靠的主存储。
+            // IndexedDB 无 handle
             var hasLocalDataFlag = hasLocalData();
             if (hasLocalDataFlag) {
-                // localStorage 有数据 → 直接用，不弹警告条，静默就绪
                 isReady = true;
                 hideWarningBar();
                 updateBadge('', '#e74c3c');
                 console.log('[FileConfig] 无持久化 handle，使用 localStorage 模式（数据已存在）');
                 return { ready: true, needsMigration: false, existingData: true, dirName: '', localStorageOnly: true };
             }
-            // localStorage 无数据 → 首次使用，提示用户选择目录以创建初始配置
-            showWarningBar('请选择一个文件夹存放配置和磁贴数据', false);
+            showWarningBar('请选择一个文件夹存放配置和所有数据', false);
             updateBadge('!', '#e74c3c');
             return { ready: false, needsMigration: false, existingData: false, dirName: '' };
 
         } catch (e) {
             console.error('[FileConfig] 初始化失败:', e);
-            // 降级：标记就绪，使用 localStorage
             isReady = true;
             hideWarningBar();
             updateBadge('', '#e74c3c');
@@ -459,40 +828,63 @@ window.DevHome = window.DevHome || {};
         try {
             var handle = await window.showDirectoryPicker({ mode: 'readwrite' });
             dirHandle = handle;
-            fileHandle = null;
 
-            // 检查目录内是否已有配置文件
-            var existingConfig = await readConfigFile();
-            if (existingConfig) {
-                // 已有配置 → 恢复到 localStorage（跨机器恢复场景）
-                restoreAllData(existingConfig);
-                showToast('配置已从 ' + handle.name + ' 恢复', 'success');
-            } else if (hasLocalData()) {
-                // 无文件但有 localStorage → 迁移到文件
-                await migrateLocalStorageToFile();
-                showToast('已将 ' + getPageCount() + ' 个分类的配置迁移到文件', 'success');
+            // 检查 manifest.json 判断格式
+            var manifest = await readManifest();
+
+            if (manifest && manifest.version >= 2) {
+                // 新格式目录 → 恢复所有数据
+                var categoryData = await readAllCategoryFiles();
+                if (categoryData) {
+                    await restoreAllData(categoryData);
+                    showToast('数据已从 ' + handle.name + ' 完整恢复', 'success');
+                } else if (hasLocalData()) {
+                    await writeAllCategoryFiles();
+                    showToast('已将本地数据同步到配置目录', 'success');
+                }
             } else {
-                // 全新初始化
-                await migrateLocalStorageToFile();
-                showToast('配置目录已就绪：' + handle.name, 'success');
+                // 检查旧格式
+                var oldData = await readOldConfigFile();
+                if (oldData) {
+                    await migrateFromOldFormat(oldData);
+                    showToast('旧版配置已迁移，数据已从 ' + handle.name + ' 恢复', 'success');
+                } else if (hasLocalData()) {
+                    // 全新目录 → 写入所有数据
+                    await writeAllCategoryFiles();
+                    showToast('数据已同步到 ' + handle.name, 'success');
+                } else {
+                    // 完全空：写入初始化文件
+                    await writeAllCategoryFiles();
+                    showToast('配置目录已就绪：' + handle.name, 'success');
+                }
             }
 
-            // 持久化 handle
             await saveHandleToDB(handle);
             isReady = true;
-            writePermissionPending = false; // 用户显式选择目录，已具备 write 权限
+            writePermissionPending = false;
             updateBadge('', '#e74c3c');
             hideWarningBar();
             return true;
         } catch (e) {
-            if (e.name === 'AbortError') return false; // 用户取消选择
+            if (e.name === 'AbortError') return false;
             console.error('[FileConfig] 选择目录失败:', e);
             showWarningBar('选择目录失败：' + (e.message || '未知错误'), true);
             return false;
         }
     }
 
-    /** 获取磁贴分类数量（用于迁移提示） */
+    /** 获取数据摘要（用于迁移提示） */
+    function getCategorySummary() {
+        var data = collectAllData();
+        var parts = [];
+        if (data.tiles && data.tiles.pages && data.tiles.pages.length > 0) parts.push(data.tiles.pages.length + ' 个分类');
+        if (data.notes && data.notes.length > 0) parts.push(data.notes.length + ' 条笔记');
+        if (data.tasks && data.tasks.length > 0) parts.push(data.tasks.length + ' 个任务');
+        if (data.captures && data.captures.length > 0) parts.push(data.captures.length + ' 条捕获');
+        return parts.length > 0 ? parts.join('、') : '初始数据';
+    }
+
+    /** 获取磁贴分类数量 */
     function getPageCount() {
         try {
             var raw = localStorage.getItem('tabpage_pages');
@@ -501,7 +893,7 @@ window.DevHome = window.DevHome || {};
         } catch (_) { return 0; }
     }
 
-    /** Toast 提示 */
+    /* ===== Toast 提示 ===== */
     function showToast(message, type) {
         try {
             var toast = document.createElement('div');
@@ -514,9 +906,7 @@ window.DevHome = window.DevHome || {};
         } catch (_) { /* Toast 不阻塞主流程 */ }
     }
 
-    /* ===== Popup 端配置检查（精简版，用于弹窗） ===== */
-
-    /** Popup 端无需完整启动流程，仅验证配置目录存在性 */
+    /* ===== Popup 端配置检查 ===== */
     async function checkConfigForPopup() {
         try {
             if (!isFileSystemAPISupported()) return { configured: true };
@@ -530,28 +920,13 @@ window.DevHome = window.DevHome || {};
     /* ===== 暴露 API ===== */
 
     ns.fileConfig = {
-        /** 启动入口：恢复/检测配置目录，返回就绪状态 */
         init: init,
-
-        /** 用户选择配置目录 */
         pickDir: handleUserPickDir,
-
-        /** 标记数据脏，触发 3 秒防抖写盘 */
         markDirty: markDirty,
-
-        /** 手动立即同步到文件（设置面板"立即同步"按钮） */
         syncToFile: function () { return syncToFile(true); },
-
-        /** 尝试恢复 write 权限（需在用户手势上下文中调用），供警告条按钮使用 */
         _tryRecoverWrite: tryRecoverWritePermission,
-
-        /** 配置是否已就绪 */
         isReady: function () { return isReady; },
-
-        /** 获取配置目录名 */
         getDirName: function () { return dirHandle ? dirHandle.name : ''; },
-
-        /** 获取上次同步信息 */
         getSyncInfo: function () {
             return {
                 dirName: dirHandle ? dirHandle.name : '',
@@ -561,29 +936,13 @@ window.DevHome = window.DevHome || {};
                 browserSupport: isFileSystemAPISupported()
             };
         },
-
-        /** 显示新标签页顶部警告条（外部调用） */
         showWarningBar: showWarningBar,
-
-        /** 隐藏新标签页顶部警告条（外部调用） */
         hideWarningBar: hideWarningBar,
-
-        /** 更新扩展图标角标 */
         updateBadge: updateBadge,
-
-        /** 收集全部数据（供弹窗或其他地方使用） */
         collectAllData: collectAllData,
-
-        /** 恢复全部数据 */
         restoreAllData: restoreAllData,
-
-        /** Popup 专用：检查配置状态 */
         checkConfigForPopup: checkConfigForPopup,
-
-        /** 显示 Toast 提示 */
         showToast: showToast,
-
-        /** 浏览器是否支持 File System Access API */
         isSupported: isFileSystemAPISupported
     };
 

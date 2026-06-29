@@ -432,7 +432,6 @@ window.DevHome = window.DevHome || {};
     function hideEditorMenu() {
         var menu = document.getElementById('editorContextMenu');
         if (menu) menu.classList.remove('visible');
-        ns.hideColorSubmenu();
         ns.hideCodeLangMenu();
     }
 
@@ -442,6 +441,10 @@ window.DevHome = window.DevHome || {};
             ns._executeBubbleAction('blockquote');
         } else if (action === 'copy') {
             document.execCommand('copy');
+        } else if (action === 'pasteText' && ns._executeBubbleAction) {
+            ns._executeBubbleAction('pasteText');
+        } else if (action === 'pasteHtml' && ns._executeBubbleAction) {
+            ns._executeBubbleAction('pasteHtml');
         } else if (action === 'paste') {
             document.execCommand('paste');
         }

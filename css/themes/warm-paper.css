@@ -881,6 +881,34 @@ body::before {
     background: var(--wb-accent-dim);
 }
 
+/* 行内创建标签：输入框伪装为 filter-chip 样式 */
+.wb-filter-chip-editing {
+    appearance: none;
+    -webkit-appearance: none;
+    outline: none;
+    min-width: 80px;
+    max-width: 160px;
+    padding: 6px 12px;
+    border: 1px dashed var(--wb-accent);
+    border-radius: 999px;
+    background: var(--wb-accent-dim);
+    color: var(--wb-text-primary);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: text;
+    box-sizing: border-box;
+    transition: border-color var(--wb-transition);
+}
+.wb-filter-chip-editing::placeholder {
+    color: var(--wb-text-tertiary);
+    opacity: 0.6;
+}
+.wb-filter-chip-editing:focus {
+    border-style: solid;
+    border-color: var(--wb-accent);
+    box-shadow: 0 0 0 2px var(--wb-accent-dim);
+}
+
 .wb-notes-list {
     flex: 1 1 0;
     overflow-y: auto;
@@ -1182,6 +1210,7 @@ body::before {
 .wb-notes-editor-body {
     flex: 1 1 0;
     display: flex;
+    flex-direction: column;  /* 垂直排列：编辑器在上，字数在下 */
     overflow: hidden;
     min-height: 0;
 }
@@ -2103,21 +2132,24 @@ body::before {
     outline: none;
 }
 
-/* ===== 字数统计样式 ===== */
+/* ===== 字数统计样式（底部通栏，约10px高度） ===== */
 .wb-note-word-count {
+    width: 100%;
     text-align: right;
     color: var(--wb-text-tertiary);
-    font-size: 11px;
-    padding: 4px 8px 8px;
+    font-size: 10px;
+    line-height: 1;
+    padding: 2px 10px;
     border-top: 1px solid var(--wb-border);
-    margin-top: 8px;
+    flex-shrink: 0;
     user-select: none;
 }
 
-/* ===== 笔记编辑器 - contenteditable 富文本区 ===== */
+/* ===== 笔记编辑器 - contenteditable / ProseMirror 富文本区 ===== */
 .wb-note-editable {
+    flex: 1 1 0;          /* 在 column flex 中撑满剩余空间 */
+    min-height: 0;         /* 允许 flex 收缩 */
     width: 100%;
-    height: 100%;
     border: 1px solid var(--wb-border);
     border-radius: var(--wb-radius);
     background: var(--wb-bg-card);
@@ -2129,6 +2161,11 @@ body::before {
     outline: none;
     overflow-y: auto;
     word-break: break-word;
+}
+/* ProseMirror 编辑器内层容器 */
+.wb-prosemirror-editor {
+    outline: none;
+    min-height: 100%;
 }
 .wb-note-editable:focus {
     border-color: var(--wb-border-active);

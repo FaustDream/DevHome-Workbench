@@ -400,8 +400,11 @@
         <div class="context-menu-item" data-editor-action="copy">
             <span>📋 复制</span><kbd class="doc-kbd ctx-kbd">Ctrl+C</kbd>
         </div>
-        <div class="context-menu-item" data-editor-action="paste">
-            <span>📄 粘贴</span><kbd class="doc-kbd ctx-kbd">Ctrl+V</kbd>
+        <div class="context-menu-item" data-editor-action="pasteText">
+            <span>📝 粘贴纯文本</span><kbd class="doc-kbd ctx-kbd">Ctrl+Shift+V</kbd>
+        </div>
+        <div class="context-menu-item" data-editor-action="pasteHtml">
+            <span>📄 粘贴（含格式）</span><kbd class="doc-kbd ctx-kbd">Ctrl+V</kbd>
         </div>
     </div>
 
@@ -811,8 +814,6 @@
     <!-- v2 外部依赖：marked.js（Markdown 渲染） + dayjs（日期处理） -->
     <script src="js/lib/marked.min.js" defer></script>
     <script src="js/lib/dayjs.min.js" defer></script>
-    <!-- ProseMirror 编辑器引擎 bundle -->
-    <script src="js/lib/pm.bundle.js" defer></script>
     <!-- highlight.js 代码高亮 bundle（20 种语言） -->
     <script src="js/lib/hljs.bundle.js" defer></script>
 

@@ -215,7 +215,14 @@ window.DevHome = window.DevHome || {};
                     ns._executeBubbleAction('blockquote');
                 } else if (action === 'copy') {
                     document.execCommand('copy');
+                } else if (action === 'pasteText' && ns._executeBubbleAction) {
+                    // 纯文本粘贴：通过 PM 的 pasteText API 插入
+                    ns._executeBubbleAction('pasteText');
+                } else if (action === 'pasteHtml' && ns._executeBubbleAction) {
+                    // 富文本粘贴：通过 PM 的 pasteHTML API 插入
+                    ns._executeBubbleAction('pasteHtml');
                 } else if (action === 'paste') {
+                    // 兼容旧版"粘贴"菜单项
                     document.execCommand('paste');
                 }
                 // 隐藏菜单
@@ -767,13 +774,12 @@ window.DevHome = window.DevHome || {};
             }
         });
 
-        // 新增自定义标签分类
+        // 新增自定义标签分类（行内创建，无弹窗）
         if (dom.wbFilterAddBtn) {
             dom.wbFilterAddBtn.addEventListener('click', function () {
-                ns.showPrompt('输入新标签名称，支持 emoji 开头（如"🎨 设计" 或 "设计"）：', { title: '新增标签' }).then(function (name) {
-                    if (!name || !name.trim()) return;
-                    ns.addCustomFilter(name.trim());
-                });
+                // 防止重复创建行内编辑器
+                if (document.querySelector('.wb-filter-chip-editing')) return;
+                ns.startInlineCustomFilter();
             });
         }
         if (dom.wbNotesAddBtn) {
@@ -851,14 +857,41 @@ window.DevHome = window.DevHome || {};
         if (dom.wbNoteTitle) dom.wbNoteTitle.addEventListener('input', autoSaveNote);
         if (dom.wbNoteContent) {
             dom.wbNoteContent.addEventListener('input', autoSaveNote);
-            // 同步格式工具栏的 heading 下拉框状态
-            dom.wbNoteContent.addEventListener('keyup', syncToolbarState);
-            dom.wbNoteContent.addEventListener('mouseup', syncToolbarState);
         }
 
-        // 格式工具栏事件——必须用 mousedown 阻止失焦
+        // 旧版格式工具栏事件（仅在 contenteditable 回退模式下生效）
+        // 当前使用 ProseMirror 气泡工具栏，这些 DOM 元素不存在时为静默跳过
         var toolbarHeading = document.getElementById('wbToolbarHeading');
-        if (toolbarHeading) {
+        var toolbarBold = document.getElementById('wbToolbarBold');
+        var toolbarItalic = document.getElementById('wbToolbarItalic');
+        var toolbarUnderline = document.getElementById('wbToolbarUnderline');
+        var toolbarUl = document.getElementById('wbToolbarUl');
+        var toolbarOl = document.getElementById('wbToolbarOl');
+        var toolbarColor = document.getElementById('wbToolbarColor');
+        var toolbarHighlight = document.getElementById('wbToolbarHighlight');
+        var colorPalette = document.getElementById('wbColorPalette');
+        // 仅当旧工具栏存在时才绑定事件（ProseMirror 模式下不存在）
+        var hasLegacyToolbar = !!toolbarHeading;
+        if (hasLegacyToolbar) {
+            // 保存/恢复选区辅助函数
+            function saveSelection() {
+                var sel = window.getSelection();
+                if (sel.rangeCount && dom.wbNoteContent && dom.wbNoteContent.contains(sel.anchorNode)) {
+                    state._savedSelection = sel.getRangeAt(0).cloneRange();
+                }
+            }
+            function restoreSelection() {
+                if (!state._savedSelection) return;
+                var sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(state._savedSelection);
+            }
+            // 监听编辑器内选区变化并保存，同时同步工具栏按钮状态
+            if (dom.wbNoteContent) {
+                dom.wbNoteContent.addEventListener('mouseup', function () { saveSelection(); syncToolbarState(); });
+                dom.wbNoteContent.addEventListener('keyup', syncToolbarState);
+            }
+
             toolbarHeading.addEventListener('mousedown', function (e) {
                 var sel = window.getSelection();
                 if (sel.rangeCount && dom.wbNoteContent && dom.wbNoteContent.contains(sel.anchorNode)) {
@@ -882,155 +915,126 @@ window.DevHome = window.DevHome || {};
                 saveSelection();
                 syncToolbarState();
             });
-        } else {
-            console.warn('[警告] 工具栏 dom#wbToolbarHeading 未找到');
-        }
 
-        var toolbarBold = document.getElementById('wbToolbarBold');
-        var toolbarItalic = document.getElementById('wbToolbarItalic');
-        var toolbarUnderline = document.getElementById('wbToolbarUnderline');
-        var toolbarUl = document.getElementById('wbToolbarUl');
-        var toolbarOl = document.getElementById('wbToolbarOl');
-        var toolbarColor = document.getElementById('wbToolbarColor');
-        var toolbarHighlight = document.getElementById('wbToolbarHighlight');
-        var colorPalette = document.getElementById('wbColorPalette');
-
-        // 保存/恢复选区辅助函数
-        function saveSelection() {
-            var sel = window.getSelection();
-            if (sel.rangeCount && dom.wbNoteContent && dom.wbNoteContent.contains(sel.anchorNode)) {
-                state._savedSelection = sel.getRangeAt(0).cloneRange();
+            if (toolbarBold) {
+                toolbarBold.addEventListener('mousedown', function (e) {
+                    e.preventDefault();
+                    console.log('[交互] 工具栏 加粗' + (state._savedSelection ? ' 恢复选区' : ''));
+                    if (state._savedSelection) restoreSelection();
+                    else console.warn('[警告] 加粗 restoreSelection 选区为空');
+                    dom.wbNoteContent.focus();
+                    document.execCommand('bold', false, null);
+                    saveSelection();
+                    syncToolbarState();
+                });
             }
-        }
-        function restoreSelection() {
-            if (!state._savedSelection) return;
-            var sel = window.getSelection();
-            sel.removeAllRanges();
-            sel.addRange(state._savedSelection);
-        }
-        // 监听编辑器内选区变化并保存
-        if (dom.wbNoteContent) {
-            dom.wbNoteContent.addEventListener('mouseup', function () { saveSelection(); syncToolbarState(); });
-        }
-
-        if (toolbarBold) {
-            toolbarBold.addEventListener('mousedown', function (e) {
-                e.preventDefault();
-                console.log('[交互] 工具栏 加粗' + (state._savedSelection ? ' 恢复选区' : ''));
-                if (state._savedSelection) restoreSelection();
-                else console.warn('[警告] 加粗 restoreSelection 选区为空');
-                dom.wbNoteContent.focus();
-                document.execCommand('bold', false, null);
-                saveSelection();
-                syncToolbarState();
-            });
-        }
-        if (toolbarItalic) {
-            toolbarItalic.addEventListener('mousedown', function (e) {
-                e.preventDefault();
-                console.log('[交互] 工具栏 斜体');
-                if (state._savedSelection) restoreSelection();
-                dom.wbNoteContent.focus();
-                document.execCommand('italic', false, null);
-                saveSelection();
-            });
-        }
-        if (toolbarUnderline) {
-            toolbarUnderline.addEventListener('mousedown', function (e) {
-                e.preventDefault();
-                console.log('[交互] 工具栏 下划线');
-                if (state._savedSelection) restoreSelection();
-                dom.wbNoteContent.focus();
-                document.execCommand('underline', false, null);
-                saveSelection();
-            });
-        }
-        if (toolbarUl) {
-            toolbarUl.addEventListener('mousedown', function (e) {
-                e.preventDefault();
-                console.log('[交互] 工具栏 无序列表');
-                if (state._savedSelection) restoreSelection();
-                dom.wbNoteContent.focus();
-                document.execCommand('insertUnorderedList', false, null);
-                saveSelection();
-            });
-        }
-        if (toolbarOl) {
-            toolbarOl.addEventListener('mousedown', function (e) {
-                e.preventDefault();
-                console.log('[交互] 工具栏 有序列表');
-                if (state._savedSelection) restoreSelection();
-                dom.wbNoteContent.focus();
-                document.execCommand('insertOrderedList', false, null);
-                saveSelection();
-            });
-        }
-        // 工具栏颜色按钮 → 弹出颜色面板
-        if (toolbarColor && colorPalette) {
-            toolbarColor.addEventListener('mousedown', function (e) {
-                e.preventDefault();
-                var sel = window.getSelection();
-                if (sel.rangeCount && dom.wbNoteContent && dom.wbNoteContent.contains(sel.anchorNode)) {
-                    state._savedSelection = sel.getRangeAt(0).cloneRange();
-                }
-                var isVisible = colorPalette.style.display === 'grid';
-                if (isVisible) {
-                    console.log('[面板] 关闭颜色面板');
+            if (toolbarItalic) {
+                toolbarItalic.addEventListener('mousedown', function (e) {
+                    e.preventDefault();
+                    console.log('[交互] 工具栏 斜体');
+                    if (state._savedSelection) restoreSelection();
+                    dom.wbNoteContent.focus();
+                    document.execCommand('italic', false, null);
+                    saveSelection();
+                });
+            }
+            if (toolbarUnderline) {
+                toolbarUnderline.addEventListener('mousedown', function (e) {
+                    e.preventDefault();
+                    console.log('[交互] 工具栏 下划线');
+                    if (state._savedSelection) restoreSelection();
+                    dom.wbNoteContent.focus();
+                    document.execCommand('underline', false, null);
+                    saveSelection();
+                });
+            }
+            if (toolbarUl) {
+                toolbarUl.addEventListener('mousedown', function (e) {
+                    e.preventDefault();
+                    console.log('[交互] 工具栏 无序列表');
+                    if (state._savedSelection) restoreSelection();
+                    dom.wbNoteContent.focus();
+                    document.execCommand('insertUnorderedList', false, null);
+                    saveSelection();
+                });
+            }
+            if (toolbarOl) {
+                toolbarOl.addEventListener('mousedown', function (e) {
+                    e.preventDefault();
+                    console.log('[交互] 工具栏 有序列表');
+                    if (state._savedSelection) restoreSelection();
+                    dom.wbNoteContent.focus();
+                    document.execCommand('insertOrderedList', false, null);
+                    saveSelection();
+                });
+            }
+            // 工具栏颜色按钮 → 弹出颜色面板
+            if (toolbarColor && colorPalette) {
+                toolbarColor.addEventListener('mousedown', function (e) {
+                    e.preventDefault();
+                    var sel = window.getSelection();
+                    if (sel.rangeCount && dom.wbNoteContent && dom.wbNoteContent.contains(sel.anchorNode)) {
+                        state._savedSelection = sel.getRangeAt(0).cloneRange();
+                    }
+                    var isVisible = colorPalette.style.display === 'grid';
+                    if (isVisible) {
+                        console.log('[面板] 关闭颜色面板');
+                        colorPalette.style.display = 'none';
+                    } else {
+                        var btnRect = toolbarColor.getBoundingClientRect();
+                        console.log('[面板] 打开颜色面板 坐标(' + Math.round(btnRect.left) + ',' + Math.round(btnRect.bottom) + ')');
+                        var colors = ['#1a1410', '#2d2820', '#4a443e', '#6e6860', '#8e8880',
+                            '#c0692a', '#d94a3a', '#e74c3c', '#e67e22', '#f39c12',
+                            '#27ae60', '#2ecc71', '#1abc9c', '#16a085', '#2980b9',
+                            '#3498db', '#8e44ad', '#9b59b6', '#2c3e50', '#7f8c8d'];
+                        colorPalette.innerHTML = colors.map(function (hex) {
+                            return '<div class="wb-color-swatch" data-hex="' + hex + '" style="background:' + hex + ';" title="' + hex + '"></div>';
+                        }).join('');
+                        colorPalette.style.position = 'fixed';
+                        colorPalette.style.top = (btnRect.bottom + 4) + 'px';
+                        colorPalette.style.left = btnRect.left + 'px';
+                        colorPalette.style.zIndex = '2800';
+                        colorPalette.style.display = 'grid';
+                    }
+                });
+                // 颜色样本点击——用 mousedown 阻止失焦
+                colorPalette.addEventListener('mousedown', function (e) {
+                    var swatch = e.target.closest('.wb-color-swatch');
+                    if (!swatch || !swatch.dataset.hex) return;
+                    e.preventDefault();
+                    console.log('[编辑] 应用颜色 ' + swatch.dataset.hex + (state._savedSelection ? '' : ' 选区为空'));
+                    if (state._savedSelection) restoreSelection();
+                    else console.warn('[警告] 颜色 restoreSelection 选区为空');
+                    dom.wbNoteContent.focus();
+                    document.execCommand('foreColor', false, swatch.dataset.hex);
+                    saveSelection();
                     colorPalette.style.display = 'none';
-                } else {
-                    var btnRect = toolbarColor.getBoundingClientRect();
-                    console.log('[面板] 打开颜色面板 坐标(' + Math.round(btnRect.left) + ',' + Math.round(btnRect.bottom) + ')');
-                    var colors = ['#1a1410', '#2d2820', '#4a443e', '#6e6860', '#8e8880',
-                        '#c0692a', '#d94a3a', '#e74c3c', '#e67e22', '#f39c12',
-                        '#27ae60', '#2ecc71', '#1abc9c', '#16a085', '#2980b9',
-                        '#3498db', '#8e44ad', '#9b59b6', '#2c3e50', '#7f8c8d'];
-                    colorPalette.innerHTML = colors.map(function (hex) {
-                        return '<div class="wb-color-swatch" data-hex="' + hex + '" style="background:' + hex + ';" title="' + hex + '"></div>';
-                    }).join('');
-                    colorPalette.style.position = 'fixed';
-                    colorPalette.style.top = (btnRect.bottom + 4) + 'px';
-                    colorPalette.style.left = btnRect.left + 'px';
-                    colorPalette.style.zIndex = '2800';
-                    colorPalette.style.display = 'grid';
-                }
-            });
-            // 颜色样本点击——用 mousedown 阻止失焦
-            colorPalette.addEventListener('mousedown', function (e) {
-                var swatch = e.target.closest('.wb-color-swatch');
-                if (!swatch || !swatch.dataset.hex) return;
-                e.preventDefault();
-                console.log('[编辑] 应用颜色 ' + swatch.dataset.hex + (state._savedSelection ? '' : ' 选区为空'));
-                if (state._savedSelection) restoreSelection();
-                else console.warn('[警告] 颜色 restoreSelection 选区为空');
-                dom.wbNoteContent.focus();
-                document.execCommand('foreColor', false, swatch.dataset.hex);
-                saveSelection();
-                colorPalette.style.display = 'none';
-                syncToolbarState();
-            });
-            document.addEventListener('click', function (e) {
-                if (colorPalette.style.display === 'grid' && !e.target.closest('#wbToolbarColor') && !e.target.closest('#wbColorPalette') && !e.target.closest('#wbToolbarHeading')) {
-                    colorPalette.style.display = 'none';
-                }
-            });
-        }
-        if (toolbarHighlight) {
-            toolbarHighlight.addEventListener('mousedown', function (e) {
-                e.preventDefault();
-                console.log('[交互] 工具栏 高亮背景');
-                if (state._savedSelection) restoreSelection();
-                else console.warn('[警告] 高亮 restoreSelection 选区为空');
-                dom.wbNoteContent.focus();
-                document.execCommand('hiliteColor', false, '#fff3cd');
-                saveSelection();
-            });
-        }
+                    syncToolbarState();
+                });
+                document.addEventListener('click', function (e) {
+                    if (colorPalette.style.display === 'grid' && !e.target.closest('#wbToolbarColor') && !e.target.closest('#wbColorPalette') && !e.target.closest('#wbToolbarHeading')) {
+                        colorPalette.style.display = 'none';
+                    }
+                });
+            }
+            if (toolbarHighlight) {
+                toolbarHighlight.addEventListener('mousedown', function (e) {
+                    e.preventDefault();
+                    console.log('[交互] 工具栏 高亮背景');
+                    if (state._savedSelection) restoreSelection();
+                    else console.warn('[警告] 高亮 restoreSelection 选区为空');
+                    dom.wbNoteContent.focus();
+                    document.execCommand('hiliteColor', false, '#fff3cd');
+                    saveSelection();
+                });
+            }
 
-        // 同步工具栏按钮状态
-        function syncToolbarState() {
-            if (toolbarBold) toolbarBold.classList.toggle('active', document.queryCommandState('bold'));
-            if (toolbarItalic) toolbarItalic.classList.toggle('active', document.queryCommandState('italic'));
-            if (toolbarUnderline) toolbarUnderline.classList.toggle('active', document.queryCommandState('underline'));
+            // 同步工具栏按钮状态
+            function syncToolbarState() {
+                if (toolbarBold) toolbarBold.classList.toggle('active', document.queryCommandState('bold'));
+                if (toolbarItalic) toolbarItalic.classList.toggle('active', document.queryCommandState('italic'));
+                if (toolbarUnderline) toolbarUnderline.classList.toggle('active', document.queryCommandState('underline'));
+            }
         }
 
         // ===== v2 日历事件 =====

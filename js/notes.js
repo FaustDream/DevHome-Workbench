@@ -52,11 +52,10 @@ window.DevHome = window.DevHome || {};
     /** 加载笔记列表（加载后自动触发全量迁移） */
     ns.loadNotes = async function () {
         state.notes = await storageV2.get(storageV2.KEYS.NOTES, []);
-        // 全量迁移：为旧笔记补充 doc 和 wordCount 字段
-        ns.migrateAllNotes();
+        // 全量迁移：为旧笔记补充 doc 和 wordCount 字段，返回迁移条数
+        var migratedCount = ns.migrateAllNotes();
         // 有迁移发生时保存一次
-        var hasNewFields = state.notes.some(function (n) { return n.doc && n.doc.type === 'doc'; });
-        if (hasNewFields) await ns.saveNotes();
+        if (migratedCount > 0) await ns.saveNotes();
     };
 
     /** 保存笔记列表 */
@@ -332,19 +331,27 @@ window.DevHome = window.DevHome || {};
         state._currentNoteType = note.type || 'note';
         ns.renderNoteTypeBadge();
 
-        // 笔记模式：使用 ProseMirror 编辑器（挂载到 #wbNoteContent）
-        if (!isCapture && dom.wbNoteContent && window.PM) {
-            // 确保旧数据有 doc 字段（迁移）
+        // 笔记模式：优先尝试 ProseMirror 编辑器，失败时回退 contenteditable
+        if (!isCapture && dom.wbNoteContent) {
+            // 确保旧数据有 doc 字段（迁移，内部会检查 PM 是否可用）
             if (!note.doc || note.doc.type !== 'doc') {
                 ns.migrateNoteDoc(note);
             }
+            // pmCreateEditor 返回 Promise（可能等待动态加载 PM bundle）
             ns.pmCreateEditor(dom.wbNoteContent, note, {
                 onChange: function () {
                     if (ns._triggerAutoSave) ns._triggerAutoSave();
                 }
+            }).then(function (editor) {
+                // 如果 PM 创建失败（返回 null），回退到 contenteditable
+                if (!editor) {
+                    console.warn('[面板] ProseMirror 创建失败，回退到 contenteditable 模式 id=' + note.id);
+                    dom.wbNoteContent.setAttribute('contenteditable', 'true');
+                    dom.wbNoteContent.innerHTML = note.content || '';
+                }
             });
         } else if (isCapture && dom.wbNoteContent) {
-            // 捕获模式：仍用 contenteditable（保持简单）
+            // 捕获模式：纯文本需转义
             dom.wbNoteContent.setAttribute('contenteditable', 'true');
             dom.wbNoteContent.innerHTML = ns.escapeHtml(note.content || '').replace(/\n/g, '<br>');
         }
@@ -354,6 +361,10 @@ window.DevHome = window.DevHome || {};
 
     /** 关闭笔记编辑器 */
     ns.closeNoteEditor = function () {
+        // 先保存当前编辑内容再销毁编辑器（防止自动保存防抖未触发导致数据丢失）
+        if (state.currentNote) {
+            ns.saveCurrentNote();
+        }
         // 销毁 ProseMirror 编辑器实例
         if (ns.pmDestroyEditor) ns.pmDestroyEditor();
         state.currentNote = null;
@@ -400,6 +411,12 @@ window.DevHome = window.DevHome || {};
             wordCount = ns.countWords(docHTML);
             // 无 ProseMirror 时不写 doc 字段（避免覆盖已有）
             docJSON = state.currentNote.doc || null;
+            // 安全保护：如果内容区为空但存储中有数据，保留原有内容防止数据丢失
+            if (!docHTML && state.currentNote.content) {
+                console.warn('[警告] 编辑器内容为空，保留原有数据 id=' + state.currentNote.id);
+                docHTML = state.currentNote.content;
+                wordCount = ns.countWords(docHTML);
+            }
         }
 
         await ns.updateNote(state.currentNote.id, {
@@ -451,6 +468,64 @@ window.DevHome = window.DevHome || {};
                 t.icon + ' ' + ns.escapeHtml(t.label) +
                 '<span class="filter-del">×</span></button>';
         }).join('');
+    };
+
+    /**
+     * 行内创建自定义标签（无弹窗，直接在标签栏中插入输入框）
+     * - 点击"+"后立即出现一个"未命名"的输入框
+     * - 用户输入内容后失焦或回车即保存
+     * - 若未修改（仍为"未命名"或为空）则自动删除
+     */
+    ns.startInlineCustomFilter = function () {
+        var addBtn = dom.wbFilterAddBtn;
+        if (!addBtn) return;
+
+        // 创建行内编辑输入框，外观与 filter-chip 一致
+        var input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'wb-filter-chip wb-filter-chip-editing';
+        input.placeholder = '未命名';
+        input.value = '';
+        input.title = '输入标签名称，回车保存，Esc 取消';
+        console.log('[交互] 行内创建标签 开始');
+
+        // 插入到"+"按钮之前
+        addBtn.parentNode.insertBefore(input, addBtn);
+
+        // 自动聚焦
+        requestAnimationFrame(function () { input.focus(); });
+
+        // 完成创建（保存或放弃）
+        var cleanup = function (save) {
+            var name = input.value.trim();
+            input.remove();
+            if (save && name && name !== '未命名') {
+                // 保存新标签
+                ns.addCustomFilter(name);
+                console.log('[编辑] 行内创建标签 保存 name=' + name);
+            } else {
+                // 未修改 → 不保存，自动清理
+                console.log('[交互] 行内创建标签 取消（未修改）');
+            }
+        };
+
+        // 回车保存
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                cleanup(true);
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                cleanup(false);
+            }
+        });
+
+        // 失焦保存（若内容不为空且不等于"未命名"）
+        input.addEventListener('blur', function () {
+            var name = input.value.trim();
+            // 失焦时有内容 → 保存；无内容 → 放弃
+            cleanup(!!(name && name !== '未命名'));
+        });
     };
 
     /** 新增自定义标签 */
@@ -611,16 +686,26 @@ window.DevHome = window.DevHome || {};
         if (picker) picker.style.display = 'none';
     };
 
-    /** 切换单个类型（多选模式） */
+    /** 切换单个类型（多选模式，但添加新标签时自动替换"未分类"） */
     ns.toggleNoteType = function (typeKey) {
         var currentStr = state._currentNoteType || 'note';
         var types = currentStr.split(',').filter(Boolean);
         var idx = types.indexOf(typeKey);
         if (idx !== -1) {
-            if (types.length > 1) types.splice(idx, 1);
+            // 移除该类型
+            types.splice(idx, 1);
+            // 如果全部移除，回退到"未分类"
+            if (types.length === 0) types = ['note'];
             console.log('[交互] 移除类型 ' + typeKey + ' 当前=' + types.join(','));
         } else {
-            types.push(typeKey);
+            // 如果当前只有"未分类"，用新标签替换它
+            if (types.length === 1 && types[0] === 'note') {
+                types = [typeKey];
+            } else {
+                // 过滤掉"未分类"（保持新标签优先），再添加新标签
+                types = types.filter(function (t) { return t !== 'note'; });
+                types.push(typeKey);
+            }
             console.log('[交互] 添加类型 ' + typeKey + ' 当前=' + types.join(','));
         }
         state._currentNoteType = types.join(',');
@@ -629,14 +714,16 @@ window.DevHome = window.DevHome || {};
         if (ns._triggerAutoSave) ns._triggerAutoSave();
     };
 
-    /** 从徽章中移除单个类型 */
+    /** 从徽章中移除单个类型（删到最后一个时自动保留"未分类"） */
     ns.removeNoteType = function (typeKey) {
         var currentStr = state._currentNoteType || 'note';
         var types = currentStr.split(',').filter(Boolean);
         var idx = types.indexOf(typeKey);
-        if (idx !== -1 && types.length > 1) {
+        if (idx !== -1) {
             types.splice(idx, 1);
         }
+        // 如果全部删光，回退到"未分类"
+        if (types.length === 0) types = ['note'];
         state._currentNoteType = types.join(',');
         ns.renderNoteTypeBadge();
         ns.hideTypePicker();
@@ -735,6 +822,7 @@ window.DevHome = window.DevHome || {};
     /**
      * 全量迁移：遍历所有笔记，为无 doc 的笔记补 doc 字段
      * 在 loadNotes() 完成后调用
+     * @returns {number} 实际迁移的笔记数量
      */
     ns.migrateAllNotes = function () {
         var migrated = 0;
@@ -756,6 +844,7 @@ window.DevHome = window.DevHome || {};
         if (migrated > 0) {
             console.log('[迁移] 全量迁移完成，迁移了 ' + migrated + ' 条笔记');
         }
+        return migrated;
     };
 
 })(window.DevHome);

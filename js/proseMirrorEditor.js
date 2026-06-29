@@ -8,6 +8,10 @@
  *   4. 气泡工具栏位置计算（Phase 4）
  *   5. 字数统计实时更新
  *
+ * 懒初始化设计：
+ *   模块导出时不依赖 window.PM，所有 PM 操作在 pmCreateEditor 首次调用时懒初始化。
+ *   这解决了 Chrome 扩展 newtab 页面中脚本加载顺序不确定的问题。
+ *
  * 暴露 API（挂载到 window.DevHome）:
  *   pmCreateEditor(domParent, note, callbacks)
  *   pmDestroyEditor()
@@ -20,17 +24,144 @@ window.DevHome = window.DevHome || {};
 (function (ns) {
     'use strict';
 
-    var PM = window.PM;
-    if (!PM) {
-        console.error('[PM编辑器] ProseMirror bundle 未加载');
-        return;
+    // ================================================================
+    // 获取 PM 引用（延迟求值，每次调用都检查 window.PM）
+    // ================================================================
+    function _getPM() {
+        return window.PM || null;
     }
 
     // ================================================================
-    // Schema 定义（与 migrateNoteDoc 共用节点结构，新增 textColor mark）
+    // 懒初始化：schema 和插件只在首次调用 pmCreateEditor 时构建
+    // ================================================================
+    var _lazySchema = null;
+    var _lazyPlugins = null;
+    var _pmLoadPromise = null; // 动态加载 PM bundle 的 Promise
+
+    /**
+     * 确保 PM 和 Schema 已就绪（返回 Promise）
+     * - 如果已初始化，立即 resolve(true)
+     * - 如果 PM 可用，同步初始化并 resolve(true)
+     * - 如果 PM 不可用，动态加载 pm.bundle.js 并等待加载完成后初始化
+     */
+    function _ensureInit() {
+        if (_lazySchema) return Promise.resolve(true);
+
+        var PM = _getPM();
+        if (PM) {
+            // PM 已就绪，同步初始化
+            try {
+                _lazySchema = _buildSchema(PM);
+                _lazyPlugins = _createPlugins(PM, _lazySchema);
+                console.log('[PM编辑器] 懒初始化完成 schema=' + Object.keys(_lazySchema.nodes).length + '节点');
+                return Promise.resolve(true);
+            } catch (e) {
+                console.error('[PM编辑器] 初始化失败', e);
+                return Promise.resolve(false);
+            }
+        }
+
+        // PM 不可用，动态加载
+        if (!_pmLoadPromise) {
+            _pmLoadPromise = _loadPMBundle();
+        }
+        return _pmLoadPromise.then(function () {
+            PM = _getPM();
+            if (!PM) {
+                console.error('[PM编辑器] 动态加载 PM bundle 后仍不可用');
+                return false;
+            }
+            try {
+                _lazySchema = _buildSchema(PM);
+                _lazyPlugins = _createPlugins(PM, _lazySchema);
+                console.log('[PM编辑器] 懒初始化完成（动态加载） schema=' + Object.keys(_lazySchema.nodes).length + '节点');
+                return true;
+            } catch (e) {
+                console.error('[PM编辑器] 动态加载后初始化失败', e);
+                return false;
+            }
+        });
+    }
+
+    /**
+     * 加载 pm.bundle.js
+     *
+     * Chrome 扩展 newtab 页面 (chrome://newtab/) 中，相对路径 <script src> 可能无法正
+     * 确映射到扩展文件。使用 chrome.runtime.getURL() 获取扩展文件的绝对路径
+     * (chrome-extension://[id]/js/lib/pm.bundle.js)，确保 CSP 'self' 正确匹配。
+     *
+     * - 如果 window.PM 已就绪，直接 resolve
+     * - 否则创建 <script> 标签加载，onload 后轮询确认 window.PM 可用
+     */
+    function _loadPMBundle() {
+        return new Promise(function (resolve, reject) {
+            if (window.PM) {
+                resolve();
+                return;
+            }
+            // 如果已有脚本标签存在但 PM 仍未就绪（极端情况），轮询等待
+            var existing = document.querySelector('script[data-pm-loaded]');
+            if (existing) {
+                console.warn('[PM编辑器] pm.bundle.js 脚本标签已存在，src=' + existing.src + ' 轮询等待 window.PM...');
+                _pollUntilPMReady(function () { resolve(); }, function () { reject(new Error('PM timeout (existing)')); });
+                return;
+            }
+
+            // 使用 chrome.runtime.getURL() 获取扩展文件的绝对路径
+            var scriptUrl;
+            try {
+                scriptUrl = chrome.runtime.getURL('js/lib/pm.bundle.js');
+            } catch (_) {
+                // 降级：非扩展环境使用相对路径
+                scriptUrl = 'js/lib/pm.bundle.js';
+            }
+            console.log('[PM编辑器] window.PM 未就绪，动态加载: ' + scriptUrl);
+
+            var script = document.createElement('script');
+            script.src = scriptUrl;
+            script.setAttribute('data-pm-loaded', '1');
+            script.onload = function () {
+                console.log('[PM编辑器] pm.bundle.js onload 触发，src=' + scriptUrl + ' 检查 window.PM...');
+                // onload 触发后，PM 仍可能未赋值（bundle 内部 IIFE 还在执行）
+                _pollUntilPMReady(function () {
+                    console.log('[PM编辑器] pm.bundle.js 加载成功，window.PM 就绪');
+                    resolve();
+                }, function () {
+                    console.error('[PM编辑器] pm.bundle.js onload 后 window.PM 仍不可用，src=' + scriptUrl);
+                    reject(new Error('PM timeout after onload'));
+                });
+            };
+            script.onerror = function (err) {
+                console.error('[PM编辑器] pm.bundle.js 加载失败（onerror）src=' + scriptUrl, err);
+                reject(new Error('pm.bundle.js load failed (onerror)'));
+            };
+            document.head.appendChild(script);
+        });
+    }
+
+    /** 轮询直到 window.PM 可用（最多 5 秒） */
+    function _pollUntilPMReady(onReady, onTimeout) {
+        var attempts = 0;
+        var maxAttempts = 100; // 50ms × 100 = 5s
+        function check() {
+            if (window.PM) {
+                onReady();
+                return;
+            }
+            if (++attempts >= maxAttempts) {
+                onTimeout();
+                return;
+            }
+            setTimeout(check, 50);
+        }
+        check();
+    }
+
+    // ================================================================
+    // Schema 定义
     // ================================================================
 
-    function buildSchema() {
+    function _buildSchema(PM) {
         return new PM.Schema({
             nodes: {
                 doc: { content: 'block+' },
@@ -123,36 +254,46 @@ window.DevHome = window.DevHome || {};
         });
     }
 
-    var schema = buildSchema();
+    // ================================================================
+    // 所有插件（懒构建）
+    // ================================================================
+
+    function _createPlugins(PM, schema) {
+        return [
+            PM.keymap(PM.baseKeymap),
+            _buildKeymap(PM, schema),
+            _buildInputRules(PM, schema),
+            PM.history(),
+            PM.dropCursor(),
+            PM.gapCursor(),
+            _bubbleToolbarPlugin(PM, schema)
+        ];
+    }
 
     // ================================================================
     // 输入规则（Markdown 快捷键）
     // ================================================================
 
-    function buildInputRules() {
+    function _buildInputRules(PM, schema) {
         return PM.inputRules({ rules: [
-            // # 空格 → heading 1
             new PM.InputRule(/^# $/, function (state, match, from, to) {
                 var tr = state.tr;
                 tr.deleteRange(from, to);
                 tr.setBlockType(from, from, schema.nodes.heading, { level: 1 });
                 return tr;
             }),
-            // ## 空格 → heading 2
             new PM.InputRule(/^## $/, function (state, match, from, to) {
                 var tr = state.tr;
                 tr.deleteRange(from, to);
                 tr.setBlockType(from, from, schema.nodes.heading, { level: 2 });
                 return tr;
             }),
-            // ### 空格 → heading 3
             new PM.InputRule(/^### $/, function (state, match, from, to) {
                 var tr = state.tr;
                 tr.deleteRange(from, to);
                 tr.setBlockType(from, from, schema.nodes.heading, { level: 3 });
                 return tr;
             }),
-            // - 或 * 空格 → bullet_list
             new PM.InputRule(/^[-*] $/, function (state, match, from, to) {
                 var tr = state.tr;
                 tr.deleteRange(from, to);
@@ -164,7 +305,6 @@ window.DevHome = window.DevHome || {};
                 }
                 return tr;
             }),
-            // 1. 空格 → ordered_list
             new PM.InputRule(/^1\. $/, function (state, match, from, to) {
                 var tr = state.tr;
                 tr.deleteRange(from, to);
@@ -176,7 +316,6 @@ window.DevHome = window.DevHome || {};
                 }
                 return tr;
             }),
-            // > 空格 → blockquote
             new PM.InputRule(/^> $/, function (state, match, from, to) {
                 var tr = state.tr;
                 tr.deleteRange(from, to);
@@ -187,7 +326,6 @@ window.DevHome = window.DevHome || {};
                 }
                 return tr;
             }),
-            // ``` 空格 → code_block
             new PM.InputRule(/^``` $/, function (state, match, from, to) {
                 var tr = state.tr;
                 tr.deleteRange(from, to);
@@ -201,7 +339,7 @@ window.DevHome = window.DevHome || {};
     // 自定义快捷键
     // ================================================================
 
-    function buildKeymap() {
+    function _buildKeymap(PM, schema) {
         var map = {};
         var mac = typeof navigator !== 'undefined' ? /Mac/.test(navigator.platform) : false;
         var mod = mac ? 'Cmd' : 'Ctrl';
@@ -218,22 +356,6 @@ window.DevHome = window.DevHome || {};
     }
 
     // ================================================================
-    // 所有插件
-    // ================================================================
-
-    function createPlugins() {
-        return [
-            PM.keymap(PM.baseKeymap),
-            buildKeymap(),
-            buildInputRules(),
-            PM.history(),
-            PM.dropCursor(),
-            PM.gapCursor(),
-            bubbleToolbarPlugin()
-        ];
-    }
-
-    // ================================================================
     // 编辑器状态
     // ================================================================
     var editorView = null;
@@ -242,13 +364,33 @@ window.DevHome = window.DevHome || {};
 
     /**
      * 创建 ProseMirror 编辑器并挂载到 DOM
-     * @param {Element} domParent - 挂载父节点（替换旧的 contenteditable div）
+     * 返回 Promise<EditorView|null>，可能等待动态加载 PM bundle
+     * @param {Element} domParent - 挂载父节点
      * @param {object} note - 笔记数据对象
      * @param {object} callbacks - { onChange, onFocus }
      */
     ns.pmCreateEditor = function (domParent, note, callbacks) {
         // 幂等：销毁旧实例
         ns.pmDestroyEditor();
+
+        // 确保 PM 和 Schema 已就绪（可能等待动态加载），then 创建编辑器
+        var self = this;
+        return _ensureInit().then(function (ready) {
+            if (!ready) {
+                console.error('[PM编辑器] 无法创建编辑器：ProseMirror 未就绪');
+                return null;
+            }
+            return _createEditorSync(domParent, note, callbacks);
+        });
+    };
+
+    /**
+     * 同步创建编辑器（_ensureInit 已确认完成后调用）
+     */
+    function _createEditorSync(domParent, note, callbacks) {
+
+        var PM = _getPM();
+        var schema = _lazySchema;
 
         editorCallbacks = callbacks || {};
 
@@ -262,7 +404,6 @@ window.DevHome = window.DevHome || {};
                 docNode = schema.nodes.doc.create(null, [schema.nodes.paragraph.create()]);
             }
         } else {
-            // 无 doc 字段时创建空文档
             docNode = schema.nodes.doc.create(null, [schema.nodes.paragraph.create()]);
         }
 
@@ -273,7 +414,7 @@ window.DevHome = window.DevHome || {};
         var state = PM.EditorState.create({
             schema: schema,
             doc: docNode,
-            plugins: createPlugins()
+            plugins: _lazyPlugins
         });
 
         editorView = new PM.EditorView(domParent, {
@@ -287,17 +428,15 @@ window.DevHome = window.DevHome || {};
                 var newState = editorView.state.apply(tr);
                 editorView.updateState(newState);
 
-                // 触发 onChange 回调（自动保存）
                 if (editorCallbacks.onChange) {
                     editorCallbacks.onChange();
                 }
 
-                // 实时更新字数统计
                 updateWordCountUI();
             }
         });
 
-        // 添加 ProseMirror 容器类名（与 CSS 样式对接）
+        // 添加容器类名
         editorView.dom.classList.add('wb-prosemirror-editor');
 
         // 初始化字数统计 UI
@@ -323,7 +462,7 @@ window.DevHome = window.DevHome || {};
 
     /**
      * 获取当前文档 JSON（用于存储）
-     * @returns {object|null} ProseMirror doc JSON
+     * @returns {object|null}
      */
     ns.pmGetDocJSON = function () {
         if (!editorView) return null;
@@ -331,12 +470,14 @@ window.DevHome = window.DevHome || {};
     };
 
     /**
-     * 获取当前文档 HTML（向后兼容列表搜索和预览）
-     * @returns {string} HTML 字符串
+     * 获取当前文档 HTML（向后兼容）
+     * @returns {string}
      */
     ns.pmGetDocHTML = function () {
-        if (!editorView) return '';
-        var serializer = PM.DOMSerializer.fromSchema(schema);
+        if (!editorView || !_lazySchema) return '';
+        var PM = _getPM();
+        if (!PM) return '';
+        var serializer = PM.DOMSerializer.fromSchema(_lazySchema);
         var frag = serializer.serializeFragment(editorView.state.doc.content);
         var div = document.createElement('div');
         div.appendChild(frag);
@@ -353,13 +494,15 @@ window.DevHome = window.DevHome || {};
     };
 
     /**
-     * 设置文档内容（用于加载笔记时初始化）
-     * @param {object} docJSON - ProseMirror doc JSON
+     * 设置文档内容
+     * @param {object} docJSON
      */
     ns.pmSetContent = function (docJSON) {
-        if (!editorView || !docJSON) return;
+        if (!editorView || !docJSON || !_lazySchema) return;
+        var PM = _getPM();
+        if (!PM) return;
         try {
-            var doc = PM.Node.fromJSON(schema, docJSON);
+            var doc = PM.Node.fromJSON(_lazySchema, docJSON);
             var tr = editorView.state.tr.replaceWith(
                 0, editorView.state.doc.content.size,
                 doc.content
@@ -371,8 +514,8 @@ window.DevHome = window.DevHome || {};
     };
 
     /**
-     * 从 ProseMirror doc 节点计算字数
-     * @param {Node} doc - ProseMirror doc 节点
+     * 从 PM doc 节点计算字数
+     * @param {Node} doc
      * @returns {number}
      */
     ns._countWordsFromDoc = function (doc) {
@@ -380,18 +523,10 @@ window.DevHome = window.DevHome || {};
         return ns.countWords(text);
     };
 
-    /**
-     * 获取编辑器当前是否活跃
-     * @returns {boolean}
-     */
     ns.pmIsActive = function () {
         return editorView !== null;
     };
 
-    /**
-     * 获取 EditorView 引用（供气泡工具栏等使用）
-     * @returns {EditorView|null}
-     */
     ns.pmGetView = function () {
         return editorView;
     };
@@ -401,18 +536,26 @@ window.DevHome = window.DevHome || {};
     // ================================================================
 
     function updateWordCountUI() {
-        if (!wordCountEl || !editorView) return;
+        var el = wordCountEl || document.getElementById('wbNoteWordCount');
+        if (!el) return;
+        wordCountEl = el;
+        if (!editorView) return;
         var count = ns._countWordsFromDoc(editorView.state.doc);
-        wordCountEl.textContent = count + ' 字';
+        el.textContent = count + ' 字';
     }
 
-    console.log('[PM编辑器] 模块加载完成');
+    console.log('[PM编辑器] 模块注册完成（懒初始化模式） window.PM=' + typeof window.PM + ' _lazySchema=' + (_lazySchema ? 'ready' : 'pending'));
+
+    // 模块加载时立即触发 PM bundle 加载（使用 chrome.runtime.getURL 获取绝对路径）
+    // 这样在用户点击笔记之前，PM 已经就绪，消除首次打开延迟
+    if (!window.PM && !_pmLoadPromise) {
+        _pmLoadPromise = _loadPMBundle();
+    }
 
     // ================================================================
-    // Phase 3: 代码块 NodeView
+    // 代码块 NodeView
     // ================================================================
 
-    /** 支持的语言列表（与 highlight.js 注册的一致） */
     var CODE_LANGUAGES = [
         { key: '', label: '纯文本' },
         { key: 'javascript', label: 'JavaScript' },
@@ -436,26 +579,19 @@ window.DevHome = window.DevHome || {};
         { key: 'markdown', label: 'Markdown' }
     ];
 
-    /**
-     * CodeBlockView — ProseMirror NodeView
-     * 渲染带语言下拉+复制按钮+编辑模式的代码块
-     */
     function CodeBlockView(node, view, getPos) {
         this._node = node;
         this._view = view;
         this._getPos = getPos;
         this._editing = false;
 
-        // 构建 DOM
         this.dom = document.createElement('div');
         this.dom.className = 'wb-codeblock';
         this.dom.setAttribute('contenteditable', 'false');
 
-        // 工具栏
         var toolbar = document.createElement('div');
         toolbar.className = 'wb-codeblock-toolbar';
 
-        // 语言下拉
         var sel = document.createElement('select');
         sel.className = 'wb-codeblock-lang';
         CODE_LANGUAGES.forEach(function (l) {
@@ -471,7 +607,6 @@ window.DevHome = window.DevHome || {};
             view.dispatch(tr);
         });
 
-        // 复制按钮
         var copyBtn = document.createElement('button');
         copyBtn.className = 'wb-codeblock-copy';
         copyBtn.title = '复制代码';
@@ -490,7 +625,6 @@ window.DevHome = window.DevHome || {};
         toolbar.appendChild(copyBtn);
         this.dom.appendChild(toolbar);
 
-        // 代码显示区
         this._pre = document.createElement('pre');
         this._pre.className = 'wb-codeblock-pre';
         this._code = document.createElement('code');
@@ -499,23 +633,19 @@ window.DevHome = window.DevHome || {};
         this._pre.appendChild(this._code);
         this.dom.appendChild(this._pre);
 
-        // 编辑 textarea（默认隐藏）
         this._textarea = document.createElement('textarea');
         this._textarea.className = 'wb-codeblock-textarea';
         this._textarea.style.display = 'none';
         this._textarea.value = node.textContent;
         this.dom.appendChild(this._textarea);
 
-        // 高亮代码
         this._highlight();
 
-        // 双击进入编辑模式
         var _this = this;
         this._pre.addEventListener('dblclick', function () {
             _this._startEdit();
         });
 
-        // textarea 失焦或 Ctrl+Enter 保存
         this._textarea.addEventListener('blur', function () {
             _this._finishEdit();
         });
@@ -532,7 +662,6 @@ window.DevHome = window.DevHome || {};
         });
     }
 
-    /** 语法高亮 */
     CodeBlockView.prototype._highlight = function () {
         if (window.hljs && this._node.attrs.language) {
             this._code.className = 'hljs language-' + this._node.attrs.language;
@@ -545,7 +674,6 @@ window.DevHome = window.DevHome || {};
         }
     };
 
-    /** 开始编辑 */
     CodeBlockView.prototype._startEdit = function () {
         this._editing = true;
         this._pre.style.display = 'none';
@@ -554,7 +682,6 @@ window.DevHome = window.DevHome || {};
         this._textarea.focus();
     };
 
-    /** 完成编辑 */
     CodeBlockView.prototype._finishEdit = function () {
         if (!this._editing) return;
         this._editing = false;
@@ -570,7 +697,6 @@ window.DevHome = window.DevHome || {};
         }
     };
 
-    /** ProseMirror update 回调 */
     CodeBlockView.prototype.update = function (node) {
         if (node.type !== this._node.type) return false;
         this._node = node;
@@ -582,7 +708,6 @@ window.DevHome = window.DevHome || {};
                 this._highlight();
             }
         }
-        // 更新下拉选中
         var sel = this.dom.querySelector('.wb-codeblock-lang');
         if (sel && sel.value !== node.attrs.language) {
             sel.value = node.attrs.language || '';
@@ -590,41 +715,38 @@ window.DevHome = window.DevHome || {};
         return true;
     };
 
-    /** 清理 */
     CodeBlockView.prototype.destroy = function () {
         this.dom = null;
         this._view = null;
     };
 
-    /** NodeView 忽略子节点事件（让 PM 处理内部光标） */
     CodeBlockView.prototype.ignoreMutation = function () { return true; };
     CodeBlockView.prototype.stopEvent = function () { return false; };
 
     // ================================================================
-    // Phase 4: 气泡工具栏插件
+    // 气泡工具栏
     // ================================================================
 
-    var bubbleToolbar = null;
+    var bubbleToolbarDom = null;
     var bubbleHideTimer = null;
 
-    /**
-     * 气泡工具栏插件 — 选中文字时浮现格式按钮
-     */
-    function bubbleToolbarPlugin() {
+    function _bubbleToolbarPlugin(PM, schema) {
         return new PM.Plugin({
-            view: function () {
+            view: function (editorView) {
+                var initSel = editorView.state.selection;
+                if (initSel instanceof PM.TextSelection && !initSel.empty) {
+                    _showBubble(PM, editorView);
+                }
                 return {
                     update: function (view, prevState) {
                         var sel = view.state.selection;
-                        // 只处理 TextSelection
                         if (!(sel instanceof PM.TextSelection) || sel.empty) {
-                            hideBubbleToolbar();
+                            _hideBubble();
                             return;
                         }
-                        // 延迟显示（避免快速连续选区变化抖动）
                         clearTimeout(bubbleHideTimer);
                         bubbleHideTimer = setTimeout(function () {
-                            showBubbleToolbar(view);
+                            _showBubble(PM, view);
                         }, 50);
                     }
                 };
@@ -632,66 +754,60 @@ window.DevHome = window.DevHome || {};
         });
     }
 
-    /** 显示气泡工具栏 */
-    function showBubbleToolbar(view) {
-        bubbleToolbar = bubbleToolbar || document.getElementById('wbBubbleToolbar');
-        if (!bubbleToolbar) return;
+    function _showBubble(PM, view) {
+        bubbleToolbarDom = bubbleToolbarDom || document.getElementById('wbBubbleToolbar');
+        if (!bubbleToolbarDom) return;
 
-        var sel = view.state.selection;
-        if (!(sel instanceof PM.TextSelection) || sel.empty) return;
-        if (!view.hasFocus()) return;
+        var state = view.state;
+        var sel = state.selection;
 
-        // 获取选区 DOM 位置
-        var domSel = window.getSelection();
-        if (!domSel || domSel.rangeCount === 0) return;
-        var range = domSel.getRangeAt(0);
-        if (!range || range.collapsed) return;
-
-        var rect = range.getBoundingClientRect();
-        if (!rect || rect.width === 0) return;
-
-        // 计算位置（选区上方居中）
-        var top = rect.top - bubbleToolbar.offsetHeight - 6;
-        var left = rect.left + rect.width / 2 - bubbleToolbar.offsetWidth / 2;
-
-        // 视口边界翻转
-        if (top < 8) top = rect.bottom + 6;
-        if (left < 8) left = 8;
-        if (left + bubbleToolbar.offsetWidth > window.innerWidth - 8) {
-            left = window.innerWidth - bubbleToolbar.offsetWidth - 8;
+        if (!(sel instanceof PM.TextSelection) || sel.empty) {
+            _hideBubble();
+            return;
         }
 
-        bubbleToolbar.style.top = top + 'px';
-        bubbleToolbar.style.left = left + 'px';
-        bubbleToolbar.style.display = 'flex';
+        var startCoords = view.coordsAtPos(sel.from);
+        var endCoords = view.coordsAtPos(sel.to);
+        if (!startCoords || !endCoords) return;
 
-        // 同步按钮激活状态
-        ns._syncBubbleToolbarState(view.state);
+        var tbHeight = bubbleToolbarDom.offsetHeight || 34;
+        var tbWidth = bubbleToolbarDom.offsetWidth || 260;
+
+        var top = Math.min(startCoords.top, endCoords.top) - tbHeight - 6;
+        var left = (startCoords.left + endCoords.right) / 2 - tbWidth / 2;
+
+        if (top < 8) top = Math.max(startCoords.bottom, endCoords.bottom) + 6;
+        left = Math.max(8, Math.min(left, window.innerWidth - tbWidth - 8));
+
+        bubbleToolbarDom.style.top = top + 'px';
+        bubbleToolbarDom.style.left = left + 'px';
+        bubbleToolbarDom.style.display = 'flex';
+
+        _syncBubbleState(state);
+
+        console.log('[气泡工具栏] 显示 选区=' + sel.from + '-' + sel.to + ' 坐标=(' + Math.round(left) + ',' + Math.round(top) + ')');
     }
 
-    /** 隐藏气泡工具栏 */
-    function hideBubbleToolbar() {
-        bubbleToolbar = bubbleToolbar || document.getElementById('wbBubbleToolbar');
-        if (bubbleToolbar) {
-            bubbleToolbar.style.display = 'none';
+    function _hideBubble() {
+        bubbleToolbarDom = bubbleToolbarDom || document.getElementById('wbBubbleToolbar');
+        if (bubbleToolbarDom && bubbleToolbarDom.style.display !== 'none') {
+            bubbleToolbarDom.style.display = 'none';
+            console.log('[气泡工具栏] 隐藏');
         }
     }
 
-    /**
-     * 同步气泡工具栏按钮激活状态
-     * 供外部 events.js 调用
-     */
+    /** 同步按钮激活状态 */
     ns._syncBubbleToolbarState = function (state) {
-        if (!bubbleToolbar) return;
+        if (!bubbleToolbarDom || !_lazySchema) return;
+        var schema = _lazySchema;
 
-        // Mark 状态按钮
         var marks = {
             bold: schema.marks.strong,
             italic: schema.marks.em,
             underline: schema.marks.underline
         };
         Object.keys(marks).forEach(function (key) {
-            var btn = bubbleToolbar.querySelector('[data-pm-action="' + key + '"]');
+            var btn = bubbleToolbarDom.querySelector('[data-pm-action="' + key + '"]');
             if (!btn) return;
             var active = false;
             state.doc.nodesBetween(state.selection.from, state.selection.to, function (node) {
@@ -703,8 +819,7 @@ window.DevHome = window.DevHome || {};
             btn.classList.toggle('active', active);
         });
 
-        // 标题下拉状态
-        var headingSel = bubbleToolbar.querySelector('[data-pm-action="heading"]');
+        var headingSel = bubbleToolbarDom.querySelector('[data-pm-action="heading"]');
         if (headingSel) {
             var $from = state.selection.$from;
             var parentNode = $from.node($from.depth);
@@ -716,11 +831,20 @@ window.DevHome = window.DevHome || {};
         }
     };
 
-    /** 执行气泡工具栏命令（供 events.js 调用） */
+    /** 同步气泡工具栏状态（适配旧调用方式，直接用内部函数） */
+    function _syncBubbleState(state) {
+        ns._syncBubbleToolbarState(state);
+    }
+
+    /** 执行气泡工具栏命令 */
     ns._executeBubbleAction = function (action, value) {
         var view = ns.pmGetView();
         if (!view) return;
         view.focus();
+
+        var PM = _getPM();
+        var schema = _lazySchema;
+        if (!PM || !schema) return;
 
         switch (action) {
             case 'bold':
@@ -754,10 +878,55 @@ window.DevHome = window.DevHome || {};
                 PM.wrapIn(schema.nodes.blockquote)(view.state, view.dispatch);
                 break;
             case 'codeBlock':
-                PM.setBlockType(schema.nodes.code_block, { language: value || '' })(view.state, view.dispatch);
-                break;
+                var codeBlockCmd = PM.setBlockType(schema.nodes.code_block, { language: value || '' });
+                codeBlockCmd(view.state, function (tr) {
+                    var pos = tr.selection.from;
+                    var placeholder = schema.text('在此输入代码...');
+                    tr.insert(pos + 1, placeholder);
+                    view.dispatch(tr);
+                });
+                return;
+            case 'pasteText':
+                navigator.clipboard.readText().then(function (plainText) {
+                    if (plainText) {
+                        view.focus();
+                        view.pasteText(plainText);
+                    } else {
+                        console.log('[交互] 纯文本粘贴 剪贴板为空');
+                    }
+                }).catch(function (err) {
+                    console.warn('[警告] 读取剪贴板失败', err);
+                });
+                return;
+            case 'pasteHtml':
+                navigator.clipboard.read().then(function (items) {
+                    var htmlFound = false;
+                    for (var i = 0; i < items.length; i++) {
+                        if (items[i].types.indexOf('text/html') !== -1) {
+                            items[i].getType('text/html').then(function (blob) {
+                                blob.text().then(function (html) {
+                                    view.focus();
+                                    view.pasteHTML(html);
+                                });
+                            });
+                            htmlFound = true;
+                            break;
+                        }
+                    }
+                    if (!htmlFound) {
+                        navigator.clipboard.readText().then(function (plainText) {
+                            if (plainText) {
+                                view.focus();
+                                view.pasteText(plainText);
+                            }
+                        });
+                    }
+                }).catch(function (err) {
+                    console.warn('[警告] 读取剪贴板失败', err);
+                });
+                return;
         }
-        hideBubbleToolbar();
+        _hideBubble();
     };
 
 })(window.DevHome);

@@ -132,15 +132,20 @@ window.DevHome = window.DevHome || {};
                 if (n.sourceUrl) md += 'source: "' + n.sourceUrl + '"\n';
                 md += '---\n\n';
                 md += '# ' + (n.title || '无标题') + '\n\n';
-                // 内容为 HTML（富文本），导出时转为纯文本
-                var content = n.content || '';
-                if (/<[a-zA-Z][^>]*>/.test(content) || /&[a-z]+;/.test(content)) {
-                    // HTML 内容：使用临时 DOM 提取纯文本
-                    var tmp = document.createElement('div');
-                    tmp.innerHTML = content;
-                    content = tmp.textContent || tmp.innerText || '';
+
+                // 优先使用 ProseMirror doc JSON 导出（保留格式）
+                if (n.doc && n.doc.type === 'doc') {
+                    md += docJSONToMarkdown(n.doc) + '\n\n';
+                } else {
+                    // 回退：HTML 内容提取为纯文本
+                    var content = n.content || '';
+                    if (/<[a-zA-Z][^>]*>/.test(content) || /&[a-z]+;/.test(content)) {
+                        var tmp = document.createElement('div');
+                        tmp.innerHTML = content;
+                        content = tmp.textContent || tmp.innerText || '';
+                    }
+                    md += content + '\n\n';
                 }
-                md += content + '\n\n';
             } else if (item.type === 'capture') {
                 var c = item.data;
                 md += '---\n';
@@ -193,5 +198,120 @@ window.DevHome = window.DevHome || {};
             setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
         }
     };
+
+    /**
+     * 将 ProseMirror doc JSON 转换为 Markdown 字符串
+     * @param {object} doc - ProseMirror doc.toJSON() 结果
+     * @returns {string} Markdown 文本
+     */
+    function docJSONToMarkdown(doc) {
+        if (!doc || !doc.content) return '';
+        return doc.content.map(function (node) { return nodeToMarkdown(node); }).join('\n\n');
+    }
+
+    /**
+     * 递归将 ProseMirror 节点转为 Markdown
+     * @param {object} node
+     * @returns {string}
+     */
+    function nodeToMarkdown(node) {
+        switch (node.type) {
+            case 'paragraph':
+                return inlineToText(node.content);
+
+            case 'heading':
+                var level = (node.attrs && node.attrs.level) || 1;
+                var prefix = '#'.repeat(Math.min(level, 6));
+                return prefix + ' ' + inlineToText(node.content);
+
+            case 'code_block':
+                var lang = (node.attrs && node.attrs.language) || '';
+                var code = (node.content && node.content[0] && node.content[0].text) || '';
+                return '```' + lang + '\n' + code + '\n```';
+
+            case 'bullet_list':
+                if (!node.content) return '';
+                return node.content.map(function (item) {
+                    return listItemToMarkdown(item, '-');
+                }).join('\n');
+
+            case 'ordered_list':
+                if (!node.content) return '';
+                var start = (node.attrs && node.attrs.order) || 1;
+                return node.content.map(function (item, idx) {
+                    return listItemToMarkdown(item, (start + idx) + '.');
+                }).join('\n');
+
+            case 'blockquote':
+                if (!node.content) return '';
+                return node.content.map(function (child) {
+                    var text = nodeToMarkdown(child);
+                    return '> ' + text.replace(/\n/g, '\n> ');
+                }).join('\n');
+
+            case 'horizontal_rule':
+                return '---';
+
+            default:
+                // 未知节点类型：提取纯文本
+                if (node.content) {
+                    return node.content.map(function (c) { return nodeToMarkdown(c); }).join('\n');
+                }
+                return '';
+        }
+    }
+
+    /**
+     * 将行内内容（text + marks）转为纯文本
+     * @param {Array} content
+     * @returns {string}
+     */
+    function inlineToText(content) {
+        if (!content || !Array.isArray(content)) return '';
+        return content.map(function (node) {
+            if (node.type === 'text') {
+                var text = node.text || '';
+                // 应用 mark 包裹
+                if (node.marks) {
+                    node.marks.forEach(function (mark) {
+                        switch (mark.type) {
+                            case 'strong': text = '**' + text + '**'; break;
+                            case 'em': text = '*' + text + '*'; break;
+                            case 'underline': text = '<u>' + text + '</u>'; break;
+                            case 'code': text = '`' + text + '`'; break;
+                            case 'link':
+                                var href = (mark.attrs && mark.attrs.href) || '';
+                                text = '[' + text + '](' + href + ')';
+                                break;
+                            case 'textColor':
+                                // 纯 Markdown 不支持颜色，直接输出文本
+                                break;
+                        }
+                    });
+                }
+                return text;
+            }
+            // 其他行内类型回退
+            return '';
+        }).join('');
+    }
+
+    /**
+     * 列表项转 Markdown
+     * @param {object} item - list_item 节点
+     * @param {string} prefix - 列表前缀（- 或 1.）
+     * @returns {string}
+     */
+    function listItemToMarkdown(item, prefix) {
+        if (!item.content || item.content.length === 0) return prefix + ' ';
+        return item.content.map(function (child, idx) {
+            var text = nodeToMarkdown(child);
+            if (idx === 0) {
+                return prefix + ' ' + text;
+            }
+            // 后续段落缩进
+            return '  ' + text;
+        }).join('\n');
+    }
 
 })(window.DevHome);
