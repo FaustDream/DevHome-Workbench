@@ -591,23 +591,6 @@
             <div class="changelog-body" id="changelogBody">
                 <div class="changelog-entry">
                     <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.3.0</span>
-                        <span class="changelog-date">2026-07-03</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>主题系统重构</strong> 全量改造为 Primitive→Semantic 双层 Design Token 体系，39 个语义令牌覆盖背景、文字、交互色、边框、阴影、字体、梯度全部视觉维度</li>
-                        <li><strong>4 套预设主题</strong> 默认（深海科技渐变·浅色深色双模式）、黑客（纯黑终端绿·仅深色）、暖纸（米白纸质·仅浅色）、像素（8-bit 命令行·仅深色），主题卡片网格选择器</li>
-                        <li><strong>浅色/深色双轨模式</strong> 跟随系统/始终浅色/始终深色三选一分段控制器，通过 data-color-scheme 属性驱动，200ms 平滑过渡</li>
-                        <li><strong>外观设置页</strong> 左右分栏布局（控制区+实时预览沙箱），智能联动：选黑客/像素主题自动切换深色并提示</li>
-                        <li><strong>背景管理升级</strong> 统一为纯色/动态效果（Matrix数字雨）/自定义图片三选一，图片支持本地上传+URL+模糊/亮度/不透明度滑块</li>
-                        <li><strong>集中式 ThemeManager</strong> 主题切换、字体异步加载、localStorage 持久化全部集中管理，发布 theme-changed 事件</li>
-                        <li><strong>字体配置驱动</strong> 主题元数据声明字体需求，Fira Code woff2 本地存储，系统等宽字体兜底</li>
-                        <li><strong>模式与主题解耦</strong> 日常/专注模式不再操作 link media，布局功能与视觉主题完全正交</li>
-                        <li><strong>架构</strong> 9 个 CSS 文件全部改造，退役 --px-* / --wb-* / --sp-* 变量体系，组件与主题配置完全解耦</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
                         <span class="changelog-version-tag">v2.7.3</span>
                         <span class="changelog-date">2026-07-03</span>
                     </div>
@@ -742,6 +725,23 @@
                         <li><strong>工作台视觉重构</strong> 深蓝半透明毛玻璃主卡片+霓虹薄荷绿标题、精炼顶部导航栏（任务/记录/日历/番茄钟+图标）</li>
                         <li><strong>浮动日历</strong> 日历重构为独立浮动卡片，固定定位右上角，点击外部自动关闭</li>
                         <li><strong>番茄钟增强</strong> SVG圆环220px大圆环+48px字重300计时器，accent色预设按钮</li>
+                    </ul>
+                </div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.3.0</span>
+                        <span class="changelog-date">2026-07-03</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>主题系统重构</strong> 全量改造为 Primitive→Semantic 双层 Design Token 体系，39 个语义令牌覆盖背景、文字、交互色、边框、阴影、字体、梯度全部视觉维度</li>
+                        <li><strong>4 套预设主题</strong> 默认（深海科技渐变·浅色深色双模式）、黑客（纯黑终端绿·仅深色）、暖纸（米白纸质·仅浅色）、像素（8-bit 命令行·仅深色），主题卡片网格选择器</li>
+                        <li><strong>浅色/深色双轨模式</strong> 跟随系统/始终浅色/始终深色三选一分段控制器，通过 data-color-scheme 属性驱动，200ms 平滑过渡</li>
+                        <li><strong>外观设置页</strong> 左右分栏布局（控制区+实时预览沙箱），智能联动：选黑客/像素主题自动切换深色并提示</li>
+                        <li><strong>背景管理升级</strong> 统一为纯色/动态效果（Matrix数字雨）/自定义图片三选一，图片支持本地上传+URL+模糊/亮度/不透明度滑块</li>
+                        <li><strong>集中式 ThemeManager</strong> 主题切换、字体异步加载、localStorage 持久化全部集中管理，发布 theme-changed 事件</li>
+                        <li><strong>字体配置驱动</strong> 主题元数据声明字体需求，Fira Code woff2 本地存储，系统等宽字体兜底</li>
+                        <li><strong>模式与主题解耦</strong> 日常/专注模式不再操作 link media，布局功能与视觉主题完全正交</li>
+                        <li><strong>架构</strong> 9 个 CSS 文件全部改造，退役 --px-* / --wb-* / --sp-* 变量体系，组件与主题配置完全解耦</li>
                     </ul>
                 </div>
                 <div class="changelog-entry">
