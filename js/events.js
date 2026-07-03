@@ -247,7 +247,7 @@ window.DevHome = window.DevHome || {};
                     ns.switchSettingsTab(navItem.dataset.sTab);
                     return;
                 }
-                // 分段选择器
+                // 分段选择器（快捷方式大小/列数 + 色彩模式）
                 var segBtn = e.target.closest('.s-seg-btn');
                 if (segBtn) {
                     e.preventDefault();
@@ -255,7 +255,17 @@ window.DevHome = window.DevHome || {};
                         applyShortcutSizeFn(segBtn.dataset.shortcutSize);
                     } else if (segBtn.dataset.shortcutColumns) {
                         applyShortcutColumnsFn(segBtn.dataset.shortcutColumns);
+                    } else if (segBtn.dataset.scheme && ns.theme) {
+                        // 色彩模式：浅色 / 深色 / 自动
+                        ns.theme.setScheme(segBtn.dataset.scheme);
                     }
+                    ns.syncSettingsControls();
+                    return;
+                }
+                // 主题卡片
+                var themeCard = e.target.closest('.s-theme-card');
+                if (themeCard && themeCard.dataset.theme && ns.theme) {
+                    ns.theme.set(themeCard.dataset.theme);
                     ns.syncSettingsControls();
                     return;
                 }

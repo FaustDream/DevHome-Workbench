@@ -432,6 +432,41 @@
                         <button type="button" class="s-action-btn" data-setting-action="resetBg">
                             <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 8a6 6 0 0110-4M14 8a6 6 0 01-10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 3v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>重置背景</span>
                         </button>
+
+                        <h3 class="s-section-title">主题</h3>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">色彩模式</span><span class="s-row-desc">浅色 / 深色 / 跟随系统</span></div>
+                            <div class="s-row-right">
+                                <div class="s-seg" id="sSchemeSeg">
+                                    <button class="s-seg-btn active" data-scheme="auto">自动</button>
+                                    <button class="s-seg-btn" data-scheme="light">浅色</button>
+                                    <button class="s-seg-btn" data-scheme="dark">深色</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">主题风格</span></div>
+                            <div class="s-row-right" style="flex-wrap:wrap;gap:4px;">
+                                <div class="s-theme-cards" id="sThemeCards">
+                                    <button class="s-theme-card active" data-theme="default">
+                                        <span class="s-theme-swatch" style="background:#071b26;"><i style="background:#55e6d2;"></i></span>
+                                        <span class="s-theme-name">默认</span>
+                                    </button>
+                                    <button class="s-theme-card" data-theme="hacker">
+                                        <span class="s-theme-swatch" style="background:#0a0a0a;"><i style="background:#00ff41;"></i></span>
+                                        <span class="s-theme-name">黑客</span>
+                                    </button>
+                                    <button class="s-theme-card" data-theme="warm_paper">
+                                        <span class="s-theme-swatch" style="background:#f5f0e8;"><i style="background:#c0692a;"></i></span>
+                                        <span class="s-theme-name">暖纸</span>
+                                    </button>
+                                    <button class="s-theme-card" data-theme="pixel">
+                                        <span class="s-theme-swatch" style="background:#0c0c0c;"><i style="background:#00ff41;"></i></span>
+                                        <span class="s-theme-name">像素</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </section>
 
                     <!-- Tab 2: AI 助手 -->
