@@ -205,11 +205,12 @@ window.DevHome = window.DevHome || {};
         document.querySelectorAll('#settingsPanel [data-mode="workbench"]').forEach(function (el) {
             el.style.display = isWB ? '' : 'none';
         });
+        // 加载 AI 配置到 UI（两种模式均需要）
+        if (typeof ns.loadMeConfig === 'function') ns.loadMeConfig();
         // 工作台模式下渲染行为数据和导出列表
         if (isWB) {
             if (typeof ns.renderBehaviorDashboard === 'function') ns.renderBehaviorDashboard();
             if (typeof ns.renderExportList === 'function') ns.renderExportList(state.exportFilter || 'all');
-            if (typeof ns.loadMeConfig === 'function') ns.loadMeConfig();
         }
         // 默认切换到第一个 tab
         if (!state._activeSettingsTab) state._activeSettingsTab = 'general';
