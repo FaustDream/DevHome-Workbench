@@ -53,13 +53,13 @@ body.focus-transition .focus-overlay.ready {
     --font-size-time: clamp(72px, 15vw, 160px);
 
     /* 快捷方式布局 */
-    --shortcut-container: 76px;
-    --shortcut-icon: 48px;
-    --shortcut-gap: 10px;
-    --shortcut-radius: 16px;
-    --shortcut-label-size: 11px;
-    --shortcut-label-bottom: 5px;
-    --shortcut-add-icon: 24px;
+    --shortcut-container: 100px;
+    --shortcut-icon: 56px;
+    --shortcut-gap: 24px;
+    --shortcut-radius: 18px;
+    --shortcut-label-size: 12px;
+    --shortcut-label-bottom: 8px;
+    --shortcut-add-icon: 28px;
     --shortcut-columns: 6;
     --daily-content-top: 78px;
 

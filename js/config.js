@@ -9,9 +9,9 @@ window.DevHome = window.DevHome || {};
     /* ===== 快捷方式尺寸配置 ===== */
     ns.DEFAULT_SHORTCUT_SIZE = 'standard';
     ns.SHORTCUT_SIZE_OPTIONS = {
-        small: { name: '小', container: '64px', icon: '32px', gap: '8px', radius: '14px', fontSize: '9px', labelBottom: '4px', addIcon: '18px' },
-        standard: { name: '标准', container: '80px', icon: '48px', gap: '10px', radius: '16px', fontSize: '11px', labelBottom: '5px', addIcon: '24px' },
-        large: { name: '大', container: '112px', icon: '64px', gap: '14px', radius: '22px', fontSize: '13px', labelBottom: '7px', addIcon: '30px' }
+        small: { name: '小', container: '76px', icon: '36px', gap: '16px', radius: '16px', fontSize: '10px', labelBottom: '6px', addIcon: '20px' },
+        standard: { name: '标准', container: '100px', icon: '56px', gap: '24px', radius: '18px', fontSize: '12px', labelBottom: '8px', addIcon: '28px' },
+        large: { name: '大', container: '128px', icon: '72px', gap: '32px', radius: '24px', fontSize: '14px', labelBottom: '10px', addIcon: '34px' }
     };
 
     /* ===== 快捷方式列数配置 ===== */
