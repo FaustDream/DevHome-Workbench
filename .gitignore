@@ -10,3 +10,6 @@ desktop.ini
 .idea/
 *.swp
 *.swo
+
+# CodeBuddy 工作数据
+.codebuddy/
