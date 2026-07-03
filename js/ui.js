@@ -267,11 +267,9 @@ window.DevHome = window.DevHome || {};
         var colsKey = ns.normalizeShortcutColumns(storage.get('shortcut_columns', ns.DEFAULT_SHORTCUT_COLUMNS));
         document.querySelectorAll('[data-shortcut-columns]').forEach(function (b) { b.classList.toggle('active', b.dataset.shortcutColumns === colsKey); });
 
-        // 色彩模式 segmented
+        // 主题卡片 active 态
         if (ns.theme) {
             var s = ns.theme.getState();
-            document.querySelectorAll('[data-scheme]').forEach(function (b) { b.classList.toggle('active', b.dataset.scheme === s.colorScheme); });
-            // 主题卡片
             document.querySelectorAll('.s-theme-card').forEach(function (c) { c.classList.toggle('active', c.dataset.theme === s.themeId); });
         }
 

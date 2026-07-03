@@ -26,13 +26,12 @@
     var THEMES = {
         default: {
             id: 'default',
-            name: '默认',
-            description: '深海科技渐变 · 深色与浅色双模式',
-            supportedSchemes: ['light', 'dark'],
+            name: '蔚蓝',
+            description: '深海科技渐变 · 浅色主题',
+            supportedSchemes: ['light'],  // 仅浅色
             linkId: 'theme-default',
             fonts: [],
-            // 主题卡片缩略图特征色条
-            previewColors: ['#071b26', '#55e6d2', '#47f0a2']
+            previewColors: ['#e8f4f8', '#0ea5e9', '#55e6d2']
         },
         hacker: {
             id: 'hacker',
@@ -227,8 +226,8 @@
             console.log('[主题] 恢复保存的状态 themeId=' + state.themeId + ' scheme=' + state.colorScheme);
         } else {
             state.themeId = 'default';
-            state.colorScheme = 'auto';
-            console.log('[主题] 使用默认状态 themeId=default scheme=auto');
+            state.colorScheme = 'light';
+            console.log('[主题] 使用默认状态 themeId=default scheme=light');
         }
 
         // 应用主题
