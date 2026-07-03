@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- 背景 -->
+  <rect width="128" height="128" rx="24" fill="#0d1b2a"/>
+  <!-- 中心菱形 -->
+  <polygon points="64,22 102,64 64,106 22,64" fill="none" stroke="#55e6d2" stroke-width="6" stroke-linejoin="round"/>
+  <!-- 菱形内部点 -->
+  <circle cx="64" cy="64" r="8" fill="#55e6d2"/>
+  <!-- 水平线 -->
+  <line x1="34" y1="64" x2="94" y2="64" stroke="#55e6d2" stroke-width="2" opacity="0.4"/>
+  <!-- 左下小方块 -->
+  <rect x="46" y="78" width="12" height="12" rx="3" fill="#47f0a2" opacity="0.5"/>
+  <!-- 右上小方块 -->
+  <rect x="70" y="38" width="12" height="12" rx="3" fill="#47f0a2" opacity="0.3"/>
+</svg>
