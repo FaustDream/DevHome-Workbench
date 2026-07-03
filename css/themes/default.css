@@ -1,0 +1,287 @@
+/* ============================================
+   DevHome Workbench - Default Theme (default.css)
+   深海科技渐变 · 浅色与深色双模式
+   Primitive → Semantic 两层 Token 赋值
+   ============================================ */
+
+/* ========================================
+   Primitive 原始色值（内部使用，不暴露给组件）
+   ======================================== */
+
+:root {
+    /* ----- 深海深色 Primitive（默认） ----- */
+    --_deep-bg:              #071b26;
+    --_deep-bg-secondary:    rgba(20, 48, 63, 0.78);
+    --_deep-bg-tertiary:     rgba(30, 65, 82, 0.72);
+    --_deep-bg-panel:        rgba(9, 31, 42, 0.92);
+    --_deep-bg-elevated:     rgba(18, 20, 22, 0.92);
+    --_deep-surface:         rgba(34, 75, 94, 0.48);
+    --_deep-surface-hover:   rgba(47, 100, 122, 0.62);
+    --_deep-surface-subtle:  rgba(255, 255, 255, 0.04);
+    --_deep-surface-muted:   rgba(255, 255, 255, 0.06);
+    --_deep-surface-card:    rgba(34, 75, 94, 0.34);
+    --_deep-overlay:         rgba(0, 0, 0, 0.7);
+    --_deep-input-bg:        rgba(255, 255, 255, 0.06);
+    --_deep-input-border:    rgba(153, 220, 226, 0.18);
+
+    --_deep-text:            #edf8f7;
+    --_deep-text-secondary:  #a8c4c9;
+    --_deep-text-tertiary:   #6f8c94;
+    --_deep-text-inverse:    #0c0c0c;
+
+    --_deep-accent:          #55e6d2;
+    --_deep-accent-hover:    #7ad7ff;
+    --_deep-accent-active:   #3dc4b0;
+    --_deep-accent-disabled: rgba(85, 230, 210, 0.3);
+
+    --_deep-green:           #47f0a2;
+    --_deep-cyan:            #7ad7ff;
+    --_deep-amber:           #ffcc66;
+    --_deep-danger:          #ff4757;
+    --_deep-danger-hover:    #ff6b81;
+
+    --_deep-border:          rgba(153, 220, 226, 0.16);
+    --_deep-border-hover:    rgba(153, 220, 226, 0.28);
+    --_deep-border-active:   rgba(85, 230, 210, 0.36);
+    --_deep-border-strong:   rgba(85, 230, 210, 0.36);
+    --_deep-separator:       rgba(153, 220, 226, 0.12);
+    --_deep-kbd-bg:          rgba(255, 255, 255, 0.07);
+    --_deep-kbd-border:      rgba(255, 255, 255, 0.14);
+    --_deep-grid-line:       rgba(181, 235, 241, 0.045);
+    --_deep-accent-glow:     rgba(85, 230, 210, 0.50);
+    --_deep-glass-bg:        rgba(34, 75, 94, 0.24);
+    --_deep-glass-border:    rgba(153, 220, 226, 0.10);
+    --_deep-nav-bg:          rgba(9, 31, 42, 0.82);
+    --_deep-sidebar-bg:      rgba(12, 38, 51, 0.72);
+
+    --_deep-shadow-sm:       0 1px 3px rgba(0,0,0,0.3);
+    --_deep-shadow-md:       0 4px 16px rgba(0,0,0,0.4);
+    --_deep-shadow-lg:       0 8px 32px rgba(0,0,0,0.5);
+
+    --_deep-gradient-page:
+        radial-gradient(circle at 18% 12%, rgba(71, 240, 162, 0.16), transparent 30%),
+        radial-gradient(circle at 78% 18%, rgba(122, 215, 255, 0.16), transparent 34%),
+        radial-gradient(circle at 52% 82%, rgba(48, 126, 153, 0.18), transparent 42%),
+        linear-gradient(135deg, #071820 0%, #12384b 48%, #071923 100%);
+    --_deep-gradient-overlay:
+        radial-gradient(circle at 18% 12%, rgba(71, 240, 162, 0.10), transparent 30%),
+        radial-gradient(circle at 82% 18%, rgba(122, 215, 255, 0.10), transparent 34%),
+        linear-gradient(135deg, rgba(7, 24, 32, 0.54) 0%, rgba(8, 28, 38, 0.68) 100%);
+
+    /* ----- 浅色 Primitive ----- */
+    --_light-bg:             #f8fafc;
+    --_light-bg-secondary:   #f1f5f9;
+    --_light-bg-tertiary:    #e2e8f0;
+    --_light-bg-panel:       #ffffff;
+    --_light-bg-elevated:    #ffffff;
+    --_light-surface:        #ffffff;
+    --_light-surface-hover:  #f1f5f9;
+    --_light-surface-subtle: rgba(0, 0, 0, 0.02);
+    --_light-surface-muted:  rgba(0, 0, 0, 0.03);
+    --_light-surface-card:   #ffffff;
+    --_light-overlay:        rgba(15, 23, 42, 0.5);
+    --_light-input-bg:       #f8fafc;
+    --_light-input-border:   #cbd5e1;
+
+    --_light-text:           #0f172a;
+    --_light-text-secondary: #475569;
+    --_light-text-tertiary:  #94a3b8;
+    --_light-text-inverse:   #f8fafc;
+
+    --_light-accent:         #0ea5e9;
+    --_light-accent-hover:   #0284c7;
+    --_light-accent-active:  #0369a1;
+    --_light-accent-disabled:rgba(14, 165, 233, 0.3);
+
+    --_light-green:          #10b981;
+    --_light-cyan:           #06b6d4;
+    --_light-amber:          #f59e0b;
+    --_light-danger:         #ef4444;
+    --_light-danger-hover:   #dc2626;
+
+    --_light-border:         #e2e8f0;
+    --_light-border-hover:   #cbd5e1;
+    --_light-border-active:  #0ea5e9;
+    --_light-separator:      #f1f5f9;
+    --_light-kbd-bg:         #f1f5f9;
+    --_light-kbd-border:     #e2e8f0;
+    --_light-grid-line:      transparent;
+    --_light-accent-glow:    rgba(14, 165, 233, 0.35);
+    --_light-glass-bg:       rgba(255, 255, 255, 0.55);
+    --_light-glass-border:   rgba(0, 0, 0, 0.06);
+    --_light-nav-bg:         rgba(248, 250, 252, 0.88);
+    --_light-sidebar-bg:     rgba(241, 245, 249, 0.78);
+
+    --_light-shadow-sm:      0 1px 2px rgba(0,0,0,0.05);
+    --_light-shadow-md:      0 4px 12px rgba(0,0,0,0.06);
+    --_light-shadow-lg:      0 8px 24px rgba(0,0,0,0.08);
+
+    --_light-gradient-page:  #f8fafc;
+    --_light-gradient-overlay: transparent;
+}
+
+/* ========================================
+   Semantic Token 赋值（深色默认值）
+   ======================================== */
+
+:root {
+    --color-bg:              var(--_deep-bg);
+    --color-bg-secondary:    var(--_deep-bg-secondary);
+    --color-bg-tertiary:     var(--_deep-bg-tertiary);
+    --color-bg-elevated:     var(--_deep-bg-panel);
+    --color-surface:         var(--_deep-surface);
+    --color-surface-hover:   var(--_deep-surface-hover);
+    --color-surface-subtle:  var(--_deep-surface-subtle);
+    --color-surface-muted:   var(--_deep-surface-muted);
+    --color-overlay:         var(--_deep-overlay);
+    --color-input-bg:        var(--_deep-input-bg);
+    --color-input-border:    var(--_deep-input-border);
+
+    --color-text:            var(--_deep-text);
+    --color-text-secondary:  var(--_deep-text-secondary);
+    --color-text-tertiary:   var(--_deep-text-tertiary);
+    --color-text-inverse:    var(--_deep-text-inverse);
+
+    --color-accent:          var(--_deep-accent);
+    --color-accent-hover:    var(--_deep-accent-hover);
+    --color-accent-active:   var(--_deep-accent-active);
+    --color-accent-disabled: var(--_deep-accent-disabled);
+
+    --color-success:         var(--_deep-green);
+    --color-warning:         var(--_deep-amber);
+    --color-danger:          var(--_deep-danger);
+    --color-danger-hover:    var(--_deep-danger-hover);
+    --color-info:            var(--_deep-cyan);
+    --color-link:            var(--_deep-accent);
+
+    --color-border:          var(--_deep-border);
+    --color-border-hover:    var(--_deep-border-hover);
+    --color-border-active:   var(--_deep-border-active);
+    --color-separator:       var(--_deep-separator);
+    --color-kbd-bg:          var(--_deep-kbd-bg);
+    --color-kbd-border:      var(--_deep-kbd-border);
+    --color-accent-glow:     var(--_deep-accent-glow);
+    --color-glass-bg:        var(--_deep-glass-bg);
+    --color-glass-border:    var(--_deep-glass-border);
+    --color-nav-bg:          var(--_deep-nav-bg);
+    --color-sidebar-bg:      var(--_deep-sidebar-bg);
+
+    --shadow-sm:             var(--_deep-shadow-sm);
+    --shadow-md:             var(--_deep-shadow-md);
+    --shadow-lg:             var(--_deep-shadow-lg);
+
+    --font-sans:             'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono:             'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+    --font-display:          'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+    --gradient-page:         var(--_deep-gradient-page);
+    --gradient-overlay:      var(--_deep-gradient-overlay);
+}
+
+/* ========================================
+   浅色覆盖（由 data-color-scheme 控制）
+   ======================================== */
+
+[data-color-scheme="light"] {
+    --color-bg:              var(--_light-bg);
+    --color-bg-secondary:    var(--_light-bg-secondary);
+    --color-bg-tertiary:     var(--_light-bg-tertiary);
+    --color-bg-elevated:     var(--_light-bg-panel);
+    --color-surface:         var(--_light-surface);
+    --color-surface-hover:   var(--_light-surface-hover);
+    --color-surface-subtle:  var(--_light-surface-subtle);
+    --color-surface-muted:   var(--_light-surface-muted);
+    --color-overlay:         var(--_light-overlay);
+    --color-input-bg:        var(--_light-input-bg);
+    --color-input-border:    var(--_light-input-border);
+
+    --color-text:            var(--_light-text);
+    --color-text-secondary:  var(--_light-text-secondary);
+    --color-text-tertiary:   var(--_light-text-tertiary);
+    --color-text-inverse:    var(--_light-text-inverse);
+
+    --color-accent:          var(--_light-accent);
+    --color-accent-hover:    var(--_light-accent-hover);
+    --color-accent-active:   var(--_light-accent-active);
+    --color-accent-disabled: var(--_light-accent-disabled);
+
+    --color-success:         var(--_light-green);
+    --color-warning:         var(--_light-amber);
+    --color-danger:          var(--_light-danger);
+    --color-danger-hover:    var(--_light-danger-hover);
+    --color-info:            var(--_light-cyan);
+    --color-link:            var(--_light-accent);
+
+    --color-border:          var(--_light-border);
+    --color-border-hover:    var(--_light-border-hover);
+    --color-border-active:   var(--_light-border-active);
+    --color-separator:       var(--_light-separator);
+    --color-kbd-bg:          var(--_light-kbd-bg);
+    --color-kbd-border:      var(--_light-kbd-border);
+    --color-accent-glow:     var(--_light-accent-glow);
+    --color-glass-bg:        var(--_light-glass-bg);
+    --color-glass-border:    var(--_light-glass-border);
+    --color-nav-bg:          var(--_light-nav-bg);
+    --color-sidebar-bg:      var(--_light-sidebar-bg);
+
+    --shadow-sm:             var(--_light-shadow-sm);
+    --shadow-md:             var(--_light-shadow-md);
+    --shadow-lg:             var(--_light-shadow-lg);
+
+    --gradient-page:         var(--_light-gradient-page);
+    --gradient-overlay:      var(--_light-gradient-overlay);
+}
+
+/* ========================================
+   显式深色覆盖（确保 data-color-scheme="dark" 生效）
+   ======================================== */
+
+[data-color-scheme="dark"] {
+    --color-bg:              var(--_deep-bg);
+    --color-bg-secondary:    var(--_deep-bg-secondary);
+    --color-bg-tertiary:     var(--_deep-bg-tertiary);
+    --color-bg-elevated:     var(--_deep-bg-panel);
+    --color-surface:         var(--_deep-surface);
+    --color-surface-hover:   var(--_deep-surface-hover);
+    --color-surface-subtle:  var(--_deep-surface-subtle);
+    --color-surface-muted:   var(--_deep-surface-muted);
+    --color-overlay:         var(--_deep-overlay);
+    --color-input-bg:        var(--_deep-input-bg);
+    --color-input-border:    var(--_deep-input-border);
+
+    --color-text:            var(--_deep-text);
+    --color-text-secondary:  var(--_deep-text-secondary);
+    --color-text-tertiary:   var(--_deep-text-tertiary);
+    --color-text-inverse:    var(--_deep-text-inverse);
+
+    --color-accent:          var(--_deep-accent);
+    --color-accent-hover:    var(--_deep-accent-hover);
+    --color-accent-active:   var(--_deep-accent-active);
+    --color-accent-disabled: var(--_deep-accent-disabled);
+
+    --color-success:         var(--_deep-green);
+    --color-warning:         var(--_deep-amber);
+    --color-danger:          var(--_deep-danger);
+    --color-danger-hover:    var(--_deep-danger-hover);
+    --color-info:            var(--_deep-cyan);
+    --color-link:            var(--_deep-accent);
+
+    --color-border:          var(--_deep-border);
+    --color-border-hover:    var(--_deep-border-hover);
+    --color-border-active:   var(--_deep-border-active);
+    --color-separator:       var(--_deep-separator);
+    --color-kbd-bg:          var(--_deep-kbd-bg);
+    --color-kbd-border:      var(--_deep-kbd-border);
+    --color-accent-glow:     var(--_deep-accent-glow);
+    --color-glass-bg:        var(--_deep-glass-bg);
+    --color-glass-border:    var(--_deep-glass-border);
+    --color-nav-bg:          var(--_deep-nav-bg);
+    --color-sidebar-bg:      var(--_deep-sidebar-bg);
+
+    --shadow-sm:             var(--_deep-shadow-sm);
+    --shadow-md:             var(--_deep-shadow-md);
+    --shadow-lg:             var(--_deep-shadow-lg);
+
+    --gradient-page:         var(--_deep-gradient-page);
+    --gradient-overlay:      var(--_deep-gradient-overlay);
+}

@@ -1,26 +1,27 @@
 /* ============================================
    DevHome Workbench v2 - 侧边栏样式
+   退役 --sp-* 变量体系，统一使用主 Semantic Token
    ============================================ */
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-    --sp-bg: #f5f0e8;
-    --sp-card: #faf7f2;
-    --sp-hover: #e8e0d4;
-    --sp-accent: #c0692a;
-    --sp-accent-dim: rgba(192, 105, 42, 0.08);
-    --sp-text: #2d2820;
-    --sp-text-secondary: #6e6860;
-    --sp-text-tertiary: #9a948c;
-    --sp-border: rgba(0, 0, 0, 0.06);
-    --sp-radius: 6px;
+    /* 侧边栏专用 Primitive（覆盖主 Token 为暖纸浅色值） */
+    --color-bg: #f5f0e8;
+    --color-surface: #faf7f2;
+    --color-surface-hover: #e8e0d4;
+    --color-accent: #c0692a;
+    --color-text: #2d2820;
+    --color-text-secondary: #6e6860;
+    --color-text-tertiary: #9a948c;
+    --color-border: rgba(0, 0, 0, 0.06);
+    --radius-md: 6px;
 }
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background: var(--sp-bg);
-    color: var(--sp-text);
+    background: var(--color-bg);
+    color: var(--color-text);
     font-size: 13px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
@@ -40,18 +41,18 @@ body {
     justify-content: space-between;
     padding-bottom: 12px;
     margin-bottom: 12px;
-    border-bottom: 1px solid var(--sp-border);
+    border-bottom: 1px solid var(--color-border);
 }
 
 .sp-header h1 {
     font-size: 16px;
     font-weight: 600;
-    color: var(--sp-accent);
+    color: var(--color-accent);
 }
 
 .sp-version {
     font-size: 10px;
-    color: var(--sp-text-tertiary);
+    color: var(--color-text-tertiary);
     font-family: monospace;
 }
 
@@ -64,27 +65,27 @@ body {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--sp-text-tertiary);
+    color: var(--color-text-tertiary);
     margin-bottom: 8px;
 }
 
 .sp-capture-input {
     width: 100%;
     padding: 10px 12px;
-    border: 1px solid var(--sp-border);
-    border-radius: var(--sp-radius);
-    background: var(--sp-card);
-    color: var(--sp-text);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-surface);
+    color: var(--color-text);
     font-size: 13px;
     font-family: inherit;
     outline: none;
     transition: border-color 0.15s;
 }
 .sp-capture-input:focus {
-    border-color: var(--sp-accent);
+    border-color: var(--color-accent);
 }
 .sp-capture-input::placeholder {
-    color: var(--sp-text-tertiary);
+    color: var(--color-text-tertiary);
 }
 
 .sp-list {
@@ -98,25 +99,25 @@ body {
 .sp-list-item {
     padding: 8px 10px;
     border-radius: 6px;
-    background: var(--sp-card);
+    background: var(--color-surface);
     cursor: pointer;
     transition: all 0.15s;
     font-size: 12px;
-    color: var(--sp-text-secondary);
+    color: var(--color-text-secondary);
 }
 .sp-list-item:hover {
-    background: var(--sp-hover);
+    background: var(--color-surface-hover);
 }
 .sp-list-item-time {
     font-size: 10px;
-    color: var(--sp-text-tertiary);
+    color: var(--color-text-tertiary);
     font-family: monospace;
 }
 
 .sp-empty {
     text-align: center;
     padding: 16px;
-    color: var(--sp-text-tertiary);
+    color: var(--color-text-tertiary);
     font-size: 12px;
 }
 
@@ -127,9 +128,9 @@ body {
     align-items: center;
     gap: 10px;
     padding: 10px 12px;
-    border: 1px solid var(--sp-border);
-    border-radius: var(--sp-radius);
-    background: var(--sp-card);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-surface);
 }
 
 .sp-pomodoro-icon {
@@ -140,22 +141,22 @@ body {
     font-family: 'Consolas', monospace;
     font-size: 18px;
     font-weight: 300;
-    color: var(--sp-accent);
+    color: var(--color-accent);
 }
 
 .sp-pomodoro-label {
     flex: 1;
     font-size: 11px;
-    color: var(--sp-text-tertiary);
+    color: var(--color-text-tertiary);
 }
 
 .sp-pomodoro-toggle {
     width: 28px;
     height: 28px;
-    border: 1px solid var(--sp-border);
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     background: transparent;
-    color: var(--sp-text-secondary);
+    color: var(--color-text-secondary);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -163,6 +164,6 @@ body {
     transition: all 0.15s;
 }
 .sp-pomodoro-toggle:hover {
-    border-color: var(--sp-accent);
-    color: var(--sp-accent);
+    border-color: var(--color-accent);
+    color: var(--color-accent);
 }

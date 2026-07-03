@@ -119,7 +119,7 @@ window.DevHome = window.DevHome || {};
                 else if (sug.iconType === 'emoji') iconHtml = '<span style="font-size:14px">' + escapeHtml(sug.icon) + '</span>';
                 else if (sug.iconType === 'image' && sug.imageData) iconHtml = '<img src="' + sug.imageData + '" style="width:16px;height:16px;border-radius:2px">';
                 else iconHtml = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><path d="M7 2H4a1.5 1.5 0 00-1.5 1.5V12L7 9l4.5 3V3.5A1.5 1.5 0 0010 2H7z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-                div.innerHTML = iconHtml + '<span>' + escapeHtml(sug.label) + '</span><span style="margin-left:auto;color:var(--text-tertiary);font-size:var(--font-size-xs)">打开</span>';
+                div.innerHTML = iconHtml + '<span>' + escapeHtml(sug.label) + '</span><span style="margin-left:auto;color:var(--color-text-tertiary);font-size:var(--font-size-xs)">打开</span>';
             }
             div.addEventListener('mousedown', function (e) { e.preventDefault(); ns.applySuggestion(sug); });
             frag.appendChild(div);

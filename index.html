@@ -4,14 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DevHome Workbench</title>
+    <link rel="stylesheet" href="css/fonts.css">
     <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/tokens.css">
     <link rel="stylesheet" href="css/time-search.css">
     <link rel="stylesheet" href="css/tiles.css">
     <link rel="stylesheet" href="css/overlays.css">
     <link rel="stylesheet" href="css/workbench.css">
-    <!-- 主题样式：日常模式（像素主题）默认启用，专注模式（暖纸主题）初始通过 media 禁用 -->
-    <link id="theme-pixel" rel="stylesheet" href="css/themes/pixel-theme.css">
+    <!-- 主题样式：默认主题（深海）默认启用，其余主题通过 ThemeManager 动态切换 media -->
+    <link id="theme-default" rel="stylesheet" href="css/themes/default.css">
+    <link id="theme-hacker" rel="stylesheet" href="css/themes/hacker.css" media="not all">
     <link id="theme-warm-paper" rel="stylesheet" href="css/themes/warm-paper.css" media="not all">
+    <link id="theme-pixel" rel="stylesheet" href="css/themes/pixel.css" media="not all">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://api.xinac.net">
@@ -19,8 +23,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="icons/icon16.png">
-    <!-- highlight.js 代码高亮主题（适配暖纸背景） -->
-    <link id="theme-hljs" rel="stylesheet" href="css/hljs-theme.css">
 </head>
 <body>
     <!-- Matrix 数字雨背景 -->
@@ -94,126 +96,101 @@
         <div class="hidden-message" id="hiddenMessage" style="display:none;"></div>
     </div>
 
-    <!-- DevHome 工作台 v2：多 Tab 综合性工作台 -->
+        <!-- DevHome 工作台 v3：三栏非对称布局 -->
     <section class="devhome-stage" id="devhomeStage" aria-label="DevHome 综合性工作台">
-        <!-- 顶部 Tab 导航栏 -->
-        <nav class="wb-nav" id="wbNav">
-            <button class="wb-nav-tab active" data-tab="dashboard">
-                <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="11" y="2" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="11" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="11" y="11" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
-                <span class="wb-nav-label">任务</span>
-            </button>
-            <button class="wb-nav-tab" data-tab="notes">
-                <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M5 2h8l4 4v11.5H5V2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 2v4h4M7 10h6M7 13h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-                <span class="wb-nav-label">记录</span>
-            </button>
-            <button class="wb-nav-tab" data-tab="calendar">
-                <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="3.5" width="15" height="14" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 8h15M6.5 1.5v3M13.5 1.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-                <span class="wb-nav-label">日历</span>
-            </button>
-            <button class="wb-nav-tab" data-tab="pomodoro">
-                <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="11" r="6.5" stroke="currentColor" stroke-width="1.5"/><path d="M10 6v5M10 11l3-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 2.5h6M10 2.5V4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-                <span class="wb-nav-label">番茄钟</span>
-            </button>
-        </nav>
-
-        <!-- 右侧内容区 -->
-        <div class="wb-content" id="wbContent">
-            <!-- Tab 0: 仪表盘 -->
-            <section class="wb-panel active" data-panel="dashboard" id="wbPanelDashboard">
-                <div class="wb-dashboard-layout">
-                    <!-- 快速捕获 -->
-                    <div class="wb-capture-bar" id="wbCaptureBar">
-                        <input type="text" class="wb-capture-input" id="wbCaptureInput"
-                               placeholder="记录想法、灵感、待办... 回车保存"
-                               autocomplete="off">
-                        <div class="wb-capture-recent" id="wbCaptureRecent"></div>
+        <div class="wb-shell" id="wbShell">
+            <!-- ========== 左栏：四象限任务分组式导航 ========== -->
+            <aside class="wb-sidebar-left" id="wbSidebarLeft">
+                <!-- 标题栏 -->
+                <div class="wb-sidebar-head">
+                    <h2 class="wb-sidebar-head-title">四象限任务</h2>
+                    <div class="wb-sidebar-head-actions">
+                        <button class="wb-task-filter-btn" id="wbTaskFilterBtn" title="切换活跃/全部">活跃</button>
+                        <button class="wb-task-clear-btn" id="wbTaskClearBtn" title="清空已完成">清空</button>
                     </div>
-                    <!-- 四象限任务 -->
-                    <div class="quadrant-board" id="quadrantBoard">
-                        <header class="quadrant-board-head">
-                            <div>
-                                <span class="quadrant-eyebrow">Focus Mode</span>
-                                <h1>四象限任务</h1>
-                            </div>
-                            <div class="quadrant-board-actions">
-                                <button class="quadrant-filter-btn" id="quadrantFilterBtn" type="button">活跃</button>
-                                <button class="quadrant-mini-btn" id="devhomeClearDone" type="button">清空历史</button>
-                                <button class="quadrant-mini-btn" id="devhomeBackHome" type="button">退出专注<span class="doc-badge" style="margin-left:6px;">Esc</span></button>
-                            </div>
-                        </header>
-                        <div class="quadrant-grid" id="quadrantGrid">
-                            <section class="quadrant-card" data-quadrant="q1">
-                                <div class="quadrant-head">
-                                    <div class="quadrant-head-left">
-                                        <span class="quadrant-dot" style="background:#ff6b6b;"></span>
-                                        <div><h2>重要且紧急</h2><span class="quadrant-subtitle">立即去做</span></div>
-                                    </div>
-                                    <span class="quadrant-count" id="q1Count">0</span>
-                                </div>
-                                <div class="quadrant-task-list" id="q1TaskList" data-quadrant="q1"></div>
-                                <button class="quadrant-add-btn" data-quadrant="q1"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>添加任务</span></button>
-                            </section>
-                            <section class="quadrant-card" data-quadrant="q2">
-                                <div class="quadrant-head">
-                                    <div class="quadrant-head-left">
-                                        <span class="quadrant-dot" style="background:#47f0a2;"></span>
-                                        <div><h2>重要不紧急</h2><span class="quadrant-subtitle">计划去做</span></div>
-                                    </div>
-                                    <span class="quadrant-count" id="q2Count">0</span>
-                                </div>
-                                <div class="quadrant-task-list" id="q2TaskList" data-quadrant="q2"></div>
-                                <button class="quadrant-add-btn" data-quadrant="q2"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>添加任务</span></button>
-                            </section>
-                            <section class="quadrant-card" data-quadrant="q3">
-                                <div class="quadrant-head">
-                                    <div class="quadrant-head-left">
-                                        <span class="quadrant-dot" style="background:#ffcc66;"></span>
-                                        <div><h2>紧急不重要</h2><span class="quadrant-subtitle">授权他人</span></div>
-                                    </div>
-                                    <span class="quadrant-count" id="q3Count">0</span>
-                                </div>
-                                <div class="quadrant-task-list" id="q3TaskList" data-quadrant="q3"></div>
-                                <button class="quadrant-add-btn" data-quadrant="q3"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>添加任务</span></button>
-                            </section>
-                            <section class="quadrant-card" data-quadrant="q4">
-                                <div class="quadrant-head">
-                                    <div class="quadrant-head-left">
-                                        <span class="quadrant-dot" style="background:#6f8c94;"></span>
-                                        <div><h2>不紧急不重要</h2><span class="quadrant-subtitle">尽量不做</span></div>
-                                    </div>
-                                    <span class="quadrant-count" id="q4Count">0</span>
-                                </div>
-                                <div class="quadrant-task-list" id="q4TaskList" data-quadrant="q4"></div>
-                                <button class="quadrant-add-btn" data-quadrant="q4"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>添加任务</span></button>
-                            </section>
+                </div>
+
+                <!-- 象限导航分组列表 -->
+                <div class="wb-quadrant-nav" id="wbQuadrantNav">
+                    <!-- q1: 重要且紧急 -->
+                    <div class="wb-quadrant-group" data-quadrant="q1">
+                        <div class="wb-quadrant-group-head">
+                            <span class="wb-qdot" style="background:#ff6b6b;"></span>
+                            <span class="wb-quadrant-group-label">重要且紧急</span>
+                            <span class="wb-quadrant-group-count" id="wbQgCountQ1">0</span>
+                        </div>
+                        <div class="wb-quadrant-group-list" id="wbQgListQ1"></div>
+                        <button class="wb-quadrant-group-add" data-quadrant="q1">+ 添加任务</button>
+                    </div>
+                    <!-- q2: 重要不紧急 -->
+                    <div class="wb-quadrant-group" data-quadrant="q2">
+                        <div class="wb-quadrant-group-head">
+                            <span class="wb-qdot" style="background:#47f0a2;"></span>
+                            <span class="wb-quadrant-group-label">重要不紧急</span>
+                            <span class="wb-quadrant-group-count" id="wbQgCountQ2">0</span>
+                        </div>
+                        <div class="wb-quadrant-group-list" id="wbQgListQ2"></div>
+                        <button class="wb-quadrant-group-add" data-quadrant="q2">+ 添加任务</button>
+                    </div>
+                    <!-- q3: 紧急不重要 -->
+                    <div class="wb-quadrant-group" data-quadrant="q3">
+                        <div class="wb-quadrant-group-head">
+                            <span class="wb-qdot" style="background:#ffcc66;"></span>
+                            <span class="wb-quadrant-group-label">紧急不重要</span>
+                            <span class="wb-quadrant-group-count" id="wbQgCountQ3">0</span>
+                        </div>
+                        <div class="wb-quadrant-group-list" id="wbQgListQ3"></div>
+                        <button class="wb-quadrant-group-add" data-quadrant="q3">+ 添加任务</button>
+                    </div>
+                    <!-- q4: 不紧急不重要 -->
+                    <div class="wb-quadrant-group" data-quadrant="q4">
+                        <div class="wb-quadrant-group-head">
+                            <span class="wb-qdot" style="background:#6f8c94;"></span>
+                            <span class="wb-quadrant-group-label">不紧急不重要</span>
+                            <span class="wb-quadrant-group-count" id="wbQgCountQ4">0</span>
+                        </div>
+                        <div class="wb-quadrant-group-list" id="wbQgListQ4"></div>
+                        <button class="wb-quadrant-group-add" data-quadrant="q4">+ 添加任务</button>
+                    </div>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="wb-sidebar-foot">
+                    <button class="wb-task-action-btn" id="devhomeBackHome">退出专注<span class="doc-badge" style="margin-left:4px;">Esc</span></button>
+                </div>
+            </aside>
+
+            <!-- ========== 中栏：核心笔记工作区 ========== -->
+            <main class="wb-main" id="wbMain">
+                <div class="wb-notes-toolbar">
+                    <div class="wb-notes-toolbar-left">
+                        <div class="wb-notes-search">
+                            <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.5 13.5L18 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                            <input type="text" id="wbNotesSearch" placeholder="搜索笔记..." autocomplete="off">
+                        </div>
+                        <button class="wb-notes-filter-btn" id="wbNotesFilterBtn" title="筛选">
+                            <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h10M3 15h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                        </button>
+                        <button class="wb-notes-add-btn" id="wbNotesAddBtn" title="新建笔记">
+                            <svg width="16" height="16" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                        </button>
+                    </div>
+                    <div class="wb-notes-toolbar-right">
+                        <div class="wb-notes-filters" id="wbNotesFilters">
+                            <button class="wb-filter-chip active" data-filter="all">全部</button>
+                            <button class="wb-filter-chip" data-filter="uncategorized">未分类</button>
+                            <button class="wb-filter-chip" data-filter="note">笔记</button>
+                            <button class="wb-filter-chip" data-filter="capture">捕获</button>
+                            <button class="wb-filter-chip" data-filter="idea">想法</button>
+                            <button class="wb-filter-chip" data-filter="bug">Bug</button>
+                            <button class="wb-filter-chip" data-filter="meeting">会议</button>
+                            <span id="wbCustomFilters"></span>
+                            <button class="wb-filter-add-btn" id="wbFilterAddBtn" title="新增标签">+</button>
                         </div>
                     </div>
                 </div>
-            </section>
-
-            <!-- Tab 1: 笔记 -->
-            <section class="wb-panel" data-panel="notes" id="wbPanelNotes">
-                <div class="wb-notes-layout">
+                <div class="wb-notes-layout" id="wbNotesLayout">
                     <div class="wb-notes-sidebar" id="wbNotesSidebar">
-                        <div class="wb-notes-search">
-                            <input type="text" id="wbNotesSearch" placeholder="搜索笔记..." autocomplete="off">
-                            <button class="wb-notes-add-btn" id="wbNotesAddBtn" title="新建笔记">
-                                <svg width="16" height="16" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                            </button>
-                        </div>
-                        <div class="wb-notes-filters" id="wbNotesFilters">
-                            <button class="wb-filter-chip always" data-filter="all">全部</button>
-                            <button class="wb-filter-chip always" data-filter="uncategorized">📌 未分类</button>
-                            <button class="wb-filter-chip" data-filter="note">📝 笔记</button>
-                            <button class="wb-filter-chip" data-filter="capture">⚡ 捕获</button>
-                            <button class="wb-filter-chip" data-filter="idea">💡 想法</button>
-                            <button class="wb-filter-chip" data-filter="bug">🐛 Bug</button>
-                            <button class="wb-filter-chip" data-filter="meeting">📋 会议</button>
-                            <button class="wb-filter-chip" data-filter="webclip">🔗 剪藏</button>
-                            <span class="wb-filter-sep"></span>
-                            <span id="wbCustomFilters"></span>
-                            <button class="wb-filter-add-btn" id="wbFilterAddBtn" title="新增标签分类">+</button>
-                        </div>
                         <div class="wb-notes-list" id="wbNotesList"></div>
                     </div>
                     <div class="wb-notes-editor" id="wbNotesEditor">
@@ -234,25 +211,6 @@
                                     </div>
                                 </div>
                             </div>
-                            <!-- 气泡工具栏（选中文字时浮现，替换旧常驻工具栏） -->
-                            <div class="wb-bubble-toolbar" id="wbBubbleToolbar" style="display:none;">
-                                <select data-pm-action="heading" title="标题级别">
-                                    <option value="">正文</option>
-                                    <option value="1">H1</option>
-                                    <option value="2">H2</option>
-                                    <option value="3">H3</option>
-                                </select>
-                                <span class="wb-bubble-sep"></span>
-                                <button data-pm-action="bold" title="加粗 (Ctrl+B)"><strong>B</strong></button>
-                                <button data-pm-action="italic" title="斜体 (Ctrl+I)"><em>I</em></button>
-                                <button data-pm-action="underline" title="下划线 (Ctrl+U)"><u>U</u></button>
-                                <span class="wb-bubble-sep"></span>
-                                <button data-pm-action="bulletList" title="无序列表">•≡</button>
-                                <button data-pm-action="orderedList" title="有序列表">1.</button>
-                                <span class="wb-bubble-sep"></span>
-                                <button data-pm-action="color" title="文字颜色" id="wbBubbleColorBtn">🎨</button>
-                                <div class="wb-color-palette" id="wbColorPalette" style="display:none;"></div>
-                            </div>
                             <div class="wb-notes-editor-body" id="wbNoteEditorBody">
                                 <div id="wbNoteContent" class="wb-note-editable" placeholder="在此编写内容..."></div>
                                 <div class="wb-note-word-count" id="wbNoteWordCount">0 字</div>
@@ -260,84 +218,45 @@
                         </div>
                     </div>
                 </div>
-            </section>
+            </main>
 
-            <!-- Tab 2: 日历 -->
-            <section class="wb-panel" data-panel="calendar" id="wbPanelCalendar">
-                <div class="wb-calendar-layout">
-                    <div class="wb-calendar-head">
-                        <button class="wb-calendar-nav" id="wbCalendarPrev">&lt;</button>
-                        <h2 class="wb-calendar-title" id="wbCalendarTitle">2026年6月</h2>
-                        <button class="wb-calendar-nav" id="wbCalendarNext">&gt;</button>
-                        <button class="wb-calendar-today" id="wbCalendarToday">今天</button>
+            <!-- ========== 右栏：时间管理中枢 ========== -->
+            <aside class="wb-sidebar-right" id="wbSidebarRight">
+                <div class="wb-mini-calendar" id="wbMiniCalendar">
+                    <div class="wb-mini-cal-head">
+                        <button class="wb-mini-cal-nav" id="wbMiniCalPrev">&lt;</button>
+                        <h3 class="wb-mini-cal-title" id="wbCalendarTitle">2026年7月</h3>
+                        <button class="wb-mini-cal-nav" id="wbMiniCalNext">&gt;</button>
                     </div>
-                    <div class="wb-calendar-grid" id="wbCalendarGrid">
-                        <div class="wb-calendar-weekdays">
-                            <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
-                        </div>
-                        <div class="wb-calendar-days" id="wbCalendarDays"></div>
-                    </div>
+                    <div class="wb-mini-cal-weekdays"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+                    <div class="wb-mini-cal-days" id="wbCalendarDays"></div>
                     <div class="wb-calendar-detail" id="wbCalendarDetail">
-                        <p class="wb-calendar-detail-empty">点击日期查看当日内容</p>
+                        <p class="wb-calendar-detail-empty">点击日期查看内容</p>
                     </div>
                 </div>
-            </section>
-
-            <!-- Tab 3: 番茄钟 -->
-            <section class="wb-panel" data-panel="pomodoro" id="wbPanelPomodoro">
-                <div class="wb-pomodoro-layout">
-                    <div class="wb-pomodoro-main">
-                        <div class="wb-pomodoro-circle" id="wbPomodoroCircle">
-                            <svg viewBox="0 0 200 200" class="wb-pomodoro-ring">
-                                <circle cx="100" cy="100" r="90" fill="none" stroke="var(--wb-border)" stroke-width="6"/>
-                                <circle cx="100" cy="100" r="90" fill="none" stroke="var(--wb-accent)" stroke-width="6"
-                                        stroke-linecap="round" id="wbPomodoroProgress"
-                                        stroke-dasharray="565.48" stroke-dashoffset="0"
-                                        transform="rotate(-90 100 100)"/>
-                            </svg>
-                            <div class="wb-pomodoro-time" id="wbPomodoroTime">25:00</div>
-                            <div class="wb-pomodoro-label" id="wbPomodoroLabel">准备开始</div>
-                        </div>
-                        <div class="wb-pomodoro-controls">
-                            <button class="wb-pomodoro-btn primary" id="wbPomodoroStart">开始</button>
-                            <button class="wb-pomodoro-btn" id="wbPomodoroPause" style="display:none;">暂停</button>
-                            <button class="wb-pomodoro-btn" id="wbPomodoroReset">重置</button>
-                        </div>
-                        <div class="wb-pomodoro-presets">
-                            <span class="wb-pomodoro-preset-label">时长：</span>
-                            <button class="wb-pomodoro-preset active" data-duration="25">25分钟</button>
-                            <button class="wb-pomodoro-preset" data-duration="30">30分钟</button>
-                            <button class="wb-pomodoro-preset" data-duration="45">45分钟</button>
-                            <button class="wb-pomodoro-preset" data-duration="60">60分钟</button>
-                            <input type="number" class="wb-pomodoro-custom" id="wbPomodoroCustom"
-                                   placeholder="自定义" min="1" max="180">
-                        </div>
-                        <div class="wb-pomodoro-mode">
-                            <button class="wb-pomodoro-mode-btn active" data-mode="default" id="wbPomodoroModeDefault">默认番茄钟</button>
-                            <button class="wb-pomodoro-mode-btn" data-mode="focus" id="wbPomodoroModeFocus">专注模式（无限）</button>
-                        </div>
-                        <div class="wb-pomodoro-rest">
-                            <span>休息时长：</span>
-                            <button class="wb-pomodoro-rest-btn active" data-rest="5">5分钟</button>
-                            <button class="wb-pomodoro-rest-btn" data-rest="10">10分钟</button>
-                            <button class="wb-pomodoro-rest-btn" data-rest="15">15分钟</button>
-                        </div>
+                <div class="wb-pomodoro-side" id="wbPomodoroSide">
+                    <h4 class="wb-pomodoro-side-title">番茄钟</h4>
+                    <div class="wb-pomodoro-side-ring">
+                        <svg viewBox="0 0 160 160" class="wb-pomodoro-ring-side">
+                            <circle cx="80" cy="80" r="64" fill="none" stroke="var(--color-border)" stroke-width="4"/>
+                            <circle cx="80" cy="80" r="64" fill="none" stroke="var(--color-accent)" stroke-width="4" stroke-linecap="round" id="wbPomodoroSideProgress" stroke-dasharray="402.12" stroke-dashoffset="0" transform="rotate(-90 80 80)"/>
+                        </svg>
+                        <div class="wb-pomodoro-side-time" id="wbPomodoroSideTime">25:00</div>
                     </div>
-                    <div class="wb-pomodoro-history" id="wbPomodoroHistory">
-                        <h3>今日番茄钟</h3>
-                        <div class="wb-pomodoro-history-list" id="wbPomodoroHistoryList"></div>
+                    <div class="wb-pomodoro-side-controls">
+                        <button class="wb-pomodoro-side-btn primary" id="wbPomodoroSideStart">开始</button>
+                        <button class="wb-pomodoro-side-btn" id="wbPomodoroSideReset">重置</button>
+                    </div>
+                    <div class="wb-pomodoro-side-presets">
+                        <button class="wb-pomodoro-side-preset active" data-duration="25">25</button>
+                        <button class="wb-pomodoro-side-preset" data-duration="30">30</button>
+                        <button class="wb-pomodoro-side-preset" data-duration="45">45</button>
+                        <button class="wb-pomodoro-side-preset" data-duration="60">60</button>
                     </div>
                 </div>
-            </section>
-
-            <!-- Tab 4: 我 -->
-            <section class="wb-panel" data-panel="me" id="wbPanelMe">
-            </section>
+            </aside>
         </div>
     </section>
-
-
-
     <!-- 磁贴右键菜单 -->
     <div class="context-menu" id="contextMenu">
         <div class="context-menu-item" data-action="edit">
@@ -432,160 +351,211 @@
             <header class="settings-panel-header">
                 <div>
                     <span class="settings-eyebrow">Settings</span>
-                    <h2>功能设置</h2>
+                    <h2>设置中心</h2>
                 </div>
                 <button class="settings-close-btn" id="settingsCloseBtn" type="button" aria-label="关闭设置">&times;</button>
             </header>
+            <div class="settings-body">
+                <!-- 左侧导航 -->
+                <nav class="s-nav" id="sNav">
+                    <button class="s-nav-item active" data-s-tab="general">通用与偏好</button>
+                    <button class="s-nav-item" data-s-tab="appearance">外观与主题</button>
+                    <button class="s-nav-item" data-s-tab="ai">AI 助手</button>
+                    <button class="s-nav-item" data-s-tab="data">数据与备份</button>
+                    <button class="s-nav-item" data-s-tab="advanced">高级与开发者</button>
+                </nav>
+                <!-- 右侧内容区 -->
+                <div class="s-tabs">
+                    <!-- Tab 0: 通用与偏好 -->
+                    <section class="s-tab active" data-s-tab="general">
+                        <h3 class="s-section-title">分类与搜索</h3>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">分类按钮</span><span class="s-row-desc">主页显示分类按钮行</span></div>
+                            <label class="s-toggle" id="sToggleCatRow"><input type="checkbox"><span class="s-toggle-thumb"></span></label>
+                        </div>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">自动聚焦</span><span class="s-row-desc">打开新标签时自动聚焦搜索框</span></div>
+                            <label class="s-toggle" id="sToggleAutoFocus"><input type="checkbox"><span class="s-toggle-thumb"></span></label>
+                        </div>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">分类记忆</span><span class="s-row-desc">记住上次浏览的分类页</span></div>
+                            <label class="s-toggle" id="sToggleCategoryMemory"><input type="checkbox"><span class="s-toggle-thumb"></span></label>
+                        </div>
 
-            <section class="settings-section" data-mode="daily">
-                <span class="doc-section-title">外观</span>
-                <button type="button" class="settings-row-btn" data-setting-action="uploadBg">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2" width="13" height="11" rx="1.5" stroke="currentColor" stroke-width="1.2"/><circle cx="5.5" cy="6.5" r="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M1.5 12l3.5-3.5L8 11.5l3-3L14.5 12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>上传背景</span>
-                </button>
-                <button type="button" class="settings-row-btn" data-setting-action="resetBg">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8a6 6 0 0110-4M14 8a6 6 0 01-10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 3v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>重置背景</span>
-                </button>
-            </section>
+                        <h3 class="s-section-title">快捷方式布局</h3>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">磁贴大小</span></div>
+                            <div class="s-row-right">
+                                <div class="s-seg">
+                                    <button class="s-seg-btn" data-shortcut-size="small">小</button>
+                                    <button class="s-seg-btn" data-shortcut-size="standard">标准</button>
+                                    <button class="s-seg-btn" data-shortcut-size="large">大</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">每排数量</span></div>
+                            <div class="s-row-right">
+                                <div class="s-seg">
+                                    <button class="s-seg-btn" data-shortcut-columns="6">6个</button>
+                                    <button class="s-seg-btn" data-shortcut-columns="8">8个</button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
 
-            <section class="settings-section" data-mode="daily">
-                <span class="doc-section-title">背景参数</span>
-                <label class="settings-slider-row">
-                    <span>字符大小 <span class="slider-value" id="charSizeValue">8px</span></span>
-                    <input type="range" id="charSizeSlider" min="8" max="80" value="8" class="context-slider">
-                </label>
-                <label class="settings-slider-row">
-                    <span>流动速度 <span class="slider-value" id="flowSpeedValue">2×</span></span>
-                    <input type="range" id="flowSpeedSlider" min="2" max="20" value="2" class="context-slider">
-                </label>
-                <label class="settings-slider-row">
-                    <span>字符密度 <span class="slider-value" id="charDensityValue">60%</span></span>
-                    <input type="range" id="charDensitySlider" min="3" max="5" value="3" class="context-slider">
-                </label>
-            </section>
+                    <!-- Tab 1: 外观与主题 -->
+                    <section class="s-tab" data-s-tab="appearance">
+                        <h3 class="s-section-title">Matrix 数字雨</h3>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">开启数字雨效果</span><span class="s-row-desc">攻防双向流动字符动画</span></div>
+                            <label class="s-toggle" id="sToggleMatrixRain"><input type="checkbox" id="matrixRainToggle"><span class="s-toggle-thumb"></span></label>
+                        </div>
+                        <div id="matrixRainParams" style="display:none;">
+                            <label class="s-slider-row">
+                                <span>字符大小 <span class="slider-value" id="charSizeValue">8px</span></span>
+                                <input type="range" id="charSizeSlider" min="8" max="80" value="8" class="context-slider">
+                            </label>
+                            <label class="s-slider-row">
+                                <span>流动速度 <span class="slider-value" id="flowSpeedValue">2×</span></span>
+                                <input type="range" id="flowSpeedSlider" min="2" max="20" value="2" class="context-slider">
+                            </label>
+                            <label class="s-slider-row">
+                                <span>字符密度 <span class="slider-value" id="charDensityValue">60%</span></span>
+                                <input type="range" id="charDensitySlider" min="3" max="5" value="3" class="context-slider">
+                            </label>
+                        </div>
 
-            <section class="settings-section" data-mode="daily">
-                <span class="doc-section-title">分类与搜索</span>
-                <button type="button" class="settings-row-btn" data-setting-action="toggleCatRow">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span id="catRowText">分类按钮：关</span>
-                    <kbd class="doc-kbd settings-kbd">Alt+C</kbd>
-                </button>
-                <button type="button" class="settings-row-btn" data-setting-action="toggleAutoFocus">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3" width="13" height="10" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M5 14v-1.5h6V14" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M5 4v-2M11 4V2M8 4v10" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg><span id="autoFocusText">自动聚焦：关</span>
-                </button>
-                <button type="button" class="settings-row-btn" data-setting-action="toggleCategoryMemory">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 2v12l5-3 5 3V2H3z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="categoryMemoryText">分类记忆：关</span>
-                </button>
-            </section>
+                        <h3 class="s-section-title">背景</h3>
+                        <button type="button" class="s-action-btn" data-setting-action="uploadBg">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2" width="13" height="11" rx="1.5" stroke="currentColor" stroke-width="1.2"/><circle cx="5.5" cy="6.5" r="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M1.5 12l3.5-3.5L8 11.5l3-3L14.5 12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>上传背景图片</span>
+                        </button>
+                        <button type="button" class="s-action-btn" data-setting-action="resetBg">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 8a6 6 0 0110-4M14 8a6 6 0 01-10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 3v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>重置背景</span>
+                        </button>
+                    </section>
 
-            <section class="settings-section" data-mode="daily">
-                <span class="doc-section-title">快捷方式</span>
-                <div class="settings-subtitle" id="shortcutSizeText">快捷方式：标准</div>
-                <div class="shortcut-size-options" aria-label="快捷方式大小">
-                    <button type="button" class="shortcut-size-btn" data-shortcut-size="small">小</button>
-                    <button type="button" class="shortcut-size-btn" data-shortcut-size="standard">标准</button>
-                    <button type="button" class="shortcut-size-btn" data-shortcut-size="large">大</button>
+                    <!-- Tab 2: AI 助手 -->
+                    <section class="s-tab" data-s-tab="ai" data-mode="workbench">
+                        <h3 class="s-section-title">AI 每日总结 <span class="s-badge">腾讯混元</span></h3>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">API Key</span></div>
+                            <div class="s-row-right s-input-wrap">
+                                <input type="password" id="wbMeAiApiKey" placeholder="已预置默认 Key" class="s-input">
+                                <button class="s-input-icon" id="sToggleAiKey" title="显示/隐藏">👁</button>
+                            </div>
+                        </div>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">端点</span></div>
+                            <div class="s-row-right s-input-wrap">
+                                <input type="text" id="wbMeAiEndpoint" value="https://hunyuan.tencentcloudapi.com" class="s-input">
+                            </div>
+                        </div>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">模型</span></div>
+                            <div class="s-row-right s-input-wrap">
+                                <input type="text" id="wbMeAiModel" value="hunyuan-lite" class="s-input" style="width:120px;">
+                            </div>
+                        </div>
+                        <button type="button" class="s-action-btn" id="wbMeAiSaveKey"><span>保存配置</span></button>
+                        <button type="button" class="s-action-btn" id="wbMeAiGenerate" style="margin-top:8px;"><span>生成今日总结</span></button>
+                        <div class="wb-settings-ai-result" id="wbMeAiResult" style="display:none;margin-top:12px;">
+                            <div id="wbMeAiContent"></div>
+                            <button type="button" class="s-action-btn" id="wbMeAiSaveNote" style="margin-top:8px;"><span>保存为笔记</span></button>
+                        </div>
+                    </section>
+
+                    <!-- Tab 3: 数据与备份 -->
+                    <section class="s-tab" data-s-tab="data">
+                        <!-- 行为面板（工作台模式） -->
+                        <div id="wbSettingsStatsWrap" data-mode="workbench" style="display:none;">
+                            <h3 class="s-section-title">统计数据</h3>
+                            <div class="s-stats" id="wbSettingsStats">
+                                <div class="s-stat-card"><span class="s-stat-num" id="wbMeStreakNum">0</span><span class="s-stat-label">连续打卡</span></div>
+                                <div class="s-stat-card"><span class="s-stat-num" id="wbMeStatTasks">0</span><span class="s-stat-label">完成任务</span></div>
+                                <div class="s-stat-card"><span class="s-stat-num" id="wbMeStatPomodoros">0</span><span class="s-stat-label">番茄钟</span></div>
+                                <div class="s-stat-card"><span class="s-stat-num" id="wbMeStatFocus">0</span><span class="s-stat-label">专注分钟</span></div>
+                                <div class="s-stat-card"><span class="s-stat-num" id="wbMeStatNotes">0</span><span class="s-stat-label">笔记</span></div>
+                            </div>
+                        </div>
+
+                        <h3 class="s-section-title">导出中心</h3>
+                        <div id="wbExportCenterWrap" data-mode="workbench" style="display:none;">
+                            <p style="font-size:11px;color:var(--color-text-tertiary);margin:0 0 8px;">选择内容导出为单个 Markdown 文件</p>
+                            <div class="wb-settings-filter-row" id="wbSettingsExportFilters">
+                                <button class="wb-filter-chip active" data-export-filter="all">全部</button>
+                                <button class="wb-filter-chip" data-export-filter="note">笔记</button>
+                                <button class="wb-filter-chip" data-export-filter="capture">捕获</button>
+                                <button class="wb-filter-chip" data-export-filter="task">任务</button>
+                            </div>
+                            <div class="wb-settings-export-list" id="wbMeExportList"></div>
+                            <div class="wb-settings-export-actions" style="margin-top:8px;">
+                                <button type="button" class="s-action-btn" id="wbMeSelectAll"><span>全选</span></button>
+                                <button type="button" class="s-action-btn" id="wbMeExportSelected"><span>导出选中</span></button>
+                            </div>
+                        </div>
+
+                        <h3 class="s-section-title">备份</h3>
+                        <button type="button" class="s-action-btn" data-setting-action="exportData">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 6l3 3 3-3M2 10v3h12v-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>导出全部数据</span>
+                        </button>
+                        <button type="button" class="s-action-btn" data-setting-action="importData">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 14V6M5 10l3-3 3 3M2 3v3h12V3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>导入备份数据</span>
+                        </button>
+
+                        <h3 class="s-section-title">文件同步</h3>
+                        <button type="button" class="s-action-btn" data-setting-action="syncToFile" id="configSyncBtn" style="display:none;">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 8a6 6 0 0110-4M14 8a6 6 0 01-10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 3v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>立即同步到文件</span>
+                        </button>
+                        <button type="button" class="s-action-btn" data-setting-action="changeConfigDir" id="configChangeDirBtn">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 3v10l5-3 5 3V3H3z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="configDirLabel">选择配置目录</span>
+                        </button>
+                        <div class="s-subtext" id="configSyncStatus"></div>
+                    </section>
+
+                    <!-- Tab 4: 高级与开发者 -->
+                    <section class="s-tab" data-s-tab="advanced">
+                        <div id="wbAdvancedWrap" data-mode="workbench" style="display:none;">
+                            <h3 class="s-section-title">专注模式</h3>
+                            <div class="s-row">
+                                <div class="s-row-left"><span class="s-row-label">快捷键</span></div>
+                                <div class="s-row-right">
+                                    <div class="s-shortcut-capture" id="sShortcutCapture" tabindex="0">
+                                        <span class="s-shortcut-keys" id="sShortcutKeys">Ctrl + K</span>
+                                        <input type="hidden" id="wbMeShortcutCtrl">
+                                        <input type="hidden" id="wbMeShortcutShift">
+                                        <input type="hidden" id="wbMeShortcutAlt">
+                                        <input type="hidden" id="wbMeShortcutKey" value="k">
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="s-action-btn" id="wbMeShortcutSave"><span>保存快捷键</span></button>
+
+                            <h3 class="s-section-title">模式</h3>
+                            <div class="s-row">
+                                <div class="s-row-left"><span class="s-row-label">严厉鞭策模式</span><span class="s-row-desc">任务超时后弹出全屏警告</span></div>
+                                <label class="s-toggle" id="sToggleStrict"><input type="checkbox" id="wbMeToggleStrict"><span class="s-toggle-thumb"></span></label>
+                            </div>
+                            <div class="s-row">
+                                <div class="s-row-left"><span class="s-row-label">文件自动同步</span><span class="s-row-desc">配置变更自动写入本地文件</span></div>
+                                <label class="s-toggle" id="sToggleFileSync"><input type="checkbox" id="wbMeToggleFileSync"><span class="s-toggle-thumb"></span></label>
+                            </div>
+                        </div>
+
+                        <h3 class="s-section-title">关于</h3>
+                        <button type="button" class="s-action-btn" id="changelogBtn">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 2v12M2 4h10l2 2v6.5H2V4z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 8h4M6 11h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>更新说明 v2.5.1</span>
+                        </button>
+
+                        <div class="s-danger-zone">
+                            <h3 class="s-section-title" style="color:var(--color-danger);">危险操作</h3>
+                            <button type="button" class="s-danger-btn" data-setting-action="resetSettings">
+                                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 8a6 6 0 0110-4M14 8a6 6 0 01-10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 3v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>重置所有设置</span>
+                            </button>
+                        </div>
+                    </section>
                 </div>
-                <div class="settings-subtitle" id="shortcutColumnsText">每排：6 个</div>
-                <div class="shortcut-size-options" aria-label="快捷方式每排数量">
-                    <button type="button" class="shortcut-columns-btn" data-shortcut-columns="6">6 个</button>
-                    <button type="button" class="shortcut-columns-btn" data-shortcut-columns="8">8 个</button>
-                </div>
-            </section>
-
-            <!-- ===== 开发工作台设置（仅工作台模式可见） ===== -->
-            <section class="settings-section" data-mode="workbench">
-                <span class="doc-section-title">行为面板</span>
-                <div class="wb-settings-stats" id="wbSettingsStats">
-                    <div class="wb-settings-stat-item"><span class="wb-settings-stat-num" id="wbMeStreakNum">0</span><span>连续打卡</span></div>
-                    <div class="wb-settings-stat-item"><span class="wb-settings-stat-num" id="wbMeStatTasks">0</span><span>完成任务</span></div>
-                    <div class="wb-settings-stat-item"><span class="wb-settings-stat-num" id="wbMeStatPomodoros">0</span><span>番茄钟</span></div>
-                    <div class="wb-settings-stat-item"><span class="wb-settings-stat-num" id="wbMeStatFocus">0</span><span>专注分钟</span></div>
-                    <div class="wb-settings-stat-item"><span class="wb-settings-stat-num" id="wbMeStatNotes">0</span><span>笔记</span></div>
-                </div>
-            </section>
-
-            <section class="settings-section" data-mode="workbench">
-                <span class="doc-section-title">AI 每日总结 <span style="font-size:10px;color:var(--text-tertiary);">腾讯混元</span></span>
-                <div class="wb-settings-ai-row">
-                    <input type="text" id="wbMeAiApiKey" placeholder="API Key（已预置默认Key）" class="settings-input">
-                    <input type="text" id="wbMeAiEndpoint" placeholder="端点" class="settings-input" value="https://hunyuan.tencentcloudapi.com" style="max-width:220px;">
-                    <input type="text" id="wbMeAiModel" placeholder="模型" class="settings-input" value="hunyuan-lite" style="max-width:100px;">
-                    <button type="button" class="settings-row-btn" id="wbMeAiSaveKey"><span>保存</span></button>
-                </div>
-                <button type="button" class="settings-row-btn" id="wbMeAiGenerate"><span>生成今日总结</span></button>
-                <div class="wb-settings-ai-result" id="wbMeAiResult" style="display:none;">
-                    <div id="wbMeAiContent"></div>
-                    <button type="button" class="settings-row-btn" id="wbMeAiSaveNote"><span>保存为笔记</span></button>
-                </div>
-            </section>
-
-            <section class="settings-section" data-mode="workbench">
-                <span class="doc-section-title">导出中心</span>
-                <p style="font-size:11px;color:var(--text-tertiary);margin:0 0 8px;">选择内容导出为单个 Markdown 文件</p>
-                <div class="wb-settings-filter-row" id="wbSettingsExportFilters">
-                    <button class="wb-filter-chip active" data-export-filter="all">全部</button>
-                    <button class="wb-filter-chip" data-export-filter="note">笔记</button>
-                    <button class="wb-filter-chip" data-export-filter="capture">捕获</button>
-                    <button class="wb-filter-chip" data-export-filter="task">任务</button>
-                </div>
-                <div class="wb-settings-export-list" id="wbMeExportList"></div>
-                <div class="wb-settings-export-actions">
-                    <button type="button" class="settings-row-btn" id="wbMeSelectAll"><span>全选</span></button>
-                    <button type="button" class="settings-row-btn" id="wbMeExportSelected"><span>导出选中</span></button>
-                </div>
-            </section>
-
-            <section class="settings-section" data-mode="workbench">
-                <span class="doc-section-title">开发设置</span>
-                <div class="wb-settings-shortcut-row">
-                    <span style="font-size:12px;color:var(--wb-text-secondary);">专注模式快捷键</span>
-                    <label class="wb-settings-toggle" style="display:inline-flex;gap:4px;">
-                        <input type="checkbox" id="wbMeShortcutCtrl" checked> Ctrl
-                    </label>
-                    <label class="wb-settings-toggle" style="display:inline-flex;gap:4px;">
-                        <input type="checkbox" id="wbMeShortcutShift"> Shift
-                    </label>
-                    <label class="wb-settings-toggle" style="display:inline-flex;gap:4px;">
-                        <input type="checkbox" id="wbMeShortcutAlt"> Alt
-                    </label>
-                    <input type="text" id="wbMeShortcutKey" value="k" maxlength="1" class="settings-input" style="width:40px;text-align:center;text-transform:lowercase;">
-                    <button type="button" class="settings-row-btn" id="wbMeShortcutSave"><span>保存</span></button>
-                </div>
-                <label class="wb-settings-toggle">
-                    <input type="checkbox" id="wbMeToggleStrict"> 严厉鞭策模式
-                </label>
-                <label class="wb-settings-toggle">
-                    <input type="checkbox" id="wbMeToggleFileSync"> 文件自动同步
-                </label>
-            </section>
-
-            <!-- ===== 通用设置（两种模式均可见） ===== -->
-            <section class="settings-section" data-mode="common">
-                <span class="doc-section-title">数据</span>
-                <button type="button" class="settings-row-btn" data-setting-action="exportData">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 6l3 3 3-3M2 10v3h12v-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>导出备份</span>
-                </button>
-                <button type="button" class="settings-row-btn" data-setting-action="importData">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 14V6M5 10l3-3 3 3M2 3v3h12V3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>导入备份</span>
-                </button>
-                <button type="button" class="settings-row-btn" data-setting-action="syncToFile" id="configSyncBtn" style="display:none;">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8a6 6 0 0110-4M14 8a6 6 0 01-10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 3v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>立即同步到文件</span>
-                </button>
-                <button type="button" class="settings-row-btn" data-setting-action="changeConfigDir" id="configChangeDirBtn">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3v10l5-3 5 3V3H3z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="configDirLabel">选择配置目录</span>
-                </button>
-                <div class="settings-subtitle" id="configSyncStatus" style="font-size:11px;color:var(--text-tertiary);margin-top:4px;"></div>
-                <button type="button" class="settings-row-btn" data-setting-action="resetSettings" style="color: var(--danger);">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8a6 6 0 0110-4M14 8a6 6 0 01-10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 3v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>重置设置</span>
-                </button>
-            </section>
-
-            <section class="settings-section" data-mode="common">
-                <span class="doc-section-title">关于</span>
-                <button type="button" class="settings-row-btn" id="changelogBtn">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 2v12M2 4h10l2 2v6.5H2V4z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 8h4M6 11h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>更新说明</span>
-                </button>
-            </section>
+            </div>
         </aside>
     </div>
 
@@ -600,6 +570,23 @@
                 <button class="changelog-close-btn" id="changelogCloseBtn" type="button" aria-label="关闭">&times;</button>
             </header>
             <div class="changelog-body" id="changelogBody">
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.3.0</span>
+                        <span class="changelog-date">2026-07-03</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>主题系统重构</strong> 全量改造为 Primitive→Semantic 双层 Design Token 体系，39 个语义令牌覆盖背景、文字、交互色、边框、阴影、字体、梯度全部视觉维度</li>
+                        <li><strong>4 套预设主题</strong> 默认（深海科技渐变·浅色深色双模式）、黑客（纯黑终端绿·仅深色）、暖纸（米白纸质·仅浅色）、像素（8-bit 命令行·仅深色），主题卡片网格选择器</li>
+                        <li><strong>浅色/深色双轨模式</strong> 跟随系统/始终浅色/始终深色三选一分段控制器，通过 data-color-scheme 属性驱动，200ms 平滑过渡</li>
+                        <li><strong>外观设置页</strong> 左右分栏布局（控制区+实时预览沙箱），智能联动：选黑客/像素主题自动切换深色并提示</li>
+                        <li><strong>背景管理升级</strong> 统一为纯色/动态效果（Matrix数字雨）/自定义图片三选一，图片支持本地上传+URL+模糊/亮度/不透明度滑块</li>
+                        <li><strong>集中式 ThemeManager</strong> 主题切换、字体异步加载、localStorage 持久化全部集中管理，发布 theme-changed 事件</li>
+                        <li><strong>字体配置驱动</strong> 主题元数据声明字体需求，Fira Code woff2 本地存储，系统等宽字体兜底</li>
+                        <li><strong>模式与主题解耦</strong> 日常/专注模式不再操作 link media，布局功能与视觉主题完全正交</li>
+                        <li><strong>架构</strong> 9 个 CSS 文件全部改造，退役 --px-* / --wb-* / --sp-* 变量体系，组件与主题配置完全解耦</li>
+                    </ul>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">
                         <span class="changelog-version-tag">v2.1.0</span>
@@ -814,8 +801,6 @@
     <!-- v2 外部依赖：marked.js（Markdown 渲染） + dayjs（日期处理） -->
     <script src="js/lib/marked.min.js" defer></script>
     <script src="js/lib/dayjs.min.js" defer></script>
-    <!-- highlight.js 代码高亮 bundle（20 种语言） -->
-    <script src="js/lib/hljs.bundle.js" defer></script>
 
     <script src="js/config.js" defer></script>
     <script src="js/storage.js" defer></script>
@@ -824,13 +809,13 @@
     <script src="js/state.js" defer></script>
     <script src="js/utils.js" defer></script>
     <script src="js/favicon.js" defer></script>
+    <script src="js/theme-manager.js" defer></script>
     <script src="js/theme.js" defer></script>
     <script src="js/pageManager.js" defer></script>
     <script src="js/tiles.js" defer></script>
     <script src="js/categoryUI.js" defer></script>
     <script src="js/ui.js" defer></script>
     <script src="js/search.js" defer></script>
-    <script src="js/proseMirrorEditor.js" defer></script>
     <script src="js/notes.js" defer></script>
     <script src="js/export.js" defer></script>
     <script src="js/workbench.js" defer></script>

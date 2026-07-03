@@ -49,13 +49,20 @@ window.DevHome = window.DevHome || {};
 
     /* ===== 笔记数据读写 ===== */
 
-    /** 加载笔记列表（加载后自动触发全量迁移） */
+    /** 加载笔记列表 */
     ns.loadNotes = async function () {
         state.notes = await storageV2.get(storageV2.KEYS.NOTES, []);
-        // 全量迁移：为旧笔记补充 doc 和 wordCount 字段，返回迁移条数
-        var migratedCount = ns.migrateAllNotes();
-        // 有迁移发生时保存一次
-        if (migratedCount > 0) await ns.saveNotes();
+        // 为旧笔记补充 wordCount 字段（doc 字段已废弃）
+        var migrated = false;
+        (state.notes || []).forEach(function (note) {
+            if (note.wordCount === undefined) {
+                note.wordCount = ns.countWords(note.content || '');
+                migrated = true;
+            }
+            // 清理废弃的 doc 字段
+            if (note.doc !== undefined) { delete note.doc; migrated = true; }
+        });
+        if (migrated) await ns.saveNotes();
     };
 
     /** 保存笔记列表 */
@@ -75,7 +82,6 @@ window.DevHome = window.DevHome || {};
             id: data.id || noteId(),
             title: data.title || '无标题',
             content: data.content || '',
-            doc: data.doc !== undefined ? data.doc : null,   // ProseMirror JSON，初始 null
             wordCount: data.wordCount || 0,                    // 字数统计
             type: data.type || 'note',
             tags: userTags,
@@ -133,7 +139,7 @@ window.DevHome = window.DevHome || {};
         if (!dom.wbCaptureRecent) return;
         var recent = state.captures.slice(0, 5);
         if (recent.length === 0) {
-            dom.wbCaptureRecent.innerHTML = '<div style="color:var(--wb-text-tertiary);font-size:12px;padding:8px;">' +
+            dom.wbCaptureRecent.innerHTML = '<div style="color:var(--color-text-tertiary);font-size:12px;padding:8px;">' +
                 (EMPTY_STATE_MESSAGES.captures[Math.floor(Math.random() * EMPTY_STATE_MESSAGES.captures.length)]) +
                 '</div>';
             return;
@@ -211,7 +217,7 @@ window.DevHome = window.DevHome || {};
         items.sort(function (a, b) { return (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt); });
 
         if (items.length === 0) {
-            dom.wbNotesList.innerHTML = '<div style="color:var(--wb-text-tertiary);font-size:12px;padding:12px;text-align:center;">' +
+            dom.wbNotesList.innerHTML = '<div style="color:var(--color-text-tertiary);font-size:12px;padding:12px;text-align:center;">' +
                 (searchTerm ? '没有找到匹配的内容' : (EMPTY_STATE_MESSAGES.notes[Math.floor(Math.random() * EMPTY_STATE_MESSAGES.notes.length)])) +
                 '</div>';
             return;
@@ -331,29 +337,21 @@ window.DevHome = window.DevHome || {};
         state._currentNoteType = note.type || 'note';
         ns.renderNoteTypeBadge();
 
-        // 笔记模式：优先尝试 ProseMirror 编辑器，失败时回退 contenteditable
-        if (!isCapture && dom.wbNoteContent) {
-            // 确保旧数据有 doc 字段（迁移，内部会检查 PM 是否可用）
-            if (!note.doc || note.doc.type !== 'doc') {
-                ns.migrateNoteDoc(note);
-            }
-            // pmCreateEditor 返回 Promise（可能等待动态加载 PM bundle）
-            ns.pmCreateEditor(dom.wbNoteContent, note, {
-                onChange: function () {
-                    if (ns._triggerAutoSave) ns._triggerAutoSave();
-                }
-            }).then(function (editor) {
-                // 如果 PM 创建失败（返回 null），回退到 contenteditable
-                if (!editor) {
-                    console.warn('[面板] ProseMirror 创建失败，回退到 contenteditable 模式 id=' + note.id);
-                    dom.wbNoteContent.setAttribute('contenteditable', 'true');
-                    dom.wbNoteContent.innerHTML = note.content || '';
-                }
-            });
-        } else if (isCapture && dom.wbNoteContent) {
-            // 捕获模式：纯文本需转义
+        // 使用 contenteditable 编辑器（笔记和捕获均适用）
+        if (dom.wbNoteContent) {
             dom.wbNoteContent.setAttribute('contenteditable', 'true');
-            dom.wbNoteContent.innerHTML = ns.escapeHtml(note.content || '').replace(/\n/g, '<br>');
+            if (isCapture) {
+                dom.wbNoteContent.innerHTML = ns.escapeHtml(note.content || '').replace(/\n/g, '<br>');
+            } else {
+                dom.wbNoteContent.innerHTML = note.content || '';
+            }
+            // 监听输入触发自动保存
+            dom.wbNoteContent.addEventListener('input', function () {
+                if (ns._triggerAutoSave) ns._triggerAutoSave();
+                // 实时更新字数
+                var wcEl = document.getElementById('wbNoteWordCount');
+                if (wcEl) wcEl.textContent = ns.countWords(dom.wbNoteContent.innerHTML) + ' 字';
+            });
         }
 
         ns.renderNotesList(state._notesFilter, state._notesSearch);
@@ -361,24 +359,22 @@ window.DevHome = window.DevHome || {};
 
     /** 关闭笔记编辑器 */
     ns.closeNoteEditor = function () {
-        // 先保存当前编辑内容再销毁编辑器（防止自动保存防抖未触发导致数据丢失）
+        // 先保存当前编辑内容（防止自动保存防抖未触发导致数据丢失）
         if (state.currentNote) {
             ns.saveCurrentNote();
         }
-        // 销毁 ProseMirror 编辑器实例
-        if (ns.pmDestroyEditor) ns.pmDestroyEditor();
         state.currentNote = null;
         if (dom.wbNotesEditorEmpty) dom.wbNotesEditorEmpty.style.display = 'flex';
         if (dom.wbNotesEditorActive) dom.wbNotesEditorActive.style.display = 'none';
         ns.renderNotesList(state._notesFilter, state._notesSearch);
     };
 
-    /** 保存当前编辑的笔记/捕获（ProseMirror + contenteditable 兼容） */
+    /** 保存当前编辑的笔记/捕获（纯 contenteditable） */
     ns.saveCurrentNote = async function () {
         if (!state.currentNote) return;
         var isCapture = state.currentNote._kind === 'capture' || state.currentNote.type === 'capture';
 
-        // 捕获类型：仍用 contenteditable innerHTML
+        // 捕获类型
         if (isCapture) {
             var capContent = dom.wbNoteContent ? dom.wbNoteContent.innerHTML : '';
             await ns.updateCapture(state.currentNote.id, capContent);
@@ -387,48 +383,31 @@ window.DevHome = window.DevHome || {};
             return;
         }
 
-        // 笔记模式：使用 ProseMirror API 获取内容
+        // 笔记模式：从 contenteditable 获取内容
         var title = dom.wbNoteTitle ? dom.wbNoteTitle.value.trim() : '';
         var type = state._currentNoteType || 'note';
-        // 只保留日期标签
         var existingDateTags = (state.currentNote.tags || []).filter(function (t) { return /^\d{4}-\d{2}-\d{2}$/.test(t); });
         if (existingDateTags.length === 0) {
             existingDateTags = [dateTag(state.currentNote.createdAt || Date.now())];
         }
 
-        // 从 ProseMirror 获取文档数据
-        var docJSON = null;
-        var docHTML = '';
-        var wordCount = 0;
+        var docHTML = dom.wbNoteContent ? dom.wbNoteContent.innerHTML : '';
+        var wordCount = ns.countWords(docHTML);
 
-        if (ns.pmIsActive && ns.pmIsActive()) {
-            docJSON = ns.pmGetDocJSON();
-            docHTML = ns.pmGetDocHTML();
-            wordCount = ns.pmGetWordCount();
-        } else {
-            // 回退：从 contenteditable 获取
-            docHTML = dom.wbNoteContent ? dom.wbNoteContent.innerHTML : '';
+        // 安全保护：内容为空时保留原有数据
+        if (!docHTML && state.currentNote.content) {
+            docHTML = state.currentNote.content;
             wordCount = ns.countWords(docHTML);
-            // 无 ProseMirror 时不写 doc 字段（避免覆盖已有）
-            docJSON = state.currentNote.doc || null;
-            // 安全保护：如果内容区为空但存储中有数据，保留原有内容防止数据丢失
-            if (!docHTML && state.currentNote.content) {
-                console.warn('[警告] 编辑器内容为空，保留原有数据 id=' + state.currentNote.id);
-                docHTML = state.currentNote.content;
-                wordCount = ns.countWords(docHTML);
-            }
         }
 
         await ns.updateNote(state.currentNote.id, {
             title: title || '无标题',
-            content: docHTML,        // 保留 HTML（向后兼容列表搜索）
-            doc: docJSON,            // ProseMirror JSON（新增）
-            wordCount: wordCount,    // 字数统计（新增）
+            content: docHTML,
+            wordCount: wordCount,
             type: type,
             tags: existingDateTags
         });
 
-        // 更新当前引用
         var updated = state.notes.find(function (n) { return n.id === state.currentNote.id; });
         if (updated) state.currentNote = updated;
         console.log('[编辑] 保存笔记 id=' + state.currentNote.id + ' 类型=' + type + ' 字数=' + wordCount);
@@ -728,123 +707,6 @@ window.DevHome = window.DevHome || {};
         ns.renderNoteTypeBadge();
         ns.hideTypePicker();
         if (ns._triggerAutoSave) ns._triggerAutoSave();
-    };
-
-    /* ===== ProseMirror 数据迁移 ===== */
-
-    /**
-     * 静默给单条笔记补 doc 字段（HTML → ProseMirror JSON）
-     * - 如果 note.doc 已存在且 type === 'doc'，跳过
-     * - 空内容生成空文档（含一个空段落）
-     * - 有 HTML 内容时用 ProseMirror DOMParser 解析
-     * - 同时计算 wordCount
-     * @param {object} note - 笔记对象
-     * @returns {object} note（已修改）
-     */
-    ns.migrateNoteDoc = function (note) {
-        // 已迁移跳过
-        if (note.doc && note.doc.type === 'doc') return note;
-
-        // 无 ProseMirror 时，只补字段不做解析
-        var PM = window.PM;
-        if (!PM) {
-            console.warn('[迁移] ProseMirror 未加载，跳过 HTML 解析，仅补充空 doc');
-            note.doc = { type: 'doc', content: [{ type: 'paragraph', content: [] }] };
-            note.wordCount = note.wordCount || ns.countWords(note.content);
-            return note;
-        }
-
-        // 空内容 → 空文档
-        if (!note.content || !note.content.trim()) {
-            note.doc = { type: 'doc', content: [{ type: 'paragraph', content: [] }] };
-            note.wordCount = 0;
-            return note;
-        }
-
-        // HTML → ProseMirror JSON（使用 DOMParser）
-        try {
-            var div = document.createElement('div');
-            div.innerHTML = note.content;
-            // 使用内置 Schema（与 proseMirrorEditor.js 一致）
-            var schema = ns._getMigrationSchema(PM);
-            var parser = PM.DOMParser.fromSchema(schema);
-            var doc = parser.parse(div);
-            note.doc = doc.toJSON();
-        } catch (e) {
-            // 解析失败时将 HTML 作为纯文本存入段落
-            console.warn('[迁移] DOMParser 解析失败，回退为纯文本段落 id=' + note.id, e.message);
-            var plainText = (note.content || '').replace(/<[^>]*>/g, '').trim();
-            note.doc = {
-                type: 'doc',
-                content: [{ type: 'paragraph', content: plainText ? [{ type: 'text', text: plainText }] : [] }]
-            };
-        }
-
-        note.wordCount = ns.countWords(note.content);
-        return note;
-    };
-
-    /** 获取迁移用 Schema（轻量版，仅含 block 节点，不需要所有 marks） */
-    ns._getMigrationSchema = function (PM) {
-        if (ns._migrationSchema) return ns._migrationSchema;
-        ns._migrationSchema = new PM.Schema({
-            nodes: {
-                doc: { content: 'block+' },
-                paragraph: { group: 'block', content: 'inline*', parseDOM: [{ tag: 'p' }], toDOM: function () { return ['p', 0]; } },
-                heading: { group: 'block', content: 'inline*', attrs: { level: { default: 1 } },
-                    parseDOM: [
-                        { tag: 'h1', attrs: { level: 1 } }, { tag: 'h2', attrs: { level: 2 } },
-                        { tag: 'h3', attrs: { level: 3 } }, { tag: 'h4', attrs: { level: 4 } },
-                        { tag: 'h5', attrs: { level: 5 } }, { tag: 'h6', attrs: { level: 6 } }
-                    ],
-                    toDOM: function (node) { return ['h' + node.attrs.level, 0]; } },
-                code_block: { group: 'block', content: 'text*', attrs: { language: { default: '' } }, isolating: true,
-                    parseDOM: [{ tag: 'pre', getAttrs: function (dom) { return { language: dom.getAttribute('data-lang') || '' }; } }],
-                    toDOM: function (node) { return ['pre', { 'data-lang': node.attrs.language }, ['code', 0]]; } },
-                bullet_list: { group: 'block', content: 'list_item+', parseDOM: [{ tag: 'ul' }], toDOM: function () { return ['ul', 0]; } },
-                ordered_list: { group: 'block', content: 'list_item+', attrs: { order: { default: 1 } }, parseDOM: [{ tag: 'ol' }], toDOM: function () { return ['ol', 0]; } },
-                list_item: { content: 'paragraph+', parseDOM: [{ tag: 'li' }], toDOM: function () { return ['li', 0]; } },
-                blockquote: { group: 'block', content: 'block+', parseDOM: [{ tag: 'blockquote' }], toDOM: function () { return ['blockquote', 0]; } },
-                horizontal_rule: { group: 'block', parseDOM: [{ tag: 'hr' }], toDOM: function () { return ['hr']; } },
-                text: { group: 'inline' }
-            },
-            marks: {
-                em: { parseDOM: [{ tag: 'em' }, { tag: 'i' }], toDOM: function () { return ['em', 0]; } },
-                strong: { parseDOM: [{ tag: 'strong' }, { tag: 'b' }], toDOM: function () { return ['strong', 0]; } },
-                underline: { parseDOM: [{ tag: 'u' }], toDOM: function () { return ['u', 0]; } },
-                link: { attrs: { href: { default: '' } }, parseDOM: [{ tag: 'a[href]', getAttrs: function (dom) { return { href: dom.getAttribute('href') }; } }], toDOM: function (node) { return ['a', { href: node.attrs.href }, 0]; } },
-                code: { parseDOM: [{ tag: 'code' }], toDOM: function () { return ['code', 0]; } }
-            }
-        });
-        return ns._migrationSchema;
-    };
-
-    /**
-     * 全量迁移：遍历所有笔记，为无 doc 的笔记补 doc 字段
-     * 在 loadNotes() 完成后调用
-     * @returns {number} 实际迁移的笔记数量
-     */
-    ns.migrateAllNotes = function () {
-        var migrated = 0;
-        // 为笔记补充 doc/wordCount
-        (state.notes || []).forEach(function (note) {
-            if (!note.doc || note.doc.type !== 'doc') {
-                ns.migrateNoteDoc(note);
-                migrated++;
-            }
-            if (note.wordCount === undefined) {
-                note.wordCount = ns.countWords(note.content || '');
-            }
-        });
-        // 为捕获补充 doc/wordCount（保持数据结构一致）
-        (state.captures || []).forEach(function (cap) {
-            if (cap.doc === undefined) cap.doc = null;
-            if (cap.wordCount === undefined) cap.wordCount = 0;
-        });
-        if (migrated > 0) {
-            console.log('[迁移] 全量迁移完成，迁移了 ' + migrated + ' 条笔记');
-        }
-        return migrated;
     };
 
 })(window.DevHome);

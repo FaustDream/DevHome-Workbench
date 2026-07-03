@@ -1,0 +1,104 @@
+/* ============================================
+   DevHome Workbench - Pixel Theme (pixel.css)
+   像素复古 · 8-bit 命令行风 · 仅深色
+   Primitive → Semantic 两层 Token 赋值
+   退役 --px-* 变量，统一使用 Semantic Token
+   ============================================ */
+
+:root {
+    /* ===== Primitive 原始色值（像素） ===== */
+    --_px-bg:              #0c0c0c;
+    --_px-bg-secondary:    #1a1a2e;
+    --_px-bg-tertiary:     #16213e;
+    --_px-bg-panel:        #0f0f23;
+    --_px-bg-elevated:     #0f0f23;
+    --_px-surface:         #0f0f23;
+    --_px-surface-hover:   #1a1a2e;
+    --_px-surface-subtle:  rgba(0, 255, 65, 0.03);
+    --_px-surface-muted:   rgba(0, 255, 65, 0.05);
+    --_px-surface-card:    #0f0f23;
+    --_px-overlay:         rgba(0, 0, 0, 0.85);
+    --_px-input-bg:        #1a1a2e;
+    --_px-input-border:    #008f11;
+
+    --_px-text:            #00ff41;
+    --_px-text-secondary:  #00cc33;
+    --_px-text-tertiary:   #008f11;
+    --_px-text-inverse:    #0c0c0c;
+
+    --_px-accent:          #00ff41;
+    --_px-accent-hover:    #33ff6b;
+    --_px-accent-active:   #00cc33;
+    --_px-accent-disabled: rgba(0, 255, 65, 0.25);
+
+    --_px-green:           #00ff41;
+    --_px-cyan:            #00ffff;
+    --_px-amber:           #ffb000;
+    --_px-danger:          #ff4136;
+    --_px-danger-hover:    #ff6b61;
+
+    --_px-border:          #003b00;
+    --_px-border-hover:    #008f11;
+    --_px-border-active:   #00ff41;
+    --_px-border-thick:    4px solid #00ff41;
+    --_px-separator:       #003b00;
+    --_px-kbd-bg:          rgba(0, 255, 65, 0.08);
+    --_px-kbd-border:      #008f11;
+
+    /* 像素偏移阴影 */
+    --_px-shadow-sm:       4px 4px 0px #003b00;
+    --_px-shadow-md:       4px 4px 0px #003b00;
+    --_px-shadow-lg:       6px 6px 0px #003b00;
+
+    /* 像素背景：无梯度，纯色 */
+    --_px-gradient-page:    none;
+    --_px-gradient-overlay: none;
+
+    /* ===== Semantic Token 赋值 ===== */
+    --color-bg:              var(--_px-bg);
+    --color-bg-secondary:    var(--_px-bg-secondary);
+    --color-bg-tertiary:     var(--_px-bg-tertiary);
+    --color-bg-elevated:     var(--_px-bg-panel);
+    --color-surface:         var(--_px-surface);
+    --color-surface-hover:   var(--_px-surface-hover);
+    --color-surface-subtle:  var(--_px-surface-subtle);
+    --color-surface-muted:   var(--_px-surface-muted);
+    --color-overlay:         var(--_px-overlay);
+    --color-input-bg:        var(--_px-input-bg);
+    --color-input-border:    var(--_px-input-border);
+
+    --color-text:            var(--_px-text);
+    --color-text-secondary:  var(--_px-text-secondary);
+    --color-text-tertiary:   var(--_px-text-tertiary);
+    --color-text-inverse:    var(--_px-text-inverse);
+
+    --color-accent:          var(--_px-accent);
+    --color-accent-hover:    var(--_px-accent-hover);
+    --color-accent-active:   var(--_px-accent-active);
+    --color-accent-disabled: var(--_px-accent-disabled);
+
+    --color-success:         var(--_px-green);
+    --color-warning:         var(--_px-amber);
+    --color-danger:          var(--_px-danger);
+    --color-danger-hover:    var(--_px-danger-hover);
+    --color-info:            var(--_px-cyan);
+    --color-link:            var(--_px-accent);
+
+    --color-border:          var(--_px-border);
+    --color-border-hover:    var(--_px-border-hover);
+    --color-border-active:   var(--_px-border-active);
+    --color-separator:       var(--_px-separator);
+    --color-kbd-bg:          var(--_px-kbd-bg);
+    --color-kbd-border:      var(--_px-kbd-border);
+
+    --shadow-sm:             var(--_px-shadow-sm);
+    --shadow-md:             var(--_px-shadow-md);
+    --shadow-lg:             var(--_px-shadow-lg);
+
+    --font-sans:             'VT323', 'Courier New', monospace;
+    --font-mono:             'VT323', 'Courier New', monospace;
+    --font-display:          'Press Start 2P', cursive;
+
+    --gradient-page:         var(--_px-gradient-page);
+    --gradient-overlay:      var(--_px-gradient-overlay);
+}

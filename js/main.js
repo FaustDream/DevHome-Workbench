@@ -122,7 +122,8 @@ window.DevHome = window.DevHome || {};
         ns.openFaviconDB();
         await ns.tileManager.load();
         ns.loadSearchHistory();
-        ns.bgManager.load();
+        // 日常模式不再自动加载自定义背景（数字雨改为手动开启）
+        // ns.bgManager.load();  // 已禁用：用户可手动上传/重置背景
         ns.renderTiles();
         ns.updatePageIndicator();
         ns.renderCategoryPopover();
@@ -154,7 +155,12 @@ window.DevHome = window.DevHome || {};
         var overlay = document.getElementById('focusOverlay');
         if (overlay && document.body.classList.contains('focus-transition')) overlay.classList.add('ready');
 
-        // 刷新恢复：仅在页面刷新（F5/Ctrl+R）时恢复专注模式，新标签页默认日常模式
+        // 初始化主题管理器（从 localStorage 恢复主题状态）
+        if (ns.theme && typeof ns.theme.init === 'function') {
+            ns.theme.init();
+        }
+
+        // 刷新恢复：仅在页面刷新时恢复专注模式，新标签页默认日常模式
         var navEntry = performance.getEntriesByType('navigation')[0];
         var isReload = navEntry && navEntry.type === 'reload';
         var savedMode = localStorage.getItem('_devhome_last_mode');

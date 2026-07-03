@@ -26,30 +26,33 @@ window.DevHome = window.DevHome || {};
 
     /* ===== Tab 切换 ===== */
     ns.switchWbTab = function (tabName) {
-        if (state.activeWbTab === tabName) return;
-        state.activeWbTab = tabName;
+        // 已废弃：三栏布局中不再需要 Tab 切换
+        // 保留函数签名以防旧代码调用
+        console.log('[模式] switchWbTab 已废弃，使用 switchSidebar 代替');
+    };
+
+    /* ===== 侧边栏面板切换 ===== */
+    ns.switchSidebar = function (panelName) {
+        if (!panelName) return;
+        state._activeSidebarPanel = panelName;
 
         // 更新导航 active
-        if (dom.wbNav) {
-            dom.wbNav.querySelectorAll('.wb-nav-tab').forEach(function (tab) {
-                tab.classList.toggle('active', tab.dataset.tab === tabName);
-            });
-        }
+        document.querySelectorAll('.wb-sidenav-item').forEach(function (item) {
+            item.classList.toggle('active', item.dataset.sidebar === panelName);
+        });
 
-        // 切换面板
-        if (dom.wbContent) {
-            dom.wbContent.querySelectorAll('.wb-panel').forEach(function (panel) {
-                panel.classList.toggle('active', panel.dataset.panel === tabName);
-            });
-        }
+        // 切换左栏面板
+        document.querySelectorAll('.wb-side-panel').forEach(function (panel) {
+            panel.classList.toggle('active', panel.dataset.panel === panelName);
+        });
 
-        // 切换到特定 Tab 时的初始化
-        if (tabName === 'notes') {
-            ns.renderNotesList(state._notesFilter || 'all', state._notesSearch || '');
-            if (typeof ns.renderCustomFilters === 'function') ns.renderCustomFilters();
-        } else if (tabName === 'calendar') {
-            ns.renderCalendar(state.currentCalendarDate || new Date());
+        // 面板初始化
+        if (panelName === 'tasks') {
+            ns.renderQuadrantBoard();
+        } else if (panelName === 'calendar') {
+            ns.renderSideCalendar(state.currentCalendarDate || new Date());
         }
+        console.log('[面板] 左侧栏切换到 ' + panelName);
     };
 
     /* ===== 专注模式切换 ===== */
@@ -79,28 +82,30 @@ window.DevHome = window.DevHome || {};
             });
         }
 
-        // 切换主题：禁用像素主题（通过 setAttribute 确保可靠性），启用暖纸主题
-        var pixelLink = document.getElementById('theme-pixel');
-        var warmPaperLink = document.getElementById('theme-warm-paper');
-        if (pixelLink) pixelLink.setAttribute('media', 'not all');
-        if (warmPaperLink) warmPaperLink.media = 'all';
+        // 切换主题已由 ThemeManager 集中管理，模式切换不再操作 link media
+        // 专注模式与非专注模式共享同一套主题
 
-        // 隐藏日常模式专属元素（Matrix 数字雨 canvas 由 JS 内联样式控制，需 JS 显式隐藏）
+        // 隐藏日常模式专属元素（Matrix 数字雨 canvas 由背景管理器控制）
         var matrixCanvas = document.getElementById('matrixCanvas');
         if (matrixCanvas) matrixCanvas.style.display = 'none';
         var bgContainer = document.getElementById('bgContainer');
         if (bgContainer) bgContainer.style.display = 'none';
 
         // 立即切换状态和 UI — 不等异步数据，否则用户看到白屏
+        console.log('[模式] 进入专注模式');
         state.workbenchVisible = true;
         state.currentDevhomeMode = 'workbench';
         state._quadrantFilter = 'active';
         state.workbench = ns.getWorkbenchState();  // 先用 localStorage 兜底数据
         if (dom.devhomeStage) dom.devhomeStage.classList.add('visible');
         if (dom.container) dom.container.classList.add('devhome-dimmed');
+
+        // 三栏初始化
         ns.renderQuadrantBoard();
-        ns.renderCaptures();
-        ns.switchWbTab('dashboard');
+        ns.renderMiniCalendar(new Date());
+        ns.renderCalendar(new Date());
+        ns.renderNotesList('all', '');
+        if (typeof ns.renderCustomFilters === 'function') ns.renderCustomFilters();
         ns.updateContextMenuLabel();
 
         // 异步加载 v2 格式的任务数据，覆盖兜底数据（如果有更新的话）
@@ -123,20 +128,18 @@ window.DevHome = window.DevHome || {};
         // 幂等性保护：已退出则忽略
         if (state.currentDevhomeMode === 'daily') return;
 
-        // 切换主题：恢复像素主题（移除 media 属性 = 默认 all），禁用暖纸主题
-        var pixelLink = document.getElementById('theme-pixel');
-        var warmPaperLink = document.getElementById('theme-warm-paper');
-        if (pixelLink) pixelLink.removeAttribute('media');
-        if (warmPaperLink) warmPaperLink.media = 'not all';
+        // 主题已由 ThemeManager 集中管理，模式切换不再操作 link media
 
-        // 恢复日常模式专属元素
+        // 恢复日常模式专属元素（仅在数字雨已开启时才显示 canvas）
         var matrixCanvas = document.getElementById('matrixCanvas');
-        if (matrixCanvas) matrixCanvas.style.display = 'block';
-        // bgContainer 由 pixel-theme.css 控制显隐，移除内联样式让 CSS 接管
+        if (matrixCanvas && ns.matrixRain && ns.matrixRain.isRunning()) {
+            matrixCanvas.style.display = 'block';
+        }
         var bgContainer = document.getElementById('bgContainer');
         if (bgContainer) bgContainer.style.display = '';
 
         state.currentDevhomeMode = 'daily';
+        console.log('[模式] 退出专注模式');
         state.workbenchVisible = false;
         if (dom.devhomeStage) dom.devhomeStage.classList.remove('visible');
         if (dom.container) dom.container.classList.remove('devhome-dimmed');
@@ -253,17 +256,22 @@ window.DevHome = window.DevHome || {};
         var config = state.workbench || ns.getWorkbenchState();
         var filter = state._quadrantFilter || 'active';
 
-        if (dom.quadrantFilterBtn) {
-            dom.quadrantFilterBtn.textContent = filter === 'active' ? '活跃' : '全部';
-            dom.quadrantFilterBtn.classList.toggle('filter-all', filter === 'all');
+        // 更新过滤按钮
+        var filterBtn = document.getElementById('wbTaskFilterBtn');
+        if (filterBtn) {
+            filterBtn.textContent = filter === 'active' ? '活跃' : '全部';
         }
 
-        QUADRANTS.forEach(function (q) {
-            var listEl = document.getElementById(q + 'TaskList');
-            var countEl = document.getElementById(q + 'Count');
-            var allTasks = (config.quadrants[q] && config.quadrants[q].tasks) || [];
+        // 维度标签映射
+        var qLabels = { q1: '重要且紧急', q2: '重要不紧急', q3: '紧急不重要', q4: '不紧急不重要' };
+
+        QUADRANTS.forEach(function (activeQ) {
+            var listEl = document.getElementById('wbQgList' + activeQ.toUpperCase());
+            var countEl = document.getElementById('wbQgCount' + activeQ.toUpperCase());
+            var allTasks = (config.quadrants[activeQ] && config.quadrants[activeQ].tasks) || [];
             var visibleTasks = getVisibleTasks(allTasks);
 
+            // 更新计数
             if (countEl) {
                 var activeCount = allTasks.filter(function (t) { return t.status === 'active' || !t.status; }).length;
                 countEl.textContent = activeCount !== allTasks.length
@@ -272,34 +280,64 @@ window.DevHome = window.DevHome || {};
             }
 
             if (!listEl) return;
+
             if (visibleTasks.length === 0) {
                 listEl.innerHTML = '';
                 return;
             }
 
+            // 维度下拉选项（排除当前维度）
+            var qOptions = QUADRANTS.filter(function (q) { return q !== activeQ; });
+
+            // 维度下拉选项 HTML
+            var selectOpts = '<option value="">移至...</option>' +
+                qOptions.map(function (q) {
+                    return '<option value="' + q + '">' + qLabels[q] + '</option>';
+                }).join('');
+
             listEl.innerHTML = visibleTasks.map(function (task) {
                 var isActive = task.status === 'active' || !task.status || task.status === undefined;
                 var isCompleted = task.status === 'completed' || (!task.status && task.completed);
                 var isCancelled = task.status === 'cancelled';
-                var rowClass = '';
-                var checkClass = '';
-                if (isCompleted) { rowClass = ' is-completed'; checkClass = ' checked'; }
-                if (isCancelled) { rowClass = ' is-cancelled'; }
-                var timeStr = formatTaskTime(task.createdAt);
-                return '<div class="quadrant-task' + rowClass + '" ' +
+                var rowClass = isCompleted ? ' is-completed' : (isCancelled ? ' is-cancelled' : '');
+                var checkClass = isCompleted ? ' checked' : '';
+
+                return '<div class="wb-task-item' + rowClass + '" ' +
                     'data-task-id="' + escapeHtml(task.id) + '" ' +
-                    'data-quadrant="' + q + '" ' +
-                    (isActive ? 'draggable="true"' : '') + '>' +
+                    'data-quadrant="' + activeQ + '">' +
                     (isActive
-                        ? '<button class="quadrant-task-check' + checkClass + '" data-task-id="' + escapeHtml(task.id) + '" data-quadrant="' + q + '" title="标记完成"></button>'
-                        : '<span class="quadrant-task-status-dot" title="' + (isCompleted ? '已完成' : '已取消') + '"></span>') +
-                    '<span class="quadrant-task-title">' + escapeHtml(task.title) + '</span>' +
-                    '<span class="quadrant-task-time">' + escapeHtml(timeStr) + '</span>' +
-                    '<button class="quadrant-task-del" data-task-id="' + escapeHtml(task.id) + '" data-quadrant="' + q + '" title="取消任务">' +
-                    '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>' +
-                    '</button></div>';
+                        ? '<button class="wb-task-check' + checkClass + '" data-task-id="' + escapeHtml(task.id) + '" data-quadrant="' + activeQ + '" title="标记完成"></button>'
+                        : '<span class="wb-task-check checked" style="pointer-events:none;"></span>') +
+                    '<span class="wb-task-item-title">' + escapeHtml(task.title) + '</span>' +
+                    (isActive
+                        ? '<select class="wb-task-selector" data-task-id="' + escapeHtml(task.id) + '" data-quadrant="' + activeQ + '" title="切换维度">' + selectOpts + '</select>'
+                        : '') +
+                    '<button class="wb-task-del" data-task-id="' + escapeHtml(task.id) + '" data-quadrant="' + activeQ + '" title="取消任务">&times;</button></div>';
             }).join('');
         });
+    };
+
+    /** 通过下拉菜单切换任务维度 */
+    ns.changeTaskQuadrant = function (taskId, fromQuadrant, toQuadrant) {
+        if (!toQuadrant || fromQuadrant === toQuadrant) return;
+        var config = ns.getWorkbenchState();
+        if (!config.quadrants[fromQuadrant] || !config.quadrants[toQuadrant]) return;
+
+        var task = null;
+        config.quadrants[fromQuadrant].tasks = config.quadrants[fromQuadrant].tasks.filter(function (t) {
+            if (t.id === taskId) { task = t; return false; }
+            return true;
+        });
+
+        if (task) {
+            task.quadrant = toQuadrant;
+            if (!config.quadrants[toQuadrant].tasks) config.quadrants[toQuadrant].tasks = [];
+            config.quadrants[toQuadrant].tasks.push(task);
+            ns.saveWorkbenchState({ quadrants: config.quadrants });
+            state.workbench = ns.getWorkbenchState();
+            ns.renderQuadrantBoard();
+            console.log('[编辑] 任务 ' + taskId + ' 维度变更: ' + fromQuadrant + ' -> ' + toQuadrant);
+        }
     };
 
     ns.toggleQuadrantFilter = function () {
@@ -359,24 +397,27 @@ window.DevHome = window.DevHome || {};
         ns.renderQuadrantBoard();
     };
 
-    ns.showQuadrantInput = function (cardEl, quadrant) {
-        var existing = cardEl.querySelector('.quadrant-input-row');
+    /** 显示任务添加内联输入框（在指定象限分组内） */
+    ns.showQuadrantInput = function (quadrant, addBtn) {
+        if (!addBtn) return;
+
+        // 移除已有输入框
+        var existing = document.querySelector('.wb-task-input-row');
         if (existing) { existing.remove(); return; }
+
         var row = document.createElement('div');
-        row.className = 'quadrant-input-row';
-        row.innerHTML = '<input type="text" placeholder="输入任务名称，回车确认..." autofocus>' +
-            '<button class="quadrant-input-confirm" title="确认添加">' +
-            '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
-            '</button>' +
-            '<button class="quadrant-input-cancel" title="取消">' +
-            '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>' +
-            '</button>';
-        var addBtn = cardEl.querySelector('.quadrant-add-btn');
-        if (addBtn) addBtn.insertAdjacentElement('beforebegin', row);
+        row.className = 'wb-task-input-row';
+        row.innerHTML = '<input type="text" placeholder="输入任务，回车确认..." autofocus>' +
+            '<button class="wb-task-input-confirm" title="确认">✓</button>' +
+            '<button class="wb-task-input-cancel" title="取消">✕</button>';
+        addBtn.insertAdjacentElement('beforebegin', row);
         var input = row.querySelector('input');
-        var confirmBtn = row.querySelector('.quadrant-input-confirm');
-        var cancelBtn = row.querySelector('.quadrant-input-cancel');
-        var submitFn = function () { var val = input.value; row.remove(); if (val.trim()) ns.addQuadrantTask(quadrant, val); };
+        var confirmBtn = row.querySelector('.wb-task-input-confirm');
+        var cancelBtn = row.querySelector('.wb-task-input-cancel');
+        var submitFn = function () {
+            var val = input.value; row.remove();
+            if (val.trim()) ns.addQuadrantTask(quadrant, val);
+        };
         var cancelFn = function () { row.remove(); };
         confirmBtn.addEventListener('click', submitFn);
         cancelBtn.addEventListener('click', cancelFn);
@@ -408,31 +449,44 @@ window.DevHome = window.DevHome || {};
     };
 
     /* ===== 番茄钟 ===== */
+    /** 辅助：同时更新左右栏番茄钟的时间显示 */
+    function _pomoUpdateTimeEls(textFn) {
+        var leftEl = document.getElementById('wbPomodoroTime');
+        var rightEl = document.getElementById('wbPomodoroSideTime');
+        var text = textFn();
+        if (leftEl) leftEl.textContent = text;
+        if (rightEl) rightEl.textContent = text;
+    }
+
+    /** 辅助：设置左右栏进度环偏移 */
+    function _pomoUpdateProgress(offset, total) {
+        var leftEl = document.getElementById('wbPomodoroProgress');
+        var rightEl = document.getElementById('wbPomodoroSideProgress');
+        var leftTotal = 502.65; // r=80 → 2*PI*80
+        var rightTotal = 402.12; // r=64 → 2*PI*64
+        if (leftEl) leftEl.setAttribute('stroke-dashoffset', String(offset * leftTotal / total));
+        if (rightEl) rightEl.setAttribute('stroke-dashoffset', String(offset * rightTotal / total));
+    }
+
     ns.setPomodoroDuration = function (duration) {
         state.pomodoroDuration = duration;
-        // 更新预设按钮 active
-        document.querySelectorAll('.wb-pomodoro-preset').forEach(function (btn) {
+        // 更新左右栏预设按钮 active
+        document.querySelectorAll('.wb-pomodoro-preset, .wb-pomodoro-side-preset').forEach(function (btn) {
             btn.classList.toggle('active', parseInt(btn.dataset.duration) === duration);
         });
         ns.updatePomodoroDisplay();
     };
 
-    ns.setPomodoroMode = function (mode) {
-        state.pomodoroMode = mode;
-        var modeDefault = document.getElementById('wbPomodoroModeDefault');
-        var modeFocus = document.getElementById('wbPomodoroModeFocus');
-        if (modeDefault) modeDefault.classList.toggle('active', mode === 'default');
-        if (modeFocus) modeFocus.classList.toggle('active', mode === 'focus');
-    };
-
     ns.updatePomodoroDisplay = function () {
-        if (!dom.wbPomodoroTime) return;
         var duration = state.pomodoroMode === 'focus' ? '∞' : state.pomodoroDuration;
-        dom.wbPomodoroTime.textContent = typeof duration === 'number'
+        var text = typeof duration === 'number'
             ? String(duration).padStart(2, '0') + ':00'
             : '∞:∞';
-        if (dom.wbPomodoroLabel) dom.wbPomodoroLabel.textContent = '准备开始';
-        if (dom.wbPomodoroProgress) dom.wbPomodoroProgress.setAttribute('stroke-dashoffset', '0');
+        _pomoUpdateTimeEls(function () { return text; });
+
+        var labelEl = document.getElementById('wbPomodoroLabel');
+        if (labelEl) labelEl.textContent = '准备开始';
+        _pomoUpdateProgress(0, 100);
     };
 
     ns.startPomodoro = function () {
@@ -446,11 +500,18 @@ window.DevHome = window.DevHome || {};
                 }
             });
         }
+        // 左栏按钮
         var startBtn = document.getElementById('wbPomodoroStart');
         var pauseBtn = document.getElementById('wbPomodoroPause');
         if (startBtn) startBtn.style.display = 'none';
         if (pauseBtn) pauseBtn.style.display = '';
-        if (dom.wbPomodoroLabel) dom.wbPomodoroLabel.textContent = '专注中...';
+        // 右栏按钮
+        var sideStart = document.getElementById('wbPomodoroSideStart');
+        var sideReset = document.getElementById('wbPomodoroSideReset');
+        if (sideStart) { sideStart.textContent = '暂停'; sideStart.classList.add('is-running'); }
+        if (sideReset) sideReset.style.display = '';
+        var labelEl = document.getElementById('wbPomodoroLabel');
+        if (labelEl) labelEl.textContent = '专注中...';
     };
 
     ns.pausePomodoro = function () {
@@ -462,7 +523,11 @@ window.DevHome = window.DevHome || {};
         if (startBtn) startBtn.style.display = '';
         if (pauseBtn) pauseBtn.style.display = 'none';
         if (startBtn) startBtn.textContent = '继续';
-        if (dom.wbPomodoroLabel) dom.wbPomodoroLabel.textContent = '已暂停';
+        // 右栏
+        var sideStart = document.getElementById('wbPomodoroSideStart');
+        if (sideStart) { sideStart.textContent = '继续'; sideStart.classList.remove('is-running'); }
+        var labelEl = document.getElementById('wbPomodoroLabel');
+        if (labelEl) labelEl.textContent = '已暂停';
     };
 
     ns.resetPomodoro = function () {
@@ -473,66 +538,122 @@ window.DevHome = window.DevHome || {};
         var pauseBtn = document.getElementById('wbPomodoroPause');
         if (startBtn) { startBtn.style.display = ''; startBtn.textContent = '开始'; }
         if (pauseBtn) pauseBtn.style.display = 'none';
+        // 右栏
+        var sideStart = document.getElementById('wbPomodoroSideStart');
+        var sideReset = document.getElementById('wbPomodoroSideReset');
+        if (sideStart) { sideStart.textContent = '开始'; sideStart.classList.remove('is-running'); }
         ns.updatePomodoroDisplay();
     };
 
-    /* ===== 日历 ===== */
+    /* ===== 日历（右栏迷你日历 + 侧栏日历） ===== */
     var _calendarDate = new Date();
 
     ns.navigateCalendar = function (delta) {
         _calendarDate.setMonth(_calendarDate.getMonth() + delta);
         ns.renderCalendar(new Date(_calendarDate));
+        ns.renderMiniCalendar(new Date(_calendarDate));
+        ns.renderSideCalendar(new Date(_calendarDate));
     };
 
     ns.renderCalendar = function (date) {
         _calendarDate = new Date(date);
         state.currentCalendarDate = _calendarDate;
 
-        if (dom.wbCalendarTitle) {
-            dom.wbCalendarTitle.textContent = _calendarDate.getFullYear() + '年' + (_calendarDate.getMonth() + 1) + '月';
+        // 右栏迷你日历标题
+        var titleEl = document.getElementById('wbCalendarTitle');
+        if (titleEl) {
+            titleEl.textContent = _calendarDate.getFullYear() + '年' + (_calendarDate.getMonth() + 1) + '月';
         }
-        if (!dom.wbCalendarDays) return;
 
-        var year = _calendarDate.getFullYear();
-        var month = _calendarDate.getMonth();
-        var firstDay = new Date(year, month, 1).getDay();
+        // 右栏迷你日历日期格（使用 .wb-cal-day 类名）
+        var daysEl = document.getElementById('wbCalendarDays');
+        if (!daysEl) return;
+        daysEl.innerHTML = ns._buildCalendarDaysHTML(_calendarDate, 'wb-cal-day');
+        ns._bindCalendarDayClicks(daysEl);
+    };
+
+    /** 右栏迷你日历渲染 */
+    ns.renderMiniCalendar = function (date) {
+        if (!date) date = _calendarDate;
+        var titleEl = document.getElementById('wbCalendarTitle');
+        var daysEl = document.getElementById('wbCalendarDays');
+        if (titleEl) {
+            titleEl.textContent = date.getFullYear() + '年' + (date.getMonth() + 1) + '月';
+        }
+        if (daysEl) {
+            daysEl.innerHTML = ns._buildCalendarDaysHTML(date, 'wb-cal-day');
+            ns._bindCalendarDayClicks(daysEl);
+        }
+    };
+
+    /** 侧栏迷你日历渲染 */
+    ns.renderSideCalendar = function (date) {
+        if (!date) date = _calendarDate;
+        var titleEl = document.getElementById('wbSideCalTitle');
+        var daysEl = document.getElementById('wbSideCalDays');
+        if (titleEl) {
+            titleEl.textContent = date.getFullYear() + '年' + (date.getMonth() + 1) + '月';
+        }
+        if (daysEl) {
+            daysEl.innerHTML = ns._buildCalendarDaysHTML(date, 'wb-side-cal-day');
+            daysEl.querySelectorAll('.wb-side-cal-day').forEach(function (el) {
+                el.addEventListener('click', function () {
+                    ns.showCalendarDetail(el.dataset.date);
+                });
+            });
+        }
+    };
+
+    /** 构建日历日期网格 HTML */
+    ns._buildCalendarDaysHTML = function (date, cellClass) {
+        var year = date.getFullYear();
+        var month = date.getMonth();
         var daysInMonth = new Date(year, month + 1, 0).getDate();
+        var firstDay = new Date(year, month, 1).getDay();
+        var prevMonthDays = new Date(year, month, 0).getDate();
         var today = new Date();
         var todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
 
-        // 收集该月有内容的日期
+        // 有内容的日期
         var contentDates = {};
         (state.notes || []).forEach(function (n) {
             var d = new Date(n.createdAt);
             if (d.getFullYear() === year && d.getMonth() === month) {
-                var key = d.getDate();
-                contentDates[key] = (contentDates[key] || 0) + 1;
+                contentDates[d.getDate()] = true;
             }
         });
 
         var html = '';
-        // 填充上月空白
-        for (var i = 0; i < firstDay; i++) {
-            html += '<div class="wb-calendar-day other-month"></div>';
+        // 上月填充
+        for (var i = firstDay - 1; i >= 0; i--) {
+            html += '<span class="' + cellClass + ' other-month">' + (prevMonthDays - i) + '</span>';
         }
-        // 当月日期
+        // 当月
         for (var day = 1; day <= daysInMonth; day++) {
             var dateStr = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
-            var classes = 'wb-calendar-day';
-            if (dateStr === todayStr) classes += ' today';
-            if (contentDates[day]) classes += ' has-content';
-            html += '<div class="' + classes + '" data-date="' + dateStr + '">' + day + '</div>';
+            var classes = [cellClass];
+            if (dateStr === todayStr) classes.push('today');
+            if (contentDates[day]) classes.push('has-content');
+            html += '<span class="' + classes.join(' ') + '" data-date="' + dateStr + '">' + day + '</span>';
         }
-        dom.wbCalendarDays.innerHTML = html;
+        // 下月填充
+        var totalCells = firstDay + daysInMonth;
+        var remaining = totalCells % 7 === 0 ? 0 : 7 - totalCells % 7;
+        for (var j = 1; j <= remaining; j++) {
+            html += '<span class="' + cellClass + ' other-month">' + j + '</span>';
+        }
+        return html;
+    };
 
-        // 点击日期显示详情
-        dom.wbCalendarDays.querySelectorAll('.wb-calendar-day').forEach(function (dayEl) {
-            dayEl.addEventListener('click', function () {
-                var clickedDate = dayEl.dataset.date;
-                ns.showCalendarDetail(clickedDate);
+    /** 绑定日期点击事件 */
+    ns._bindCalendarDayClicks = function (container) {
+        container.querySelectorAll('[data-date]').forEach(function (el) {
+            el.addEventListener('click', function () {
+                ns.showCalendarDetail(el.dataset.date);
             });
         });
     };
+
 
     ns.showCalendarDetail = function (dateStr) {
         if (!dom.wbCalendarDetail) return;
@@ -635,7 +756,7 @@ window.DevHome = window.DevHome || {};
         }
 
         if (dom.wbMeAiResult) dom.wbMeAiResult.style.display = 'block';
-        if (dom.wbMeAiContent) dom.wbMeAiContent.innerHTML = '<p style="color:var(--wb-text-secondary);">正在生成总结...</p>';
+        if (dom.wbMeAiContent) dom.wbMeAiContent.innerHTML = '<p style="color:var(--color-text-secondary);">正在生成总结...</p>';
 
         // 调用腾讯混元 API（Bearer Token 方式）
         try {
@@ -677,7 +798,7 @@ window.DevHome = window.DevHome || {};
         } catch (e) {
             if (dom.wbMeAiContent) {
                 dom.wbMeAiContent.innerHTML = '<p style="color:#ff6b6b;">生成失败：' + escapeHtml(e.message) + '</p>' +
-                    '<p style="color:var(--wb-text-tertiary);font-size:11px;">请检查 API Key 和网络连接</p>';
+                    '<p style="color:var(--color-text-tertiary);font-size:11px;">请检查 API Key 和网络连接</p>';
             }
             console.error('[AI Summary] 错误:', e);
         }

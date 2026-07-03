@@ -1,0 +1,83 @@
+/* ============================================
+   DevHome Workbench - tokens.css
+   Semantic Design Token 声明层
+   
+   架构说明：
+   - 本文件仅声明 Token 变量名，不设默认值（留空）
+   - 色值由 css/themes/ 下的主题文件通过 Primitive → Semantic 赋值
+   - 所有模块 CSS（tiles/overlays/workbench 等）引用这些变量
+   - 组件代码与主题色值完全解耦
+   
+   两层引用模型：
+   主题文件    →  tokens.css         →  模块 CSS
+   :root {        :root {}               .tile {
+     --_gray: #x;                          background: var(--color-bg);
+     --color-bg: var(--_gray);           }
+   }
+   ============================================ */
+
+:root {
+    /* ===== 背景层级 (Backgrounds) ===== */
+    --color-bg:             /* 主画布背景 */ ;
+    --color-bg-secondary:   /* 次级背景（侧边栏/导航） */ ;
+    --color-bg-tertiary:    /* 三级背景 */ ;
+    --color-bg-elevated:    /* 悬浮弹窗面板背景 */ ;
+
+    /* ===== 表面/控件 (Surfaces) ===== */
+    --color-surface:         /* 卡片/面板表面 */ ;
+    --color-surface-hover:   /* 卡片/面板 hover 态 */ ;
+    --color-surface-subtle:  /* 极浅表面（卡片内微妙的背景层，暗色=白透明, 浅色=黑透明） */ ;
+    --color-surface-muted:   /* 弱表面（分隔线、微妙的边框色层级） */ ;
+    --color-overlay:         /* 遮罩层背景 */ ;
+    --color-input-bg:        /* 输入框背景 */ ;
+    --color-input-border:    /* 输入框边框 */ ;
+
+    /* ===== 文字层级 (Typography) ===== */
+    --color-text:           /* 主文本颜色 */ ;
+    --color-text-secondary: /* 次级文本 */ ;
+    --color-text-tertiary:  /* 占位符/禁用文字 */ ;
+    --color-text-inverse:   /* 反色文字（深底白字/浅底黑字） */ ;
+
+    /* ===== 交互颜色 (Interactive Colors) ===== */
+    --color-accent:         /* 品牌主色调 */ ;
+    --color-accent-hover:   /* 悬停态 */ ;
+    --color-accent-active:  /* 点击激活态 */ ;
+    --color-accent-disabled: /* 禁用态 */ ;
+
+    /* ===== 状态色 (Status Colors) ===== */
+    --color-success:        /* 成功绿 */ ;
+    --color-warning:        /* 警告琥珀 */ ;
+    --color-danger:         /* 错误红 */ ;
+    --color-danger-hover:   /* 错误红 hover */ ;
+    --color-info:           /* 信息蓝 */ ;
+    --color-link:           /* 链接色 */ ;
+
+    /* ===== 边框/分隔 (Borders & Dividers) ===== */
+    --color-border:         /* 默认边框 */ ;
+    --color-border-hover:   /* 悬停边框 */ ;
+    --color-border-active:  /* 激活/聚焦边框 */ ;
+
+    /* ===== 组件特殊 (Component-specific) ===== */
+    --color-separator:      /* 分割线颜色 */ ;
+    --color-kbd-bg:         /* 快捷键标签背景 */ ;
+    --color-kbd-border:     /* 快捷键标签边框 */ ;
+    --color-accent-glow:    /* 霓虹发光色（text-shadow 用，accent 的 rgba 变体） */ ;
+    --color-glass-bg:       /* 毛玻璃卡片半透明背景 */ ;
+    --color-glass-border:   /* 毛玻璃卡片微妙边框 */ ;
+    --color-nav-bg:         /* 顶部导航栏背景 */ ;
+    --color-sidebar-bg:     /* 侧边栏背景（左右栏） */ ;
+
+    /* ===== 阴影 (Shadows) ===== */
+    --shadow-sm:            /* 小阴影（卡片、输入框） */ ;
+    --shadow-md:            /* 中阴影（弹窗、面板） */ ;
+    --shadow-lg:            /* 大阴影（模态层） */ ;
+
+    /* ===== 字体 (Typography Fonts) ===== */
+    --font-sans:            /* 无衬线字体（正文） */ ;
+    --font-mono:            /* 等宽/代码字体 */ ;
+    --font-display:         /* 展示/标题字体 */ ;
+
+    /* ===== 梯度 (Gradients) ===== */
+    --gradient-page:        /* 页面背景梯度（复合值，可为 none 用纯色） */ ;
+    --gradient-overlay:     /* 背景图片遮罩梯度 */ ;
+}

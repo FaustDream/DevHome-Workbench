@@ -1,0 +1,44 @@
+/* ============================================
+   DevHome Workbench - fonts.css
+   所有 @font-face 集中声明，配置驱动，主题通过 Token 引用
+   新增字体仅需在此处加一条 @font-face + 主题元数据中声明
+   ============================================ */
+
+/* ===== 系统无衬线字体（默认，无需额外文件） ===== */
+/* --font-sans 兜底链：由主题 Token 控制，此处无需 @font-face */
+
+/* ===== Fira Code — 等宽代码字体（黑客主题） ===== */
+@font-face {
+    font-family: 'Fira Code';
+    src: url('../fonts/FiraCode.woff2') format('woff2');
+    font-weight: 400 700;
+    font-style: normal;
+    font-display: swap; /* 先渲染系统等宽字体，加载完成后无感切换 */
+}
+
+/* ===== Press Start 2P — 像素显示字体（像素主题） ===== */
+@font-face {
+    font-family: 'Press Start 2P';
+    src: url('https://fonts.gstatic.com/s/pressstart2p/v15/e3t4euO8T-267oIAQAu6jDQyK3nVivNm4I81.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* ===== VT323 — 像素终端字体（像素主题） ===== */
+@font-face {
+    font-family: 'VT323';
+    src: url('https://fonts.gstatic.com/s/vt323/v17/pxiKyp0ihIEF2isfFJXUdVNF.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* ===== Inter — 系统无衬线（默认主题） ===== */
+@font-face {
+    font-family: 'Inter';
+    src: url('https://fonts.gstatic.com/s/inter/v18/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7SUc.woff2') format('woff2');
+    font-weight: 300 700;
+    font-style: normal;
+    font-display: swap;
+}

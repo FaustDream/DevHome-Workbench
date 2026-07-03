@@ -100,94 +100,102 @@ window.DevHome = window.DevHome || {};
 
         // ===== 模式切换 =====
         if (dom.devhomeBackHome) dom.devhomeBackHome.addEventListener('click', ns.showDailyMode);
-        if (dom.devhomeClearDone) dom.devhomeClearDone.addEventListener('click', ns.clearCompletedTasks);
-        if (dom.quadrantFilterBtn) dom.quadrantFilterBtn.addEventListener('click', ns.toggleQuadrantFilter);
+        // 清空历史按钮
+        var taskClearBtn = document.getElementById('wbTaskClearBtn');
+        if (taskClearBtn) taskClearBtn.addEventListener('click', function () { ns.clearCompletedTasks(); });
+        // 活跃/全部切换
+        var taskFilterBtn = document.getElementById('wbTaskFilterBtn');
+        if (taskFilterBtn) taskFilterBtn.addEventListener('click', function () {
+            ns.toggleQuadrantFilter();
+            console.log('[交互] 过滤切换 ' + (state._quadrantFilter || 'active'));
+        });
 
-        // ===== 四象限工作台事件 =====
-        if (dom.quadrantGrid) {
-            // 点击事件：复选框、取消按钮、添加按钮
-            dom.quadrantGrid.addEventListener('click', function (e) {
-                // 任务复选框 → 标记完成（软删除，隐藏但不销毁）
-                var check = e.target.closest('.quadrant-task-check');
+        // ===== 象限分组导航事件 =====
+        var quadrantNav = document.getElementById('wbQuadrantNav');
+        if (quadrantNav) {
+            // 点击委托：复选框、删除按钮、添加按钮
+            quadrantNav.addEventListener('click', function (e) {
+                // 复选框 → 标记完成
+                var check = e.target.closest('.wb-task-check');
                 if (check) {
                     e.stopPropagation();
                     ns.completeQuadrantTask(check.dataset.quadrant, check.dataset.taskId);
                     return;
                 }
-                // 取消按钮 → 标记取消（软删除，隐藏但不销毁）
-                var del = e.target.closest('.quadrant-task-del');
+                // 删除按钮 → 取消任务
+                var del = e.target.closest('.wb-task-del');
                 if (del) {
                     e.stopPropagation();
                     ns.cancelQuadrantTask(del.dataset.quadrant, del.dataset.taskId);
                     return;
                 }
-                // 添加按钮
-                var addBtn = e.target.closest('.quadrant-add-btn');
+                // 添加按钮 → 显示输入框
+                var addBtn = e.target.closest('.wb-quadrant-group-add');
                 if (addBtn) {
                     e.stopPropagation();
-                    var quadrant = addBtn.dataset.quadrant;
-                    var card = addBtn.closest('.quadrant-card');
-                    if (card && !card.querySelector('.quadrant-input-row')) {
-                        ns.showQuadrantInput(card, quadrant);
-                    }
+                    ns.showQuadrantInput(addBtn.dataset.quadrant, addBtn);
+                    console.log('[交互] 点击象限添加任务 ' + addBtn.dataset.quadrant);
                     return;
                 }
             });
 
-            // 拖拽事件
-            dom.quadrantGrid.addEventListener('dragstart', function (e) {
-                var task = e.target.closest('.quadrant-task');
-                if (!task) return;
-                state._dragTaskId = task.dataset.taskId;
-                state._dragFromQuadrant = task.dataset.quadrant;
-                task.classList.add('dragging');
-                e.dataTransfer.effectAllowed = 'move';
-                e.dataTransfer.setData('text/plain', task.dataset.taskId);
-            });
-
-            dom.quadrantGrid.addEventListener('dragend', function (e) {
-                var task = e.target.closest('.quadrant-task');
-                if (task) task.classList.remove('dragging');
-                // 移除所有拖拽高亮
-                var cards = dom.quadrantGrid.querySelectorAll('.quadrant-card');
-                cards.forEach(function (c) { c.classList.remove('drag-over'); });
-                state._dragTaskId = null;
-                state._dragFromQuadrant = null;
-            });
-
-            dom.quadrantGrid.addEventListener('dragover', function (e) {
-                e.preventDefault();
-                e.dataTransfer.dropEffect = 'move';
-                var card = e.target.closest('.quadrant-card');
-                if (card) {
-                    // 移除所有高亮，仅高亮当前悬停的象限
-                    var allCards = dom.quadrantGrid.querySelectorAll('.quadrant-card');
-                    allCards.forEach(function (c) { c.classList.remove('drag-over'); });
-                    card.classList.add('drag-over');
-                }
-            });
-
-            dom.quadrantGrid.addEventListener('dragleave', function (e) {
-                var card = e.target.closest('.quadrant-card');
-                // 仅在真正离开象限卡片时移除高亮
-                if (card && !card.contains(e.relatedTarget)) {
-                    card.classList.remove('drag-over');
-                }
-            });
-
-            dom.quadrantGrid.addEventListener('drop', function (e) {
-                e.preventDefault();
-                var card = e.target.closest('.quadrant-card');
-                if (!card) return;
-                card.classList.remove('drag-over');
-                var toQuadrant = card.dataset.quadrant;
-                if (state._dragTaskId && state._dragFromQuadrant && toQuadrant) {
-                    ns.moveQuadrantTask(state._dragTaskId, state._dragFromQuadrant, toQuadrant);
-                }
-                state._dragTaskId = null;
-                state._dragFromQuadrant = null;
+            // 维度下拉切换
+            quadrantNav.addEventListener('change', function (e) {
+                var sel = e.target.closest('.wb-task-selector');
+                if (!sel || !sel.value) return;
+                e.stopPropagation();
+                ns.changeTaskQuadrant(sel.dataset.taskId, sel.dataset.quadrant, sel.value);
             });
         }
+
+        // ===== 右侧迷你日历导航 =====
+        var miniCalPrev = document.getElementById('wbMiniCalPrev');
+        var miniCalNext = document.getElementById('wbMiniCalNext');
+        if (miniCalPrev) {
+            miniCalPrev.addEventListener('click', function () {
+                ns.navigateCalendar(-1);
+                console.log('[交互] 迷你日历 上一月');
+            });
+        }
+        if (miniCalNext) {
+            miniCalNext.addEventListener('click', function () {
+                ns.navigateCalendar(1);
+                console.log('[交互] 迷你日历 下一月');
+            });
+        }
+
+
+
+        // ===== 右侧番茄钟控制 =====
+        var pomoSideStart = document.getElementById('wbPomodoroSideStart');
+        var pomoSideReset = document.getElementById('wbPomodoroSideReset');
+        if (pomoSideStart) {
+            pomoSideStart.addEventListener('click', function () {
+                // 切换开始/暂停
+                if (pomoSideStart.classList.contains('is-running')) {
+                    ns.pausePomodoro();
+                    console.log('[交互] 右栏番茄钟 暂停');
+                } else {
+                    ns.startPomodoro();
+                    console.log('[交互] 右栏番茄钟 开始');
+                }
+            });
+        }
+        if (pomoSideReset) pomoSideReset.addEventListener('click', function () { ns.resetPomodoro(); console.log('[交互] 右栏番茄钟 重置'); });
+
+        // 右侧番茄钟预设
+        document.querySelectorAll('.wb-pomodoro-side-preset').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                document.querySelectorAll('.wb-pomodoro-side-preset').forEach(function (b) { b.classList.remove('active'); });
+                btn.classList.add('active');
+                ns.setPomodoroDuration(parseInt(btn.dataset.duration));
+                console.log('[交互] 番茄钟时长设为 ' + btn.dataset.duration + '分钟');
+            });
+        });
+
+
+
+
 
         // ===== 页面切换 =====
         dom.prevPage.addEventListener('click', function () { ns.changePageWithAnimation(state.currentPage - 1); });
@@ -200,7 +208,7 @@ window.DevHome = window.DevHome || {};
         // ===== 空白区域右键菜单 =====
         dom.blankContextMenu.addEventListener('click', function (e) { var item = e.target.closest('.context-menu-item'); if (item && item.dataset.action) ns.handleBlankMenuAction(item.dataset.action); });
 
-        // ===== 编辑器右键菜单（精简版：代码块 + 引用块 + 复制粘贴） =====
+        // ===== 编辑器右键菜单（contenteditable 精简版：复制粘贴） =====
         var editorMenu = document.getElementById('editorContextMenu');
         if (editorMenu) {
             editorMenu.addEventListener('mousedown', function (e) {
@@ -211,79 +219,16 @@ window.DevHome = window.DevHome || {};
                 console.log('[交互] 右键菜单 ' + item.dataset.editorAction);
 
                 var action = item.dataset.editorAction;
-                if (action === 'blockquote' && ns._executeBubbleAction) {
-                    ns._executeBubbleAction('blockquote');
-                } else if (action === 'copy') {
+                if (action === 'copy') {
                     document.execCommand('copy');
-                } else if (action === 'pasteText' && ns._executeBubbleAction) {
-                    // 纯文本粘贴：通过 PM 的 pasteText API 插入
-                    ns._executeBubbleAction('pasteText');
-                } else if (action === 'pasteHtml' && ns._executeBubbleAction) {
-                    // 富文本粘贴：通过 PM 的 pasteHTML API 插入
-                    ns._executeBubbleAction('pasteHtml');
                 } else if (action === 'paste') {
-                    // 兼容旧版"粘贴"菜单项
                     document.execCommand('paste');
                 }
-                // 隐藏菜单
                 var em = document.getElementById('editorContextMenu');
                 if (em) em.classList.remove('visible');
             });
-
-            // 代码子菜单：hover 或 click 触发
-            var ctxCodeItem = editorMenu.querySelector('#ctxCodeSubmenu');
-            if (ctxCodeItem) {
-                ctxCodeItem.addEventListener('mouseenter', function () {
-                    ns.showCodeLangMenu(ctxCodeItem);
-                });
-                ctxCodeItem.addEventListener('mouseleave', function () {
-                    setTimeout(function () {
-                        var langMenu = document.getElementById('ctxCodeLangMenu');
-                        if (langMenu && !langMenu.matches(':hover') && !ctxCodeItem.matches(':hover')) ns.hideCodeLangMenu();
-                    }, 150);
-                });
-                ctxCodeItem.addEventListener('click', function (e) {
-                    e.preventDefault(); e.stopPropagation();
-                    var langMenu = document.getElementById('ctxCodeLangMenu');
-                    if (langMenu && langMenu.classList.contains('visible')) {
-                        ns.hideCodeLangMenu();
-                    } else {
-                        ns.showCodeLangMenu(ctxCodeItem);
-                    }
-                });
-                ctxCodeItem.addEventListener('mousedown', function (e) {
-                    e.preventDefault(); e.stopPropagation();
-                });
-                var langMenu = document.getElementById('ctxCodeLangMenu');
-                if (langMenu) {
-                    langMenu.addEventListener('mouseenter', function () {
-                        langMenu.classList.add('visible');
-                    });
-                    langMenu.addEventListener('mouseleave', function () {
-                        ns.hideCodeLangMenu();
-                    });
-                    langMenu.addEventListener('click', function (e) { e.stopPropagation(); });
-                    langMenu.addEventListener('mousedown', function (e) { e.stopPropagation(); });
-                    langMenu.addEventListener('mousedown', function (e) {
-                        var item = e.target.closest('.ctx-code-lang-item');
-                        if (!item) return;
-                        e.preventDefault();
-                        if (ns._executeBubbleAction) {
-                            ns._executeBubbleAction('codeBlock', item.dataset.lang);
-                        }
-                        var em = document.getElementById('editorContextMenu');
-                        if (em) em.classList.remove('visible');
-                        ns.hideCodeLangMenu();
-                    });
-                }
-            }
         }
 
-        // ===== 气泡工具栏事件 =====
-        bindBubbleToolbar();
-
-        // ===== 旧工具栏按钮事件延迟绑定（兼容回退） =====
-        _bindLegacyToolbarEvents();
 
         // ===== 设置面板 =====
         if (dom.settingsGearBtn) dom.settingsGearBtn.addEventListener('click', ns.openSettingsPanel);
@@ -294,15 +239,115 @@ window.DevHome = window.DevHome || {};
         if (dom.changelogCloseBtn) dom.changelogCloseBtn.addEventListener('click', ns.closeChangelog);
         if (dom.changelogOverlay) dom.changelogOverlay.addEventListener('click', function (e) { if (e.target === dom.changelogOverlay) ns.closeChangelog(); });
         if (dom.settingsPanel) {
+            // 设置面板点击委托
             dom.settingsPanel.addEventListener('click', function (e) {
-                var sizeBtn = e.target.closest('.shortcut-size-btn');
-                if (sizeBtn) { e.preventDefault(); applyShortcutSizeFn(sizeBtn.dataset.shortcutSize); ns.syncSettingsControls(); return; }
-                var colsBtn = e.target.closest('.shortcut-columns-btn');
-                if (colsBtn) { e.preventDefault(); applyShortcutColumnsFn(colsBtn.dataset.shortcutColumns); ns.syncSettingsControls(); return; }
+                // 左侧导航 Tab
+                var navItem = e.target.closest('.s-nav-item');
+                if (navItem) {
+                    ns.switchSettingsTab(navItem.dataset.sTab);
+                    return;
+                }
+                // 分段选择器
+                var segBtn = e.target.closest('.s-seg-btn');
+                if (segBtn) {
+                    e.preventDefault();
+                    if (segBtn.dataset.shortcutSize) {
+                        applyShortcutSizeFn(segBtn.dataset.shortcutSize);
+                    } else if (segBtn.dataset.shortcutColumns) {
+                        applyShortcutColumnsFn(segBtn.dataset.shortcutColumns);
+                    }
+                    ns.syncSettingsControls();
+                    return;
+                }
+                // 设置操作按钮
                 var settingBtn = e.target.closest('[data-setting-action]');
-                if (settingBtn) { e.preventDefault(); ns.handleSettingsAction(settingBtn.dataset.settingAction); }
+                if (settingBtn) { e.preventDefault(); ns.handleSettingsAction(settingBtn.dataset.settingAction); return; }
+                // 导出过滤按钮
+                var exportFilter = e.target.closest('[data-export-filter]');
+                if (exportFilter && typeof ns.setExportFilter === 'function') {
+                    ns.setExportFilter(exportFilter.dataset.exportFilter);
+                    return;
+                }
+                // AI Key 密码切换
+                var aiKeyIcon = e.target.closest('#sToggleAiKey');
+                if (aiKeyIcon) {
+                    var input = document.getElementById('wbMeAiApiKey');
+                    if (input) {
+                        var isPass = input.type === 'password';
+                        input.type = isPass ? 'text' : 'password';
+                        aiKeyIcon.textContent = isPass ? '🙈' : '👁';
+                    }
+                }
             });
-            dom.settingsPanel.addEventListener('change', function (_e) { /* 设置面板已移除专注模式选项，保留 change 监听器骨架供日后扩展 */ });
+
+            // 设置面板 change 委托（Toggle 开关 + 快捷键捕获）
+            dom.settingsPanel.addEventListener('change', function (e) {
+                var cb = e.target;
+                if (!cb || cb.type !== 'checkbox') return;
+                // Matrix 数字雨
+                if (cb.id === 'matrixRainToggle') {
+                    var params = document.getElementById('matrixRainParams');
+                    if (cb.checked && ns.matrixRain) { ns.matrixRain.start(); if (params) params.style.display = ''; }
+                    else { if (ns.matrixRain) ns.matrixRain.stop(); if (params) params.style.display = 'none'; }
+                    return;
+                }
+                // 分类按钮
+                if (cb.closest('#sToggleCatRow')) { ns.handleSettingsAction('toggleCatRow'); return; }
+                // 自动聚焦
+                if (cb.closest('#sToggleAutoFocus')) { ns.handleSettingsAction('toggleAutoFocus'); return; }
+                // 分类记忆
+                if (cb.closest('#sToggleCategoryMemory')) { ns.handleSettingsAction('toggleCategoryMemory'); return; }
+                // 严厉模式 / 文件同步
+                var toggleStrict = cb.closest('#sToggleStrict');
+                if (toggleStrict) { ns._saveStrictMode(cb.checked); return; }
+                var toggleFileSync = cb.closest('#sToggleFileSync');
+                if (toggleFileSync) { ns._saveFileSync(cb.checked); return; }
+            });
+        }
+
+        // ===== 快捷键捕获组件 =====
+        var shortcutCapture = document.getElementById('sShortcutCapture');
+        if (shortcutCapture) {
+            var _scKeys = [];
+            shortcutCapture.addEventListener('keydown', function (e) {
+                e.preventDefault();
+                var parts = [];
+                if (e.ctrlKey || e.metaKey) parts.push('Ctrl');
+                if (e.shiftKey) parts.push('Shift');
+                if (e.altKey) parts.push('Alt');
+                if (e.key && e.key.length === 1 && !['Control','Shift','Alt','Meta'].includes(e.key)) {
+                    parts.push(e.key.toUpperCase());
+                }
+                if (parts.length > 0) {
+                    _scKeys = parts;
+                    var display = document.getElementById('sShortcutKeys');
+                    if (display) display.textContent = parts.join(' + ');
+                    shortcutCapture.classList.add('recording');
+                }
+            });
+            shortcutCapture.addEventListener('blur', function () {
+                shortcutCapture.classList.remove('recording');
+                // 保存捕获的键
+                if (_scKeys.length > 0) {
+                    var ctrlEl = document.getElementById('wbMeShortcutCtrl');
+                    var shiftEl = document.getElementById('wbMeShortcutShift');
+                    var altEl = document.getElementById('wbMeShortcutAlt');
+                    var keyEl = document.getElementById('wbMeShortcutKey');
+                    if (ctrlEl) ctrlEl.value = _scKeys.includes('Ctrl') ? '1' : '0';
+                    if (shiftEl) shiftEl.value = _scKeys.includes('Shift') ? '1' : '0';
+                    if (altEl) altEl.value = _scKeys.includes('Alt') ? '1' : '0';
+                    if (keyEl) keyEl.value = (_scKeys.filter(function(k){return k.length===1;})[0] || 'K').toLowerCase();
+                }
+            });
+            shortcutCapture.addEventListener('click', function () { shortcutCapture.focus(); });
+        }
+
+        // ===== 保存快捷键 =====
+        var shortcutSave = document.getElementById('wbMeShortcutSave');
+        if (shortcutSave) {
+            shortcutSave.addEventListener('click', function () {
+                ns._saveShortcut();
+            });
         }
 
         // ===== 搜索引擎 =====
@@ -426,7 +471,7 @@ window.DevHome = window.DevHome || {};
         }
         function updateFaPreview() {
             var ic = dom.faInput.value.trim();
-            dom.faPreview.innerHTML = ic ? '<i class="' + ic + '"></i>' : '<span style="font-size:12px;color:var(--text-secondary)">自动获取网站图标</span>';
+            dom.faPreview.innerHTML = ic ? '<i class="' + ic + '"></i>' : '<span style="font-size:12px;color:var(--color-text-secondary)">自动获取网站图标</span>';
         }
 
         // ===== 右键菜单全局 =====
@@ -486,6 +531,29 @@ window.DevHome = window.DevHome || {};
             charDensitySlider.addEventListener('input', function () {
                 localStorage.setItem('tabpage_char_density', this.value);
                 if (charDensityValue) charDensityValue.textContent = Math.round(this.value / 5 * 100) + '%';
+            });
+        }
+
+        // ===== Matrix 数字雨开关 =====
+        var matrixRainToggle = document.getElementById('matrixRainToggle');
+        var matrixRainParams = document.getElementById('matrixRainParams');
+        if (matrixRainToggle && ns.matrixRain) {
+            // 同步初始状态
+            var isOn = ns.matrixRain.isRunning();
+            matrixRainToggle.checked = isOn;
+            if (matrixRainParams) matrixRainParams.style.display = isOn ? '' : 'none';
+
+            matrixRainToggle.addEventListener('change', function () {
+                var params = document.getElementById('matrixRainParams');
+                if (this.checked) {
+                    ns.matrixRain.start();
+                    if (params) params.style.display = '';
+                    console.log('[数字雨] 开启');
+                } else {
+                    ns.matrixRain.stop();
+                    if (params) params.style.display = 'none';
+                    console.log('[数字雨] 关闭');
+                }
             });
         }
 
@@ -558,16 +626,6 @@ window.DevHome = window.DevHome || {};
                     ns.syncSettingsControls();
                     ns.bindEvents();
                 }
-            });
-        }
-
-        // ===== v2 工作台 Tab 切换 =====
-        if (dom.wbNav) {
-            dom.wbNav.addEventListener('click', function (e) {
-                var tab = e.target.closest('.wb-nav-tab');
-                if (!tab) return;
-                var tabName = tab.dataset.tab;
-                if (tabName) ns.switchWbTab(tabName);
             });
         }
 
@@ -1173,109 +1231,5 @@ window.DevHome = window.DevHome || {};
         function applyShortcutColumnsFn(cols) { ns.applyShortcutColumns(cols); }
     };
 
-    /* ===== 气泡工具栏事件 ===== */
-
-    /** 绑定气泡工具栏按钮事件 */
-    function bindBubbleToolbar() {
-        var toolbar = document.getElementById('wbBubbleToolbar');
-        if (!toolbar) return;
-
-        // 按钮 mousedown 事件（阻止失焦，执行 PM 命令）
-        toolbar.addEventListener('mousedown', function (e) {
-            var btn = e.target.closest('[data-pm-action]');
-            if (!btn) return;
-            e.preventDefault();
-
-            var action = btn.dataset.pmAction;
-            if (action === 'color') {
-                // 颜色按钮：切换颜色面板
-                toggleBubbleColorPalette(btn);
-                return;
-            }
-
-            var value = btn.value || null;
-            if (ns._executeBubbleAction) {
-                ns._executeBubbleAction(action, value);
-            }
-        });
-
-        // 标题下拉 change 事件
-        var headingSel = toolbar.querySelector('[data-pm-action="heading"]');
-        if (headingSel) {
-            headingSel.addEventListener('change', function () {
-                if (ns._executeBubbleAction) {
-                    ns._executeBubbleAction('heading', headingSel.value || null);
-                }
-            });
-            headingSel.addEventListener('mousedown', function (e) {
-                e.stopPropagation();
-            });
-        }
-
-        // 颜色面板点击
-        var colorPalette = document.getElementById('wbColorPalette');
-        if (colorPalette) {
-            colorPalette.addEventListener('mousedown', function (e) {
-                var swatch = e.target.closest('.wb-color-swatch');
-                if (!swatch || !swatch.dataset.hex) return;
-                e.preventDefault();
-                if (ns._executeBubbleAction) {
-                    ns._executeBubbleAction('color', swatch.dataset.hex);
-                }
-                var palette = document.getElementById('wbColorPalette');
-                if (palette) palette.style.display = 'none';
-            });
-        }
-    }
-
-    /** 切换气泡颜色面板显隐 */
-    function toggleBubbleColorPalette(anchorBtn) {
-        var palette = document.getElementById('wbColorPalette');
-        if (!palette) return;
-        if (palette.style.display === 'grid') {
-            palette.style.display = 'none';
-            return;
-        }
-        // 渲染颜色面板
-        ns._renderColorPalette && ns._renderColorPalette(palette);
-        palette.style.display = 'grid';
-        var anchorRect = anchorBtn.getBoundingClientRect();
-        palette.style.position = 'fixed';
-        palette.style.left = Math.max(8, anchorRect.left) + 'px';
-        palette.style.top = (anchorRect.bottom + 4) + 'px';
-        palette.style.zIndex = '3000';
-        // 关闭监听
-        setTimeout(function () {
-            document.addEventListener('click', function hide() {
-                palette.style.display = 'none';
-                document.removeEventListener('click', hide);
-            }, { once: true });
-        }, 0);
-    }
-
-    /** 旧工具栏事件兼容回退（当气泡工具栏不可用时） */
-    function _bindLegacyToolbarEvents() {
-        var toolbar = document.getElementById('wbNotesToolbar');
-        if (!toolbar) return;
-
-        function execPMAction(action, value) {
-            if (ns._executeBubbleAction) ns._executeBubbleAction(action, value);
-        }
-
-        toolbar.addEventListener('mousedown', function (e) {
-            var btn = e.target.closest('[data-pm-action]');
-            if (!btn) return;
-            e.preventDefault();
-            execPMAction(btn.dataset.pmAction, btn.value || null);
-        });
-
-        var headingSel = toolbar.querySelector('[data-pm-action="heading"]');
-        if (headingSel) {
-            headingSel.addEventListener('change', function () {
-                execPMAction('heading', headingSel.value || null);
-            });
-            headingSel.addEventListener('mousedown', function (e) { e.stopPropagation(); });
-        }
-    }
-
 })(window.DevHome);
+

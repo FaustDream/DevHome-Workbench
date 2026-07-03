@@ -899,7 +899,7 @@ window.DevHome = window.DevHome || {};
             var toast = document.createElement('div');
             toast.className = 'file-config-toast' + (type === 'success' ? ' file-config-toast--success' : '');
             toast.textContent = message;
-            toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--devhome-card-bg);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);color:var(--text-primary);padding:10px 24px;border-radius:var(--radius-full);font-size:var(--font-size-sm);z-index:9999;border:1px solid var(--glass-border);transition:opacity 0.3s ease;pointer-events:none;';
+            toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--color-surface);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);color:var(--color-text);padding:10px 24px;border-radius:var(--radius-full);font-size:var(--font-size-sm);z-index:9999;border:1px solid var(--color-border);transition:opacity 0.3s ease;pointer-events:none;';
             document.body.appendChild(toast);
             setTimeout(function () { toast.style.opacity = '0'; }, 2500);
             setTimeout(function () { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 3000);

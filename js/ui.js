@@ -200,56 +200,106 @@ window.DevHome = window.DevHome || {};
 
     /* ===== 设置面板 ===== */
     ns.openSettingsPanel = function () {
+        // 根据模式显隐工作台专属内容
+        var isWB = state.currentDevhomeMode === 'workbench';
+        document.querySelectorAll('#settingsPanel [data-mode="workbench"]').forEach(function (el) {
+            el.style.display = isWB ? '' : 'none';
+        });
+        // 工作台模式下渲染行为数据和导出列表
+        if (isWB) {
+            if (typeof ns.renderBehaviorDashboard === 'function') ns.renderBehaviorDashboard();
+            if (typeof ns.renderExportList === 'function') ns.renderExportList(state.exportFilter || 'all');
+            if (typeof ns.loadMeConfig === 'function') ns.loadMeConfig();
+        }
+        // 默认切换到第一个 tab
+        if (!state._activeSettingsTab) state._activeSettingsTab = 'general';
+        ns.switchSettingsTab(state._activeSettingsTab);
         ns.syncSettingsControls();
         dom.settingsOverlay.classList.add('visible');
         ns.hideBlankContextMenu();
-
-        // 工作台模式下，渲染行为面板和导出列表
-        if (state.currentDevhomeMode === 'workbench' && typeof ns.renderBehaviorDashboard === 'function') {
-            ns.renderBehaviorDashboard();
-            ns.renderExportList(state.exportFilter || 'all');
-            ns.loadMeConfig();
-        }
     };
 
     ns.closeSettingsPanel = function () { dom.settingsOverlay.classList.remove('visible'); };
 
     /* ===== 更新说明弹窗 ===== */
-    ns.openChangelog = function () {
-        dom.changelogOverlay.classList.add('visible');
-    };
+    ns.openChangelog = function () { dom.changelogOverlay.classList.add('visible'); };
+    ns.closeChangelog = function () { dom.changelogOverlay.classList.remove('visible'); };
 
-    ns.closeChangelog = function () {
-        dom.changelogOverlay.classList.remove('visible');
+    /* ===== 设置 Tab 切换 ===== */
+    ns.switchSettingsTab = function (tabName) {
+        state._activeSettingsTab = tabName;
+        // 更新导航 active
+        document.querySelectorAll('.s-nav-item').forEach(function (item) {
+            item.classList.toggle('active', item.dataset.sTab === tabName);
+        });
+        // 切换 tab 内容
+        document.querySelectorAll('.s-tab').forEach(function (tab) {
+            tab.classList.toggle('active', tab.dataset.sTab === tabName);
+        });
     };
 
     ns.syncSettingsControls = function () {
         if (!dom.settingsPanel) return;
-        var autoFocusOn = storage.get('auto_focus', false);
-        if (dom.autoFocusText) dom.autoFocusText.textContent = autoFocusOn ? '自动聚焦：开' : '自动聚焦：关';
-        var categoryMemoryOn = storage.get('category_memory', false);
-        if (dom.categoryMemoryText) dom.categoryMemoryText.textContent = categoryMemoryOn ? '分类记忆：开' : '分类记忆：关';
-        if (dom.catRowText) dom.catRowText.textContent = storage.get('cat_row', false) ? '分类按钮：开' : '分类按钮：关';
 
-        // [v1.3.0] 文件配置同步状态
+        // Toggle 状态
+        var setToggle = function (id, state) {
+            var el = document.getElementById(id);
+            if (!el) { el = document.getElementById(id + 'Toggle'); }
+            if (el) {
+                var cb = el.querySelector('input[type="checkbox"]') || el;
+                if (cb && cb.type === 'checkbox') cb.checked = state;
+            }
+        };
+        setToggle('sToggleCatRow', storage.get('cat_row', false));
+        setToggle('sToggleAutoFocus', storage.get('auto_focus', false));
+        setToggle('sToggleCategoryMemory', storage.get('category_memory', false));
+        setToggle('sToggleStrict', storage.get('strict_mode', false));
+        setToggle('sToggleFileSync', storage.get('file_sync', false));
+
+        // 分段选择器
+        var sizeKey = ns.normalizeShortcutSize(storage.get('shortcut_size', ns.DEFAULT_SHORTCUT_SIZE));
+        document.querySelectorAll('[data-shortcut-size]').forEach(function (b) { b.classList.toggle('active', b.dataset.shortcutSize === sizeKey); });
+        var colsKey = ns.normalizeShortcutColumns(storage.get('shortcut_columns', ns.DEFAULT_SHORTCUT_COLUMNS));
+        document.querySelectorAll('[data-shortcut-columns]').forEach(function (b) { b.classList.toggle('active', b.dataset.shortcutColumns === colsKey); });
+
+        // 数字雨开关 + 参数显隐
+        var mrToggle = document.getElementById('matrixRainToggle');
+        var mrParams = document.getElementById('matrixRainParams');
+        if (mrToggle && ns.matrixRain) {
+            var isOn = ns.matrixRain.isRunning();
+            mrToggle.checked = isOn;
+            if (mrParams) mrParams.style.display = isOn ? '' : 'none';
+        }
+
+        // 快捷键显示
+        var shortcutKeys = document.getElementById('sShortcutKeys');
+        if (shortcutKeys) {
+            var ctrlEl = document.getElementById('wbMeShortcutCtrl');
+            var shiftEl = document.getElementById('wbMeShortcutShift');
+            var altEl = document.getElementById('wbMeShortcutAlt');
+            var keyEl = document.getElementById('wbMeShortcutKey');
+            var parts = [];
+            if (ctrlEl && ctrlEl.value === '1') parts.push('Ctrl');
+            if (shiftEl && shiftEl.value === '1') parts.push('Shift');
+            if (altEl && altEl.value === '1') parts.push('Alt');
+            parts.push((keyEl && keyEl.value || 'K').toUpperCase());
+            shortcutKeys.textContent = parts.join(' + ');
+        }
+
+        // 文件配置同步状态
         if (ns.fileConfig && ns.fileConfig.isSupported()) {
             var syncInfo = ns.fileConfig.getSyncInfo();
             var hasDir = !!syncInfo.dirName;
-            // 切换/选择目录按钮始终可见，标签根据是否有目录变化
             if (dom.configChangeDirBtn) dom.configChangeDirBtn.style.display = '';
             if (dom.configDirLabel) dom.configDirLabel.textContent = hasDir ? '切换配置目录' : '选择配置目录';
-            // 立即同步仅在有目录句柄时显示
             if (dom.configSyncBtn) dom.configSyncBtn.style.display = hasDir ? '' : 'none';
-            // 状态信息始终显示
             if (dom.configSyncStatus) {
                 dom.configSyncStatus.style.display = '';
                 if (hasDir) {
                     var timeStr = syncInfo.lastSyncTime ? new Date(syncInfo.lastSyncTime).toLocaleTimeString('zh-CN') : '未同步';
                     dom.configSyncStatus.textContent = '配置目录：' + syncInfo.dirName + ' | 上次同步：' + timeStr;
-                    dom.configSyncStatus.style.color = syncInfo.lastError ? 'var(--danger)' : 'var(--text-tertiary)';
                 } else {
-                    dom.configSyncStatus.textContent = '未选择配置目录，选择后数据将自动同步到文件';
-                    dom.configSyncStatus.style.color = 'var(--text-tertiary)';
+                    dom.configSyncStatus.textContent = '未选择配置目录';
                 }
             }
         }
@@ -353,7 +403,7 @@ window.DevHome = window.DevHome || {};
 
     function updateFaPreview() {
         var iconClass = dom.faInput.value.trim();
-        dom.faPreview.innerHTML = iconClass ? '<i class="' + iconClass + '"></i>' : '<span style="font-size:12px;color:var(--text-secondary)">自动获取网站图标</span>';
+        dom.faPreview.innerHTML = iconClass ? '<i class="' + iconClass + '"></i>' : '<span style="font-size:12px;color:var(--color-text-secondary)">自动获取网站图标</span>';
     }
 
     ns.saveTile = function () {
@@ -435,38 +485,17 @@ window.DevHome = window.DevHome || {};
         ns.hideCodeLangMenu();
     }
 
-    /** 编辑器右键菜单项处理（精简版：仅 blockquote/copy/paste，其余由气泡工具栏 + PM 快捷键覆盖） */
+    /** 编辑器右键菜单项处理（contenteditable 精简版：copy/paste） */
     ns.handleEditorMenuAction = function (action) {
-        if (action === 'blockquote' && ns._executeBubbleAction) {
-            ns._executeBubbleAction('blockquote');
-        } else if (action === 'copy') {
+        if (action === 'copy') {
             document.execCommand('copy');
-        } else if (action === 'pasteText' && ns._executeBubbleAction) {
-            ns._executeBubbleAction('pasteText');
-        } else if (action === 'pasteHtml' && ns._executeBubbleAction) {
-            ns._executeBubbleAction('pasteHtml');
         } else if (action === 'paste') {
             document.execCommand('paste');
         }
         hideEditorMenu();
     };
 
-    /* ===== 颜色面板渲染（气泡工具栏用） ===== */
 
-    /**
-     * 渲染 20 色颜色面板到指定容器
-     * @param {Element} container
-     */
-    ns._renderColorPalette = function (container) {
-        var COLORS_20 = [
-            '#000000', '#434343', '#666666', '#999999', '#b7b7b7', '#cccccc', '#d9d9d9', '#efefef',
-            '#980000', '#ff0000', '#ff9900', '#ffff00', '#00ff00', '#00ffff', '#4a86e8', '#0000ff',
-            '#9900ff', '#ff00ff', '#e6b8af', '#f4cccc'
-        ];
-        container.innerHTML = COLORS_20.map(function (c) {
-            return '<div class="wb-color-swatch" data-hex="' + c + '" style="background:' + c + ';" title="' + c + '"></div>';
-        }).join('');
-    };
 
     /* ===== 代码语言子菜单 ===== */
     var CODE_LANGUAGES = [
@@ -518,12 +547,50 @@ window.DevHome = window.DevHome || {};
         if (menu) menu.classList.remove('visible');
     };
 
-    /** 插入代码块（使用 ProseMirror API） */
-    ns.insertCodeBlock = function (lang) {
-        if (ns._executeBubbleAction) {
-            ns._executeBubbleAction('codeBlock', lang || '');
-            hideEditorMenu();
+    /* ===== 设置面板保存辅助 ===== */
+    ns._saveStrictMode = function (on) {
+        ns.storage.set('strict_mode', on);
+        ns.showToast(on ? '严厉鞭策模式已开启' : '严厉鞭策模式已关闭', 'info');
+    };
+    ns._saveFileSync = function (on) {
+        ns.storage.set('file_sync', on);
+        ns.showToast(on ? '文件自动同步已开启' : '文件自动同步已关闭', 'info');
+    };
+    ns._saveShortcut = function () {
+        var ctrlEl = document.getElementById('wbMeShortcutCtrl');
+        var shiftEl = document.getElementById('wbMeShortcutShift');
+        var altEl = document.getElementById('wbMeShortcutAlt');
+        var keyEl = document.getElementById('wbMeShortcutKey');
+        if (!keyEl) return;
+        var sc = {
+            ctrl: ctrlEl && ctrlEl.value === '1',
+            shift: shiftEl && shiftEl.value === '1',
+            alt: altEl && altEl.value === '1',
+            key: keyEl.value.toLowerCase() || 'k'
+        };
+        ns.state._focusShortcut = sc;
+        if (ns.storageV2) {
+            ns.storageV2.get(ns.storageV2.KEYS.CONFIG, ns.DEFAULT_V2_CONFIG).then(function (cfg) {
+                cfg.focusShortcut = sc;
+                ns.storageV2.set(ns.storageV2.KEYS.CONFIG, cfg);
+            });
         }
+        ns.showToast('快捷键已保存', 'success');
+    };
+    ns.loadMeConfig = function () {
+        // 加载开发设置到 UI
+        if (!ns.storageV2) return;
+        ns.storageV2.get(ns.storageV2.KEYS.CONFIG, ns.DEFAULT_V2_CONFIG).then(function (cfg) {
+            if (!cfg.focusShortcut) return;
+            var ctrlEl = document.getElementById('wbMeShortcutCtrl');
+            var shiftEl = document.getElementById('wbMeShortcutShift');
+            var altEl = document.getElementById('wbMeShortcutAlt');
+            var keyEl = document.getElementById('wbMeShortcutKey');
+            if (ctrlEl) ctrlEl.value = cfg.focusShortcut.ctrl ? '1' : '0';
+            if (shiftEl) shiftEl.value = cfg.focusShortcut.shift ? '1' : '0';
+            if (altEl) altEl.value = cfg.focusShortcut.alt ? '1' : '0';
+            if (keyEl) keyEl.value = cfg.focusShortcut.key || 'k';
+        });
     };
 
 })(window.DevHome);
