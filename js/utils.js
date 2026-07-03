@@ -312,4 +312,56 @@ window.DevHome = window.DevHome || {};
         }, duration + 300);
     };
 
+    /* ===== 带操作按钮的 Action Toast（用于撤销等场景） ===== */
+    /**
+     * 显示带操作按钮的 toast 通知
+     * @param {string} message - 通知内容
+     * @param {string} actionLabel - 操作按钮文字（如 "撤销"）
+     * @param {function} actionCallback - 点击操作按钮的回调
+     * @param {number} [duration] - 显示时长（毫秒），默认 4000
+     * @param {string} [type] - 类型：'info' | 'success' | 'error'，默认 'info'
+     */
+    ns.showActionToast = function (message, actionLabel, actionCallback, duration, type) {
+        type = type || 'info';
+        duration = duration || 4000;
+        var toast = document.createElement('div');
+        toast.className = 'wb-toast wb-toast-action ' + type;
+        toast.style.pointerEvents = 'auto';
+        toast.style.cursor = 'default';
+
+        var messageSpan = document.createElement('span');
+        messageSpan.className = 'wb-toast-message';
+        messageSpan.textContent = message;
+
+        var actionBtn = document.createElement('button');
+        actionBtn.className = 'wb-toast-action-btn';
+        actionBtn.textContent = actionLabel;
+
+        var didAction = false;
+        var timer = null;
+
+        var cleanup = function () {
+            if (timer) { clearTimeout(timer); timer = null; }
+            if (toast.parentNode) toast.parentNode.removeChild(toast);
+        };
+
+        actionBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            if (!didAction) {
+                didAction = true;
+                actionCallback();
+            }
+            cleanup();
+        });
+
+        toast.appendChild(messageSpan);
+        toast.appendChild(actionBtn);
+        document.body.appendChild(toast);
+
+        // 自动消失后清理
+        timer = setTimeout(function () {
+            if (toast.parentNode) toast.parentNode.removeChild(toast);
+        }, duration + 300);
+    };
+
 })(window.DevHome);

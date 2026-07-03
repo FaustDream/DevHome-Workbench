@@ -112,6 +112,72 @@ window.DevHome = window.DevHome || {};
         await ns.saveNotes();
     };
 
+    /* ===== 删除撤销队列 ===== */
+
+    /** 暂存被删除的笔记/捕获，供撤销使用 */
+    state._deletedNotes = [];
+
+    /**
+     * 将笔记/捕获放入删除队列，执行实际删除，并弹出撤销 Toast
+     * @param {object} item - 要删除的笔记或捕获对象
+     * @param {string} kind - 'note' 或 'capture'
+     */
+    ns.deleteWithUndo = function (item, kind) {
+        var id = item.id;
+        var label = kind === 'capture' ? (item.content || '').slice(0, 30) : (item.title || '').slice(0, 30);
+        if (!label) label = '无标题';
+        console.log('[交互] 删除' + (kind === 'capture' ? '捕获' : '笔记') + ' id=' + id + ' 标签=' + label);
+
+        // 存入删除队列
+        var entry = { id: id, item: item, kind: kind };
+        state._deletedNotes.push(entry);
+
+        // 执行实际删除
+        var delPromise = kind === 'capture' ? ns.deleteCapture(id) : ns.deleteNote(id);
+        delPromise.then(function () {
+            if (state.currentNote && state.currentNote.id === id) ns.closeNoteEditor();
+            ns.renderNotesList(state._notesFilter, state._notesSearch);
+            if (kind === 'capture') ns.renderCaptures();
+        });
+
+        // 弹出带撤销按钮的 Toast
+        var labelShort = label.length > 20 ? label + '...' : label;
+        ns.showActionToast('已删除' + (kind === 'capture' ? '捕获' : '笔记') + ' "' + labelShort + '"', '撤销', function () {
+            // 撤销：从队列中恢复笔记
+            var idx = state._deletedNotes.findIndex(function (d) { return d.id === id; });
+            if (idx === -1) return;
+            var deleted = state._deletedNotes[idx];
+            state._deletedNotes.splice(idx, 1);
+            console.log('[交互] 撤销删除 id=' + id);
+            if (deleted.kind === 'capture') {
+                ns.restoreCapture(deleted.item);
+            } else {
+                ns.restoreNote(deleted.item);
+            }
+            // 如果撤销的是当前查看的笔记，重新打开
+            if (state.currentNote && state.currentNote.id === id) {
+                // closeNoteEditor 已被调用，需要重新打开
+                ns.openNoteEditor(deleted.item);
+            }
+        });
+    };
+
+    /** 恢复被删除的笔记 */
+    ns.restoreNote = async function (note) {
+        state.notes.push(note);
+        state.notes.sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
+        await ns.saveNotes();
+        ns.renderNotesList(state._notesFilter, state._notesSearch);
+    };
+
+    /** 恢复被删除的捕获 */
+    ns.restoreCapture = async function (cap) {
+        state.captures.push(cap);
+        await storageV2.set(storageV2.KEYS.CAPTURES, state.captures);
+        ns.renderCaptures();
+        ns.renderNotesList(state._notesFilter, state._notesSearch);
+    };
+
     /* ===== 快速捕获 ===== */
 
     /** 加载捕获列表 */

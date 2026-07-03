@@ -654,24 +654,18 @@ window.DevHome = window.DevHome || {};
         // ===== v2 笔记面板事件 =====
         if (dom.wbNotesList) {
             dom.wbNotesList.addEventListener('click', function (e) {
-                // 删除按钮点击
+                // 删除按钮点击 — Toast + 撤销
                 var delBtn = e.target.closest('.wb-note-list-del');
                 if (delBtn) {
                     e.stopPropagation();
                     var delId = delBtn.dataset.delId;
                     var delKind = delBtn.dataset.delKind;
-                    var label = delKind === 'capture'
-                        ? (state.captures.find(function(c){return c.id===delId;}) || {}).content || ''
-                        : (state.notes.find(function(n){return n.id===delId;}) || {}).title || '';
-                    ns.showConfirm('确定删除 "' + label.slice(0, 30) + '" 吗？', { title: '删除' + (delKind === 'capture' ? '捕获' : '笔记') }).then(function (ok) {
-                        if (!ok) return;
-                        var delPromise = delKind === 'capture' ? ns.deleteCapture(delId) : ns.deleteNote(delId);
-                        delPromise.then(function () {
-                            if (state.currentNote && state.currentNote.id === delId) ns.closeNoteEditor();
-                            ns.renderNotesList(state._notesFilter, state._notesSearch);
-                            if (delKind === 'capture') ns.renderCaptures();
-                        });
-                    });
+                    var item = delKind === 'capture'
+                        ? (state.captures.find(function(c){return c.id===delId;}) || null)
+                        : (state.notes.find(function(n){return n.id===delId;}) || null);
+                    if (!item) return;
+                    // 使用 deleteWithUndo 直接删除，弹出撤销 Toast
+                    ns.deleteWithUndo(item, delKind);
                 }
                 // 列表项点击 - 打开编辑
                 var item = e.target.closest('.wb-note-list-item');

@@ -435,5 +435,38 @@ body::before {
 .wb-toast.info    { background: rgba(85,230,210,0.12); border: 1px solid rgba(85,230,210,0.25); color: var(--color-accent); }
 .wb-toast.success { background: rgba(71,240,162,0.12); border: 1px solid rgba(71,240,162,0.25); color: #47f0a2; }
 .wb-toast.error   { background: rgba(255,107,107,0.12); border: 1px solid rgba(255,107,107,0.25); color: #ff6b6b; }
+
+/* Action Toast（带操作按钮，如撤销） */
+.wb-toast-action {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 18px;
+}
+.wb-toast-action .wb-toast-message {
+    flex-shrink: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 340px;
+}
+.wb-toast-action .wb-toast-action-btn {
+    flex-shrink: 0;
+    padding: 4px 12px;
+    border: 1px solid var(--color-border-active);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.08);
+    color: var(--color-text);
+    font-size: 12px;
+    font-weight: 600;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.wb-toast-action .wb-toast-action-btn:hover {
+    background: rgba(255,255,255,0.16);
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
 @keyframes wbToastIn  { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
 @keyframes wbToastOut { from { opacity: 1; transform: translateX(-50%) translateY(0); } to { opacity: 0; transform: translateX(-50%) translateY(-8px); } }
