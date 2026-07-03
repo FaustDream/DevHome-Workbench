@@ -563,7 +563,7 @@
 
                         <h3 class="s-section-title">关于</h3>
                         <button type="button" class="s-action-btn" id="changelogBtn">
-                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 2v12M2 4h10l2 2v6.5H2V4z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 8h4M6 11h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>更新说明 v2.5.1</span>
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 2v12M2 4h10l2 2v6.5H2V4z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 8h4M6 11h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>更新说明 v2.7.3</span>
                         </button>
 
                         <div class="s-danger-zone">
@@ -604,6 +604,144 @@
                         <li><strong>字体配置驱动</strong> 主题元数据声明字体需求，Fira Code woff2 本地存储，系统等宽字体兜底</li>
                         <li><strong>模式与主题解耦</strong> 日常/专注模式不再操作 link media，布局功能与视觉主题完全正交</li>
                         <li><strong>架构</strong> 9 个 CSS 文件全部改造，退役 --px-* / --wb-* / --sp-* 变量体系，组件与主题配置完全解耦</li>
+                    </ul>
+                </div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.7.3</span>
+                        <span class="changelog-date">2026-07-03</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>视觉中心微调</strong> 取消 body 绝对垂直居中（align-items: flex-start），.container 改用 padding-top: 15vh 顶部相对偏移，时间组件落在屏幕黄金阅读区</li>
+                    </ul>
+                </div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.7.2</span>
+                        <span class="changelog-date">2026-07-03</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>磁贴卡片重构</strong> 标准卡片 80→100px 正方形，卡片间距 10→24px，三档预设（小/标准/大）同步放大</li>
+                        <li><strong>边框弱化</strong> 移除实线边框 → 极淡背景(var(--color-surface-subtle)) + 轻柔阴影(var(--shadow-sm))</li>
+                        <li><strong>内部布局</strong> label 从 absolute→flow 流式布局，icon-label 间距 8px，卡片 padding 8px，图标容器 max-size 约束</li>
+                        <li><strong>Hover 增强</strong> 上浮 -1→-2px，阴影加深</li>
+                    </ul>
+                </div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.7.1</span>
+                        <span class="changelog-date">2026-07-03</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>时间日期可读性</strong> 时间字重 300→500、删除硬编码渐变改用 var(--color-text)、添加 text-shadow 双层白色发光防护</li>
+                        <li><strong>日期优化</strong> 字重 400→500，letter-spacing 增加 0.01em</li>
+                        <li><strong>布局居中</strong> body align-items: center 垂直居中，容器间距 16px→24px，磁贴正方形化</li>
+                    </ul>
+                </div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.7.0</span>
+                        <span class="changelog-date">2026-07-03</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>AI助手修复</strong> 修复AI助手功能不可用问题</li>
+                        <li><strong>代码优化</strong> 合并 loadMeConfig 重复定义，浅色/深色主题双模式验证通过</li>
+                    </ul>
+                </div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.6.2</span>
+                        <span class="changelog-date">2026-07-03</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>BDD 验证</strong> 10/10 规则全部通过：禁止原生弹窗、交互日志完整、Semantic Token 引用、主题双模式、ProseMirror 无残留等</li>
+                        <li><strong>修复</strong> 补充 openSettingsPanel/closeSettingsPanel/startPomodoro 等6处 console.log 交互日志</li>
+                        <li><strong>修复</strong> badge-capture/idea/bug/meeting 等6类徽章颜色从硬编码改为 CSS 变量引用</li>
+                    </ul>
+                </div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.6.0</span>
+                        <span class="changelog-date">2026-07-03</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>设置中心重构</strong> 弹窗从小尺寸右下角→居中大尺寸 Modal(min(760px, 92vw), 85vh)，左170px导航5Tab（通用/外观/AI助手/数据/高级），右侧自适应内容区</li>
+                        <li><strong>UI 组件标准化</strong> 自定义 Toggle 滑动开关、分段选择器 .s-seg、AI Key 密码切换、快捷键捕获组件 .s-shortcut-capture、危险操作区 .s-danger-zone</li>
+                        <li><strong>数据统计</strong> .s-stat-card：大号数字+小号标签展示磁贴/笔记/任务统计</li>
+                    </ul>
+                </div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.5.1</span>
+                        <span class="changelog-date">2026-07-03</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>数字雨联动</strong> 勾选"开启数字雨效果"→显示字符大小/流动速度/字符密度滑块+启动动画，取消勾选→滑块自动隐藏+停止动画</li>
+                    </ul>
+                </div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.5.0</span>
+                        <span class="changelog-date">2026-07-03</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>日常模式重置</strong> 停止自动加载用户自定义背景，日常模式使用纯 CSS 渐变背景</li>
+                        <li><strong>数字雨开关化</strong> 默认 OFF，在设置面板外观区域新增"Matrix 数字雨"复选框手动开启</li>
+                        <li><strong>API</strong> 暴露 ns.matrixRain.start/stop/isRunning() 供外部调用</li>
+                    </ul>
+                </div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.4.3</span>
+                        <span class="changelog-date">2026-07-03</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>移除 ProseMirror</strong> 删除 pm.bundle.js/hljs.bundle.js 等9个依赖文件，回退 contenteditable 方案，清理 migrate/export 残留代码</li>
+                    </ul>
+                </div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.4.2</span>
+                        <span class="changelog-date">2026-07-03</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>修复弹窗样式</strong> confirm/prompt/toast 弹窗关键 CSS 在之前重构中丢失，本次全部恢复（120行样式+动画）</li>
+                        <li><strong>修复笔记按钮</strong> #wbNotesAddBtn 新建笔记按钮在上次 HTML 重写中被移除，本次补回</li>
+                        <li><strong>补齐样式</strong> 新增 filter-chip-editing / filter-del / delete-mode 样式</li>
+                    </ul>
+                </div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.4.1</span>
+                        <span class="changelog-date">2026-07-03</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>四象限重构</strong> 切换为导航式分组，左栏改为4个独立象限分组卡片式展示，移除左侧顶部导航</li>
+                        <li><strong>笔记列表</strong> 新增完整 .wb-note-list-item 样式体系，修复之前空白问题</li>
+                        <li><strong>番茄钟修复</strong> 右侧开始/暂停按钮切换，左右栏 DOM 状态同步</li>
+                    </ul>
+                </div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.4.0</span>
+                        <span class="changelog-date">2026-07-03</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>三栏式布局</strong> 从单列居中Tab切换→左260px导航+中flex笔记编辑+右280px时间，非对称三栏常驻布局</li>
+                        <li><strong>侧边栏毛玻璃</strong> var(--color-sidebar-bg) + backdrop-filter: blur(20px)</li>
+                        <li><strong>四象限标签模式</strong> 横向胶囊标签，active 薄荷绿发光边框，维度下拉切换归属</li>
+                        <li><strong>右栏迷你日历</strong> 7列紧凑月视图 + 今天高亮 + 内容标记点</li>
+                    </ul>
+                </div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.3.1</span>
+                        <span class="changelog-date">2026-07-03</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>工作台视觉重构</strong> 深蓝半透明毛玻璃主卡片+霓虹薄荷绿标题、精炼顶部导航栏（任务/记录/日历/番茄钟+图标）</li>
+                        <li><strong>浮动日历</strong> 日历重构为独立浮动卡片，固定定位右上角，点击外部自动关闭</li>
+                        <li><strong>番茄钟增强</strong> SVG圆环220px大圆环+48px字重300计时器，accent色预设按钮</li>
                     </ul>
                 </div>
                 <div class="changelog-entry">
