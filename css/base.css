@@ -86,7 +86,7 @@ body {
     min-height: 100vh;
     min-height: 100dvh;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     overflow-x: hidden;
     transform: translateZ(0);
@@ -289,7 +289,8 @@ body::before {
 .container {
     width: 100%;
     max-width: 1200px;
-    padding: 24px var(--spacing-md) var(--spacing-md);
+    /* 顶部相对偏移 15vh，替代绝对居中，将时间组件落在屏幕黄金阅读区 */
+    padding: 15vh var(--spacing-md) var(--spacing-md);
     display: flex;
     flex-direction: column;
     align-items: center;
