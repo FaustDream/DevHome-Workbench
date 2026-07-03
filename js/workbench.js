@@ -320,6 +320,7 @@ window.DevHome = window.DevHome || {};
             }).join('');
         });
         console.log('[面板] 四象限渲染完成 总任务=' + totalCount + ' 过滤=' + filter);
+    };
 
     /** 通过下拉菜单切换任务维度 */
     ns.changeTaskQuadrant = function (taskId, fromQuadrant, toQuadrant) {
