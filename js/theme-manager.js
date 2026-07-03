@@ -107,8 +107,8 @@
      */
     function loadFont(fontDef) {
         return new Promise(function (resolve) {
-            // 先检查字体是否已加载
-            if (document.fonts && document.fonts.check('1em ' + fontDef.family)) {
+            // 先检查字体是否已加载（字体名含空格必须加引号，否则 CSS font shorthand 报 SyntaxError）
+            if (document.fonts && document.fonts.check("1em '" + fontDef.family + "'")) {
                 console.log('[字体] ' + fontDef.family + ' 已缓存，跳过加载');
                 resolve(true);
                 return;
@@ -130,10 +130,10 @@
                 // 字体已在 fonts.css 中预声明（Google Fonts 远程），只需触发浏览器加载
                 // 尝试通过 document.fonts.load 触发
                 if (document.fonts) {
-                    document.fonts.load('1em ' + fontDef.family).then(function () {
+                    document.fonts.load("1em '" + fontDef.family + "'").then(function () {
                         console.log('[字体] ' + fontDef.family + ' 远程加载完成');
-                    }).catch(function () {
-                        console.warn('[字体] ' + fontDef.family + ' 远程加载超时，使用系统兜底');
+                    }).catch(function (err) {
+                        console.warn('[字体] ' + fontDef.family + ' 远程加载失败，使用系统兜底', err.message);
                     });
                 }
                 resolve(true);
@@ -233,6 +233,17 @@
         // 应用主题
         activateThemeLink(state.themeId);
         applySchemeToDOM();
+
+        // 确保恢复的方案与当前主题兼容（防止之前保存了不兼容的组合）
+        var restoredTheme = THEMES[state.themeId];
+        if (restoredTheme && restoredTheme.supportedSchemes.length === 1) {
+            var expectedScheme = restoredTheme.supportedSchemes[0];
+            if (state.colorScheme !== expectedScheme && state.colorScheme !== 'auto') {
+                console.log('[主题] 初始化：' + restoredTheme.name + ' 仅支持 ' + expectedScheme + '，自动纠正方案');
+                state.colorScheme = expectedScheme;
+                applySchemeToDOM();
+            }
+        }
 
         // 加载当前主题的字体
         var theme = THEMES[state.themeId];
