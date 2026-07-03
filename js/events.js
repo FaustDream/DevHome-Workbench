@@ -1143,7 +1143,7 @@ window.DevHome = window.DevHome || {};
             });
         });
 
-        // ===== v2 我 Tab 事件 =====
+        // ===== AI 助手事件 =====
         // AI Key 保存
         var aiSaveKey = document.getElementById('wbMeAiSaveKey');
         if (aiSaveKey) {
@@ -1157,20 +1157,24 @@ window.DevHome = window.DevHome || {};
                 config.aiApi.endpoint = endpoint || ns.DEFAULT_V2_CONFIG.aiApi.endpoint;
                 config.aiApi.model = model || ns.DEFAULT_V2_CONFIG.aiApi.model;
                 await ns.storageV2.set(ns.storageV2.KEYS.CONFIG, config);
-                ns.fileConfig && ns.fileConfig.showToast && ns.fileConfig.showToast('API 配置已保存', 'success');
+                ns.showToast('API 配置已保存', 'success');
             });
         }
         // AI 生成总结
         var aiGenerate = document.getElementById('wbMeAiGenerate');
-        if (aiGenerate) aiGenerate.addEventListener('click', ns.generateAISummary);
+        if (aiGenerate) aiGenerate.addEventListener('click', function () {
+            ns.generateAISummary();
+            console.log('[交互] AI 生成今日总结');
+        });
         // AI 保存为笔记
         var aiSaveNote = document.getElementById('wbMeAiSaveNote');
         if (aiSaveNote) {
             aiSaveNote.addEventListener('click', function () {
                 if (!dom.wbMeAiContent) return;
                 var content = dom.wbMeAiContent.textContent || dom.wbMeAiContent.innerText || '';
-                ns.createNote({ title: 'AI 每日总结 - ' + new Date().toLocaleDateString('zh-CN'), content: content, type: 'note', tags: ['AI总结'] }).then(function () {
-                    ns.fileConfig && ns.fileConfig.showToast && ns.fileConfig.showToast('已保存为笔记', 'success');
+                var title = 'AI 每日总结 - ' + new Date().toLocaleDateString('zh-CN');
+                ns.createNote({ title: title, content: content, type: 'note', tags: ['AI总结'] }).then(function () {
+                    ns.showToast('AI 总结已保存为笔记', 'success');
                 });
             });
         }

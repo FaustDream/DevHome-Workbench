@@ -809,22 +809,35 @@ window.DevHome = window.DevHome || {};
         }
     };
 
-    /* ===== 加载设置面板配置 ===== */
+    /* ===== 加载 AI + 快捷键配置到设置面板 UI ===== */
     ns.loadMeConfig = async function () {
         var config = await storageV2.get(storageV2.KEYS.CONFIG, DEFAULT_V2_CONFIG);
+        // AI 配置
         if (dom.wbMeAiApiKey) dom.wbMeAiApiKey.value = config.aiApi.apiKey || '';
         if (dom.wbMeAiEndpoint) dom.wbMeAiEndpoint.value = config.aiApi.endpoint || DEFAULT_V2_CONFIG.aiApi.endpoint;
         if (dom.wbMeAiModel) dom.wbMeAiModel.value = config.aiApi.model || DEFAULT_V2_CONFIG.aiApi.model;
-        if (dom.wbMeToggleStrict) dom.wbMeToggleStrict.checked = config.behavior.strictMode || false;
-        if (dom.wbMeToggleFileSync) dom.wbMeToggleFileSync.checked = config.fileSync.enabled || false;
 
-        // 加载快捷键配置
+        // 加载快捷键到 hidden input（新 DOM 用 value '1'/'0'）
         var sc = config.focusShortcut || { ctrl: true, shift: false, alt: false, key: 'k' };
         state._focusShortcut = sc;
-        if (dom.wbMeShortcutCtrl) dom.wbMeShortcutCtrl.checked = sc.ctrl;
-        if (dom.wbMeShortcutShift) dom.wbMeShortcutShift.checked = sc.shift;
-        if (dom.wbMeShortcutAlt) dom.wbMeShortcutAlt.checked = sc.alt;
-        if (dom.wbMeShortcutKey) dom.wbMeShortcutKey.value = sc.key;
+        var ctrlEl = document.getElementById('wbMeShortcutCtrl');
+        var shiftEl = document.getElementById('wbMeShortcutShift');
+        var altEl = document.getElementById('wbMeShortcutAlt');
+        var keyEl = document.getElementById('wbMeShortcutKey');
+        if (ctrlEl) ctrlEl.value = sc.ctrl ? '1' : '0';
+        if (shiftEl) shiftEl.value = sc.shift ? '1' : '0';
+        if (altEl) altEl.value = sc.alt ? '1' : '0';
+        if (keyEl) keyEl.value = sc.key || 'k';
+        // 更新显示
+        var display = document.getElementById('sShortcutKeys');
+        if (display) {
+            var parts = [];
+            if (sc.ctrl) parts.push('Ctrl');
+            if (sc.shift) parts.push('Shift');
+            if (sc.alt) parts.push('Alt');
+            parts.push((sc.key || 'K').toUpperCase());
+            display.textContent = parts.join(' + ');
+        }
         ns.updateContextMenuLabel();
     };
 

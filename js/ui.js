@@ -581,20 +581,7 @@ window.DevHome = window.DevHome || {};
         }
         ns.showToast('快捷键已保存', 'success');
     };
-    ns.loadMeConfig = function () {
-        // 加载开发设置到 UI
-        if (!ns.storageV2) return;
-        ns.storageV2.get(ns.storageV2.KEYS.CONFIG, ns.DEFAULT_V2_CONFIG).then(function (cfg) {
-            if (!cfg.focusShortcut) return;
-            var ctrlEl = document.getElementById('wbMeShortcutCtrl');
-            var shiftEl = document.getElementById('wbMeShortcutShift');
-            var altEl = document.getElementById('wbMeShortcutAlt');
-            var keyEl = document.getElementById('wbMeShortcutKey');
-            if (ctrlEl) ctrlEl.value = cfg.focusShortcut.ctrl ? '1' : '0';
-            if (shiftEl) shiftEl.value = cfg.focusShortcut.shift ? '1' : '0';
-            if (altEl) altEl.value = cfg.focusShortcut.alt ? '1' : '0';
-            if (keyEl) keyEl.value = cfg.focusShortcut.key || 'k';
-        });
-    };
+    // 注意：ns.loadMeConfig 在 workbench.js 中定义（加载 AI + 快捷键配置到 UI）
+    // 这里不再重复定义，避免覆盖
 
 })(window.DevHome);
