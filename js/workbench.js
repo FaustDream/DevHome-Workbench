@@ -255,6 +255,10 @@ window.DevHome = window.DevHome || {};
     ns.renderQuadrantBoard = function () {
         var config = state.workbench || ns.getWorkbenchState();
         var filter = state._quadrantFilter || 'active';
+        var totalCount = 0;
+        QUADRANTS.forEach(function (q) {
+            totalCount += (config.quadrants[q] && config.quadrants[q].tasks || []).length;
+        });
 
         // 更新过滤按钮
         var filterBtn = document.getElementById('wbTaskFilterBtn');
@@ -315,7 +319,7 @@ window.DevHome = window.DevHome || {};
                     '<button class="wb-task-del" data-task-id="' + escapeHtml(task.id) + '" data-quadrant="' + activeQ + '" title="取消任务">&times;</button></div>';
             }).join('');
         });
-    };
+        console.log('[面板] 四象限渲染完成 总任务=' + totalCount + ' 过滤=' + filter);
 
     /** 通过下拉菜单切换任务维度 */
     ns.changeTaskQuadrant = function (taskId, fromQuadrant, toQuadrant) {
@@ -500,12 +504,11 @@ window.DevHome = window.DevHome || {};
                 }
             });
         }
-        // 左栏按钮
+        console.log('[交互] 番茄钟 开始 时长=' + (state.pomodoroMode === 'focus' ? '无限' : state.pomodoroDuration + '分'));
         var startBtn = document.getElementById('wbPomodoroStart');
         var pauseBtn = document.getElementById('wbPomodoroPause');
         if (startBtn) startBtn.style.display = 'none';
         if (pauseBtn) pauseBtn.style.display = '';
-        // 右栏按钮
         var sideStart = document.getElementById('wbPomodoroSideStart');
         var sideReset = document.getElementById('wbPomodoroSideReset');
         if (sideStart) { sideStart.textContent = '暂停'; sideStart.classList.add('is-running'); }
@@ -515,6 +518,7 @@ window.DevHome = window.DevHome || {};
     };
 
     ns.pausePomodoro = function () {
+        console.log('[交互] 番茄钟 暂停');
         if (typeof chrome !== 'undefined' && chrome.runtime) {
             chrome.runtime.sendMessage({ type: 'POMODORO_PAUSE' });
         }
@@ -531,6 +535,7 @@ window.DevHome = window.DevHome || {};
     };
 
     ns.resetPomodoro = function () {
+        console.log('[交互] 番茄钟 重置');
         if (typeof chrome !== 'undefined' && chrome.runtime) {
             chrome.runtime.sendMessage({ type: 'POMODORO_STOP' });
         }

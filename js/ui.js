@@ -217,9 +217,13 @@ window.DevHome = window.DevHome || {};
         ns.syncSettingsControls();
         dom.settingsOverlay.classList.add('visible');
         ns.hideBlankContextMenu();
+        console.log('[面板] 打开设置面板');
     };
 
-    ns.closeSettingsPanel = function () { dom.settingsOverlay.classList.remove('visible'); };
+    ns.closeSettingsPanel = function () {
+        dom.settingsOverlay.classList.remove('visible');
+        console.log('[面板] 关闭设置面板');
+    };
 
     /* ===== 更新说明弹窗 ===== */
     ns.openChangelog = function () { dom.changelogOverlay.classList.add('visible'); };

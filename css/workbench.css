@@ -622,11 +622,11 @@
     letter-spacing: 0.02em;
     flex-shrink: 0;
 }
-.badge-capture { background: rgba(255,204,102,0.15); color: #ffcc66; }
-.badge-note { background: rgba(133,142,190,0.15); color: #858ebe; }
-.badge-idea { background: rgba(71,240,162,0.15); color: #47f0a2; }
-.badge-bug { background: rgba(255,107,107,0.15); color: #ff6b6b; }
-.badge-meeting { background: rgba(122,215,255,0.15); color: #7ad7ff; }
+.badge-capture { background: rgba(255,184,77,0.15); color: var(--color-warning); }
+.badge-note    { background: rgba(133,142,190,0.15); color: #858ebe; }
+.badge-idea    { background: rgba(85,230,210,0.15); color: var(--color-accent); }
+.badge-bug     { background: rgba(255,107,107,0.15); color: var(--color-danger); }
+.badge-meeting { background: rgba(122,215,255,0.15); color: var(--color-info); }
 .badge-webclip { background: rgba(200,155,230,0.15); color: #c89be6; }
 .wb-note-list-item:not(.show-badge) .wb-note-type-badge { display: none; }
 .wb-note-list-item.active .wb-note-type-badge,
