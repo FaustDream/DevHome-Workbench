@@ -287,7 +287,8 @@
 
 .tile {
     width: 100%;
-    min-height: var(--shortcut-container);
+    height: var(--shortcut-container);
+    min-height: auto;
     border-radius: var(--shortcut-radius);
     background: var(--color-surface);
     backdrop-filter: blur(16px) saturate(125%);

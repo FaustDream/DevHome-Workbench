@@ -13,19 +13,20 @@
 
 .time-main {
     font-size: calc(clamp(48px, 10vw, 120px) * var(--time-scale, 0.85));
-    font-weight: 300;
+    font-weight: 500;
     letter-spacing: -0.04em;
     line-height: 1;
-    background: linear-gradient(135deg, #f5ffff 0%, #b8ddf0 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--color-text);
+    /* 文字防护：浅色背景不可见，深色/动态纹理下提供可读性保障 */
+    text-shadow: 0 2px 16px rgba(255, 255, 255, 0.25),
+                 0 0 40px rgba(255, 255, 255, 0.08);
 }
 
 .date-display {
     font-size: var(--font-size-md);
     color: var(--color-text-secondary);
-    font-weight: 400;
+    font-weight: 500;
+    letter-spacing: 0.01em;
     margin-top: var(--spacing-xs);
 }
 
