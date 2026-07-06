@@ -171,89 +171,112 @@
 .search-button:hover { opacity: 0.85; transform: scale(1.05); }
 .search-button:active { transform: scale(0.95); }
 
-/* ===== 磁贴页面指示器 ===== */
-.page-indicator {
-    position: relative;
+/* 页面指示器已移除，分类切换由 catRow 统一管理 */
+
+/* ===== 个性化问候语 ===== */
+.greeting-text {
+    margin-bottom: 4px;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: var(--spacing-xs);
-    margin-top: var(--spacing-sm);
-    padding: var(--spacing-xs) var(--spacing-sm);
+    gap: 2px;
+    user-select: none;
+    animation: greetingFadeIn 0.6s ease;
+}
+@keyframes greetingFadeIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.greeting-main {
+    font-size: var(--font-size-lg);
+    font-weight: 500;
+    color: var(--color-text);
+    letter-spacing: 0.02em;
+}
+.greeting-sub {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-tertiary);
+    font-weight: 400;
+}
+
+/* ===== 天气预报组件 ===== */
+.weather-widget {
+    position: absolute;
+    top: 0;
+    right: -6px;
+    transform: translateX(100%);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: var(--radius-full);
     background: var(--color-surface);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    cursor: pointer;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    user-select: none;
     transition: all var(--transition-fast);
-    opacity: 0.8;
-    width: fit-content;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-.page-indicator:hover {
-    opacity: 1;
-    border-color: var(--color-accent);
-}
-
-.page-info {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 60px;
-}
-
-.page-name {
-    color: var(--color-text);
-    font-weight: 500;
-    cursor: default;
-    transition: color var(--transition-fast);
-    font-size: var(--font-size-sm);
-    padding: 0 var(--spacing-xs);
-    text-align: center;
-    max-width: 100px;
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
 }
+.weather-widget:hover { background: var(--color-bg-secondary); }
+.weather-icon { font-size: 16px; line-height: 1; }
+.weather-temp { font-weight: 600; color: var(--color-text); }
+.weather-desc { font-size: var(--font-size-xs); color: var(--color-text-tertiary); }
 
-.page-name:hover {
-    color: var(--color-accent);
-}
-
-.page-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: var(--radius-sm);
-    background: var(--color-bg-tertiary);
+/* 天气趋势面板 */
+.weather-panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 220px;
+    background: var(--color-bg-elevated);
     border: 1px solid var(--color-border);
-    color: var(--color-text-secondary);
-    cursor: pointer;
+    border-radius: var(--radius-lg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: var(--shadow-lg);
+    z-index: var(--z-modal);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition: all var(--transition-fast);
+}
+.weather-panel.visible { opacity: 1; visibility: visible; transform: translateY(0); }
+
+.weather-panel-inner { padding: 12px 14px; }
+.weather-panel-title {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--color-border);
+}
+.weather-panel-day {
     display: flex;
     align-items: center;
-    justify-content: center;
-    font-size: var(--font-size-xs);
-    transition: all var(--transition-fast);
-    flex-shrink: 0;
+    gap: 8px;
+    padding: 6px 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
 }
+.wpd-label { min-width: 72px; color: var(--color-text-secondary); }
+.wpd-icon { font-size: 18px; }
+.wpd-desc { flex: 1; color: var(--color-text); }
+.wpd-temps { text-align: right; }
+.wpd-high { font-weight: 600; }
+.wpd-low { color: var(--color-text-tertiary); }
 
-.page-btn:hover:not(:disabled) {
-    background: var(--color-accent);
-    color: var(--color-text-inverse);
-    border-color: var(--color-accent);
-    transform: translateY(-1px);
-}
-
-.page-btn:active {
-    transform: translateY(0);
-}
-
-.page-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    background: var(--color-bg-tertiary);
+/* ===== 每日金句 ===== */
+.quote-text {
+    margin-top: 6px;
+    font-size: var(--font-size-sm);
     color: var(--color-text-tertiary);
-    border-color: var(--color-border);
-    transform: none;
+    font-style: italic;
+    text-align: center;
+    max-width: 520px;
+    line-height: 1.5;
+    user-select: none;
+    cursor: default;
 }

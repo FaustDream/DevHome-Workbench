@@ -28,7 +28,8 @@ window.DevHome = window.DevHome || {};
         baidu:    { badge: '百', name: '百度', url: 'https://www.baidu.com/s?wd=' },
         bing:     { svg: '<svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="8" y="11.5" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor">B</text></svg>', name: 'Bing', url: 'https://www.bing.com/search?q=' },
         duckduckgo:{ svg: '<svg width="16" height="16" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>', name: 'DuckDuckGo', url: 'https://duckduckgo.com/?q=' },
-        yahoo:    { svg: '<svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="8" y="11.5" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor">Y</text></svg>', name: 'Yahoo', url: 'https://search.yahoo.com/search?p=' }
+        yahoo:    { svg: '<svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="8" y="11.5" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor">Y</text></svg>', name: 'Yahoo', url: 'https://search.yahoo.com/search?p=' },
+        github:   { badge: 'GH', name: 'GitHub', url: 'https://github.com/search?q=' }
     };
 
     /* ===== 默认工作台状态（四象限任务） ===== */
@@ -77,6 +78,19 @@ window.DevHome = window.DevHome || {};
         '不完美的行动胜过完美的计划'
     ];
 
+    /** 模块显隐开关默认配置（所有新功能默认开启，用户可在设置中关闭） */
+    ns.DEFAULT_MODULE_CONFIG = {
+        weather: true,          // 天气预报
+        dailyQuote: true,       // 每日金句
+        greeting: true,         // 个性化问候语
+        bangCommands: true,     // Bang Commands 快捷搜索词缀
+        newsFeed: true,         // 资讯热榜 / RSS 订阅
+        recentTabs: true,       // 最近关闭 / 历史记录快速访问
+        dragLayout: true,       // 自定义布局（长按拖拽）
+        perfMonitor: true,      // 性能监控面板
+        githubTrending: true    // GitHub Trending 聚合
+    };
+
     /** 空状态幽默文案 */
     ns.EMPTY_STATE_MESSAGES = {
         captures: [
@@ -122,12 +136,21 @@ window.DevHome = window.DevHome || {};
     /* ===== v2 默认配置（存储到 chrome.storage.local） ===== */
     ns.DEFAULT_V2_CONFIG = {
         aiApi: {
-            provider: 'hunyuan',            // 腾讯混元
-            apiKey: 'sk-KVgtp3GV6gMAvEV2dowFilqMCSc07jQUlc0pHx5I94XWZ',  // 默认 API Key
-            endpoint: 'https://hunyuan.tencentcloudapi.com',              // API 端点
-            model: 'hunyuan-lite',
-            autoSummaryEnabled: false,      // 默认关闭自动总结
-            autoSummaryTime: '22:00'        // 默认晚上10点
+            activeProvider: 'hunyuan',     // 当前激活的供应商 ID
+            providers: {                   // 各供应商配置（可动态扩展）
+                hunyuan: {
+                    apiKey: 'sk-KVgtp3GV6gMAvEV2dowFilqMCSc07jQUlc0pHx5I94XWZ',
+                    endpoint: 'https://hunyuan.tencentcloudapi.com',
+                    model: 'hunyuan-lite'
+                },
+                deepseek: {
+                    apiKey: 'sk-u0W6YLj0vb9Bcc1jiPkAAT96FU185GqE7P9p2w3Djd48asDu',
+                    endpoint: 'https://new-api.rugao.me/v1/chat/completions',
+                    model: 'deepseek-v4-flash'
+                }
+            },
+            autoSummaryEnabled: false,
+            autoSummaryTime: '22:00'
         },
         focusShortcut: {
             ctrl: true,

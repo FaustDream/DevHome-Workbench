@@ -79,7 +79,6 @@ window.DevHome = window.DevHome || {};
             state.currentPage = pageIndex;
             this.updateCurrentTiles();
             if (storage.get('category_memory', false)) storage.set('last_page', pageIndex);
-            ns.updatePageIndicator();
             return true;
         },
 
@@ -89,15 +88,13 @@ window.DevHome = window.DevHome || {};
             pageManager.save(this.pagesData);
             state.currentPage = state.totalPages - 1;
             this.currentTiles = [];
-            ns.updatePageIndicator();
-        },
+            },
 
         removeCurrentPage: function () {
             if (state.totalPages <= 1) return false;
             this.pagesData = pageManager.removePageWithStrategy(this.pagesData, state.currentPage, 'moveToCommon');
             pageManager.save(this.pagesData);
             this.updateCurrentTiles();
-            ns.updatePageIndicator();
             ns.refreshCatRowIfVisible();
             return true;
         },
@@ -109,7 +106,6 @@ window.DevHome = window.DevHome || {};
             this.pagesData = pageManager.removePageWithStrategy(this.pagesData, pageIndex, strategy);
             pageManager.save(this.pagesData);
             this.updateCurrentTiles();
-            ns.updatePageIndicator();
             ns.refreshCatRowIfVisible();
             ns.renderTiles();
             return true;
@@ -121,7 +117,6 @@ window.DevHome = window.DevHome || {};
             this.pagesData = pageManager.reorderPage(this.pagesData, fromIndex, toIndex);
             pageManager.save(this.pagesData);
             this.updateCurrentTiles();
-            ns.updatePageIndicator();
             ns.refreshCatRowIfVisible();
             ns.renderTiles();
             return true;
@@ -131,7 +126,6 @@ window.DevHome = window.DevHome || {};
             pageManager.renamePage(state.currentPage, newName);
             this.pagesData[state.currentPage].name = newName;
             pageManager.save(this.pagesData);
-            ns.updatePageIndicator();
             ns.refreshCatRowIfVisible();
         },
 
@@ -249,6 +243,8 @@ window.DevHome = window.DevHome || {};
     }
 
     function prepareTilePointer(tile, clientX, clientY) {
+        // 自定义布局关闭时，不启用长按拖拽
+        if (ns.isModuleEnabled && !ns.isModuleEnabled('dragLayout')) return;
         clearLongPressTimer();
         state.dragMoved = false; state.dragReady = false; state.dragging = tile;
         state.dragStartX = clientX; state.dragStartY = clientY;

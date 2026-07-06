@@ -1,23 +1,24 @@
 {
   "manifest_version": 3,
   "name": "DevHome Workbench",
-  "version": "2.9.0",
+  "version": "2.12.0",
   "author": "凌致",
   "description": "综合性开发工作台——融合任务、笔记、日历、番茄钟、网页剪藏、AI总结与行为追踪的个人工作操作系统",
-  "permissions": [
-    "storage",
-    "unlimitedStorage",
-    "bookmarks",
-    "history",
-    "downloads",
-    "tabs",
-    "sidePanel",
-    "contextMenus",
-    "notifications",
-    "alarms",
-    "scripting",
-    "clipboardRead"
-  ],
+    "permissions": [
+        "storage",
+        "unlimitedStorage",
+        "bookmarks",
+        "history",
+        "downloads",
+        "tabs",
+        "sidePanel",
+        "contextMenus",
+        "notifications",
+        "alarms",
+        "scripting",
+        "clipboardRead",
+        "sessions"
+    ],
   "chrome_url_overrides": {
     "newtab": "index.html"
   },
@@ -31,11 +32,17 @@
   "background": {
     "service_worker": "js/background.js"
   },
-  "host_permissions": [
-    "*://api.bing.com/*",
-    "*://api.xinac.net/*",
-    "*://hunyuan.tencentcloudapi.com/*"
-  ],
+    "host_permissions": [
+        "*://api.bing.com/*",
+        "*://api.xinac.net/*",
+        "*://hunyuan.tencentcloudapi.com/*",
+        "*://new-api.rugao.me/*",
+        "*://api.open-meteo.com/*",
+        "*://v1.hitokoto.cn/*",
+        "*://api.zhihu.com/*",
+        "*://www.v2ex.com/*",
+        "*://github.com/*"
+    ],
   "commands": {
     "_execute_action": {
       "suggested_key": {
@@ -68,6 +75,6 @@
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://hunyuan.tencentcloudapi.com https://api.xinac.net https://api.bing.com; object-src 'self'"
+    "extension_pages": "script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https:; object-src 'self'"
   }
 }

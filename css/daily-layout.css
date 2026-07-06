@@ -1,0 +1,423 @@
+/* ============================================
+   DevHome Workbench - daily-layout.css
+   日常模式全新布局：顶部信息区 + 搜索标签栏 + 侧边栏网格 + 底部面板 + 悬浮菜单
+   覆盖旧版居中对齐布局，保持 Semantic Token 主题变量引用
+   ============================================ */
+
+/* === 容器重置 === */
+.container {
+    max-width: 1280px;
+    padding: 24px 32px 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+}
+
+/* === 一、顶部信息区 (Header) === */
+.dh-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    padding: 0 4px;
+}
+
+/* --- 左侧文本区 --- */
+.dh-header-left {
+    flex: 1;
+    max-width: 52%;
+}
+.greeting-text {
+    margin-bottom: 0;
+    align-items: flex-start;
+    gap: 2px;
+    animation: greetingFadeIn 0.6s ease;
+}
+.greeting-main {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--color-text);
+    font-family: var(--font-display, var(--font-sans));
+}
+.greeting-sub {
+    font-size: var(--font-size-md);
+    color: var(--color-text-secondary);
+    font-weight: 400;
+    letter-spacing: 0.01em;
+}
+.dh-quote {
+    margin-top: 12px;
+    padding: 14px 18px;
+    background: var(--color-surface-subtle);
+    border-radius: var(--radius-md);
+    position: relative;
+    border-left: 3px solid var(--color-accent);
+    max-width: 440px;
+}
+.quote-text {
+    margin-top: 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    font-style: italic;
+    line-height: 1.6;
+    text-align: left;
+    max-width: none;
+    cursor: default;
+    user-select: none;
+}
+.dh-quote-mark {
+    position: absolute;
+    right: 14px;
+    bottom: 4px;
+    font-size: 48px;
+    color: var(--color-accent);
+    opacity: 0.15;
+    font-family: Georgia, serif;
+    line-height: 1;
+    pointer-events: none;
+}
+
+/* --- 右侧时间与天气区 --- */
+.dh-header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+/* 时间 */
+.time-display {
+    cursor: default;
+    user-select: none;
+    text-align: right;
+    padding: 0;
+    border-radius: 0;
+    transition: none;
+    margin-bottom: 0;
+    position: static;
+}
+.time-display:hover { background: transparent; }
+.time-display:active { transform: none; }
+.time-main {
+    font-size: 64px;
+    font-weight: 300;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: var(--color-text);
+    text-shadow: none;
+}
+.date-display {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-tertiary);
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    margin-top: 0;
+}
+
+/* 天气（胶囊状，时钟右侧下方） */
+.dh-weather-row {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    margin-top: 6px;
+}
+.weather-widget {
+    position: static;
+    transform: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: var(--radius-full);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    user-select: none;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+    box-shadow: var(--shadow-sm);
+}
+.weather-widget:hover { background: var(--color-bg-secondary); }
+.weather-icon { font-size: 18px; line-height: 1; }
+.weather-temp { font-weight: 600; color: var(--color-text); font-size: var(--font-size-md); }
+.weather-desc { font-size: var(--font-size-xs); color: var(--color-text-tertiary); }
+
+/* 天气面板（绝对定位于天气 widget 下方） */
+.weather-panel {
+    position: fixed;
+    top: auto;
+    right: 40px;
+    min-width: 220px;
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: var(--shadow-lg);
+    z-index: var(--z-modal);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition: all var(--transition-fast);
+}
+.weather-panel.visible { opacity: 1; visibility: visible; transform: translateY(0); }
+.weather-panel-inner { padding: 12px 14px; }
+.weather-panel-title {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--color-border);
+}
+.weather-panel-day {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
+}
+.wpd-label { min-width: 72px; color: var(--color-text-secondary); }
+.wpd-icon { font-size: 18px; }
+.wpd-desc { flex: 1; color: var(--color-text); }
+.wpd-temps { text-align: right; }
+.wpd-high { font-weight: 600; }
+.wpd-low { color: var(--color-text-tertiary); }
+
+/* === 二、搜索与标签栏 === */
+.dh-search-area {
+    margin-bottom: 16px;
+}
+.search-container {
+    max-width: 100%;
+}
+.search-wrapper {
+    min-height: 50px;
+    padding: 6px 12px 6px 16px;
+}
+
+/* 顶部水平标签栏 */
+.dh-tabs {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 0 4px;
+}
+.dh-tab-btn {
+    padding: 8px 20px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-family: var(--font-sans);
+}
+.dh-tab-btn:hover { background: var(--color-bg-secondary); color: var(--color-text); }
+.dh-tab-btn.active { background: var(--color-accent); color: var(--color-text-inverse); border-color: var(--color-accent); }
+
+/* === 三、主体内容区 === */
+.dh-main {
+    display: flex;
+    gap: 20px;
+    flex: 1;
+    min-height: 280px;
+}
+
+/* 左侧边栏 */
+.dh-sidebar {
+    width: 160px;
+    flex-shrink: 0;
+    padding: 12px 0;
+}
+.dh-sidebar-title {
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--color-text-tertiary);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    padding: 0 12px;
+}
+.dh-category-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    user-select: none;
+    font-weight: 500;
+}
+.dh-category-item:hover { background: var(--color-bg-secondary); color: var(--color-text); }
+.dh-category-item.active { background: var(--color-surface); color: var(--color-accent); font-weight: 600; }
+.dh-cat-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.5;
+    flex-shrink: 0;
+}
+.dh-category-item.active .dh-cat-dot { opacity: 1; background: var(--color-accent); }
+
+/* 右侧应用网格 */
+.dh-content-area {
+    flex: 1;
+    min-width: 0;
+}
+.dh-app-section {
+    margin-bottom: 16px;
+}
+.dh-app-section-title {
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--color-text-tertiary);
+    text-transform: uppercase;
+    padding: 0 4px 8px;
+}
+.dh-app-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--shortcut-gap, 24px);
+    justify-content: flex-start;
+}
+.tiles-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--shortcut-gap, 24px);
+    justify-content: flex-start;
+}
+
+/* Cat row 隐藏（已迁移到侧边栏和顶部标签栏） */
+.cat-row { display: none; }
+
+/* === 四、底部数据面板 === */
+.dh-panels {
+    display: flex;
+    gap: 16px;
+    margin-top: 20px;
+}
+.feed-card, .trending-card {
+    flex: 1;
+    margin: 0;
+    max-width: none;
+}
+.feed-card-head, .trending-card-head {
+    padding: 10px 16px;
+}
+.feed-card-title, .trending-card-title {
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+.feed-tabs { padding: 6px 14px; }
+.feed-tab {
+    padding: 4px 12px;
+    font-size: 11px;
+}
+.feed-list { max-height: 260px; }
+
+/* === 五、悬浮操作菜单 === */
+.dh-float-menu {
+    position: fixed;
+    right: 16px;
+    bottom: 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: var(--z-floating);
+}
+.dh-float-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 6px;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: var(--shadow-md);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(6px);
+    transition: all var(--transition-fast);
+}
+.dh-float-panel.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+.dh-float-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+    user-select: none;
+}
+.dh-float-item:hover { background: var(--color-bg-secondary); color: var(--color-text); }
+.dh-float-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+.dh-float-toggle-row {
+    display: flex;
+    gap: 6px;
+}
+.dh-float-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-fast);
+}
+.dh-float-btn:hover { background: var(--color-bg-secondary); color: var(--color-text); transform: scale(1.06); }
+.dh-float-btn svg { width: 18px; height: 18px; }
+
+/* 调整固定按钮位置（悬浮菜单下方） */
+.settings-gear-btn { bottom: 74px; }
+.recent-tabs-btn { bottom: 74px; right: 16px; }
+.recent-tabs-popup { right: 60px; bottom: 74px; }
+.perf-monitor { right: 16px; bottom: 56px; }
+
+/* === 隐藏信息区元素 === */
+.hidden-message { display: none !important; }
+
+/* === 响应式：窄屏时单个面板全宽 === */
+@media (max-width: 800px) {
+    .dh-header { flex-direction: column; gap: 16px; }
+    .dh-header-left { max-width: 100%; }
+    .dh-header-right { align-items: flex-start; }
+    .dh-panels { flex-direction: column; }
+    .dh-main { flex-direction: column; }
+    .dh-sidebar { width: 100%; display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 0; }
+    .dh-sidebar-title { width: 100%; }
+}

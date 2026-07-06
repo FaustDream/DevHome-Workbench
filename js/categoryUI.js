@@ -13,28 +13,25 @@ window.DevHome = window.DevHome || {};
     var escapeHtml = ns.escapeHtml;
     var tileManager = ns.tileManager;
 
-    /* ===== 页面指示器 ===== */
-    ns.updatePageIndicator = function () {
-        var currentName = state.pageNames[state.currentPage] || '' + (state.currentPage + 1);
-        dom.pageName.textContent = currentName;
-        dom.prevPage.disabled = state.currentPage <= 0;
-        dom.nextPage.disabled = state.currentPage >= state.totalPages - 1;
-        updateCatRowActive();
-    };
-
     /* ===== 分类按钮行 ===== */
     var timesSvg = '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M8 2l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
     var plusSvg = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
     function renderCatRow() {
         if (!dom.catRow) return;
+        // 新布局：侧边栏垂直分类列表
         var buttons = state.pageNames.map(function (name, idx) {
-            var cls = idx === state.currentPage ? 'cat-btn active' : 'cat-btn';
-            return '<button class="' + cls + '" data-page="' + idx + '" type="button">' +
+            var cls = idx === state.currentPage ? 'dh-category-item cat-btn active' : 'dh-category-item cat-btn';
+            return '<div class="' + cls + '" data-page="' + idx + '" role="button" tabindex="0">' +
+                '<span class="dh-cat-dot"></span>' +
                 '<span class="cat-btn-label">' + escapeHtml(name) + '</span>' +
                 '<span class="cat-delete-btn" role="button" tabindex="0" data-cat-delete="' + idx + '" aria-label="删除分类 ' + escapeHtml(name) + '">' +
-                timesSvg + '</span></button>';
+                timesSvg + '</span></div>';
         }).join('');
-        dom.catRow.innerHTML = buttons + '<button class="cat-add-btn" type="button" data-cat-add="true" title="新建分类" aria-label="新建分类">' + plusSvg + '</button>';
+        // 添加新建分类按钮
+        var addHtml = '<div class="dh-category-item cat-btn cat-add-btn" role="button" tabindex="0" data-cat-add="true" title="新建分类">' +
+            '<span class="dh-cat-dot" style="background:var(--color-accent);opacity:0.5;"></span>' +
+            '<span class="cat-btn-label" style="color:var(--color-accent);">+ 添加</span></div>';
+        dom.catRow.innerHTML = buttons + addHtml;
         dom.catRow.classList.toggle('category-edit-mode', state.categoryEditMode);
     }
 
@@ -43,10 +40,6 @@ window.DevHome = window.DevHome || {};
         if (dom.catRowText) dom.catRowText.textContent = enabled ? '分类按钮：开' : '分类按钮：关';
         if (enabled) renderCatRow();
         if (dom.catRow) dom.catRow.classList.toggle('visible', enabled);
-        if (dom.pageIndicator) {
-            dom.pageIndicator.classList.toggle('category-indicator-hidden', enabled);
-            dom.pageIndicator.classList.remove('category-menu-open');
-        }
         updateCatRowActive();
     };
 
@@ -76,7 +69,6 @@ window.DevHome = window.DevHome || {};
         if (storage.get('category_memory', false)) storage.set('last_page', newPage);
         renderCatRow();
         ns.renderTiles();
-        ns.updatePageIndicator();
         console.log('[分类切换] 成功切换到:', state.pageNames[newPage], '(pageIdx:', newPage, ') 耗时:', (performance.now() - (t0 || 0)).toFixed(1) + 'ms');
     };
 
@@ -136,6 +128,8 @@ window.DevHome = window.DevHome || {};
     };
 
     ns.prepareCategoryPointer = function (btn, clientX, clientY) {
+        // 自定义布局关闭时，不启用分类拖拽
+        if (ns.isModuleEnabled && !ns.isModuleEnabled('dragLayout')) return;
         clearCategoryLongPressTimer();
         state.categoryDragMoved = false; state.categoryDragReady = false; state.categoryDragging = btn;
         state.dragStartX = clientX; state.dragStartY = clientY;

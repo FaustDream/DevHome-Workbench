@@ -193,7 +193,16 @@ window.DevHome = window.DevHome || {};
                 ns.toggleFocusMode();
                 break;
             case 'addPage': ns.addNewPage(); break;
+            case 'renamePage':
+                var curName = state.pageNames[state.currentPage] || '';
+                ns.showPrompt('输入新的分类名称', { title: '重命名分类', defaultValue: curName }).then(function (newName) {
+                    if (newName && newName !== curName) {
+                        ns.tileManager.renameCurrentPage(newName);
+                    }
+                });
+                break;
             case 'removePage': ns.removeCurrentPage(); break;
+            case 'aiChat': if (ns.aiChat) ns.aiChat.open(); break;
         }
         ns.hideBlankContextMenu();
     };
@@ -259,6 +268,18 @@ window.DevHome = window.DevHome || {};
         setToggle('sToggleCategoryMemory', storage.get('category_memory', false));
         setToggle('sToggleStrict', storage.get('strict_mode', false));
         setToggle('sToggleFileSync', storage.get('file_sync', false));
+
+        // 模块显隐开关
+        var mc = state.moduleConfig || {};
+        setToggle('sToggleModuleWeather', mc.weather !== false);
+        setToggle('sToggleModuleDailyQuote', mc.dailyQuote !== false);
+        setToggle('sToggleModuleGreeting', mc.greeting !== false);
+        setToggle('sToggleModuleBang', mc.bangCommands !== false);
+        setToggle('sToggleModuleNewsFeed', mc.newsFeed !== false);
+        setToggle('sToggleModuleRecentTabs', mc.recentTabs !== false);
+        setToggle('sToggleModuleDragLayout', mc.dragLayout !== false);
+        setToggle('sToggleModulePerfMonitor', mc.perfMonitor !== false);
+        setToggle('sToggleModuleGithubTrending', mc.githubTrending !== false);
 
         // 分段选择器
         var sizeKey = ns.normalizeShortcutSize(storage.get('shortcut_size', ns.DEFAULT_SHORTCUT_SIZE));
@@ -346,8 +367,7 @@ window.DevHome = window.DevHome || {};
                             // 重新加载磁贴数据
                             ns.tileManager.load().then(function () {
                                 ns.renderTiles();
-                                ns.updatePageIndicator();
-                            });
+                                });
                             // 重新渲染工作台
                             if (state.workbenchVisible) {
                                 state.workbench = ns.getWorkbenchState();
@@ -514,6 +534,14 @@ window.DevHome = window.DevHome || {};
     ns._saveFileSync = function (on) {
         ns.storage.set('file_sync', on);
         ns.showToast(on ? '文件自动同步已开启' : '文件自动同步已关闭', 'info');
+    };
+    /** 保存单个模块显隐开关到 state.moduleConfig 并持久化 */
+    ns._saveModuleConfig = function (key, enabled) {
+        var mc = ns.state.moduleConfig || {};
+        mc[key] = enabled;
+        ns.state.moduleConfig = mc;
+        ns.storage.set('module_config', JSON.parse(JSON.stringify(mc)));
+        console.log('[模块管理] ' + key + ' → ' + (enabled ? '开启' : '关闭'));
     };
     ns._saveShortcut = function () {
         var ctrlEl = document.getElementById('wbMeShortcutCtrl');

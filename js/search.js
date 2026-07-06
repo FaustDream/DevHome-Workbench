@@ -186,7 +186,48 @@ window.DevHome = window.DevHome || {};
         else if (e.key === 'Escape') { e.preventDefault(); ns.hideSuggestions(); dom.searchInput.blur(); }
         else if (e.key === 'Tab') { e.preventDefault(); if (state.selectedSuggestionIndex >= 0 && items[state.selectedSuggestionIndex]) { var s = ns.buildSuggestions(dom.searchInput.value)[state.selectedSuggestionIndex]; if (s) ns.applySuggestion(s); } }
     };
-    ns.handleSearchInput = function () { ns.renderSuggestions(); };
+    ns.handleSearchInput = function () {
+        // Bang Commands：输入前缀自动切换搜索引擎
+        if (ns.isModuleEnabled && ns.isModuleEnabled('bangCommands')) {
+            var val = dom.searchInput.value;
+            var matched = matchBangCommand(val);
+            if (matched) {
+                ns.setEngine(matched.engine);
+                dom.searchInput.value = val.slice(matched.prefixLen);
+                // 将光标移到开头，避免 suggest 重新触发
+                setTimeout(function () {
+                    dom.searchInput.setSelectionRange(0, 0);
+                }, 10);
+                console.log('[Bang] 切换引擎 → ' + matched.engine);
+            }
+        }
+        ns.renderSuggestions();
+    };
+
+    /** Bang Commands 匹配规则 */
+    var BANG_RULES = [
+        { prefix: 'b ', engine: 'baidu' },
+        { prefix: 'gh ', engine: 'github' },
+        { prefix: 'g ', engine: 'google' },
+        { prefix: 'dd ', engine: 'duckduckgo' },
+        { prefix: 'yh ', engine: 'yahoo' },
+        { prefix: 'bh ', engine: 'bing' }
+    ];
+
+    function matchBangCommand(val) {
+        for (var i = 0; i < BANG_RULES.length; i++) {
+            var rule = BANG_RULES[i];
+            if (val.startsWith(rule.prefix)) {
+                // 确保有实际的搜索内容
+                var remaining = val.slice(rule.prefix.length).trim();
+                if (remaining.length > 0) {
+                    return { engine: rule.engine, prefixLen: rule.prefix.length };
+                }
+            }
+        }
+        return null;
+    }
+
     ns.handleSearchFocus = function () { ns.renderSuggestions(); };
     ns.handleSearchBlur = function () { setTimeout(function () { if (!document.activeElement.closest('.suggestion-item')) ns.hideSuggestions(); }, 200); };
 

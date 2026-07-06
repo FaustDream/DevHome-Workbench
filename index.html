@@ -11,6 +11,9 @@
     <link rel="stylesheet" href="css/tiles.css">
     <link rel="stylesheet" href="css/overlays.css">
     <link rel="stylesheet" href="css/workbench.css">
+    <link rel="stylesheet" href="css/daily-layout.css">
+    <link rel="stylesheet" href="css/ai-chat.css">
+    <link rel="stylesheet" href="css/feed.css">
     <!-- 主题样式：默认主题（蔚蓝），支持浅色/深色双模式 -->
     <link id="theme-default" rel="stylesheet" href="css/themes/default.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -34,7 +37,7 @@
     </div>
 
     <div class="container">
-        <!-- 文件配置警告条：未选择配置目录时显示 -->
+        <!-- 文件配置警告条 -->
         <div class="config-warning-bar" id="configWarningBar" style="display:none;">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink:0;">
                 <circle cx="8" cy="8" r="7" stroke="#856404" stroke-width="1.2" fill="none"/>
@@ -44,51 +47,106 @@
             <button id="configSelectDirBtn" type="button" class="config-select-dir-btn">选择目录</button>
         </div>
 
-        <div class="time-display" id="timeDisplay">
-            <div class="time-main" id="timeMain">00:00</div>
-            <div class="date-display" id="dateDisplay">2024年1月1日 星期一</div>
-        </div>
-
-        <div class="search-container" id="searchContainer">
-            <div class="search-wrapper doc-cmd-wrapper">
-                <span class="doc-prompt">&gt;</span>
-                <div class="search-engine-selector" id="engineSelector">
-                    <div class="current-engine" id="currentEngine">
-                        <svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="8" y="11.5" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor">G</text></svg>
-                        <span>Google</span>
-                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </div>
+        <!-- ===== 一、顶部信息区 ===== -->
+        <header class="dh-header">
+            <!-- 左侧文本区 -->
+            <div class="dh-header-left">
+                <div class="greeting-text" id="greetingText"></div>
+                <div class="dh-quote">
+                    <div class="quote-text" id="quoteText"></div>
+                    <div class="dh-quote-mark">&ldquo;</div>
                 </div>
-                <input type="text" class="search-input doc-cmd-input" id="searchInput" placeholder="搜索..." autocomplete="off" aria-label="搜索框">
-                <button class="search-button" id="searchButton" aria-label="搜索">
-                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.8"/><path d="M12 12l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-                </button>
             </div>
-            <!-- 搜索建议面板 -->
-            <div class="search-suggestions" id="searchSuggestions">
-                <div class="suggestions-header" id="suggestionsHeader"></div>
-                <div class="suggestions-list" id="suggestionsList"></div>
-                <div class="suggestions-footer" id="suggestionsFooter"></div>
+
+            <!-- 右侧时间与天气区 -->
+            <div class="dh-header-right">
+                <div class="time-display" id="timeDisplay" style="position:static;">
+                    <div class="time-main" id="timeMain">00:00</div>
+                    <div class="date-display" id="dateDisplay">2024年1月1日 星期一</div>
+                </div>
+                <div class="dh-weather-row">
+                    <span class="weather-widget" id="weatherWidget" style="display:none;"></span>
+                </div>
+                <!-- 天气趋势弹窗 -->
+                <div class="weather-panel" id="weatherPanel"></div>
             </div>
+        </header>
+
+        <!-- ===== 二、搜索与标签栏 ===== -->
+        <div class="dh-search-area">
+            <div class="search-container" id="searchContainer">
+                <div class="search-wrapper doc-cmd-wrapper">
+                    <span class="doc-prompt">&gt;</span>
+                    <div class="search-engine-selector" id="engineSelector">
+                        <div class="current-engine" id="currentEngine">
+                            <svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="8" y="11.5" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor">G</text></svg>
+                            <span>Google</span>
+                            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                    </div>
+                    <input type="text" class="search-input doc-cmd-input" id="searchInput" placeholder="Search..." autocomplete="off" aria-label="搜索框">
+                    <button class="search-button" id="searchButton" aria-label="搜索">
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.8"/><path d="M12 12l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                    </button>
+                </div>
+                <!-- 搜索建议面板 -->
+                <div class="search-suggestions" id="searchSuggestions">
+                    <div class="suggestions-header" id="suggestionsHeader"></div>
+                    <div class="suggestions-list" id="suggestionsList"></div>
+                    <div class="suggestions-footer" id="suggestionsFooter"></div>
+                </div>
+            </div>
+
+            <!-- 顶部水平标签栏 -->
+            <nav class="dh-tabs" id="dhTabs">
+                <button class="dh-tab-btn active" data-dh-tab="common">COMMON</button>
+                <button class="dh-tab-btn" data-dh-tab="recommended">RECOMMENDED</button>
+                <button class="dh-tab-btn" data-dh-tab="favorites">FAVORITES</button>
+                <button class="dh-tab-btn" data-dh-tab="settings">SETTINGS</button>
+            </nav>
         </div>
 
-        <div id="catRow" class="cat-row"></div>
+        <!-- ===== 三、主体内容区 ===== -->
+        <div class="dh-main">
+            <!-- 左侧边栏：分类导航 -->
+            <aside class="dh-sidebar">
+                <div class="dh-sidebar-title">Categories</div>
+                <div id="catRow" class="cat-row"></div>
+            </aside>
 
-        <!-- 磁贴页面指示器 -->
-        <div class="page-indicator" id="pageIndicator">
-            <button class="page-btn" id="prevPage" title="上一页">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 2L4 6l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
-            <div class="page-info" id="pageInfo">
-                <span class="page-name" id="pageName">第1页</span>
+            <!-- 右侧应用网格 -->
+            <div class="dh-content-area">
+                <div class="dh-app-grid" id="tilesContainer"></div>
+
+                <!-- ===== 四、底部数据面板 ===== -->
+                <div class="dh-panels">
+                    <section class="feed-card" id="feedCard">
+                        <div class="feed-card-head" id="feedCardHead" title="折叠/展开">
+                            <span class="feed-card-title">📡 TRENDING NEWS</span>
+                            <span class="feed-toggle-icon" id="feedToggleIcon">▲</span>
+                        </div>
+                        <div id="feedCardBody">
+                            <div class="feed-tabs" id="feedTabs">
+                                <button class="feed-tab active" data-feed-tab="zhihu">知乎</button>
+                                <button class="feed-tab" data-feed-tab="v2ex">V2EX</button>
+                                <button class="feed-tab" data-feed-tab="github">GitHub</button>
+                            </div>
+                            <div class="feed-list" id="feedList"></div>
+                        </div>
+                    </section>
+
+                    <section class="trending-card" id="trendingCard">
+                        <div class="trending-card-head" id="trendingCardHead" title="折叠/展开">
+                            <span class="trending-card-title">🔥 GITHUB TRENDING</span>
+                            <span class="feed-toggle-icon" id="trendingToggleIcon">▼</span>
+                        </div>
+                        <div id="trendingCardBody">
+                            <div class="feed-list" id="trendingList"></div>
+                        </div>
+                    </section>
+                </div>
             </div>
-            <button class="page-btn" id="nextPage" title="下一页">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
-
         </div>
-
-        <div class="tiles-container" id="tilesContainer"></div>
 
         <div class="hidden-message" id="hiddenMessage" style="display:none;"></div>
     </div>
@@ -296,8 +354,16 @@
             <kbd class="doc-kbd ctx-kbd" id="ctxFocusModeKey">Ctrl+K</kbd>
         </div>
         <div class="context-menu-divider ctx-daily-only"></div>
+        <div class="context-menu-item ctx-daily-only" data-action="aiChat">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2a5 5 0 015 5v1a5 5 0 01-5 5H5a5 5 0 01-5-5V4a2 2 0 012-2h3a2 2 0 012 2v1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="4.5" cy="8.5" r="0.7" fill="currentColor"/><circle cx="7" cy="8.5" r="0.7" fill="currentColor"/><circle cx="9.5" cy="8.5" r="0.7" fill="currentColor"/></svg><span>AI 对话</span>
+            <kbd class="doc-kbd ctx-kbd">Ctrl+I</kbd>
+        </div>
+        <div class="context-menu-divider ctx-daily-only"></div>
         <div class="context-menu-item ctx-daily-only" data-action="addPage">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 2h6l3 3v7.5H3V2z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 2v3h3M7 7v3M5.5 8.5h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>新建分类</span>
+        </div>
+        <div class="context-menu-item ctx-daily-only" data-action="renamePage">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M10 2l2 2-6 6H4V8l6-6z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>重命名分类</span>
         </div>
         <div class="context-menu-item ctx-daily-only" data-action="removePage">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 2h6l3 3v7.5H3V2z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 2v3h3M5.5 8.5h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>删除当前分类</span>
@@ -328,6 +394,48 @@
     <!-- 代码语言子菜单 -->
     <div class="context-menu ctx-submenu" id="ctxCodeLangMenu"></div>
 
+    <!-- ===== 五、悬浮操作菜单 ===== -->
+    <div class="dh-float-menu" id="dhFloatMenu">
+        <!-- 操作面板（默认隐藏） -->
+        <div class="dh-float-panel" id="dhFloatPanel">
+            <div class="dh-float-item" data-dh-action="sync" title="同步数据">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8a6 6 0 019-3M14 8a6 6 0 01-9 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 3v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span>Sync</span>
+            </div>
+            <div class="dh-float-item" data-dh-action="redo" title="刷新页面">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M1 8a7 7 0 0113-5M15 8a7 7 0 01-13 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M15 1v3h-3M1 15v-3h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span>Redo</span>
+            </div>
+            <div class="dh-float-item" data-dh-action="theme" title="主题设置">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.5 1.5M11.5 11.5L13 13M3 13l1.5-1.5M11.5 4.5L13 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                <span>Theme</span>
+            </div>
+        </div>
+        <!-- 底部按钮组 -->
+        <div class="dh-float-toggle-row">
+            <button class="dh-float-btn" id="dhFloatMenuToggle" title="快捷操作" aria-label="快捷操作菜单">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 4.5h12M3 9h12M3 13.5h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
+            <button class="dh-float-btn" id="dhSchemeToggle" title="切换浅色/深色" aria-label="切换色彩模式">
+                <svg id="dhSchemeIcon" width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M9 1v2M9 15v2M1 9h2M15 9h2M3.3 3.3l1.4 1.4M13.3 13.3l1.4 1.4M3.3 14.7l1.4-1.4M13.3 4.7l1.4-1.4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- 性能监控面板 -->
+    <div class="perf-monitor" id="perfMonitor" style="display:none;"></div>
+
+    <!-- 最近关闭标签页按钮 -->
+    <button class="recent-tabs-btn" id="recentTabsBtn" type="button" title="恢复最近关闭的网页" aria-label="最近关闭的网页">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8a6 6 0 019-3M14 8a6 6 0 01-9 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 3v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+
+    <!-- 最近关闭弹窗 -->
+    <div class="recent-tabs-popup" id="recentTabsPopup">
+        <div class="recent-tabs-popup-head">最近关闭的网页</div>
+        <div class="recent-tabs-popup-list" id="recentTabsList"></div>
+    </div>
+
     <!-- 固定设置入口 -->
     <button class="settings-gear-btn" id="settingsGearBtn" type="button" title="设置" aria-label="打开设置">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -357,6 +465,7 @@
                 <nav class="s-nav" id="sNav">
                     <button class="s-nav-item active" data-s-tab="general">通用与偏好</button>
                     <button class="s-nav-item" data-s-tab="appearance">外观与主题</button>
+                    <button class="s-nav-item" data-s-tab="modules">模块管理</button>
                     <button class="s-nav-item" data-s-tab="ai">AI 助手</button>
                     <button class="s-nav-item" data-s-tab="data">数据与备份</button>
                     <button class="s-nav-item" data-s-tab="advanced">高级与开发者</button>
@@ -440,33 +549,100 @@
                         </div>
                     </section>
 
-                    <!-- Tab 2: AI 助手 -->
+                    <!-- Tab 2: 模块管理 -->
+                    <section class="s-tab" data-s-tab="modules">
+                        <h3 class="s-section-title">时钟区域增强</h3>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">天气预报</span><span class="s-row-desc">时钟旁显示实时天气图标与温度，点击查看趋势</span></div>
+                            <label class="s-toggle" id="sToggleModuleWeather"><input type="checkbox" id="moduleWeatherToggle"><span class="s-toggle-thumb"></span></label>
+                        </div>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">每日金句</span><span class="s-row-desc">时钟下方每日随机刷新名言/诗词/冷知识</span></div>
+                            <label class="s-toggle" id="sToggleModuleDailyQuote"><input type="checkbox" id="moduleDailyQuoteToggle"><span class="s-toggle-thumb"></span></label>
+                        </div>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">个性化问候语</span><span class="s-row-desc">根据系统时间显示动态问候（早安/午安/晚安）</span></div>
+                            <label class="s-toggle" id="sToggleModuleGreeting"><input type="checkbox" id="moduleGreetingToggle"><span class="s-toggle-thumb"></span></label>
+                        </div>
+
+                        <h3 class="s-section-title">搜索增强与内容卡片</h3>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">Bang Commands</span><span class="s-row-desc">搜索框前缀快捷切换引擎（b+空格→百度，gh+空格→GitHub）</span></div>
+                            <label class="s-toggle" id="sToggleModuleBang"><input type="checkbox" id="moduleBangToggle"><span class="s-toggle-thumb"></span></label>
+                        </div>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">资讯热榜</span><span class="s-row-desc">可折叠信息流卡片（知乎热榜 / V2EX / GitHub Trending）</span></div>
+                            <label class="s-toggle" id="sToggleModuleNewsFeed"><input type="checkbox" id="moduleNewsFeedToggle"><span class="s-toggle-thumb"></span></label>
+                        </div>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">最近关闭恢复</span><span class="s-row-desc">页面右下角快捷按钮，一键恢复最近关闭的网页</span></div>
+                            <label class="s-toggle" id="sToggleModuleRecentTabs"><input type="checkbox" id="moduleRecentTabsToggle"><span class="s-toggle-thumb"></span></label>
+                        </div>
+
+                        <h3 class="s-section-title">布局与开发者工具</h3>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">自定义布局</span><span class="s-row-desc">长按拖拽重排书签和分类标签位置</span></div>
+                            <label class="s-toggle" id="sToggleModuleDragLayout"><input type="checkbox" id="moduleDragLayoutToggle"><span class="s-toggle-thumb"></span></label>
+                        </div>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">性能监控面板</span><span class="s-row-desc">右下角显示当前标签页内存使用情况（开发者模式）</span></div>
+                            <label class="s-toggle" id="sToggleModulePerfMonitor"><input type="checkbox" id="modulePerfMonitorToggle"><span class="s-toggle-thumb"></span></label>
+                        </div>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">GitHub Trending</span><span class="s-row-desc">独立卡片展示当天 GitHub Trending 热榜项目</span></div>
+                            <label class="s-toggle" id="sToggleModuleGithubTrending"><input type="checkbox" id="moduleGithubTrendingToggle"><span class="s-toggle-thumb"></span></label>
+                        </div>
+                    </section>
+
+                    <!-- Tab 3: AI 助手（原 Tab 2） -->
                     <section class="s-tab" data-s-tab="ai">
-                        <h3 class="s-section-title">AI 每日总结 <span class="s-badge">腾讯混元</span></h3>
-                        <div class="s-row">
-                            <div class="s-row-left"><span class="s-row-label">API Key</span></div>
-                            <div class="s-row-right s-input-wrap">
-                                <input type="password" id="wbMeAiApiKey" placeholder="已预置默认 Key" class="s-input">
-                                <button class="s-input-icon" id="sToggleAiKey" title="显示/隐藏">👁</button>
+                        <div class="ai-settings-layout">
+                            <!-- 左侧：供应商列表 + 管理 -->
+                            <div class="ai-settings-left">
+                                <button type="button" class="ai-provider-add-btn" id="wbAiAddProvider">
+                                    <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 2v7M2 5.5h7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>添加
+                                </button>
+                                <div class="ai-provider-list" id="wbAiProviderList"></div>
                             </div>
-                        </div>
-                        <div class="s-row">
-                            <div class="s-row-left"><span class="s-row-label">端点</span></div>
-                            <div class="s-row-right s-input-wrap">
-                                <input type="text" id="wbMeAiEndpoint" value="https://hunyuan.tencentcloudapi.com" class="s-input">
+
+                            <!-- 右侧：配置编辑 -->
+                            <div class="ai-settings-right">
+                                <h4 class="ai-config-title">编辑配置 <span class="s-badge" id="wbAiProviderBadge">腾讯混元</span></h4>
+                                <div class="s-row">
+                                    <div class="s-row-left"><span class="s-row-label">名称</span></div>
+                                    <div class="s-row-right s-input-wrap">
+                                        <input type="text" id="wbMeAiName" class="s-input" placeholder="供应商名称" style="width:120px;">
+                                    </div>
+                                </div>
+                                <div class="s-row">
+                                    <div class="s-row-left"><span class="s-row-label">API Key</span></div>
+                                    <div class="s-row-right s-input-wrap">
+                                        <input type="password" id="wbMeAiApiKey" placeholder="sk-..." class="s-input">
+                                        <button class="s-input-icon" id="sToggleAiKey" title="显示/隐藏">👁</button>
+                                    </div>
+                                </div>
+                                <div class="s-row">
+                                    <div class="s-row-left"><span class="s-row-label">端点</span></div>
+                                    <div class="s-row-right s-input-wrap">
+                                        <input type="text" id="wbMeAiEndpoint" class="s-input" placeholder="https://api.example.com/v1/chat/completions">
+                                    </div>
+                                </div>
+                                <div class="s-row">
+                                    <div class="s-row-left"><span class="s-row-label">模型</span></div>
+                                    <div class="s-row-right s-input-wrap">
+                                        <input type="text" id="wbMeAiModel" class="s-input" style="width:140px;" placeholder="模型名称">
+                                    </div>
+                                </div>
+                                <button type="button" class="s-action-btn" id="wbMeAiSaveKey"><span>保存当前供应商配置</span></button>
+                                <div class="ai-config-actions">
+                                    <button type="button" class="s-action-btn" id="wbMeAiGenerate"><span>生成每日总结</span></button>
+                                    <button type="button" class="s-action-btn" id="wbMeAiQuickChat"><span>打开对话</span></button>
+                                </div>
+                                <div class="wb-settings-ai-result" id="wbMeAiResult" style="display:none;margin-top:10px;">
+                                    <div id="wbMeAiContent"></div>
+                                    <button type="button" class="s-action-btn" id="wbMeAiSaveNote" style="margin-top:8px;"><span>保存为笔记</span></button>
+                                </div>
                             </div>
-                        </div>
-                        <div class="s-row">
-                            <div class="s-row-left"><span class="s-row-label">模型</span></div>
-                            <div class="s-row-right s-input-wrap">
-                                <input type="text" id="wbMeAiModel" value="hunyuan-lite" class="s-input" style="width:120px;">
-                            </div>
-                        </div>
-                        <button type="button" class="s-action-btn" id="wbMeAiSaveKey"><span>保存配置</span></button>
-                        <button type="button" class="s-action-btn" id="wbMeAiGenerate" style="margin-top:8px;"><span>生成今日总结</span></button>
-                        <div class="wb-settings-ai-result" id="wbMeAiResult" style="display:none;margin-top:12px;">
-                            <div id="wbMeAiContent"></div>
-                            <button type="button" class="s-action-btn" id="wbMeAiSaveNote" style="margin-top:8px;"><span>保存为笔记</span></button>
                         </div>
                     </section>
 
@@ -549,7 +725,7 @@
 
                         <h3 class="s-section-title">关于</h3>
                         <button type="button" class="s-action-btn" id="changelogBtn">
-                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 2v12M2 4h10l2 2v6.5H2V4z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 8h4M6 11h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>更新说明 v2.7.3</span>
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 2v12M2 4h10l2 2v6.5H2V4z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 8h4M6 11h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>更新说明 v2.12.0</span>
                         </button>
 
                         <div class="s-danger-zone">
@@ -567,7 +743,21 @@
     <!-- 更新说明内容（供 Shadcn Dialog 动态读取渲染） -->
     <div id="changelogBodyTemplate" style="display:none">
         <div class="changelog-body" id="changelogBody">
-            <div class="changelog-entry">
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.12.0</span>
+                        <span class="changelog-date">2026-07-06</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>布局重构</strong> 日常模式全面重新设计：顶部左右分栏（问候+金句 / 时间+天气）、搜索栏+胶囊标签栏（COMMON/RECOMMENDED/FAVORITES/SETTINGS）、左侧分类侧边栏+右侧应用网格、底部双卡片面板（TRENDING NEWS + GITHUB TRENDING）、右下角悬浮操作菜单（Sync/Redo/Theme + 昼夜切换）</li>
+                        <li><strong>新增</strong> 9 大功能模块：天气预报、每日金句、个性化问候语、Bang Commands 快捷搜索、资讯热榜、最近关闭恢复、性能监控面板、GitHub Trending、自定义布局控制</li>
+                        <li><strong>新增</strong> 设置面板"模块管理"Tab，所有新功能支持独立开关</li>
+                        <li><strong>新增</strong> GitHub 搜索引擎（支持 Bang Command `gh ` 直接搜索）</li>
+                        <li><strong>新增</strong> 悬浮操作菜单：一键同步数据、重新加载、主题设置、昼夜模式切换</li>
+                        <li><strong>权限</strong> 新增 sessions、host_permissions 扩展</li>
+                    </ul>
+                </div>
+                <div class="changelog-entry">
                     <div class="changelog-version">
                         <span class="changelog-version-tag">v2.7.5</span>
                         <span class="changelog-date">2026-07-03</span>
@@ -887,6 +1077,9 @@
         <div class="engine-option" data-engine="yahoo" data-url="https://search.yahoo.com/search?p=">
             <svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="8" y="11.5" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor">Y</text></svg><span>Yahoo</span>
         </div>
+        <div class="engine-option" data-engine="github" data-url="https://github.com/search?q=">
+            <span class="engine-badge" aria-hidden="true">GH</span><span>GitHub</span>
+        </div>
     </div>
 
     <!-- Shadcn/ui 依赖：React 18 + Tailwind base + 组件编译产物 -->
@@ -911,6 +1104,13 @@
     <script src="js/fileConfig.js" defer></script>
     <script src="js/state.js" defer></script>
     <script src="js/utils.js" defer></script>
+    <script src="js/ai-providers.js" defer></script>
+    <script src="js/ai-modules.js" defer></script>
+    <script src="js/ai-chat.js" defer></script>
+    <script src="js/quotes.js" defer></script>
+    <script src="js/weather.js" defer></script>
+    <script src="js/feed.js" defer></script>
+    <script src="js/performance.js" defer></script>
     <script src="js/favicon.js" defer></script>
     <script src="js/theme-manager.js" defer></script>
     <script src="js/theme.js" defer></script>

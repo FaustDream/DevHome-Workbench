@@ -135,9 +135,7 @@ window.DevHome = window.DevHome || {};
 
 
 
-        // ===== 页面切换 =====
-        dom.prevPage.addEventListener('click', function () { ns.changePageWithAnimation(state.currentPage - 1); });
-        dom.nextPage.addEventListener('click', function () { ns.changePageWithAnimation(state.currentPage + 1); });
+        // ===== 滚轮翻页 =====
         dom.tilesContainer.addEventListener('wheel', ns.handleWheelScroll, { passive: false });
         dom.tilesContainer.addEventListener('click', ns.handleTileDeleteClick);
         dom.tilesContainer.addEventListener('keydown', ns.handleTileDeleteKeydown);
@@ -242,6 +240,16 @@ window.DevHome = window.DevHome || {};
                 if (toggleStrict) { ns._saveStrictMode(cb.checked); return; }
                 var toggleFileSync = cb.closest('#sToggleFileSync');
                 if (toggleFileSync) { ns._saveFileSync(cb.checked); return; }
+                // 模块显隐开关
+                if (cb.id === 'moduleWeatherToggle') { ns._saveModuleConfig('weather', cb.checked); return; }
+                if (cb.id === 'moduleDailyQuoteToggle') { ns._saveModuleConfig('dailyQuote', cb.checked); return; }
+                if (cb.id === 'moduleGreetingToggle') { ns._saveModuleConfig('greeting', cb.checked); return; }
+                if (cb.id === 'moduleBangToggle') { ns._saveModuleConfig('bangCommands', cb.checked); return; }
+                if (cb.id === 'moduleNewsFeedToggle') { ns._saveModuleConfig('newsFeed', cb.checked); return; }
+                if (cb.id === 'moduleRecentTabsToggle') { ns._saveModuleConfig('recentTabs', cb.checked); return; }
+                if (cb.id === 'moduleDragLayoutToggle') { ns._saveModuleConfig('dragLayout', cb.checked); return; }
+                if (cb.id === 'modulePerfMonitorToggle') { ns._saveModuleConfig('perfMonitor', cb.checked); return; }
+                if (cb.id === 'moduleGithubTrendingToggle') { ns._saveModuleConfig('githubTrending', cb.checked); return; }
             });
         }
 
@@ -298,6 +306,10 @@ window.DevHome = window.DevHome || {};
             if (state.tileEditMode && !e.target.closest('.tile') && !e.target.closest('.tile-delete-btn')) ns.setTileEditMode(false);
             if (state.categoryEditMode && !e.target.closest('.cat-row')) { state.categoryEditMode = false; if (dom.catRow) dom.catRow.classList.toggle('category-edit-mode', false); }
             if (!e.target.closest('.search-container')) ns.hideSuggestions();
+            // 关闭最近关闭弹窗
+            if (dom.recentTabsPopup && dom.recentTabsPopup.classList.contains('visible') && !e.target.closest('#recentTabsBtn') && !e.target.closest('#recentTabsPopup')) {
+                dom.recentTabsPopup.classList.remove('visible');
+            }
         });
         document.addEventListener('mouseup', clearLongPressTimer);
         document.addEventListener('mouseup', clearCatLongPressTimer);
@@ -333,6 +345,10 @@ window.DevHome = window.DevHome || {};
             }
             // 可配置的专注模式快捷键
             if (ns.isFocusModeShortcut(e)) { e.preventDefault(); ns.toggleFocusMode(); }
+            // Ctrl+I 打开 AI 对话
+            if (e.ctrlKey && e.key === 'i' && !e.shiftKey && !e.altKey && !e.metaKey) {
+                if (!isEditing) { e.preventDefault(); if (ns.aiChat) ns.aiChat.open(); }
+            }
             // 仅在非编辑状态下拦截数字键切换搜索引擎
             var activeEl = document.activeElement;
             var isEditing = activeEl === dom.wbNoteTitle
@@ -485,7 +501,7 @@ window.DevHome = window.DevHome || {};
                                 storage.set('page_names', data.pageNames || ['第1页']);
                                 if (data.devhome) ns.devhomeStorage.set('workbench', data.devhome);
                                 await ns.tileManager.load();
-                                ns.renderTiles(); ns.updatePageIndicator();
+                                ns.renderTiles(); ns.refreshCatRowIfVisible();
                                 ns.showToast('备份导入成功！', 'success');
                             }
                         } else ns.showToast('无效的备份文件格式！', 'error');
@@ -515,7 +531,7 @@ window.DevHome = window.DevHome || {};
                         await ns.tileManager.load();
                         ns.loadSearchHistory();
                         ns.renderTiles();
-                        ns.updatePageIndicator();
+                        ns.refreshCatRowIfVisible();
                         ns.syncSettingsControls();
                         return;
                     }
@@ -533,7 +549,7 @@ window.DevHome = window.DevHome || {};
                     await ns.tileManager.load();
                     ns.loadSearchHistory();
                     ns.renderTiles();
-                    ns.updatePageIndicator();
+                    ns.refreshCatRowIfVisible();
                     ns.syncSettingsControls();
                     ns.bindEvents();
                 }
@@ -1049,27 +1065,47 @@ window.DevHome = window.DevHome || {};
         });
 
         // ===== AI 助手事件 =====
-        // AI Key 保存
-        var aiSaveKey = document.getElementById('wbMeAiSaveKey');
-        if (aiSaveKey) {
-            aiSaveKey.addEventListener('click', async function () {
-                var apiKey = dom.wbMeAiApiKey ? dom.wbMeAiApiKey.value.trim() : '';
-                var endpoint = dom.wbMeAiEndpoint ? dom.wbMeAiEndpoint.value.trim() : '';
-                var model = dom.wbMeAiModel ? dom.wbMeAiModel.value.trim() : '';
-                if (!apiKey) { ns.showToast('请填写 API Key', 'error'); return; }
-                var config = await ns.storageV2.get(ns.storageV2.KEYS.CONFIG, ns.DEFAULT_V2_CONFIG);
-                config.aiApi.apiKey = apiKey;
-                config.aiApi.endpoint = endpoint || ns.DEFAULT_V2_CONFIG.aiApi.endpoint;
-                config.aiApi.model = model || ns.DEFAULT_V2_CONFIG.aiApi.model;
-                await ns.storageV2.set(ns.storageV2.KEYS.CONFIG, config);
-                ns.showToast('API 配置已保存', 'success');
+        // 供应商列表点击选择
+        if (dom.wbAiProviderList) {
+            dom.wbAiProviderList.addEventListener('click', function (e) {
+                var item = e.target.closest('.ai-provider-item');
+                if (!item) return;
+                var delBtn = e.target.closest('.ai-provider-del-btn');
+                if (delBtn) {
+                    e.stopPropagation();
+                    var pid = item.dataset.providerId;
+                    ns.deleteAiProvider(pid);
+                    return;
+                }
+                // 选择供应商
+                var providerId = item.dataset.providerId;
+                ns.selectAiProvider(providerId);
             });
         }
-        // AI 生成总结
+        // 添加供应商
+        if (dom.wbAiAddProvider) {
+            dom.wbAiAddProvider.addEventListener('click', function () {
+                ns.addAiProvider();
+            });
+        }
+        // AI 配置保存
+        var aiSaveKey = document.getElementById('wbMeAiSaveKey');
+        if (aiSaveKey) {
+            aiSaveKey.addEventListener('click', function () {
+                ns.saveAiProviderConfig();
+            });
+        }
+        // AI 生成每日总结
         var aiGenerate = document.getElementById('wbMeAiGenerate');
         if (aiGenerate) aiGenerate.addEventListener('click', function () {
             ns.generateAISummary();
-            console.log('[交互] AI 生成今日总结');
+            console.log('[交互] AI 生成每日总结');
+        });
+        // AI 对话面板
+        var aiQuickChat = document.getElementById('wbMeAiQuickChat');
+        if (aiQuickChat) aiQuickChat.addEventListener('click', function () {
+            if (ns.aiChat) ns.aiChat.open();
+            console.log('[交互] 打开 AI 对话面板');
         });
         // AI 保存为笔记
         var aiSaveNote = document.getElementById('wbMeAiSaveNote');
@@ -1135,9 +1171,227 @@ window.DevHome = window.DevHome || {};
             });
         }
 
+        // ===== 最近关闭标签页 =====
+        if (dom.recentTabsBtn) {
+            dom.recentTabsBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                ns.toggleRecentTabsPopup();
+                console.log('[交互] 点击最近关闭按钮');
+            });
+        }
+        if (dom.recentTabsPopup) {
+            dom.recentTabsPopup.addEventListener('click', function (e) {
+                var item = e.target.closest('.recent-tab-item');
+                if (item && item.dataset.sessionId) {
+                    e.preventDefault();
+                    ns.restoreClosedTab(item.dataset.sessionId);
+                }
+            });
+        }
+
+        // ===== 资讯热榜卡片折叠 =====
+        if (dom.feedCardHead) {
+            dom.feedCardHead.addEventListener('click', function () {
+                ns.toggleFeedCollapse();
+                console.log('[交互] 折叠/展开资讯热榜');
+            });
+        }
+        if (dom.trendingCardHead) {
+            dom.trendingCardHead.addEventListener('click', function () {
+                ns.toggleTrendingCollapse();
+                console.log('[交互] 折叠/展开 GitHub Trending');
+            });
+        }
+
+        // ===== 资讯热榜 Tab 切换 =====
+        if (dom.feedTabs) {
+            dom.feedTabs.addEventListener('click', function (e) {
+                var tab = e.target.closest('.feed-tab');
+                if (!tab) return;
+                var tabName = tab.dataset.feedTab;
+                if (tabName) ns.switchFeedTab(tabName);
+            });
+        }
+
+        // ===== 顶部标签栏 (DH Tabs) =====
+        if (dom.dhTabs) {
+            dom.dhTabs.addEventListener('click', function (e) {
+                var tab = e.target.closest('.dh-tab-btn');
+                if (!tab) return;
+                var tabName = tab.dataset.dhTab;
+                ns.switchDhTab(tabName);
+                console.log('[交互] 切换顶部标签 → ' + tabName);
+            });
+        }
+
+        // ===== 悬浮操作菜单 =====
+        if (dom.dhFloatMenuToggle) {
+            dom.dhFloatMenuToggle.addEventListener('click', function (e) {
+                e.stopPropagation();
+                var panel = dom.dhFloatPanel;
+                if (!panel) return;
+                panel.classList.toggle('visible');
+                console.log('[交互] 切换悬浮菜单');
+            });
+        }
+        // 点击菜单外部关闭
+        document.addEventListener('click', function (e) {
+            if (dom.dhFloatPanel && dom.dhFloatPanel.classList.contains('visible')
+                && !e.target.closest('#dhFloatMenu')) {
+                dom.dhFloatPanel.classList.remove('visible');
+            }
+        });
+        // 悬浮菜单项点击
+        var floatMenu = document.getElementById('dhFloatMenu');
+        if (floatMenu) {
+            floatMenu.addEventListener('click', function (e) {
+                var item = e.target.closest('[data-dh-action]');
+                if (!item) return;
+                var action = item.dataset.dhAction;
+                ns.handleFloatAction(action);
+                // 关闭面板
+                if (dom.dhFloatPanel) dom.dhFloatPanel.classList.remove('visible');
+            });
+        }
+        // 色彩模式切换按钮
+        if (dom.dhSchemeToggle) {
+            dom.dhSchemeToggle.addEventListener('click', function (e) {
+                e.stopPropagation();
+                ns.toggleColorScheme();
+                console.log('[交互] 切换色彩模式');
+            });
+        }
+
         // ===== 快捷方式大小/列数 =====
         function applyShortcutSizeFn(size) { ns.applyShortcutSize(size); }
         function applyShortcutColumnsFn(cols) { ns.applyShortcutColumns(cols); }
+    };
+
+    /** 切换最近关闭标签页弹窗 */
+    ns.toggleRecentTabsPopup = async function () {
+        var popup = dom.recentTabsPopup;
+        if (!popup) return;
+        var isVisible = popup.classList.contains('visible');
+        if (isVisible) {
+            popup.classList.remove('visible');
+            return;
+        }
+        // 加载最近关闭的标签页
+        var list = dom.recentTabsList;
+        if (list) list.innerHTML = '<div class="recent-tab-item-empty">加载中...</div>';
+        popup.classList.add('visible');
+
+        try {
+            var sessions = [];
+            if (chrome && chrome.sessions && chrome.sessions.getRecentlyClosed) {
+                var items = await chrome.sessions.getRecentlyClosed({ maxResults: 10 });
+                items.forEach(function (item) {
+                    if (item.tab && item.tab.sessionId) {
+                        sessions.push({ id: item.tab.sessionId, title: item.tab.title, url: item.tab.url });
+                    }
+                });
+            }
+            if (list) {
+                if (sessions.length === 0) {
+                    list.innerHTML = '<div class="recent-tab-item-empty">暂无最近关闭的网页</div>';
+                } else {
+                    list.innerHTML = sessions.map(function (s) {
+                        return '<div class="recent-tab-item" data-session-id="' + s.id + '" title="' + (s.url || '') + '">' + (s.title || '无标题') + '</div>';
+                    }).join('');
+                }
+            }
+        } catch (e) {
+            if (list) list.innerHTML = '<div class="recent-tab-item-empty">无法获取（需要 sessions 权限）</div>';
+            console.warn('[最近关闭]', e.message);
+        }
+    };
+
+    /** 恢复最近关闭的标签页 */
+    ns.restoreClosedTab = function (sessionId) {
+        if (chrome && chrome.sessions && chrome.sessions.restore) {
+            chrome.sessions.restore(sessionId, function () {
+                console.log('[最近关闭] 已恢复 sessionId=' + sessionId);
+                dom.recentTabsPopup.classList.remove('visible');
+            });
+        }
+    };
+
+    /** 顶部标签栏切换 */
+    ns.switchDhTab = function (tabName) {
+        // 更新 tab 按钮 active 态
+        if (dom.dhTabs) {
+            dom.dhTabs.querySelectorAll('.dh-tab-btn').forEach(function (b) {
+                b.classList.toggle('active', b.dataset.dhTab === tabName);
+            });
+        }
+        switch (tabName) {
+            case 'common':
+                // 切换到第一个分类页
+                if (state.currentPage !== 0) ns.changePageWithAnimation(0);
+                break;
+            case 'recommended':
+                // 推荐页：暂用第二页，若无则切到第一页
+                var target = state.totalPages > 1 ? 1 : 0;
+                if (state.currentPage !== target) ns.changePageWithAnimation(target);
+                break;
+            case 'favorites':
+                // 收藏页：暂用最后一页
+                var fav = Math.max(0, state.totalPages - 1);
+                if (state.currentPage !== fav) ns.changePageWithAnimation(fav);
+                break;
+            case 'settings':
+                ns.openSettingsPanel();
+                break;
+        }
+    };
+
+    /** 悬浮菜单操作 */
+    ns.handleFloatAction = function (action) {
+        switch (action) {
+            case 'sync':
+                if (ns.fileConfig && ns.fileConfig.isReady()) {
+                    ns.fileConfig.syncToFile().then(function () {
+                        if (ns.fileConfig.showToast) ns.fileConfig.showToast('数据已同步', 'success');
+                    });
+                } else {
+                    ns.showToast('请先选择配置目录', 'info');
+                }
+                break;
+            case 'redo':
+                window.location.reload();
+                break;
+            case 'theme':
+                ns.openSettingsPanel();
+                // 切换到外观 tab
+                setTimeout(function () { ns.switchSettingsTab('appearance'); }, 100);
+                break;
+        }
+    };
+
+    /** 切换浅色/深色模式 */
+    ns.toggleColorScheme = function () {
+        if (!ns.theme) return;
+        var current = ns.theme.getState().colorScheme;
+        var next = current === 'dark' ? 'light' : 'dark';
+        ns.theme.setScheme(next);
+        // 更新图标
+        if (dom.dhSchemeIcon) {
+            if (next === 'dark') {
+                dom.dhSchemeIcon.innerHTML = '<path d="M9 1a8 8 0 100 16A8 8 0 019 1z" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity="0.15"/><circle cx="9" cy="9" r="3" stroke="currentColor" stroke-width="1.2" fill="none"/>';
+            } else {
+                dom.dhSchemeIcon.innerHTML = '<circle cx="9" cy="9" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M9 1v2M9 15v2M1 9h2M15 9h2M3.3 3.3l1.4 1.4M13.3 13.3l1.4 1.4M3.3 14.7l1.4-1.4M13.3 4.7l1.4-1.4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>';
+            }
+        }
+        console.log('[主题] 切换色彩模式 → ' + next);
+    };
+
+    /** 悬浮菜单按钮初始图标（根据当前主题同步） */
+    ns.syncFloatMenuIcons = function () {
+        if (!dom.dhSchemeIcon || !ns.theme) return;
+        var scheme = ns.theme.getState().colorScheme;
+        if (scheme === 'dark') {
+            dom.dhSchemeIcon.innerHTML = '<path d="M9 1a8 8 0 100 16A8 8 0 019 1z" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity="0.15"/><circle cx="9" cy="9" r="3" stroke="currentColor" stroke-width="1.2" fill="none"/>';
+        }
     };
 
 })(window.DevHome);
