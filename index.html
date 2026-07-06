@@ -12,7 +12,6 @@
     <link rel="stylesheet" href="css/overlays.css">
     <link rel="stylesheet" href="css/workbench.css">
     <link rel="stylesheet" href="css/ai-chat.css">
-    <link rel="stylesheet" href="css/daily-layout.css">
     <!-- 主题样式：默认主题（蔚蓝），支持浅色/深色双模式 -->
     <link id="theme-default" rel="stylesheet" href="css/themes/default.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -57,7 +56,9 @@
 
         <div class="quote-text" id="quoteText"></div>
 
-        <div class="search-container" id="searchContainer">
+        <!-- ===== 交互核心区：搜索栏 → 分类 → 快捷方式，垂直三层 ===== -->
+        <section class="dh-interactive-zone" id="dhInteractiveZone">
+            <div class="search-container" id="searchContainer">
                 <div class="search-wrapper doc-cmd-wrapper">
                     <span class="doc-prompt">&gt;</span>
                     <div class="search-engine-selector" id="engineSelector">
@@ -86,13 +87,19 @@
         <div class="tiles-container" id="tilesContainer"></div>
 
         <div class="hidden-message" id="hiddenMessage" style="display:none;"></div>
+        </section>
     </div>
 
-        <!-- DevHome 工作台 v3：三栏非对称布局 -->
+        <!-- DevHome 工作台 v4：双栏仪表盘布局 -->
     <section class="devhome-stage" id="devhomeStage" aria-label="DevHome 综合性工作台">
         <div class="wb-shell" id="wbShell">
-            <!-- ========== 左栏：四象限任务分组式导航 ========== -->
-            <aside class="wb-sidebar-left" id="wbSidebarLeft">
+            <!-- ========== 左侧可折叠任务面板 ========== -->
+            <aside class="wb-quadrant-panel" id="wbQuadrantPanel">
+                <!-- 折叠/展开按钮 -->
+                <button class="wb-quadrant-toggle" id="wbQuadrantToggle" title="折叠/展开四象限任务">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 3h12M2 8h12M2 13h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                </button>
+
                 <!-- 标题栏 -->
                 <div class="wb-sidebar-head">
                     <h2 class="wb-sidebar-head-title">四象限任务</h2>
@@ -152,17 +159,15 @@
                 </div>
             </aside>
 
-            <!-- ========== 中栏：核心笔记工作区 ========== -->
+            <!-- ========== 主工作区：笔记 + 番茄钟 (70%) ========== -->
             <main class="wb-main" id="wbMain">
+                <!-- 笔记标题行：含搜索 + 新建按钮 + 过滤胶囊 -->
                 <div class="wb-notes-toolbar">
                     <div class="wb-notes-toolbar-left">
                         <div class="wb-notes-search">
                             <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.5 13.5L18 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
                             <input type="text" id="wbNotesSearch" placeholder="搜索笔记..." autocomplete="off">
                         </div>
-                        <button class="wb-notes-filter-btn" id="wbNotesFilterBtn" title="筛选">
-                            <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h10M3 15h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-                        </button>
                         <button class="wb-notes-add-btn" id="wbNotesAddBtn" title="新建笔记">
                             <svg width="16" height="16" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                         </button>
@@ -181,6 +186,7 @@
                         </div>
                     </div>
                 </div>
+
                 <div class="wb-notes-layout" id="wbNotesLayout">
                     <div class="wb-notes-sidebar" id="wbNotesSidebar">
                         <div class="wb-notes-list" id="wbNotesList"></div>
@@ -211,9 +217,31 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- 番茄钟：整合在主工作区底部 -->
+                <div class="wb-pomodoro-bar" id="wbPomodoroBar">
+                    <h4 class="wb-pomodoro-bar-title">番茄钟</h4>
+                    <div class="wb-pomodoro-bar-ring">
+                        <svg viewBox="0 0 160 160" class="wb-pomodoro-ring-bar">
+                            <circle cx="80" cy="80" r="64" fill="none" stroke="var(--color-border)" stroke-width="4"/>
+                            <circle cx="80" cy="80" r="64" fill="none" stroke="var(--color-accent)" stroke-width="4" stroke-linecap="round" id="wbPomodoroSideProgress" stroke-dasharray="402.12" stroke-dashoffset="0" transform="rotate(-90 80 80)"/>
+                        </svg>
+                        <div class="wb-pomodoro-bar-time" id="wbPomodoroSideTime">25:00</div>
+                    </div>
+                    <div class="wb-pomodoro-bar-controls">
+                        <button class="wb-pomodoro-bar-btn primary" id="wbPomodoroSideStart">开始</button>
+                        <button class="wb-pomodoro-bar-btn" id="wbPomodoroSideReset">重置</button>
+                    </div>
+                    <div class="wb-pomodoro-bar-quick">
+                        <button class="wb-pomodoro-quick-btn active" data-duration="25" title="25分钟专注">25</button>
+                        <button class="wb-pomodoro-quick-btn" data-duration="30" title="30分钟专注">30</button>
+                        <button class="wb-pomodoro-quick-btn" data-duration="45" title="45分钟专注">45</button>
+                        <button class="wb-pomodoro-quick-btn" data-duration="60" title="60分钟专注">60</button>
+                    </div>
+                </div>
             </main>
 
-            <!-- ========== 右栏：时间管理中枢 ========== -->
+            <!-- ========== 右侧栏：日历 + 快捷设置 (30%) ========== -->
             <aside class="wb-sidebar-right" id="wbSidebarRight">
                 <div class="wb-mini-calendar" id="wbMiniCalendar">
                     <div class="wb-mini-cal-head">
@@ -221,31 +249,21 @@
                         <h3 class="wb-mini-cal-title" id="wbCalendarTitle">2026年7月</h3>
                         <button class="wb-mini-cal-nav" id="wbMiniCalNext">&gt;</button>
                     </div>
+                    <!-- 视图切换 -->
+                    <div class="wb-cal-view-switch">
+                        <button class="wb-cal-view-btn active" data-view="month" id="wbCalViewMonth">月</button>
+                        <button class="wb-cal-view-btn" data-view="week" id="wbCalViewWeek">周</button>
+                    </div>
                     <div class="wb-mini-cal-weekdays"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
                     <div class="wb-mini-cal-days" id="wbCalendarDays"></div>
                     <div class="wb-calendar-detail" id="wbCalendarDetail">
                         <p class="wb-calendar-detail-empty">点击日期查看内容</p>
                     </div>
                 </div>
-                <div class="wb-pomodoro-side" id="wbPomodoroSide">
-                    <h4 class="wb-pomodoro-side-title">番茄钟</h4>
-                    <div class="wb-pomodoro-side-ring">
-                        <svg viewBox="0 0 160 160" class="wb-pomodoro-ring-side">
-                            <circle cx="80" cy="80" r="64" fill="none" stroke="var(--color-border)" stroke-width="4"/>
-                            <circle cx="80" cy="80" r="64" fill="none" stroke="var(--color-accent)" stroke-width="4" stroke-linecap="round" id="wbPomodoroSideProgress" stroke-dasharray="402.12" stroke-dashoffset="0" transform="rotate(-90 80 80)"/>
-                        </svg>
-                        <div class="wb-pomodoro-side-time" id="wbPomodoroSideTime">25:00</div>
-                    </div>
-                    <div class="wb-pomodoro-side-controls">
-                        <button class="wb-pomodoro-side-btn primary" id="wbPomodoroSideStart">开始</button>
-                        <button class="wb-pomodoro-side-btn" id="wbPomodoroSideReset">重置</button>
-                    </div>
-                    <div class="wb-pomodoro-side-presets">
-                        <button class="wb-pomodoro-side-preset active" data-duration="25">25</button>
-                        <button class="wb-pomodoro-side-preset" data-duration="30">30</button>
-                        <button class="wb-pomodoro-side-preset" data-duration="45">45</button>
-                        <button class="wb-pomodoro-side-preset" data-duration="60">60</button>
-                    </div>
+
+                <!-- 快捷设置面板 -->
+                <div class="wb-quick-settings" id="wbQuickSettings">
+                    <h4 class="wb-quick-settings-title">快捷设置</h4>
                 </div>
             </aside>
         </div>
@@ -360,7 +378,6 @@
                 <nav class="s-nav" id="sNav">
                     <button class="s-nav-item active" data-s-tab="general">通用与偏好</button>
                     <button class="s-nav-item" data-s-tab="appearance">外观与主题</button>
-                    <button class="s-nav-item" data-s-tab="modules">模块管理</button>
                     <button class="s-nav-item" data-s-tab="ai">AI 助手</button>
                     <button class="s-nav-item" data-s-tab="data">数据与备份</button>
                     <button class="s-nav-item" data-s-tab="advanced">高级与开发者</button>
@@ -444,52 +461,7 @@
                         </div>
                     </section>
 
-                    <!-- Tab 2: 模块管理 -->
-                    <section class="s-tab" data-s-tab="modules">
-                        <h3 class="s-section-title">时钟区域增强</h3>
-                        <div class="s-row">
-                            <div class="s-row-left"><span class="s-row-label">天气预报</span><span class="s-row-desc">时钟旁显示实时天气图标与温度，点击查看趋势</span></div>
-                            <label class="s-toggle" id="sToggleModuleWeather"><input type="checkbox" id="moduleWeatherToggle"><span class="s-toggle-thumb"></span></label>
-                        </div>
-                        <div class="s-row">
-                            <div class="s-row-left"><span class="s-row-label">每日金句</span><span class="s-row-desc">时钟下方每日随机刷新名言/诗词/冷知识</span></div>
-                            <label class="s-toggle" id="sToggleModuleDailyQuote"><input type="checkbox" id="moduleDailyQuoteToggle"><span class="s-toggle-thumb"></span></label>
-                        </div>
-                        <div class="s-row">
-                            <div class="s-row-left"><span class="s-row-label">个性化问候语</span><span class="s-row-desc">根据系统时间显示动态问候（早安/午安/晚安）</span></div>
-                            <label class="s-toggle" id="sToggleModuleGreeting"><input type="checkbox" id="moduleGreetingToggle"><span class="s-toggle-thumb"></span></label>
-                        </div>
-
-                        <h3 class="s-section-title">搜索增强与内容卡片</h3>
-                        <div class="s-row">
-                            <div class="s-row-left"><span class="s-row-label">Bang Commands</span><span class="s-row-desc">搜索框前缀快捷切换引擎（b+空格→百度，gh+空格→GitHub）</span></div>
-                            <label class="s-toggle" id="sToggleModuleBang"><input type="checkbox" id="moduleBangToggle"><span class="s-toggle-thumb"></span></label>
-                        </div>
-                        <div class="s-row">
-                            <div class="s-row-left"><span class="s-row-label">资讯热榜</span><span class="s-row-desc">可折叠信息流卡片（知乎热榜 / V2EX / GitHub Trending）</span></div>
-                            <label class="s-toggle" id="sToggleModuleNewsFeed"><input type="checkbox" id="moduleNewsFeedToggle"><span class="s-toggle-thumb"></span></label>
-                        </div>
-                        <div class="s-row">
-                            <div class="s-row-left"><span class="s-row-label">最近关闭恢复</span><span class="s-row-desc">页面右下角快捷按钮，一键恢复最近关闭的网页</span></div>
-                            <label class="s-toggle" id="sToggleModuleRecentTabs"><input type="checkbox" id="moduleRecentTabsToggle"><span class="s-toggle-thumb"></span></label>
-                        </div>
-
-                        <h3 class="s-section-title">布局与开发者工具</h3>
-                        <div class="s-row">
-                            <div class="s-row-left"><span class="s-row-label">自定义布局</span><span class="s-row-desc">长按拖拽重排书签和分类标签位置</span></div>
-                            <label class="s-toggle" id="sToggleModuleDragLayout"><input type="checkbox" id="moduleDragLayoutToggle"><span class="s-toggle-thumb"></span></label>
-                        </div>
-                        <div class="s-row">
-                            <div class="s-row-left"><span class="s-row-label">性能监控面板</span><span class="s-row-desc">右下角显示当前标签页内存使用情况（开发者模式）</span></div>
-                            <label class="s-toggle" id="sToggleModulePerfMonitor"><input type="checkbox" id="modulePerfMonitorToggle"><span class="s-toggle-thumb"></span></label>
-                        </div>
-                        <div class="s-row">
-                            <div class="s-row-left"><span class="s-row-label">GitHub Trending</span><span class="s-row-desc">独立卡片展示当天 GitHub Trending 热榜项目</span></div>
-                            <label class="s-toggle" id="sToggleModuleGithubTrending"><input type="checkbox" id="moduleGithubTrendingToggle"><span class="s-toggle-thumb"></span></label>
-                        </div>
-                    </section>
-
-                    <!-- Tab 3: AI 助手（原 Tab 2） -->
+                    <!-- Tab 2: AI 助手 -->
                     <section class="s-tab" data-s-tab="ai">
                         <div class="ai-settings-layout">
                             <!-- 左侧：供应商列表 + 管理 -->
@@ -620,7 +592,7 @@
 
                         <h3 class="s-section-title">关于</h3>
                         <button type="button" class="s-action-btn" id="changelogBtn">
-                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 2v12M2 4h10l2 2v6.5H2V4z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 8h4M6 11h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>更新说明 v2.12.1</span>
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 2v12M2 4h10l2 2v6.5H2V4z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 8h4M6 11h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>更新说明 v2.13.0</span>
                         </button>
 
                         <div class="s-danger-zone">
@@ -640,14 +612,27 @@
         <div class="changelog-body" id="changelogBody">
                 <div class="changelog-entry">
                     <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.13.0</span>
+                        <span class="changelog-date">2026-07-06</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>重构</strong> 专注模式三栏布局 → 双栏仪表盘：左侧可折叠四象限面板 + 主工作区(70%) + 右侧栏(30%)</li>
+                        <li><strong>改进</strong> 四象限任务面板增加折叠/展开按钮，折叠后仅48px宽</li>
+                        <li><strong>改进</strong> 番茄钟从右侧栏移至主工作区底部，与笔记形成统一工作流</li>
+                        <li><strong>改进</strong> 番茄钟预设时长改为圆形快捷按钮，点击即刻开始倒计时</li>
+                        <li><strong>改进</strong> 日历新增周/月视图切换，今日日期高亮为实心圆</li>
+                        <li><strong>优化</strong> 统一卡片风格：引入 --card-radius/--card-shadow/--card-border Token</li>
+                        <li><strong>优化</strong> 去除笔记工具栏重复"+"按钮，标签栏整合在同一行</li>
+                        <li><strong>新增</strong> 右侧栏新增快捷设置面板预留位</li>
+                    </ul>
+                </div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">
                         <span class="changelog-version-tag">v2.12.1</span>
                         <span class="changelog-date">2026-07-06</span>
                     </div>
                     <ul class="changelog-list">
-                        <li><strong>修复</strong> 日常模式缺少 css/daily-layout.css 引用，导致三列布局样式不生效</li>
-                        <li><strong>修复</strong> 缺少 js/feed.js 引用，导致资讯热榜和 GitHub Trending 模块静默失效</li>
-                        <li><strong>修复</strong> 缺少 js/performance.js 引用，导致性能监控面板静默失效</li>
-                        <li><strong>修复</strong> 缺少 js/widgets.js 引用，导致左侧小部件面板（快速操作/项目看板/系统状态）静默失效</li>
+                        <li><strong>修复</strong> 移除遗留的 daily-layout.css 及三列布局残留文件，恢复原始居中布局</li>
                     </ul>
                 </div>
                 <div class="changelog-entry">
@@ -656,12 +641,8 @@
                         <span class="changelog-date">2026-07-06</span>
                     </div>
                     <ul class="changelog-list">
-                        <li><strong>布局重构</strong> 日常模式全面重新设计为紧凑三列布局：顶部左右分栏（问候+金句 / 时间+天气）、搜索栏+胶囊标签栏（COMMON/RECOMMENDED/FAVORITES/SETTINGS）、左侧分类+三小部件堆叠（快速操作/项目看板/系统状态）、中间紧凑 3x4 磁贴网格、右侧热门服务双面板、右下角悬浮操作菜单（Sync/Redo/Theme + 昼夜切换）</li>
-                        <li><strong>新增</strong> 9 大功能模块：天气预报、每日金句、个性化问候语、Bang Commands 快捷搜索、资讯热榜、最近关闭恢复、性能监控面板、GitHub Trending、自定义布局控制</li>
-                        <li><strong>新增</strong> 设置面板"模块管理"Tab，所有新功能支持独立开关</li>
-                        <li><strong>新增</strong> GitHub 搜索引擎（支持 Bang Command `gh ` 直接搜索）</li>
-                        <li><strong>新增</strong> 悬浮操作菜单：一键同步数据、重新加载、主题设置、昼夜模式切换</li>
-                        <li><strong>权限</strong> 新增 sessions、host_permissions 扩展</li>
+                        <li><strong>新增</strong> 天气预报（Open-Meteo API + 3天趋势面板）、每日金句（50条本地库 + hitokoto API）、个性化问候语（按时间段动态切换）</li>
+                        <li><strong>权限</strong> 新增 open-meteo、hitokoto host_permissions</li>
                     </ul>
                 </div>
                 <div class="changelog-entry">
@@ -984,9 +965,6 @@
         <div class="engine-option" data-engine="yahoo" data-url="https://search.yahoo.com/search?p=">
             <svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="8" y="11.5" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor">Y</text></svg><span>Yahoo</span>
         </div>
-        <div class="engine-option" data-engine="github" data-url="https://github.com/search?q=">
-            <span class="engine-badge" aria-hidden="true">GH</span><span>GitHub</span>
-        </div>
     </div>
 
     <!-- Shadcn/ui 依赖：React 18 + Tailwind base + 组件编译产物 -->
@@ -1028,9 +1006,6 @@
     <script src="js/export.js" defer></script>
     <script src="js/workbench.js" defer></script>
     <script src="js/events.js" defer></script>
-    <script src="js/feed.js" defer></script>
-    <script src="js/performance.js" defer></script>
-    <script src="js/widgets.js" defer></script>
     <script src="js/main.js" defer></script>
     <script src="js/matrix-bg.js"></script>
 

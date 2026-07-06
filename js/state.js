@@ -172,7 +172,9 @@ window.DevHome = window.DevHome || {};
         pomodoroRestDuration: 5,        // 当前休息时长
         pomodoroMode: 'default',        // 番茄钟模式
         exportFilter: 'all',            // 导出筛选
-        _currentNoteType: 'note'         // 当前编辑笔记的类型
+        _currentNoteType: 'note',        // 当前编辑笔记的类型
+        _calendarView: 'month',          // 日历视图：month | week
+        _quadrantCollapsed: false        // 四象限侧边栏折叠状态
     };
 
 })(window.DevHome);

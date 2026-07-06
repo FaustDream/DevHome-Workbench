@@ -55,6 +55,33 @@ window.DevHome = window.DevHome || {};
         console.log('[面板] 左侧栏切换到 ' + panelName);
     };
 
+    /* ===== 侧边栏折叠/展开 ===== */
+    ns.toggleQuadrantSidebar = function () {
+        var panel = document.getElementById('wbQuadrantPanel');
+        if (!panel) return;
+        var isCollapsed = panel.classList.toggle('collapsed');
+        console.log('[面板] 四象限侧边栏 ' + (isCollapsed ? '折叠' : '展开'));
+    };
+
+    /* ===== 日历视图切换 ===== */
+    ns.switchCalendarView = function (view) {
+        state._calendarView = view;
+        // 更新按钮状态
+        document.querySelectorAll('.wb-cal-view-btn').forEach(function (btn) {
+            btn.classList.toggle('active', btn.dataset.view === view);
+        });
+        // 重新渲染日历
+        var daysEl = document.getElementById('wbCalendarDays');
+        if (!daysEl) return;
+        if (view === 'week') {
+            daysEl.classList.add('week-view');
+        } else {
+            daysEl.classList.remove('week-view');
+        }
+        ns.renderMiniCalendar(_calendarDate);
+        console.log('[面板] 日历切换到' + (view === 'week' ? '周视图' : '月视图'));
+    };
+
     /* ===== 专注模式切换 ===== */
 
     /** 一键切换专注模式/日常模式 */
@@ -453,29 +480,25 @@ window.DevHome = window.DevHome || {};
     };
 
     /* ===== 番茄钟 ===== */
-    /** 辅助：同时更新左右栏番茄钟的时间显示 */
+    /** 辅助：同时更新主工作区番茄钟的时间显示 */
     function _pomoUpdateTimeEls(textFn) {
-        var leftEl = document.getElementById('wbPomodoroTime');
-        var rightEl = document.getElementById('wbPomodoroSideTime');
+        var timeEl = document.getElementById('wbPomodoroSideTime');
         var text = textFn();
-        if (leftEl) leftEl.textContent = text;
-        if (rightEl) rightEl.textContent = text;
+        if (timeEl) timeEl.textContent = text;
     }
 
-    /** 辅助：设置左右栏进度环偏移 */
+    /** 辅助：设置进度环偏移 */
     function _pomoUpdateProgress(offset, total) {
-        var leftEl = document.getElementById('wbPomodoroProgress');
-        var rightEl = document.getElementById('wbPomodoroSideProgress');
-        var leftTotal = 502.65; // r=80 → 2*PI*80
-        var rightTotal = 402.12; // r=64 → 2*PI*64
-        if (leftEl) leftEl.setAttribute('stroke-dashoffset', String(offset * leftTotal / total));
-        if (rightEl) rightEl.setAttribute('stroke-dashoffset', String(offset * rightTotal / total));
+        var el = document.getElementById('wbPomodoroSideProgress');
+        var circumference = 402.12; // r=64 → 2*PI*64
+        if (el) el.setAttribute('stroke-dashoffset', String(offset * circumference / total));
     }
 
+    /** 设置番茄钟时长 */
     ns.setPomodoroDuration = function (duration) {
         state.pomodoroDuration = duration;
-        // 更新左右栏预设按钮 active
-        document.querySelectorAll('.wb-pomodoro-preset, .wb-pomodoro-side-preset').forEach(function (btn) {
+        // 更新快捷圆形按钮 active 状态
+        document.querySelectorAll('.wb-pomodoro-quick-btn').forEach(function (btn) {
             btn.classList.toggle('active', parseInt(btn.dataset.duration) === duration);
         });
         ns.updatePomodoroDisplay();
@@ -493,7 +516,15 @@ window.DevHome = window.DevHome || {};
         _pomoUpdateProgress(0, 100);
     };
 
-    ns.startPomodoro = function () {
+    /** 启动番茄钟，支持直接传入时长参数 */
+    ns.startPomodoro = function (duration) {
+        // 如果传入时长，先设置
+        if (typeof duration === 'number' && duration > 0) {
+            state.pomodoroDuration = duration;
+            document.querySelectorAll('.wb-pomodoro-quick-btn').forEach(function (btn) {
+                btn.classList.toggle('active', parseInt(btn.dataset.duration) === duration);
+            });
+        }
         if (typeof chrome !== 'undefined' && chrome.runtime) {
             chrome.runtime.sendMessage({
                 type: 'POMODORO_START',
@@ -505,10 +536,6 @@ window.DevHome = window.DevHome || {};
             });
         }
         console.log('[交互] 番茄钟 开始 时长=' + (state.pomodoroMode === 'focus' ? '无限' : state.pomodoroDuration + '分'));
-        var startBtn = document.getElementById('wbPomodoroStart');
-        var pauseBtn = document.getElementById('wbPomodoroPause');
-        if (startBtn) startBtn.style.display = 'none';
-        if (pauseBtn) pauseBtn.style.display = '';
         var sideStart = document.getElementById('wbPomodoroSideStart');
         var sideReset = document.getElementById('wbPomodoroSideReset');
         if (sideStart) { sideStart.textContent = '暂停'; sideStart.classList.add('is-running'); }
@@ -522,12 +549,6 @@ window.DevHome = window.DevHome || {};
         if (typeof chrome !== 'undefined' && chrome.runtime) {
             chrome.runtime.sendMessage({ type: 'POMODORO_PAUSE' });
         }
-        var startBtn = document.getElementById('wbPomodoroStart');
-        var pauseBtn = document.getElementById('wbPomodoroPause');
-        if (startBtn) startBtn.style.display = '';
-        if (pauseBtn) pauseBtn.style.display = 'none';
-        if (startBtn) startBtn.textContent = '继续';
-        // 右栏
         var sideStart = document.getElementById('wbPomodoroSideStart');
         if (sideStart) { sideStart.textContent = '继续'; sideStart.classList.remove('is-running'); }
         var labelEl = document.getElementById('wbPomodoroLabel');
@@ -539,13 +560,7 @@ window.DevHome = window.DevHome || {};
         if (typeof chrome !== 'undefined' && chrome.runtime) {
             chrome.runtime.sendMessage({ type: 'POMODORO_STOP' });
         }
-        var startBtn = document.getElementById('wbPomodoroStart');
-        var pauseBtn = document.getElementById('wbPomodoroPause');
-        if (startBtn) { startBtn.style.display = ''; startBtn.textContent = '开始'; }
-        if (pauseBtn) pauseBtn.style.display = 'none';
-        // 右栏
         var sideStart = document.getElementById('wbPomodoroSideStart');
-        var sideReset = document.getElementById('wbPomodoroSideReset');
         if (sideStart) { sideStart.textContent = '开始'; sideStart.classList.remove('is-running'); }
         ns.updatePomodoroDisplay();
     };
