@@ -79,7 +79,7 @@ function loadModule(filename) {
     }
 }
 
-['config.js', 'storage.js', 'state.js', 'utils.js', 'favicon.js', 'theme.js', 'pageManager.js',
+['config.js', 'storage.js', 'state.js', 'utils.js', 'favicon.js', 'bgManager.js', 'pageManager.js',
     'tiles.js', 'categoryUI.js', 'ui.js', 'search.js', 'workbench.js', 'events.js', 'main.js'
 ].forEach(f => loadModule(f));
 

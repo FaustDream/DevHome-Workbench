@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DevHome Workbench - 侧边栏</title>
+    <!-- 主题 Token：提供 --color-bg 等语义变量，使侧边栏响应浅色/深色切换 -->
+    <link rel="stylesheet" href="css/themes/default.css">
     <link rel="stylesheet" href="css/sidepanel.css">
 </head>
 <body>
@@ -50,6 +52,8 @@
     <script src="js/secrets.js"></script>
     <script src="js/config.js"></script>
     <script src="js/storageV2.js"></script>
+    <!-- 主题管理：在侧边栏内初始化 data-color-scheme，确保与主页面配色一致 -->
+    <script src="js/theme-manager.js"></script>
     <script src="js/sidepanel.js"></script>
 </body>
 </html>

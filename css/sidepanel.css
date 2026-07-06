@@ -6,15 +6,9 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-    /* 侧边栏专用 Primitive（覆盖主 Token 为暖纸浅色值） */
-    --color-bg: #f5f0e8;
-    --color-surface: #faf7f2;
-    --color-surface-hover: #e8e0d4;
-    --color-accent: #c0692a;
-    --color-text: #2d2820;
-    --color-text-secondary: #6e6860;
-    --color-text-tertiary: #9a948c;
-    --color-border: rgba(0, 0, 0, 0.06);
+    /* 仅保留侧边栏专用圆角（主题 Token 未提供该变量）。
+       配色变量（--color-bg 等）不再在此硬编码，统一交由 ThemeManager 管理的主题 Token，
+       使侧边栏随主页面的浅色/深色模式切换保持一致。 */
     --radius-md: 6px;
 }
 

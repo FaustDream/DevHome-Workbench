@@ -23,7 +23,7 @@ DevHome Workbench/
 │   ├── state.js           # 全局状态与 DOM 缓存
 │   ├── storage.js         # 存储抽象层
 │   ├── utils.js           # 工具函数
-│   ├── theme.js           # 主题管理
+│   ├── bgManager.js       # 背景管理（自定义背景图片/视频的上传、加载、重置）
 │   ├── background.js      # 背景图片/视频管理
 │   ├── favicon.js         # Favicon IndexedDB 缓存
 │   ├── pageManager.js     # 分类页管理

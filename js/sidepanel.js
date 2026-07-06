@@ -175,6 +175,11 @@ window.DevHome = window.DevHome || {};
 
     /* ===== 初始化 ===== */
     function init() {
+        // 应用主题：设置 data-color-scheme，使侧边栏配色跟随主页面的浅色/深色切换
+        if (ns.theme && typeof ns.theme.init === 'function') {
+            ns.theme.init();
+        }
+
         cacheDom();
         loadData();
         listenMessages();
