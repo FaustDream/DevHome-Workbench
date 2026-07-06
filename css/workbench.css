@@ -1051,6 +1051,64 @@
     color: var(--color-accent);
 }
 
+/* 模式切换按钮 */
+.wb-pomodoro-mode-row {
+    display: flex;
+    gap: 2px;
+    justify-content: center;
+}
+.wb-pomodoro-mode-btn {
+    padding: 3px 10px;
+    border: var(--card-border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--color-text-tertiary);
+    font-family: var(--font-sans);
+    font-size: 10px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.wb-pomodoro-mode-btn.active {
+    border-color: var(--color-accent);
+    background: rgba(85,230,210,0.12);
+    color: var(--color-accent);
+    font-weight: 600;
+}
+
+/* 休息时长设置 */
+.wb-pomodoro-rest-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+.wb-pomodoro-rest-label {
+    font-size: 10px;
+    color: var(--color-text-tertiary);
+    font-weight: 500;
+}
+.wb-pomodoro-rest-input {
+    width: 36px;
+    padding: 2px 4px;
+    border: var(--card-border);
+    border-radius: 5px;
+    background: var(--color-input-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-align: center;
+    outline: none;
+    -moz-appearance: textfield;
+}
+.wb-pomodoro-rest-input::-webkit-outer-spin-button,
+.wb-pomodoro-rest-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.wb-pomodoro-rest-input:focus { border-color: var(--color-accent); }
+.wb-pomodoro-rest-unit {
+    font-size: 10px;
+    color: var(--color-text-tertiary);
+}
+
 /* 开始/暂停/重置按钮 */
 .wb-pomodoro-bar-btn {
     padding: 6px 14px;

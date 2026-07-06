@@ -142,7 +142,7 @@ window.DevHome = window.DevHome || {};
 
 
 
-        // ===== 番茄钟控制（主工作区底部栏） =====
+        // ===== 番茄钟控制 =====
         var pomoSideStart = document.getElementById('wbPomodoroSideStart');
         var pomoSideReset = document.getElementById('wbPomodoroSideReset');
         if (pomoSideStart) {
@@ -158,6 +158,21 @@ window.DevHome = window.DevHome || {};
             });
         }
         if (pomoSideReset) pomoSideReset.addEventListener('click', function () { ns.resetPomodoro(); console.log('[交互] 番茄钟 重置'); });
+
+        // 倒计时/正计时模式切换
+        document.querySelectorAll('.wb-pomodoro-mode-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                ns.togglePomodoroMode(btn.dataset.mode);
+            });
+        });
+
+        // 休息时长输入
+        var restInput = document.getElementById('wbPomodoroRestInput');
+        if (restInput) {
+            restInput.addEventListener('change', function () {
+                ns.setPomodoroRestDuration(this.value);
+            });
+        }
 
         // 圆形快捷时长按钮 — 仅选中时长，不自动开始
         document.querySelectorAll('.wb-pomodoro-quick-btn').forEach(function (btn) {

@@ -163,6 +163,8 @@ window.DevHome = window.DevHome || {};
         pomodoroDuration: 25,           // 当前番茄钟时长
         pomodoroRestDuration: 5,        // 当前休息时长
         pomodoroMode: 'default',        // 番茄钟模式
+        pomodoroCountUp: false,         // 正计时模式 true=正计时 false=倒计时
+        _pomodoroCountUpTimer: null,    // 正计时本地 setInterval ID
         exportFilter: 'all',            // 导出筛选
         _currentNoteType: 'note',        // 当前编辑笔记的类型
         _calendarView: 'month',          // 日历视图：month | week

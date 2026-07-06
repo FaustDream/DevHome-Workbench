@@ -248,11 +248,22 @@
                             </svg>
                             <div class="wb-pomodoro-bar-time" id="wbPomodoroSideTime">25:00</div>
                         </div>
+                        <!-- 模式切换：倒计时 / 正计时 -->
+                        <div class="wb-pomodoro-mode-row">
+                            <button class="wb-pomodoro-mode-btn active" data-mode="countdown" id="wbPomodoroModeCountdown">倒计时</button>
+                            <button class="wb-pomodoro-mode-btn" data-mode="countup" id="wbPomodoroModeCountup">正计时</button>
+                        </div>
                         <div class="wb-pomodoro-sidebar-quick">
                             <button class="wb-pomodoro-quick-btn active" data-duration="25" title="25分钟专注">25</button>
                             <button class="wb-pomodoro-quick-btn" data-duration="30" title="30分钟专注">30</button>
                             <button class="wb-pomodoro-quick-btn" data-duration="45" title="45分钟专注">45</button>
                             <button class="wb-pomodoro-quick-btn" data-duration="60" title="60分钟专注">60</button>
+                        </div>
+                        <!-- 休息时长 -->
+                        <div class="wb-pomodoro-rest-row">
+                            <span class="wb-pomodoro-rest-label">休息</span>
+                            <input type="number" class="wb-pomodoro-rest-input" id="wbPomodoroRestInput" value="5" min="1" max="30" title="休息时长（分钟）">
+                            <span class="wb-pomodoro-rest-unit">分</span>
                         </div>
                         <div class="wb-pomodoro-sidebar-controls">
                             <button class="wb-pomodoro-bar-btn primary" id="wbPomodoroSideStart">开始</button>
@@ -587,7 +598,7 @@
 
                         <h3 class="s-section-title">关于</h3>
                         <button type="button" class="s-action-btn" id="changelogBtn">
-                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 2v12M2 4h10l2 2v6.5H2V4z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 8h4M6 11h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>更新说明 v2.13.4</span>
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 2v12M2 4h10l2 2v6.5H2V4z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 8h4M6 11h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>更新说明 v2.13.5</span>
                         </button>
 
                         <div class="s-danger-zone">
@@ -605,6 +616,19 @@
     <!-- 更新说明内容（供 Shadcn Dialog 动态读取渲染） -->
     <div id="changelogBodyTemplate" style="display:none">
         <div class="changelog-body" id="changelogBody">
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.13.5</span>
+                        <span class="changelog-date">2026-07-06</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>新增</strong> 番茄钟正计时模式：点击"正计时"切换到从00:00向上计数</li>
+                        <li><strong>新增</strong> 可修改休息时长：输入框在番茄钟面板中，范围1~30分钟</li>
+                        <li><strong>新增</strong> 倒计时/正计时模式切换按钮（双按钮组）</li>
+                        <li><strong>实现</strong> 正计时使用本地 setInterval 每秒 +1，进度环以2小时为上限逐渐填满</li>
+                        <li><strong>实现</strong> 正计时模式下隐藏快捷时长按钮，暂停/重置正常停止定时器</li>
+                    </ul>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">
                         <span class="changelog-version-tag">v2.13.4</span>
