@@ -207,7 +207,7 @@
 .page-name {
     color: var(--color-text);
     font-weight: 500;
-    cursor: pointer;
+    cursor: default;
     transition: color var(--transition-fast);
     font-size: var(--font-size-sm);
     padding: 0 var(--spacing-xs);

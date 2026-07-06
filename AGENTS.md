@@ -256,4 +256,110 @@
 ## git同步
 - 每次代码修改完成后，执行版本号更新操作，并确保当前版本不存在任何已知问题。验证无误后，自动将代码及版本信息同步提交并推送到Git仓库。
 
+---
+
+## 12. Shadcn/ui 组件规范
+
+本项目引入 **Shadcn/ui** 组件库（配合 React 18 + Tailwind CSS），用于弹窗、按钮等 UI 组件的标准化。
+
+### 12.1 目录结构
+
+```
+└── js/
+    ├── lib/
+    │   ├── react.production.min.js       # React 18 生产构建
+    │   └── react-dom.production.min.js    # ReactDOM 18 生产构建
+    ├── components/
+    │   └── ui/                           # Shadcn 组件源码（JSX）
+    │       ├── README.md                 # 组件使用说明
+    │       ├── button.jsx                # Button 组件
+    │       └── dialog.jsx                # Dialog 组件
+    └── ui-components/                    # esbuild 编译产物（JS，可直接引用）
+        ├── button.js
+        └── dialog.js
+```
+
+### 12.2 安装与编译
+
+```bash
+# 首次使用：安装依赖
+npm install
+
+# 下载 React 生产构建到 js/lib/
+node scripts/install-react.mjs
+
+# 编译 JSX 组件 → js/ui-components/
+npm run build:components
+```
+
+### 12.3 页面引入方式
+
+```html
+<link rel="stylesheet" href="css/tailwind-base.css">
+<script src="js/lib/react.production.min.js"></script>
+<script src="js/lib/react-dom.production.min.js"></script>
+<script src="js/ui-components/button.js"></script>
+```
+
+### 12.4 使用组件
+
+```javascript
+// 在页面中创建 React 挂载点
+const root = ReactDOM.createRoot(document.getElementById('modalRoot'));
+
+// 使用 Shadcn Button
+root.render(React.createElement(window.ShadcnButton, {
+    variant: 'default',  // default | destructive | outline | secondary | ghost | link
+    size: 'default',     // default | sm | lg | icon
+    onClick: function () { console.log('clicked'); }
+}, '按钮文字'));
+
+// 使用 Shadcn Dialog
+root.render(React.createElement(window.ShadcnDialog.Dialog, { open: true },
+    React.createElement(window.ShadcnDialog.DialogOverlay),
+    React.createElement(window.ShadcnDialog.DialogContent, null,
+        React.createElement(window.ShadcnDialog.DialogHeader, null,
+            React.createElement(window.ShadcnDialog.DialogTitle, null, '标题')
+        ),
+        React.createElement(window.ShadcnDialog.DialogFooter, null,
+            React.createElement(window.ShadcnButton, { variant: 'outline' }, '取消')
+        )
+    )
+));
+```
+
+### 12.5 添加新 Shadcn 组件
+
+1. 从 [shadcn/ui 官网](https://ui.shadcn.com) 找到需要的组件
+2. 复制源码到 `js/components/ui/<组件名>.jsx`
+3. 将 Tailwind class 替换为项目 CSS 变量：
+   - `bg-background` → `var(--color-bg)`
+   - `text-foreground` → `var(--color-text)`
+   - `bg-primary` → `var(--color-accent)`
+   - `border-border` → `var(--color-border)`
+   - `bg-destructive` → `var(--color-danger)`
+4. 将组件暴露到全局 `window.ShadcnXxx`
+5. 运行 `npm run build:components`
+6. 在页面中引入编译产物即可使用
+
+### 12.6 主题 CSS 变量映射
+
+| Shadcn Token | 项目 CSS 变量 | 说明 |
+|--------------|-------------|------|
+| `--background` | `--color-bg` | 页面背景 |
+| `--foreground` | `--color-text` | 文字颜色 |
+| `--card` | `--color-bg-elevated` | 卡片/弹窗背景 |
+| `--primary` | `--color-accent` | 主色调 |
+| `--secondary` | `--color-bg-secondary` | 次要背景 |
+| `--destructive` | `--color-danger` | 危险操作色 |
+| `--border` | `--color-border` | 边框色 |
+| `--input` | `--color-input-bg` | 输入框背景 |
+| `--ring` | `--color-accent` | 聚焦环颜色 |
+
+### 12.7 与现有弹窗的关系
+
+- **Shadcn Dialog** → 用于需要 React 交互的复杂弹窗（如磁贴编辑等未来功能）
+- **wb-confirm / wb-prompt** (原生 JS) → 当前项目中的确认/输入弹窗继续保留，两者共存
+- 新弹窗优先使用 Shadcn Dialog，旧弹窗逐步迁移
+
 

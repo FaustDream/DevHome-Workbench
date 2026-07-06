@@ -126,7 +126,6 @@ window.DevHome = window.DevHome || {};
         // ns.bgManager.load();  // 已禁用：用户可手动上传/重置背景
         ns.renderTiles();
         ns.updatePageIndicator();
-        ns.renderCategoryPopover();
 
         var autoFocusOn = storage.get('auto_focus', false);
         if (dom.autoFocusText) dom.autoFocusText.textContent = autoFocusOn ? '自动聚焦：开' : '自动聚焦：关';
@@ -144,7 +143,7 @@ window.DevHome = window.DevHome || {};
             }
         }
 
-        ns.applyCategoryButtonMode(storage.get('cat_row', false), false);
+        ns.applyCategoryButtonMode(true, false);
         ns.syncSettingsControls();
         ns.bindEvents();
         updateTime();

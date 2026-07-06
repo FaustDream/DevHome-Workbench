@@ -37,68 +37,6 @@ window.DevHome = window.DevHome || {};
             });
         }
 
-        // ===== 分类浮窗事件 =====
-        if (dom.categoryPopover) {
-            // 移除 hover 触发，改为纯 click 切换
-            // mousedown/mouseup 标记：防止点击期间 renderCategoryPopover 销毁按钮
-            dom.categoryPopover.addEventListener('mousedown', function () { ns._setPopoverMouseDown(true); });
-            dom.categoryPopover.addEventListener('mouseup', function () { ns._setPopoverMouseDown(false); });
-            document.addEventListener('mouseup', function () { ns._setPopoverMouseDown(false); }); // 兜底
-            dom.categoryPopover.addEventListener('click', function (e) {
-                var renameBtn = e.target.closest('.category-popover-rename-btn');
-                if (renameBtn) {
-                    e.preventDefault(); e.stopPropagation();
-                    var item = renameBtn.closest('.category-popover-item');
-                    if (item) {
-                        var pageIdx = parseInt(item.dataset.page, 10);
-                        if (!isNaN(pageIdx)) ns._renameCategoryFromPopover(pageIdx);
-                    }
-                    return;
-                }
-                var deleteBtn = e.target.closest('.category-popover-delete-btn');
-                if (deleteBtn) {
-                    e.preventDefault(); e.stopPropagation();
-                    var item2 = deleteBtn.closest('.category-popover-item');
-                    if (item2) {
-                        var pageIdx2 = parseInt(item2.dataset.page, 10);
-                        if (!isNaN(pageIdx2)) ns.deleteCategoryByIndex(pageIdx2);
-                    }
-                    return;
-                }
-                var btn = e.target.closest('.category-popover-item');
-                if (!btn) return;
-                e.preventDefault(); e.stopPropagation();
-                var pageIdx = parseInt(btn.dataset.page, 10);
-                if (!isNaN(pageIdx)) {
-                    var name = (btn.querySelector('.category-popover-name') || {}).textContent || '';
-                    var t0 = performance.now();
-                    console.log('[分类点击] 目标:', name, '(pageIdx:', pageIdx, ') 当前页:', ns.state.currentPage);
-                    ns.changePageWithAnimation(pageIdx, t0, name);
-                    ns.renderCategoryPopover();
-                }
-            });
-        }
-        // ===== 分类浮窗：点击分类名称打开/关闭浮窗 =====
-        if (dom.pageName) {
-            dom.pageName.addEventListener('click', function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-                if (typeof ns._toggleCategoryPopover === 'function') {
-                    ns._toggleCategoryPopover();
-                }
-            });
-        } else if (dom.pageInfo) {
-            // 兜底：如果 pageName 不可用，绑定 pageInfo
-            dom.pageInfo.addEventListener('click', function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-                if (typeof ns._toggleCategoryPopover === 'function') {
-                    ns._toggleCategoryPopover();
-                }
-            });
-        }
-
-        // ===== 模式切换 =====
         if (dom.devhomeBackHome) dom.devhomeBackHome.addEventListener('click', ns.showDailyMode);
         // 清空历史按钮
         var taskClearBtn = document.getElementById('wbTaskClearBtn');
@@ -200,7 +138,6 @@ window.DevHome = window.DevHome || {};
         // ===== 页面切换 =====
         dom.prevPage.addEventListener('click', function () { ns.changePageWithAnimation(state.currentPage - 1); });
         dom.nextPage.addEventListener('click', function () { ns.changePageWithAnimation(state.currentPage + 1); });
-        document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && dom.pageIndicator) dom.pageIndicator.classList.remove('category-menu-open'); });
         dom.tilesContainer.addEventListener('wheel', ns.handleWheelScroll, { passive: false });
         dom.tilesContainer.addEventListener('click', ns.handleTileDeleteClick);
         dom.tilesContainer.addEventListener('keydown', ns.handleTileDeleteKeydown);
@@ -235,9 +172,7 @@ window.DevHome = window.DevHome || {};
         if (dom.settingsCloseBtn) dom.settingsCloseBtn.addEventListener('click', ns.closeSettingsPanel);
         if (dom.settingsOverlay) dom.settingsOverlay.addEventListener('click', function (e) { if (e.target === dom.settingsOverlay) ns.closeSettingsPanel(); });
         if (dom.changelogBtn) dom.changelogBtn.addEventListener('click', function () { ns.closeSettingsPanel(); ns.openChangelog(); });
-        // ===== 更新说明弹窗 =====
-        if (dom.changelogCloseBtn) dom.changelogCloseBtn.addEventListener('click', ns.closeChangelog);
-        if (dom.changelogOverlay) dom.changelogOverlay.addEventListener('click', function (e) { if (e.target === dom.changelogOverlay) ns.closeChangelog(); });
+        // ===== 更新说明弹窗（已迁移至 Shadcn Dialog） =====
         if (dom.settingsPanel) {
             // 设置面板点击委托
             dom.settingsPanel.addEventListener('click', function (e) {
@@ -259,10 +194,10 @@ window.DevHome = window.DevHome || {};
                     ns.syncSettingsControls();
                     return;
                 }
-                // 主题卡片
-                var themeCard = e.target.closest('.s-theme-card');
-                if (themeCard && themeCard.dataset.theme && ns.theme) {
-                    ns.theme.set(themeCard.dataset.theme);
+                // 色彩模式按钮
+                var schemeCard = e.target.closest('.s-theme-card');
+                if (schemeCard && schemeCard.dataset.scheme && ns.theme) {
+                    ns.theme.setScheme(schemeCard.dataset.scheme);
                     ns.syncSettingsControls();
                     return;
                 }
@@ -298,8 +233,6 @@ window.DevHome = window.DevHome || {};
                     else { if (ns.matrixRain) ns.matrixRain.stop(); if (params) params.style.display = 'none'; }
                     return;
                 }
-                // 分类按钮
-                if (cb.closest('#sToggleCatRow')) { ns.handleSettingsAction('toggleCatRow'); return; }
                 // 自动聚焦
                 if (cb.closest('#sToggleAutoFocus')) { ns.handleSettingsAction('toggleAutoFocus'); return; }
                 // 分类记忆
@@ -364,11 +297,6 @@ window.DevHome = window.DevHome || {};
             if (!e.target.closest('.search-engine-selector') && !e.target.closest('.engine-dropdown')) ns.hideEngineDropdown();
             if (state.tileEditMode && !e.target.closest('.tile') && !e.target.closest('.tile-delete-btn')) ns.setTileEditMode(false);
             if (state.categoryEditMode && !e.target.closest('.cat-row')) { state.categoryEditMode = false; if (dom.catRow) dom.catRow.classList.toggle('category-edit-mode', false); }
-            // 点击分类浮窗和 pageIndicator 之外的区域时关闭浮窗
-            if (dom.pageIndicator && dom.pageIndicator.classList.contains('category-menu-open') &&
-                !e.target.closest('.category-popover') && !e.target.closest('.page-indicator')) {
-                dom.pageIndicator.classList.remove('category-menu-open');
-            }
             if (!e.target.closest('.search-container')) ns.hideSuggestions();
         });
         document.addEventListener('mouseup', clearLongPressTimer);
@@ -389,7 +317,6 @@ window.DevHome = window.DevHome || {};
             if (e.key === '/' && document.activeElement !== dom.searchInput) { e.preventDefault(); dom.searchInput.focus(); }
             if (e.key === 'Escape') {
                 // 判断是否需要拦截 ESC 行为
-                var hasChangelogOpen = dom.changelogOverlay && dom.changelogOverlay.classList.contains('visible');
                 var isFocusMode = state.currentDevhomeMode !== 'daily';
                 var hasEngineDropdown = dom.engineDropdown && dom.engineDropdown.classList.contains('visible');
                 var hasSuggestions = state.suggestionsVisible;
@@ -397,10 +324,9 @@ window.DevHome = window.DevHome || {};
                 var hasSettingsOpen = dom.settingsOverlay && dom.settingsOverlay.classList.contains('visible');
 
                 // 仅在确实需要拦截时才阻止默认行为
-                if (hasChangelogOpen || isFocusMode || hasEngineDropdown || hasSuggestions || isSearchFocused || hasSettingsOpen) {
+                if (isFocusMode || hasEngineDropdown || hasSuggestions || isSearchFocused || hasSettingsOpen) {
                     e.preventDefault();
                 }
-                if (hasChangelogOpen) { ns.closeChangelog(); }
                 if (isFocusMode) { ns.exitFocusMode(); }
                 ns.hideEngineDropdown(); ns.hideSuggestions(); ns.closeSettingsPanel();
                 if (isSearchFocused) dom.searchInput.blur();
@@ -459,27 +385,7 @@ window.DevHome = window.DevHome || {};
         }
 
         // ===== 弹窗 =====
-        dom.modalClose.addEventListener('click', ns.closeModal);
-        dom.modalCancel.addEventListener('click', ns.closeModal);
-        dom.modalSave.addEventListener('click', ns.saveTile);
-        $$('.icon-type-tab').forEach(function (tab) { tab.addEventListener('click', function () { updateIconType(tab.dataset.type); if (tab.dataset.type === 'fa') updateFaPreview(); }); });
-        dom.faInput.addEventListener('input', updateFaPreview);
-        dom.imageUploadArea.addEventListener('click', function () { dom.imageInput.click(); });
-        dom.imageInput.addEventListener('change', function (e) {
-            var file = e.target.files[0];
-            if (file && file.type.startsWith('image/')) { state.imageFile = file; var r = new FileReader(); r.onload = function (ev) { dom.imagePreview.src = ev.target.result; dom.imagePreview.classList.remove('hidden'); }; r.readAsDataURL(file); }
-        });
-        function updateIconType(type) {
-            state.iconType = type;
-            $$('.icon-type-tab').forEach(function (t) { t.classList.toggle('active', t.dataset.type === type); });
-            dom.faGroup.classList.toggle('hidden', type !== 'fa');
-            dom.imageGroup.classList.toggle('hidden', type !== 'image');
-            dom.emojiGroup.classList.toggle('hidden', type !== 'emoji');
-        }
-        function updateFaPreview() {
-            var ic = dom.faInput.value.trim();
-            dom.faPreview.innerHTML = ic ? '<i class="' + ic + '"></i>' : '<span style="font-size:12px;color:var(--color-text-secondary)">自动获取网站图标</span>';
-        }
+        // 弹窗事件已迁移至 Shadcn Dialog 组件（shadcn-dialogs.js），不再需要原生 DOM 绑定
 
         // ===== 右键菜单全局 =====
         document.addEventListener('contextmenu', function (e) {
@@ -610,7 +516,6 @@ window.DevHome = window.DevHome || {};
                         ns.loadSearchHistory();
                         ns.renderTiles();
                         ns.updatePageIndicator();
-                        ns.renderCategoryPopover();
                         ns.syncSettingsControls();
                         return;
                     }
@@ -629,7 +534,6 @@ window.DevHome = window.DevHome || {};
                     ns.loadSearchHistory();
                     ns.renderTiles();
                     ns.updatePageIndicator();
-                    ns.renderCategoryPopover();
                     ns.syncSettingsControls();
                     ns.bindEvents();
                 }

@@ -107,7 +107,7 @@ window.DevHome = window.DevHome || {};
         ctx.fillStyle = 'rgba(0,0,0,0.13)';
         ctx.fillRect(0, 0, w, h);
 
-        ctx.font = 'bold ' + fontSize + 'px "VT323","Courier New",monospace';
+        ctx.font = 'bold ' + fontSize + 'px "Cascadia Code","Consolas","Courier New",monospace';
         ctx.textBaseline = 'top';
 
         if (frameCount % 5 === 0) {

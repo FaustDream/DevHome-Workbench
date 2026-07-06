@@ -69,6 +69,38 @@ window.DevHome = window.DevHome || {};
         } catch (e) { /* 静默失败 */ }
     };
 
+    /** 随机纯色生成器（favicon 获取失败时使用） */
+    function randomFaviconColor() {
+        var palette = [
+            '#c0692a', '#d94a3a', '#e67e22', '#f39c12', '#27ae60',
+            '#2ecc71', '#1abc9c', '#2980b9', '#3498db', '#8e44ad',
+            '#9b59b6', '#16a085', '#e74c3c', '#7f8c8d', '#2c3e50'
+        ];
+        return palette[Math.floor(Math.random() * palette.length)];
+    }
+
+    /**
+     * 创建 favicon 获取失败时的纯色方块回退
+     * 显示域名首字母在彩色圆角方块上
+     */
+    function createColorFallback(domain, iconWrap) {
+        var div = document.createElement('div');
+        div.style.width = 'var(--shortcut-icon, 32px)';
+        div.style.height = 'var(--shortcut-icon, 32px)';
+        div.style.borderRadius = '8px';
+        div.style.background = randomFaviconColor();
+        div.style.color = '#fff';
+        div.style.display = 'flex';
+        div.style.alignItems = 'center';
+        div.style.justifyContent = 'center';
+        div.style.fontSize = '14px';
+        div.style.fontWeight = '700';
+        div.style.fontFamily = 'var(--font-sans)';
+        div.textContent = (domain.charAt(0) || '?').toUpperCase();
+        iconWrap.innerHTML = '';
+        iconWrap.appendChild(div);
+    }
+
     ns.loadFavicon = function (url, imgElement, iconWrap) {
         try {
             var urlObj = new URL(url);
@@ -80,10 +112,7 @@ window.DevHome = window.DevHome || {};
             });
             imgElement.onerror = function () {
                 imgElement.src = '';
-                var fallback = document.createElement('i');
-                fallback.className = 'fas fa-question';
-                iconWrap.innerHTML = '';
-                iconWrap.appendChild(fallback);
+                createColorFallback(domain, iconWrap);
             };
             fetch(apiUrl).then(function (r) { return r.blob(); }).then(function (blob) {
                 if (!blob.type.startsWith('image/')) return;
@@ -92,10 +121,9 @@ window.DevHome = window.DevHome || {};
                 reader.readAsDataURL(blob);
             }).catch(function () { /* 忽略失败 */ });
         } catch (e) {
-            var fb = document.createElement('i');
-            fb.className = 'fas fa-question';
-            iconWrap.innerHTML = '';
-            iconWrap.appendChild(fb);
+            var domain = '';
+            try { domain = new URL(url).hostname; } catch (_) {}
+            createColorFallback(domain || '?', iconWrap);
         }
     };
 

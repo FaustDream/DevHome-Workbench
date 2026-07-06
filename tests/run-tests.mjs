@@ -152,7 +152,7 @@ describe('utils.js: 工具函数', () => {
     it('normalizeShortcutColumns: 无效回退 6', () => { eq(D.normalizeShortcutColumns(99), '6'); eq(D.normalizeShortcutColumns(8), '8'); });
     it('createDefaultTile 正确结构', () => {
         const t = D.createDefaultTile({ name: 'X', url: 'http://x' }, 3, 999);
-        eq(t.label, 'X'); eq(t.type, 'fa'); eq(t.position, 3); assert(t.id.startsWith('tile_999_'));
+        eq(t.label, 'X'); eq(t.type, 'favicon'); eq(t.position, 3); assert(t.id.startsWith('tile_999_'));
     });
     it('getPageTileSignature 排序后拼接', () => {
         const sig = D.getPageTileSignature({ tiles: [{ label: 'B', url: 'b' }, { label: 'A', url: 'a' }] });

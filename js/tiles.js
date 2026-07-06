@@ -24,17 +24,6 @@ window.DevHome = window.DevHome || {};
 
         load: async function () {
             this.pagesData = await pageManager.load();
-            var needSave = false;
-            this.pagesData.forEach(function (page) {
-                if (page.tiles) {
-                    page.tiles.forEach(function (tile) {
-                        if (tile.type === 'fa' && tile.icon === 'fas fa-globe') {
-                            tile.type = 'favicon'; tile.icon = ''; needSave = true;
-                        }
-                    });
-                }
-            });
-            if (needSave) pageManager.save(this.pagesData);
             this.updateCurrentTiles();
         },
 
@@ -211,12 +200,9 @@ window.DevHome = window.DevHome || {};
             var iconWrap = document.createElement('div');
             iconWrap.className = 'tile-icon-wrap';
 
-            if (tile.type === 'fa') {
-                var i = document.createElement('i'); i.className = tile.icon; iconWrap.appendChild(i);
-            } else if (tile.type === 'image' && tile.imageData) {
+            // 统一使用 favicon 加载，支持 imageData 兼容旧数据
+            if (tile.type === 'image' && tile.imageData) {
                 var img = document.createElement('img'); img.className = 'tile-img'; img.src = tile.imageData; iconWrap.appendChild(img);
-            } else if (tile.type === 'emoji' && tile.icon) {
-                var span = document.createElement('span'); span.className = 'tile-emoji'; span.textContent = tile.icon; iconWrap.appendChild(span);
             } else {
                 var img2 = document.createElement('img'); img2.className = 'tile-img'; iconWrap.appendChild(img2);
                 loadFavicon(tile.url, img2, iconWrap);

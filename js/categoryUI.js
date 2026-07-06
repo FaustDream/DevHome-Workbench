@@ -20,7 +20,6 @@ window.DevHome = window.DevHome || {};
         dom.prevPage.disabled = state.currentPage <= 0;
         dom.nextPage.disabled = state.currentPage >= state.totalPages - 1;
         updateCatRowActive();
-        updateCategoryPopoverActive();
     };
 
     /* ===== 分类按钮行 ===== */
@@ -57,116 +56,8 @@ window.DevHome = window.DevHome || {};
         btns.forEach(function (btn, idx) { btn.classList.toggle('active', idx === state.currentPage); });
     }
 
-    /* ===== 分类悬浮弹窗 ===== */
-    // 标记弹窗区域是否有 mousedown 正在进行中，防止此期间 innerHTML 替换销毁点击目标
-    var popoverMouseDown = false;
-    ns._setPopoverMouseDown = function (v) { popoverMouseDown = v; };
-
-    var renameSvg = '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M7 1l2 2-6 6H1V7l6-6z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-    var trashSvg = '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 2.5h7M3.5 2.5V1.5h3v1M2.5 2.5v6h5v-6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-
-    ns.renderCategoryPopover = function () {
-        if (!dom.categoryPopover) return;
-        if (popoverMouseDown) return; // mousedown 进行中，禁止 re-render 以免销毁被点击按钮
-        clearTimeout(categoryPopoverCloseTimer);
-        dom.categoryPopover.innerHTML = state.pageNames.map(function (name, idx) {
-            var page = tileManager.pagesData[idx] || {};
-            var tiles = Array.isArray(page.tiles) ? page.tiles.length : 0;
-            var cls = idx === state.currentPage ? 'category-popover-item active' : 'category-popover-item';
-            // 分类项：名称 + 快捷方式数量 + 重命名按钮 + 删除按钮（至少保留一个分类时隐藏删除）
-            var showDelete = state.totalPages > 1;
-            return '<div class="' + cls + '" data-page="' + idx + '" title="点击切换到此分类">' +
-                '<span class="category-popover-name">' + escapeHtml(name) + '</span>' +
-                '<span class="category-popover-count">' + tiles + '</span>' +
-                '<span class="category-popover-rename-btn" title="重命名分类" role="button" tabindex="0" aria-label="重命名 ' + escapeHtml(name) + '">' + renameSvg + '</span>' +
-                (showDelete ? '<span class="category-popover-delete-btn" title="删除分类" role="button" tabindex="0" aria-label="删除 ' + escapeHtml(name) + '">' + trashSvg + '</span>' : '') +
-                '</div>';
-        }).join('');
-    };
-
-    function updateCategoryPopoverActive() {
-        if (!dom.categoryPopover) return;
-        var btns = dom.categoryPopover.querySelectorAll('.category-popover-item');
-        if (btns.length !== state.pageNames.length) { ns.renderCategoryPopover(); return; }
-        btns.forEach(function (btn, idx) { btn.classList.toggle('active', idx === state.currentPage); });
-    }
-
-    ns.refreshCategoryPopover = function () { ns.renderCategoryPopover(); };
-
-    var categoryPopoverCloseTimer = null;
-
-    /** 执行弹窗显示的核心逻辑（更新内容 + 显示） */
-    function _doShowCategoryPopover() {
-        if (!dom.pageIndicator || !dom.categoryPopover) return;
-        var btns = dom.categoryPopover.querySelectorAll('.category-popover-item');
-        if (btns.length === state.pageNames.length) {
-            btns.forEach(function (btn, idx) {
-                var page = tileManager.pagesData[idx] || {};
-                var tiles = Array.isArray(page.tiles) ? page.tiles.length : 0;
-                var countEl = btn.querySelector('.category-popover-count');
-                if (countEl) countEl.textContent = tiles;
-                btn.classList.toggle('active', idx === state.currentPage);
-                // 更新删除按钮显隐
-                var deleteBtn = btn.querySelector('.category-popover-delete-btn');
-                if (deleteBtn) deleteBtn.style.display = state.totalPages > 1 ? '' : 'none';
-            });
-        } else {
-            ns.renderCategoryPopover();
-        }
-        dom.pageIndicator.classList.add('category-menu-open');
-    }
-
-    function toggleCategoryPopover() {
-        if (!dom.pageIndicator) return;
-        clearTimeout(categoryPopoverCloseTimer);
-        if (dom.pageIndicator.classList.contains('category-menu-open')) {
-            dom.pageIndicator.classList.remove('category-menu-open');
-        } else {
-            _doShowCategoryPopover();
-        }
-    }
-
-    /* 从浮窗内重命名分类：原地出现输入框，完成自动保存 */
-    ns._renameCategoryFromPopover = function (pageIndex) {
-        if (pageIndex < 0 || pageIndex >= state.totalPages) return;
-        var item = dom.categoryPopover.querySelector('.category-popover-item[data-page="' + pageIndex + '"]');
-        if (!item) return;
-        var nameSpan = item.querySelector('.category-popover-name');
-        if (!nameSpan) return;
-        var currentName = (nameSpan.textContent || '').trim();
-        // 创建输入框替换名称 span
-        var input = document.createElement('input');
-        input.type = 'text';
-        input.value = currentName;
-        input.className = 'category-popover-input';
-        nameSpan.replaceWith(input);
-        input.focus();
-        input.select();
-
-        var saving = false;
-        function save() {
-            if (saving) return; saving = true;
-            var newName = input.value.trim();
-            input.replaceWith(nameSpan);
-            if (newName && newName !== currentName) {
-                // 解除 popoverMouseDown 锁，确保 renderCategoryPopover 能执行
-                ns._setPopoverMouseDown(false);
-                tileManager.renamePageAt(pageIndex, newName);
-                ns.renderCategoryPopover();
-                ns.updatePageIndicator();
-                ns.refreshCatRowIfVisible();
-            }
-        }
-        input.addEventListener('blur', save);
-        input.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
-            if (e.key === 'Escape') { input.value = currentName; input.blur(); }
-        });
-    };
-
     ns.refreshCatRowIfVisible = function () {
-        if (dom.catRow && dom.catRow.classList.contains('visible')) renderCatRow();
-        ns.renderCategoryPopover();
+        renderCatRow();
     };
 
     /* ===== 页面切换（带动画） ===== */
@@ -185,7 +76,6 @@ window.DevHome = window.DevHome || {};
         if (storage.get('category_memory', false)) storage.set('last_page', newPage);
         renderCatRow();
         ns.renderTiles();
-        ns.renderCategoryPopover();
         ns.updatePageIndicator();
         console.log('[分类切换] 成功切换到:', state.pageNames[newPage], '(pageIdx:', newPage, ') 耗时:', (performance.now() - (t0 || 0)).toFixed(1) + 'ms');
     };
@@ -323,9 +213,5 @@ window.DevHome = window.DevHome || {};
             });
         });
     };
-
-    /* ===== 事件导出（供 events.js 使用） ===== */
-    ns._toggleCategoryPopover = toggleCategoryPopover;
-    ns._renameCategoryFromPopover = ns._renameCategoryFromPopover;
 
 })(window.DevHome);

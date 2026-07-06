@@ -297,7 +297,7 @@ window.DevHome = window.DevHome || {};
         result.tiles.settings = {};
         [
             'shortcut_size', 'shortcut_columns', 'auto_focus', 'category_memory',
-            'last_page', 'cat_row', 'engine', 'bg', 'char_size', 'flow_speed',
+            'last_page', 'engine', 'bg', 'char_size', 'flow_speed',
             'char_density'
         ].forEach(function (key) {
             try {

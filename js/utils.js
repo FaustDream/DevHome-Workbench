@@ -98,8 +98,8 @@ window.DevHome = window.DevHome || {};
             id: 'tile_' + seed + '_' + idx,
             label: item.name,
             url: item.url,
-            type: 'fa',
-            icon: 'fas fa-globe',
+            type: 'favicon',
+            icon: '',
             color: '#4a9eff',
             position: idx
         };
@@ -174,122 +174,30 @@ window.DevHome = window.DevHome || {};
         return ns.SHORTCUT_COLUMN_OPTIONS[key] ? key : String(ns.DEFAULT_SHORTCUT_COLUMNS);
     };
 
-    /* ===== 自定义确认弹窗（替代原生 confirm） ===== */
+    /* ===== 自定义确认弹窗（使用 Shadcn Dialog 组件） ===== */
     /**
-     * 显示暖纸主题确认弹窗
+     * 显示确认弹窗
      * @param {string} message - 提示消息
-     * @param {object} [opts] - 可选配置
-     * @param {string} [opts.title] - 标题，默认"确认操作"
-     * @param {string} [opts.okLabel] - 确定按钮文字，默认"确定"
-     * @param {string} [opts.cancelLabel] - 取消按钮文字，默认"取消"
+     * @param {object} [opts] - 可选配置 { title, okLabel, cancelLabel }
      * @returns {Promise<boolean>} true=确定，false=取消
      */
     ns.showConfirm = function (message, opts) {
-        return new Promise(function (resolve) {
-            opts = opts || {};
-            var overlay = document.getElementById('wbConfirmOverlay');
-            var titleEl = document.getElementById('wbConfirmTitle');
-            var messageEl = document.getElementById('wbConfirmMessage');
-            var okBtn = document.getElementById('wbConfirmOk');
-            var cancelBtn = document.getElementById('wbConfirmCancel');
-
-            if (!overlay || !titleEl || !messageEl || !okBtn || !cancelBtn) {
-                // 兜底：DOM 不存在时使用原生 confirm（仅极端情况）
-                resolve(window.confirm(message));
-                return;
-            }
-
-            titleEl.textContent = opts.title || '确认操作';
-            messageEl.textContent = message;
-            okBtn.textContent = opts.okLabel || '确定';
-            cancelBtn.textContent = opts.cancelLabel || '取消';
-
-            function cleanup() {
-                okBtn.removeEventListener('click', onOk);
-                cancelBtn.removeEventListener('click', onCancel);
-                overlay.removeEventListener('click', onClickOutside);
-                document.removeEventListener('keydown', onKeyDown);
-                overlay.classList.remove('visible');
-            }
-
-            function onOk() { cleanup(); resolve(true); }
-            function onCancel() { cleanup(); resolve(false); }
-            function onClickOutside(e) {
-                if (e.target === overlay) { cleanup(); resolve(false); }
-            }
-            function onKeyDown(e) {
-                if (e.key === 'Escape') { e.preventDefault(); cleanup(); resolve(false); }
-                if (e.key === 'Enter') { e.preventDefault(); cleanup(); resolve(true); }
-            }
-
-            okBtn.addEventListener('click', onOk);
-            cancelBtn.addEventListener('click', onCancel);
-            overlay.addEventListener('click', onClickOutside);
-            document.addEventListener('keydown', onKeyDown);
-            overlay.classList.add('visible');
-        });
+        if (window.ShadcnDialogs) return window.ShadcnDialogs.showConfirm(message, opts);
+        // 兜底：Shadcn 未加载时使用原生 confirm
+        return Promise.resolve(window.confirm(message));
     };
 
-    /* ===== 自定义输入弹窗（替代原生 prompt） ===== */
+    /* ===== 自定义输入弹窗（使用 Shadcn Dialog 组件） ===== */
     /**
-     * 显示暖纸主题输入弹窗
-     * @param {string} message - 提示消息（也作为 placeholder）
-     * @param {object} [opts] - 可选配置
-     * @param {string} [opts.title] - 标题，默认"请输入"
-     * @param {string} [opts.defaultValue] - 默认值
-     * @param {string} [opts.okLabel] - 确定按钮文字，默认"确定"
-     * @param {string} [opts.cancelLabel] - 取消按钮文字，默认"取消"
+     * 显示输入弹窗
+     * @param {string} message - 提示消息
+     * @param {object} [opts] - 可选配置 { title, defaultValue, okLabel, cancelLabel }
      * @returns {Promise<string|null>} 输入的文本，取消返回 null
      */
     ns.showPrompt = function (message, opts) {
-        return new Promise(function (resolve) {
-            opts = opts || {};
-            var overlay = document.getElementById('wbPromptOverlay');
-            var titleEl = document.getElementById('wbPromptTitle');
-            var inputEl = document.getElementById('wbPromptInput');
-            var okBtn = document.getElementById('wbPromptOk');
-            var cancelBtn = document.getElementById('wbPromptCancel');
-
-            if (!overlay || !titleEl || !inputEl || !okBtn || !cancelBtn) {
-                // 兜底：DOM 不存在时使用原生 prompt（仅极端情况）
-                resolve(window.prompt(message, opts.defaultValue || ''));
-                return;
-            }
-
-            titleEl.textContent = opts.title || '请输入';
-            inputEl.placeholder = message || '';
-            inputEl.value = opts.defaultValue || '';
-
-            function cleanup() {
-                okBtn.removeEventListener('click', onOk);
-                cancelBtn.removeEventListener('click', onCancel);
-                overlay.removeEventListener('click', onClickOutside);
-                document.removeEventListener('keydown', onKeyDown);
-                overlay.classList.remove('visible');
-            }
-
-            function onOk() { 
-                var val = inputEl.value.trim();
-                cleanup(); 
-                resolve(val || null); 
-            }
-            function onCancel() { cleanup(); resolve(null); }
-            function onClickOutside(e) {
-                if (e.target === overlay) { cleanup(); resolve(null); }
-            }
-            function onKeyDown(e) {
-                if (e.key === 'Escape') { e.preventDefault(); cleanup(); resolve(null); }
-                if (e.key === 'Enter') { e.preventDefault(); var val = inputEl.value.trim(); cleanup(); resolve(val || null); }
-            }
-
-            okBtn.addEventListener('click', onOk);
-            cancelBtn.addEventListener('click', onCancel);
-            overlay.addEventListener('click', onClickOutside);
-            document.addEventListener('keydown', onKeyDown);
-            overlay.classList.add('visible');
-            // 聚焦输入框
-            setTimeout(function () { inputEl.focus(); }, 100);
-        });
+        if (window.ShadcnDialogs) return window.ShadcnDialogs.showPrompt(message, opts);
+        // 兜底：Shadcn 未加载时使用原生 prompt
+        return Promise.resolve(window.prompt(message, (opts && opts.defaultValue) || ''));
     };
 
     /* ===== Toast 通知（替代原生 alert） ===== */

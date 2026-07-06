@@ -227,8 +227,8 @@ window.DevHome = window.DevHome || {};
     };
 
     /* ===== 更新说明弹窗 ===== */
-    ns.openChangelog = function () { dom.changelogOverlay.classList.add('visible'); };
-    ns.closeChangelog = function () { dom.changelogOverlay.classList.remove('visible'); };
+    ns.openChangelog = function () { window.ShadcnDialogs.showChangelog(); };
+    ns.closeChangelog = function () { window.ShadcnDialogs.closeAll(); };
 
     /* ===== 设置 Tab 切换 ===== */
     ns.switchSettingsTab = function (tabName) {
@@ -255,7 +255,6 @@ window.DevHome = window.DevHome || {};
                 if (cb && cb.type === 'checkbox') cb.checked = state;
             }
         };
-        setToggle('sToggleCatRow', storage.get('cat_row', false));
         setToggle('sToggleAutoFocus', storage.get('auto_focus', false));
         setToggle('sToggleCategoryMemory', storage.get('category_memory', false));
         setToggle('sToggleStrict', storage.get('strict_mode', false));
@@ -267,10 +266,10 @@ window.DevHome = window.DevHome || {};
         var colsKey = ns.normalizeShortcutColumns(storage.get('shortcut_columns', ns.DEFAULT_SHORTCUT_COLUMNS));
         document.querySelectorAll('[data-shortcut-columns]').forEach(function (b) { b.classList.toggle('active', b.dataset.shortcutColumns === colsKey); });
 
-        // 主题卡片 active 态
+        // 色彩模式按钮 active 态
         if (ns.theme) {
             var s = ns.theme.getState();
-            document.querySelectorAll('.s-theme-card').forEach(function (c) { c.classList.toggle('active', c.dataset.theme === s.themeId); });
+            document.querySelectorAll('.s-theme-card').forEach(function (c) { c.classList.toggle('active', c.dataset.scheme === s.colorScheme); });
         }
 
         // 数字雨开关 + 参数显隐
@@ -326,9 +325,6 @@ window.DevHome = window.DevHome || {};
                 storage.set('category_memory', !cm);
                 if (!cm) storage.set('last_page', state.currentPage);
                 break;
-            case 'toggleCatRow':
-                ns.applyCategoryButtonMode(!storage.get('cat_row', false));
-                break;
             case 'exportData': ns.exportBackupData(); break;
             case 'importData': dom.importInput.click(); break;
             // [v1.3.0] 文件配置操作
@@ -351,7 +347,6 @@ window.DevHome = window.DevHome || {};
                             ns.tileManager.load().then(function () {
                                 ns.renderTiles();
                                 ns.updatePageIndicator();
-                                ns.renderCategoryPopover();
                             });
                             // 重新渲染工作台
                             if (state.workbenchVisible) {
@@ -380,98 +375,51 @@ window.DevHome = window.DevHome || {};
         ns.syncSettingsControls();
     };
 
-    /* ===== 磁贴编辑弹窗 ===== */
+    /* ===== 磁贴编辑弹窗（使用 Shadcn Dialog 组件） ===== */
+    /** 随机纯色生成器：从预设暖色调色板中随机选取，供 favicon 失败时使用 */
+    function randomTileColor() {
+        var palette = [
+            '#c0692a', '#d94a3a', '#e67e22', '#f39c12', '#27ae60',
+            '#2ecc71', '#1abc9c', '#2980b9', '#3498db', '#8e44ad',
+            '#9b59b6', '#16a085', '#e74c3c', '#7f8c8d', '#2c3e50'
+        ];
+        return palette[Math.floor(Math.random() * palette.length)];
+    }
+
     ns.openUploadModal = function () {
         state.editingTile = null;
-        dom.modalTitle.textContent = '上传磁贴';
-        dom.faInput.value = ''; dom.labelInput.value = ''; dom.urlInput.value = 'https://';
-        dom.colorInput.value = '#4a9eff'; dom.emojiInput.value = '🚀';
-        dom.imagePreview.classList.add('hidden'); state.imageFile = null;
-        updateIconType('fa'); updateFaPreview();
-        dom.modalOverlay.classList.add('visible');
+        console.log('[面板] 打开添加磁贴弹窗');
+        window.ShadcnDialogs.showTileForm('添加磁贴', '', 'https://').then(function (result) {
+            if (!result) return; // 用户取消
+            var tileData = { label: result.name, url: result.url, type: 'favicon', icon: '', color: randomTileColor() };
+            ns.tileManager.add(tileData);
+            console.log('[编辑] 保存磁贴 name=' + result.name + ' url=' + result.url);
+            ns.renderTiles();
+        });
     };
 
     ns.openEditModal = function (tile) {
         state.editingTile = tile;
-        dom.modalTitle.textContent = '编辑磁贴';
-        dom.labelInput.value = tile.label; dom.urlInput.value = tile.url; dom.colorInput.value = tile.color || '#4a9eff';
-        if (tile.type === 'fa') { dom.faInput.value = tile.icon; updateIconType('fa'); updateFaPreview(); }
-        else if (tile.type === 'image' && tile.imageData) { dom.imagePreview.src = tile.imageData; dom.imagePreview.classList.remove('hidden'); updateIconType('image'); }
-        else if (tile.type === 'emoji') { dom.emojiInput.value = tile.icon; updateIconType('emoji'); }
-        else { dom.faInput.value = ''; updateIconType('fa'); updateFaPreview(); }
-        dom.modalOverlay.classList.add('visible');
+        console.log('[面板] 打开编辑磁贴弹窗 name=' + tile.label);
+        window.ShadcnDialogs.showTileForm('编辑磁贴', tile.label, tile.url).then(function (result) {
+            if (!result) return; // 用户取消
+            var tileData = { label: result.name, url: result.url, type: 'favicon', icon: '', color: tile.color || randomTileColor() };
+            ns.tileManager.update(tile.id, tileData);
+            console.log('[编辑] 保存磁贴 name=' + result.name + ' url=' + result.url);
+            ns.renderTiles();
+        });
     };
 
-    ns.closeModal = function () { dom.modalOverlay.classList.remove('visible'); state.editingTile = null; state.imageFile = null; };
-
-    function updateIconType(type) {
-        state.iconType = type;
-        $$('.icon-type-tab').forEach(function (tab) { tab.classList.toggle('active', tab.dataset.type === type); });
-        dom.faGroup.classList.toggle('hidden', type !== 'fa');
-        dom.imageGroup.classList.toggle('hidden', type !== 'image');
-        dom.emojiGroup.classList.toggle('hidden', type !== 'emoji');
-    }
-
-    function updateFaPreview() {
-        var iconClass = dom.faInput.value.trim();
-        dom.faPreview.innerHTML = iconClass ? '<i class="' + iconClass + '"></i>' : '<span style="font-size:12px;color:var(--color-text-secondary)">自动获取网站图标</span>';
-    }
+    ns.closeModal = function () {
+        // 兼容旧调用，直接关闭 Shadcn 弹窗
+        if (window.ShadcnDialogs) window.ShadcnDialogs.closeAll();
+        state.editingTile = null;
+    };
 
     ns.saveTile = function () {
-        var label = dom.labelInput.value.trim(), url = dom.urlInput.value.trim(), color = dom.colorInput.value;
-        if (!label || !url) { ns.showToast('请填写名称和网址', 'error'); return; }
-        if (!url.startsWith('http://') && !url.startsWith('https://')) { ns.showToast('网址必须以 http:// 或 https:// 开头', 'error'); return; }
-        var tileData = { label: label, url: url, color: color, type: state.iconType };
-        if (state.iconType === 'fa') {
-            var iconVal = dom.faInput.value.trim();
-            if (iconVal) tileData.icon = iconVal;
-            else { tileData.type = 'favicon'; tileData.icon = ''; }
-        } else if (state.iconType === 'emoji') { tileData.icon = dom.emojiInput.value.trim() || '📌'; }
-        else if (state.iconType === 'image' && state.imageFile) {
-            var reader = new FileReader();
-            reader.onload = function (e) { tileData.imageData = e.target.result; tileData.icon = ''; completeSave(tileData); };
-            reader.readAsDataURL(state.imageFile);
-            return;
-        } else if (state.iconType === 'image' && state.editingTile && state.editingTile.imageData) {
-            tileData.imageData = state.editingTile.imageData; tileData.icon = '';
-        } else { tileData.icon = 'fas fa-question'; }
-        completeSave(tileData);
+        // 保留兼容旧事件绑定，新流程已走 showTileForm Promise 回调
+        ns.showToast('请通过弹窗保存', 'info');
     };
-
-    function completeSave(tileData) {
-        if (state.editingTile) tileManager.update(state.editingTile.id, tileData);
-        else tileManager.add(tileData);
-        ns.renderTiles(); ns.closeModal();
-    }
-
-    /* ===== 20 种预定义颜色 ===== */
-    var PRESET_COLORS = [
-        '#1a1410', '#2d2820', '#4a443e', '#6e6860', '#8e8880',
-        '#c0692a', '#d94a3a', '#e74c3c', '#e67e22', '#f39c12',
-        '#27ae60', '#2ecc71', '#1abc9c', '#16a085', '#2980b9',
-        '#3498db', '#8e44ad', '#9b59b6', '#2c3e50', '#7f8c8d'
-    ];
-
-    /** 渲染颜色面板（工具栏和右键菜单共用） */
-    function renderColorPalette(container) {
-        if (!container) return;
-        container.innerHTML = PRESET_COLORS.map(function (hex) {
-            return '<div class="wb-color-swatch" data-hex="' + hex + '" style="background:' + hex + ';" title="' + hex + '"></div>';
-        }).join('');
-    }
-
-    /** 应用颜色到选中的 contenteditable 文本 */
-    function applyColorToSelection(hex) {
-        var sel = window.getSelection();
-        if (!sel.rangeCount) return;
-        // 确保 focus 在 contenteditable 上
-        var contentEl = dom.wbNoteContent;
-        if (!contentEl || !contentEl.contains(sel.anchorNode)) {
-            contentEl.focus();
-            return;
-        }
-        document.execCommand('foreColor', false, hex);
-    }
 
     /* ===== 编辑器右键菜单 ===== */
     ns.showEditorContextMenu = function (e) {

@@ -1,0 +1,17 @@
+{
+  "name": "devhome-workbench",
+  "version": "2.8.0",
+  "private": true,
+  "description": "DevHome Workbench - Chrome Extension",
+  "scripts": {
+    "build:components": "node build.mjs",
+    "install:react": "node scripts/install-react.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}

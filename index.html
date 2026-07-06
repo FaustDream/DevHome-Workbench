@@ -11,17 +11,14 @@
     <link rel="stylesheet" href="css/tiles.css">
     <link rel="stylesheet" href="css/overlays.css">
     <link rel="stylesheet" href="css/workbench.css">
-    <!-- 主题样式：默认主题（深海）默认启用，其余主题通过 ThemeManager 动态切换 media -->
+    <!-- 主题样式：默认主题（蔚蓝），支持浅色/深色双模式 -->
     <link id="theme-default" rel="stylesheet" href="css/themes/default.css">
-    <link id="theme-hacker" rel="stylesheet" href="css/themes/hacker.css" media="not all">
-    <link id="theme-warm-paper" rel="stylesheet" href="css/themes/warm-paper.css" media="not all">
-    <link id="theme-pixel" rel="stylesheet" href="css/themes/pixel.css" media="not all">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://api.xinac.net">
     <link rel="dns-prefetch" href="https://api.xinac.net">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
 </head>
 <body>
@@ -83,12 +80,12 @@
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 2L4 6l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
             <div class="page-info" id="pageInfo">
-                <span class="page-name" id="pageName" title="点击展开分类列表，可在浮窗内切换、重命名或删除分类">第1页</span>
+                <span class="page-name" id="pageName">第1页</span>
             </div>
             <button class="page-btn" id="nextPage" title="下一页">
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
-            <div class="category-popover" id="categoryPopover" aria-label="分类选择"></div>
+
         </div>
 
         <div class="tiles-container" id="tilesContainer"></div>
@@ -370,10 +367,6 @@
                     <section class="s-tab active" data-s-tab="general">
                         <h3 class="s-section-title">分类与搜索</h3>
                         <div class="s-row">
-                            <div class="s-row-left"><span class="s-row-label">分类按钮</span><span class="s-row-desc">主页显示分类按钮行</span></div>
-                            <label class="s-toggle" id="sToggleCatRow"><input type="checkbox"><span class="s-toggle-thumb"></span></label>
-                        </div>
-                        <div class="s-row">
                             <div class="s-row-left"><span class="s-row-label">自动聚焦</span><span class="s-row-desc">打开新标签时自动聚焦搜索框</span></div>
                             <label class="s-toggle" id="sToggleAutoFocus"><input type="checkbox"><span class="s-toggle-thumb"></span></label>
                         </div>
@@ -434,23 +427,15 @@
                             <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 8a6 6 0 0110-4M14 8a6 6 0 01-10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 3v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>重置背景</span>
                         </button>
 
-                        <h3 class="s-section-title">主题</h3>
+                        <h3 class="s-section-title">色彩模式</h3>
                         <div class="s-theme-cards" id="sThemeCards">
-                            <button class="s-theme-card active" data-theme="default" title="深海科技渐变 · 浅色">
+                            <button class="s-theme-card active" data-scheme="light" title="明亮清爽的浅色界面">
                                 <span class="s-theme-swatch" style="background:#e8f4f8;"><i style="background:#0ea5e9;"></i></span>
-                                <span class="s-theme-name">蔚蓝</span>
+                                <span class="s-theme-name">浅色</span>
                             </button>
-                            <button class="s-theme-card" data-theme="hacker" title="纯黑终端 · 荧光绿">
-                                <span class="s-theme-swatch" style="background:#0a0a0a;"><i style="background:#00ff41;"></i></span>
-                                <span class="s-theme-name">黑客</span>
-                            </button>
-                            <button class="s-theme-card" data-theme="warm_paper" title="米白纸质 · 铁锈红">
-                                <span class="s-theme-swatch" style="background:#f5f0e8;"><i style="background:#c0692a;"></i></span>
-                                <span class="s-theme-name">暖纸</span>
-                            </button>
-                            <button class="s-theme-card" data-theme="pixel" title="像素复古 · 8-bit">
-                                <span class="s-theme-swatch" style="background:#0c0c0c;"><i style="background:#00ff41;"></i></span>
-                                <span class="s-theme-name">像素</span>
+                            <button class="s-theme-card" data-scheme="dark" title="护眼舒适的深色界面">
+                                <span class="s-theme-swatch" style="background:#0a1628;"><i style="background:#55e6d2;"></i></span>
+                                <span class="s-theme-name">深色</span>
                             </button>
                         </div>
                     </section>
@@ -579,18 +564,10 @@
         </aside>
     </div>
 
-    <!-- 更新说明弹窗 -->
-    <div class="changelog-overlay" id="changelogOverlay">
-        <div class="changelog-modal" id="changelogModal">
-            <header class="changelog-header">
-                <div>
-                    <span class="changelog-eyebrow">Release Notes</span>
-                    <h2>更新说明</h2>
-                </div>
-                <button class="changelog-close-btn" id="changelogCloseBtn" type="button" aria-label="关闭">&times;</button>
-            </header>
-            <div class="changelog-body" id="changelogBody">
-                <div class="changelog-entry">
+    <!-- 更新说明内容（供 Shadcn Dialog 动态读取渲染） -->
+    <div id="changelogBodyTemplate" style="display:none">
+        <div class="changelog-body" id="changelogBody">
+            <div class="changelog-entry">
                     <div class="changelog-version">
                         <span class="changelog-version-tag">v2.7.5</span>
                         <span class="changelog-date">2026-07-03</span>
@@ -886,66 +863,12 @@
                         <li><strong>视觉效果</strong> CSS 自定义属性体系、毛玻璃面板、网格背景、渐变动画过渡、响应式布局支持</li>
                     </ul>
                 </div>
-            </div>
         </div>
     </div>
 
     <!-- 隐藏的背景文件上传 -->
     <input type="file" id="bgInput" accept="image/*,video/*" hidden>
     <input type="file" id="importInput" accept=".json" hidden>
-
-    <!-- 上传/编辑磁贴弹窗 -->
-    <div class="modal-overlay" id="modalOverlay">
-        <div class="modal" id="tileModal">
-            <div class="modal-header">
-                <h3 id="modalTitle">上传磁贴</h3>
-                <button class="modal-close" id="modalClose">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>图标类型</label>
-                    <div class="icon-type-tabs">
-                        <button class="icon-type-tab active" data-type="fa">图标库</button>
-                        <button class="icon-type-tab" data-type="image">上传图片</button>
-                        <button class="icon-type-tab" data-type="emoji">Emoji</button>
-                    </div>
-                </div>
-                <div class="form-group" id="faGroup">
-                    <label>Font Awesome 图标类名</label>
-                    <input type="text" id="faInput" placeholder="例如: fab fa-github" class="form-input">
-                    <div class="fa-preview" id="faPreview"></div>
-                </div>
-                <div class="form-group hidden" id="imageGroup">
-                    <label>上传图标图片</label>
-                    <div class="image-upload-area" id="imageUploadArea">
-                        <input type="file" id="imageInput" accept="image/*" hidden>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="2" y="3" width="20" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/><circle cx="8.5" cy="9.5" r="2" stroke="currentColor" stroke-width="1.5"/><path d="M2 19l5-5 4 4 4-4 7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>点击选择图片</span>
-                    </div>
-                    <img id="imagePreview" class="image-preview hidden" alt="预览">
-                </div>
-                <div class="form-group hidden" id="emojiGroup">
-                    <label>Emoji 图标</label>
-                    <input type="text" id="emojiInput" placeholder="例如: 🚀" class="form-input emoji-input" maxlength="4">
-                </div>
-                <div class="form-group">
-                    <label>名称</label>
-                    <input type="text" id="labelInput" placeholder="磁贴名称" class="form-input" maxlength="20">
-                </div>
-                <div class="form-group">
-                    <label>网址</label>
-                    <input type="text" id="urlInput" placeholder="https://..." class="form-input">
-                </div>
-                <div class="form-group">
-                    <label>图标颜色</label>
-                    <input type="color" id="colorInput" value="#4a9eff" class="form-color">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-cancel" id="modalCancel">取消</button>
-                <button class="btn btn-save" id="modalSave">保存</button>
-            </div>
-        </div>
-    </div>
 
     <!-- 搜索引擎下拉弹窗（body 直接子级，避免层叠上下文限制）-->
     <div class="engine-dropdown" id="engineDropdown">
@@ -965,6 +888,18 @@
             <svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="8" y="11.5" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor">Y</text></svg><span>Yahoo</span>
         </div>
     </div>
+
+    <!-- Shadcn/ui 依赖：React 18 + Tailwind base + 组件编译产物 -->
+    <link rel="stylesheet" href="css/tailwind-base.css">
+    <script src="js/lib/react.production.min.js" defer></script>
+    <script src="js/lib/react-dom.production.min.js" defer></script>
+    <script src="js/ui-components/button.js" defer></script>
+    <script src="js/ui-components/dialog.js" defer></script>
+    <script src="js/ui-components/confirm-dialog.js" defer></script>
+    <script src="js/ui-components/prompt-dialog.js" defer></script>
+    <script src="js/ui-components/tile-form-dialog.js" defer></script>
+    <script src="js/ui-components/changelog-dialog.js" defer></script>
+    <script src="js/shadcn-dialogs.js" defer></script>
 
     <!-- v2 外部依赖：marked.js（Markdown 渲染） + dayjs（日期处理） -->
     <script src="js/lib/marked.min.js" defer></script>
@@ -991,41 +926,7 @@
     <script src="js/main.js" defer></script>
     <script src="js/matrix-bg.js"></script>
 
-    <!-- 自定义确认弹窗（暖纸风格，图标左置） -->
-    <div class="wb-confirm-overlay" id="wbConfirmOverlay">
-        <div class="wb-confirm-dialog">
-            <div class="wb-confirm-header">
-                <svg class="wb-confirm-icon" width="20" height="20" viewBox="0 0 32 32" fill="none">
-                    <circle cx="16" cy="16" r="14" stroke="#c0692a" stroke-width="2"/>
-                    <path d="M16 10v10M16 23v1" stroke="#c0692a" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-                <h3 class="wb-confirm-title" id="wbConfirmTitle">确认操作</h3>
-            </div>
-            <p class="wb-confirm-message" id="wbConfirmMessage"></p>
-            <div class="wb-confirm-actions">
-                <button class="wb-confirm-btn wb-confirm-cancel" id="wbConfirmCancel">取消</button>
-                <button class="wb-confirm-btn wb-confirm-ok" id="wbConfirmOk">确定</button>
-            </div>
-        </div>
-    </div>
 
-    <!-- 自定义输入弹窗（暖纸风格） -->
-    <div class="wb-prompt-overlay" id="wbPromptOverlay">
-        <div class="wb-prompt-dialog">
-            <div class="wb-confirm-header">
-                <svg class="wb-confirm-icon" width="20" height="20" viewBox="0 0 32 32" fill="none">
-                    <circle cx="16" cy="16" r="14" stroke="#c0692a" stroke-width="2"/>
-                    <path d="M16 10v10M16 23v1" stroke="#c0692a" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-                <h3 class="wb-confirm-title" id="wbPromptTitle">请输入</h3>
-            </div>
-            <input type="text" class="wb-prompt-input" id="wbPromptInput" placeholder="" autocomplete="off">
-            <div class="wb-confirm-actions">
-                <button class="wb-confirm-btn wb-confirm-cancel" id="wbPromptCancel">取消</button>
-                <button class="wb-confirm-btn wb-confirm-ok" id="wbPromptOk">确定</button>
-            </div>
-        </div>
-    </div>
 
 
 </body>
