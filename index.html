@@ -248,10 +248,13 @@
                             </svg>
                             <div class="wb-pomodoro-bar-time" id="wbPomodoroSideTime">25:00</div>
                         </div>
+                        <!-- 当前模式标签 -->
+                        <div class="wb-pomodoro-mode-label" id="wbPomodoroModeLabel"></div>
                         <!-- 模式切换：倒计时 / 正计时 -->
                         <div class="wb-pomodoro-mode-row">
                             <button class="wb-pomodoro-mode-btn active" data-mode="countdown" id="wbPomodoroModeCountdown">倒计时</button>
                             <button class="wb-pomodoro-mode-btn" data-mode="countup" id="wbPomodoroModeCountup">正计时</button>
+                            <button class="wb-pomodoro-auto-cycle-btn active" id="wbPomodoroAutoCycleBtn" title="切换单次/循环">循环中</button>
                         </div>
                         <div class="wb-pomodoro-sidebar-quick">
                             <button class="wb-pomodoro-quick-btn active" data-duration="25" title="25分钟专注">25</button>
@@ -598,7 +601,7 @@
 
                         <h3 class="s-section-title">关于</h3>
                         <button type="button" class="s-action-btn" id="changelogBtn">
-                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 2v12M2 4h10l2 2v6.5H2V4z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 8h4M6 11h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>更新说明 v2.13.5</span>
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 2v12M2 4h10l2 2v6.5H2V4z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 8h4M6 11h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>更新说明 v2.14.0</span>
                         </button>
 
                         <div class="s-danger-zone">
@@ -616,6 +619,20 @@
     <!-- 更新说明内容（供 Shadcn Dialog 动态读取渲染） -->
     <div id="changelogBodyTemplate" style="display:none">
         <div class="changelog-body" id="changelogBody">
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.14.0</span>
+                        <span class="changelog-date">2026-07-06</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>新增</strong> 番茄钟自动循环：工作时间结束自动进入休息，休息结束自动开始下一轮</li>
+                        <li><strong>新增</strong> 系统通知：工作完成/休息结束弹出 Chrome 通知，含随机激励语句</li>
+                        <li><strong>新增</strong> 激励语句库：工作完成/休息完成/工作开始/休息开始四类共40+条</li>
+                        <li><strong>新增</strong> 循环/单次切换按钮，UI 显示"工作中#N"或"休息中"状态标签</li>
+                        <li><strong>新增</strong> sessionCount 轮次计数，service worker 自动循环直到用户点击重置</li>
+                        <li><strong>修复</strong> POMODORO_STATE 广播包含 isResting/sessionCount/autoCycle/restDuration</li>
+                    </ul>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">
                         <span class="changelog-version-tag">v2.13.5</span>

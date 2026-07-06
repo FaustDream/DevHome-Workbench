@@ -174,6 +174,14 @@ window.DevHome = window.DevHome || {};
             });
         }
 
+        // 自动循环开关
+        var autoCycleBtn = document.getElementById('wbPomodoroAutoCycleBtn');
+        if (autoCycleBtn) {
+            autoCycleBtn.addEventListener('click', function () {
+                ns.togglePomodoroAutoCycle();
+            });
+        }
+
         // 圆形快捷时长按钮 — 仅选中时长，不自动开始
         document.querySelectorAll('.wb-pomodoro-quick-btn').forEach(function (btn) {
             btn.addEventListener('click', function () {

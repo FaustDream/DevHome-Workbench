@@ -1056,9 +1056,10 @@
     display: flex;
     gap: 2px;
     justify-content: center;
+    align-items: center;
 }
 .wb-pomodoro-mode-btn {
-    padding: 3px 10px;
+    padding: 3px 8px;
     border: var(--card-border);
     border-radius: 6px;
     background: transparent;
@@ -1074,6 +1075,43 @@
     background: rgba(85,230,210,0.12);
     color: var(--color-accent);
     font-weight: 600;
+}
+
+/* 自动循环按钮 */
+.wb-pomodoro-auto-cycle-btn {
+    padding: 3px 8px;
+    border: var(--card-border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--color-text-tertiary);
+    font-family: var(--font-sans);
+    font-size: 10px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    margin-left: 4px;
+}
+.wb-pomodoro-auto-cycle-btn.active {
+    border-color: var(--color-accent);
+    background: rgba(85,230,210,0.12);
+    color: var(--color-accent);
+    font-weight: 600;
+}
+
+/* 工作/休息状态标签 */
+.wb-pomodoro-mode-label {
+    text-align: center;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 0;
+    min-height: 16px;
+    transition: all 0.3s ease;
+}
+.wb-pomodoro-mode-label.working {
+    color: var(--color-accent);
+}
+.wb-pomodoro-mode-label.resting {
+    color: var(--color-warning);
 }
 
 /* 休息时长设置 */

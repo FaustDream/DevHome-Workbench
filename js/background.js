@@ -13,17 +13,45 @@
 /* ===== 常量 ===== */
 var POMODORO_TICK_MS = 1000; // 每秒 tick
 
+/* ===== 激励语句库 ===== */
+var WORK_COMPLETE_QUOTES = [
+    '又干掉一个🍅', '大脑说谢谢', '比刚才的自己多坚持了一会儿',
+    '专注是一种超能力', '休息一下，你值得', '时间花在了对的地方',
+    '每一步都算数', '专注的你是最强的', '这一轮很漂亮',
+    '让大脑喘口气', '高效不在于时长，在于专注'
+];
+var REST_COMPLETE_QUOTES = [
+    '满血复活，继续冲！', '休息好了，准备下一轮', '充电完成，出发',
+    '精力已恢复，开始吧', '新的一轮，新的可能', '休息是为了走更远',
+    '状态回来了', '再来一个🍅', '准备好迎接挑战了吗',
+    '深吸一口气，继续前进'
+];
+var WORK_START_QUOTES = [
+    '专注模式启动', '进入心流', '屏蔽干扰，聚焦当下',
+    '这一个番茄献给你想做的事', '开始创造', '安静地开启一段专注'
+];
+var REST_START_QUOTES = [
+    '起身走动一下吧', '闭眼休息片刻', '喝口水，放松肩膀',
+    '远眺窗外30秒', '深呼吸，放空大脑', '做几个伸展动作'
+];
+
+function randomQuote(pool) {
+    return pool[Math.floor(Math.random() * pool.length)];
+}
+
 /* ===== 番茄钟状态（Service Worker 内存，重启丢失） ===== */
 var pomodoroState = {
     active: false,
     taskId: null,
-    duration: 25,        // 总时长（分钟）
-    restDuration: 5,     // 休息时长（分钟）
-    type: 'default',     // default | focus
-    remaining: 0,        // 剩余秒数
+    duration: 25,         // 工作总时长（分钟）
+    restDuration: 5,      // 休息时长（分钟）
+    type: 'default',      // default | focus
+    remaining: 0,         // 当前阶段剩余秒数
     startedAt: null,
-    isResting: false,    // 是否在休息阶段
-    restRemaining: 0
+    isResting: false,     // 是否在休息阶段
+    restRemaining: 0,
+    autoCycle: true,      // 是否自动循环
+    sessionCount: 0       // 已完成的工作轮次
 };
 var pomodoroTimer = null; // setInterval 句柄
 
@@ -116,13 +144,14 @@ chrome.commands.onCommand.addListener(async function (command, tab) {
 /* ===== 番茄钟：使用 chrome.alarms ===== */
 
 /**
- * 开始番茄钟
- * @param {Object} params - { duration, restDuration, type, taskId }
+ * 开始番茄钟（工作阶段）
+ * @param {Object} params - { duration, restDuration, type, taskId, autoCycle, countUp }
  */
 function startPomodoro(params) {
     // 清除旧计时器
     if (pomodoroTimer) { clearInterval(pomodoroTimer); pomodoroTimer = null; }
 
+    params = params || {};
     pomodoroState.active = true;
     pomodoroState.duration = params.duration || 25;
     pomodoroState.restDuration = params.restDuration || 5;
@@ -132,11 +161,13 @@ function startPomodoro(params) {
     pomodoroState.startedAt = Date.now();
     pomodoroState.isResting = false;
     pomodoroState.restRemaining = 0;
+    pomodoroState.autoCycle = params.autoCycle !== false; // 默认开启
+    pomodoroState.sessionCount = (params.sessionCount || 0) + 0;
 
-    // 使用 setInterval 每秒 tick（Service Worker 可能被休眠，但番茄钟场景可接受）
+    // 使用 setInterval 每秒 tick
     pomodoroTimer = setInterval(pomodoroTick, POMODORO_TICK_MS);
 
-    console.log('[Background] 番茄钟已开始:', pomodoroState.duration + '分钟');
+    console.log('[Background] 番茄钟已开始:', pomodoroState.duration + '分钟, 自动循环=' + pomodoroState.autoCycle);
 }
 
 /**
@@ -152,37 +183,63 @@ function pomodoroTick() {
     // 时间到
     if (pomodoroState.remaining <= 0) {
         if (pomodoroState.isResting) {
-            // 休息结束
-            if (pomodoroTimer) { clearInterval(pomodoroTimer); pomodoroTimer = null; }
-            pomodoroState.active = false;
+            // 休息结束 → 自动开始下一轮工作
             pomodoroState.isResting = false;
-            broadcastPomodoroState();
-        } else {
-            // 工作时间结束，进入休息
-            pomodoroState.isResting = true;
-            pomodoroState.restRemaining = pomodoroState.restDuration * 60;
-            pomodoroState.remaining = pomodoroState.restRemaining;
+            pomodoroState.sessionCount = (pomodoroState.sessionCount || 0) + 0; // 保持计数
+            pomodoroState.remaining = pomodoroState.duration * 60;
+            pomodoroState.startedAt = Date.now();
 
-            // 发送通知
-            var messages = [
-                '又干掉一个🍅',
-                '大脑说谢谢',
-                '比刚才的自己多坚持了一会儿',
-                '专注是一种超能力',
-                '休息一下，你值得'
-            ];
-            var msg = messages[Math.floor(Math.random() * messages.length)];
-
-            chrome.notifications.create('pomodoro-done', {
+            // 发送通知：休息结束
+            var restQuote = randomQuote(REST_COMPLETE_QUOTES);
+            chrome.notifications.create('pomodoro-rest-done', {
                 type: 'basic',
                 iconUrl: 'icons/icon48.png',
-                title: '番茄钟完成！',
-                message: msg + '\n休息 ' + pomodoroState.restDuration + ' 分钟吧',
+                title: '休息结束 — ' + restQuote,
+                message: '开始第 ' + (pomodoroState.sessionCount + 1) + ' 轮专注，' + pomodoroState.duration + ' 分钟',
                 priority: 1
             });
 
-            // 记录番茄钟会话
+            broadcastPomodoroState();
+            console.log('[Background] 休息结束，自动开始新一轮工作');
+        } else {
+            // 工作时间结束
+            pomodoroState.sessionCount = (pomodoroState.sessionCount || 0) + 1;
             savePomodoroSession();
+
+            if (pomodoroState.autoCycle) {
+                // 自动进入休息
+                pomodoroState.isResting = true;
+                pomodoroState.restRemaining = pomodoroState.restDuration * 60;
+                pomodoroState.remaining = pomodoroState.restRemaining;
+
+                // 发送通知：工作完成
+                var workQuote = randomQuote(WORK_COMPLETE_QUOTES);
+                chrome.notifications.create('pomodoro-done', {
+                    type: 'basic',
+                    iconUrl: 'icons/icon48.png',
+                    title: '工作完成！' + workQuote,
+                    message: '休息 ' + pomodoroState.restDuration + ' 分钟 — ' + randomQuote(REST_START_QUOTES),
+                    priority: 1
+                });
+
+                broadcastPomodoroState();
+                console.log('[Background] 第' + pomodoroState.sessionCount + '轮完成，自动进入休息');
+            } else {
+                // 不自动循环，停止
+                if (pomodoroTimer) { clearInterval(pomodoroTimer); pomodoroTimer = null; }
+                pomodoroState.active = false;
+
+                var doneQuote = randomQuote(WORK_COMPLETE_QUOTES);
+                chrome.notifications.create('pomodoro-done', {
+                    type: 'basic',
+                    iconUrl: 'icons/icon48.png',
+                    title: '番茄钟完成！' + doneQuote,
+                    message: '你今天已经完成了 ' + pomodoroState.sessionCount + ' 个番茄',
+                    priority: 1
+                });
+
+                broadcastPomodoroState();
+            }
         }
     }
 }
@@ -209,13 +266,15 @@ function resumePomodoro() {
 }
 
 /**
- * 停止/重置番茄钟
+ * 停止/重置番茄钟（彻底终止自动循环）
  */
 function stopPomodoro() {
     if (pomodoroTimer) { clearInterval(pomodoroTimer); pomodoroTimer = null; }
     pomodoroState.active = false;
     pomodoroState.remaining = 0;
     pomodoroState.isResting = false;
+    pomodoroState.sessionCount = 0;
+    broadcastPomodoroState();
     console.log('[Background] 番茄钟已停止');
 }
 
@@ -256,8 +315,11 @@ function broadcastPomodoroState() {
         active: pomodoroState.active,
         remaining: pomodoroState.remaining,
         duration: pomodoroState.duration,
+        restDuration: pomodoroState.restDuration,
         type: pomodoroState.type,
         isResting: pomodoroState.isResting,
+        autoCycle: pomodoroState.autoCycle,
+        sessionCount: pomodoroState.sessionCount,
         formatted: formatTime(pomodoroState.remaining)
     };
     chrome.runtime.sendMessage({
@@ -298,8 +360,11 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
                     active: pomodoroState.active,
                     remaining: pomodoroState.remaining,
                     duration: pomodoroState.duration,
+                    restDuration: pomodoroState.restDuration,
                     type: pomodoroState.type,
                     isResting: pomodoroState.isResting,
+                    autoCycle: pomodoroState.autoCycle,
+                    sessionCount: pomodoroState.sessionCount,
                     formatted: formatTime(pomodoroState.remaining),
                     taskId: pomodoroState.taskId
                 }
