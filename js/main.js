@@ -136,6 +136,8 @@ window.DevHome = window.DevHome || {};
         if (ns.initPerfMonitor) ns.initPerfMonitor();
         // 绑定天气点击事件（需在 DOM ready 后）
         if (ns.bindWeatherEvents) ns.bindWeatherEvents();
+        // 初始化左侧小部件面板
+        if (ns.initWidgets) ns.initWidgets();
 
         var autoFocusOn = storage.get('auto_focus', false);
         if (dom.autoFocusText) dom.autoFocusText.textContent = autoFocusOn ? '自动聚焦：开' : '自动聚焦：关';

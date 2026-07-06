@@ -226,35 +226,44 @@
 .dh-tab-btn:hover { background: var(--color-bg-secondary); color: var(--color-text); }
 .dh-tab-btn.active { background: var(--color-accent); color: var(--color-text-inverse); border-color: var(--color-accent); }
 
-/* === 三、主体内容区 === */
+/* === 三、主体内容区（三列布局） === */
 .dh-main {
-    display: flex;
+    display: grid;
+    grid-template-columns: 200px 1fr 260px;
     gap: 20px;
     flex: 1;
-    min-height: 280px;
+    min-height: 320px;
 }
 
-/* 左侧边栏 */
+/* --- 左侧列：分类 + 堆叠小部件 --- */
+.dh-left-col {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+}
 .dh-sidebar {
-    width: 160px;
-    flex-shrink: 0;
-    padding: 12px 0;
+    padding: 10px 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
 }
 .dh-sidebar-title {
-    font-size: var(--font-size-xs);
+    font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.08em;
     color: var(--color-text-tertiary);
     text-transform: uppercase;
-    margin-bottom: 10px;
-    padding: 0 12px;
+    margin-bottom: 6px;
+    padding: 0 14px;
 }
 .dh-category-item {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 12px;
-    border-radius: var(--radius-sm);
+    padding: 7px 14px;
+    border-radius: 0;
     font-size: var(--font-size-sm);
     color: var(--color-text-secondary);
     cursor: pointer;
@@ -263,7 +272,7 @@
     font-weight: 500;
 }
 .dh-category-item:hover { background: var(--color-bg-secondary); color: var(--color-text); }
-.dh-category-item.active { background: var(--color-surface); color: var(--color-accent); font-weight: 600; }
+.dh-category-item.active { background: var(--color-bg-secondary); color: var(--color-accent); font-weight: 600; }
 .dh-cat-dot {
     width: 6px;
     height: 6px;
@@ -274,63 +283,197 @@
 }
 .dh-category-item.active .dh-cat-dot { opacity: 1; background: var(--color-accent); }
 
-/* 右侧应用网格 */
-.dh-content-area {
+/* 小部件堆叠 */
+.dh-widget-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
     flex: 1;
-    min-width: 0;
 }
-.dh-app-section {
-    margin-bottom: 16px;
+.dh-widget {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
 }
-.dh-app-section-title {
-    font-size: var(--font-size-xs);
+.dh-widget-title {
+    padding: 10px 14px;
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.06em;
     color: var(--color-text-tertiary);
     text-transform: uppercase;
-    padding: 0 4px 8px;
+    border-bottom: 1px solid var(--color-border);
 }
-.dh-app-grid {
+.dh-widget-body { padding: 10px 12px; }
+
+/* 快速操作 */
+.dh-quick-actions {
     display: flex;
-    flex-wrap: wrap;
-    gap: var(--shortcut-gap, 24px);
-    justify-content: flex-start;
+    flex-direction: column;
+    gap: 6px;
 }
+.dh-quick-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-align: left;
+}
+.dh-quick-btn:hover { background: var(--color-bg-secondary); color: var(--color-text); }
+.dh-quick-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+/* 项目看板 */
+.dh-kanban-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.dh-kanban-item { cursor: default; }
+.dh-kanban-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+.dh-kanban-name {
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    color: var(--color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 110px;
+}
+.dh-kanban-deadline {
+    font-size: 10px;
+    color: var(--color-text-tertiary);
+    flex-shrink: 0;
+}
+.dh-progress-track {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--color-bg-tertiary);
+    overflow: hidden;
+}
+.dh-progress-bar {
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--color-accent), var(--color-info));
+    transition: width 0.3s ease;
+}
+.dh-kanban-meta {
+    font-size: 10px;
+    color: var(--color-text-tertiary);
+    margin-top: 3px;
+}
+
+/* 系统状态 */
+.dh-system-status {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.dh-status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: var(--font-size-xs);
+}
+.dh-status-label { color: var(--color-text-secondary); }
+.dh-status-value { color: var(--color-text); font-weight: 500; }
+.dh-status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    margin-left: auto;
+    margin-right: 6px;
+}
+
+/* --- 中间列：紧凑 3x4 网格 --- */
+.dh-center-col {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+.dh-compact-grid,
 .tiles-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--shortcut-gap, 24px);
-    justify-content: flex-start;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(4, auto);
+    gap: 14px;
+    justify-items: center;
+    align-content: start;
+    padding: 8px 0;
 }
 
-/* Cat row 隐藏（已迁移到侧边栏和顶部标签栏） */
-.cat-row { display: none; }
-
-/* === 四、底部数据面板 === */
-.dh-panels {
-    display: flex;
-    gap: 16px;
-    margin-top: 20px;
+/* 紧凑磁贴覆盖：通过覆盖 CSS 变量实现 */
+.dh-compact-grid,
+.tiles-container {
+    --shortcut-container: 82px;
+    --shortcut-icon: 38px;
+    --shortcut-gap: 14px;
+    --shortcut-radius: 16px;
+    --shortcut-label-size: 10px;
+    --shortcut-label-bottom: 0;
+    --shortcut-add-icon: 22px;
 }
-.feed-card, .trending-card {
-    flex: 1;
+
+/* 恢复 cat-row 正常显示（在侧边栏内部） */
+.cat-row {
+    display: flex;
+    flex-direction: column;
+}
+
+/* --- 右侧列：热门服务 --- */
+.dh-right-col {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-width: 0;
+}
+.dh-right-col .feed-card,
+.dh-right-col .trending-card {
     margin: 0;
     max-width: none;
+    flex: 1;
 }
-.feed-card-head, .trending-card-head {
-    padding: 10px 16px;
+.dh-right-col .feed-card-head,
+.dh-right-col .trending-card-head {
+    padding: 10px 14px;
 }
-.feed-card-title, .trending-card-title {
-    font-size: var(--font-size-xs);
+.dh-right-col .feed-card-title,
+.dh-right-col .trending-card-title {
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.04em;
 }
-.feed-tabs { padding: 6px 14px; }
-.feed-tab {
-    padding: 4px 12px;
-    font-size: 11px;
+.dh-right-col .feed-tabs { padding: 6px 12px; }
+.dh-right-col .feed-tab {
+    padding: 3px 10px;
+    font-size: 10px;
 }
-.feed-list { max-height: 260px; }
+.dh-right-col .feed-list { max-height: none; flex: 1; overflow-y: auto; }
+.dh-right-col .feed-item {
+    padding: 7px 12px;
+    font-size: var(--font-size-xs);
+}
+.dh-right-col .feed-item-title {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+.dh-right-col .feed-item-meta { display: none; }
 
 /* === 五、悬浮操作菜单 === */
 .dh-float-menu {
@@ -411,13 +554,23 @@
 /* === 隐藏信息区元素 === */
 .hidden-message { display: none !important; }
 
-/* === 响应式：窄屏时单个面板全宽 === */
-@media (max-width: 800px) {
+/* === 响应式：窄屏时单列堆叠 === */
+@media (max-width: 980px) {
+    .dh-main { grid-template-columns: 1fr; }
+    .dh-left-col { flex-direction: row; flex-wrap: wrap; }
+    .dh-sidebar { width: 100%; }
+    .dh-widget-stack { flex-direction: row; width: 100%; flex-wrap: wrap; }
+    .dh-widget { flex: 1; min-width: 200px; }
+    .dh-compact-grid, .tiles-container { grid-template-columns: repeat(4, 1fr); }
+    .dh-right-col { flex-direction: row; flex-wrap: wrap; }
+    .dh-right-col .feed-card, .dh-right-col .trending-card { min-width: 280px; }
+}
+@media (max-width: 600px) {
+    .container { padding: 16px; }
     .dh-header { flex-direction: column; gap: 16px; }
     .dh-header-left { max-width: 100%; }
     .dh-header-right { align-items: flex-start; }
-    .dh-panels { flex-direction: column; }
-    .dh-main { flex-direction: column; }
-    .dh-sidebar { width: 100%; display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 0; }
-    .dh-sidebar-title { width: 100%; }
+    .dh-main { grid-template-columns: 1fr; }
+    .dh-compact-grid, .tiles-container { grid-template-columns: repeat(3, 1fr); }
+    .dh-widget-stack { flex-direction: column; }
 }

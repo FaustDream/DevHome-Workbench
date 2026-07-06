@@ -65,6 +65,7 @@ body.focus-transition .focus-overlay.ready {
 
     /* Z 层级 */
     --z-trash: 1000;
+    --z-floating: 2000;
     --z-context-menu: 2700;
     --z-modal: 3000;
 }

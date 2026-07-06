@@ -11,9 +11,8 @@
     <link rel="stylesheet" href="css/tiles.css">
     <link rel="stylesheet" href="css/overlays.css">
     <link rel="stylesheet" href="css/workbench.css">
-    <link rel="stylesheet" href="css/daily-layout.css">
     <link rel="stylesheet" href="css/ai-chat.css">
-    <link rel="stylesheet" href="css/feed.css">
+    <link rel="stylesheet" href="css/daily-layout.css">
     <!-- 主题样式：默认主题（蔚蓝），支持浅色/深色双模式 -->
     <link id="theme-default" rel="stylesheet" href="css/themes/default.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -47,34 +46,18 @@
             <button id="configSelectDirBtn" type="button" class="config-select-dir-btn">选择目录</button>
         </div>
 
-        <!-- ===== 一、顶部信息区 ===== -->
-        <header class="dh-header">
-            <!-- 左侧文本区 -->
-            <div class="dh-header-left">
-                <div class="greeting-text" id="greetingText"></div>
-                <div class="dh-quote">
-                    <div class="quote-text" id="quoteText"></div>
-                    <div class="dh-quote-mark">&ldquo;</div>
-                </div>
-            </div>
+        <div class="greeting-text" id="greetingText"></div>
 
-            <!-- 右侧时间与天气区 -->
-            <div class="dh-header-right">
-                <div class="time-display" id="timeDisplay" style="position:static;">
-                    <div class="time-main" id="timeMain">00:00</div>
-                    <div class="date-display" id="dateDisplay">2024年1月1日 星期一</div>
-                </div>
-                <div class="dh-weather-row">
-                    <span class="weather-widget" id="weatherWidget" style="display:none;"></span>
-                </div>
-                <!-- 天气趋势弹窗 -->
-                <div class="weather-panel" id="weatherPanel"></div>
-            </div>
-        </header>
+        <div class="time-display" id="timeDisplay" style="position:relative;">
+            <div class="time-main" id="timeMain">00:00</div>
+            <div class="date-display" id="dateDisplay">2024年1月1日 星期一</div>
+            <span class="weather-widget" id="weatherWidget" style="display:none;"></span>
+            <div class="weather-panel" id="weatherPanel"></div>
+        </div>
 
-        <!-- ===== 二、搜索与标签栏 ===== -->
-        <div class="dh-search-area">
-            <div class="search-container" id="searchContainer">
+        <div class="quote-text" id="quoteText"></div>
+
+        <div class="search-container" id="searchContainer">
                 <div class="search-wrapper doc-cmd-wrapper">
                     <span class="doc-prompt">&gt;</span>
                     <div class="search-engine-selector" id="engineSelector">
@@ -96,57 +79,11 @@
                     <div class="suggestions-footer" id="suggestionsFooter"></div>
                 </div>
             </div>
-
-            <!-- 顶部水平标签栏 -->
-            <nav class="dh-tabs" id="dhTabs">
-                <button class="dh-tab-btn active" data-dh-tab="common">COMMON</button>
-                <button class="dh-tab-btn" data-dh-tab="recommended">RECOMMENDED</button>
-                <button class="dh-tab-btn" data-dh-tab="favorites">FAVORITES</button>
-                <button class="dh-tab-btn" data-dh-tab="settings">SETTINGS</button>
-            </nav>
         </div>
 
-        <!-- ===== 三、主体内容区 ===== -->
-        <div class="dh-main">
-            <!-- 左侧边栏：分类导航 -->
-            <aside class="dh-sidebar">
-                <div class="dh-sidebar-title">Categories</div>
-                <div id="catRow" class="cat-row"></div>
-            </aside>
+        <div id="catRow" class="cat-row"></div>
 
-            <!-- 右侧应用网格 -->
-            <div class="dh-content-area">
-                <div class="dh-app-grid" id="tilesContainer"></div>
-
-                <!-- ===== 四、底部数据面板 ===== -->
-                <div class="dh-panels">
-                    <section class="feed-card" id="feedCard">
-                        <div class="feed-card-head" id="feedCardHead" title="折叠/展开">
-                            <span class="feed-card-title">📡 TRENDING NEWS</span>
-                            <span class="feed-toggle-icon" id="feedToggleIcon">▲</span>
-                        </div>
-                        <div id="feedCardBody">
-                            <div class="feed-tabs" id="feedTabs">
-                                <button class="feed-tab active" data-feed-tab="zhihu">知乎</button>
-                                <button class="feed-tab" data-feed-tab="v2ex">V2EX</button>
-                                <button class="feed-tab" data-feed-tab="github">GitHub</button>
-                            </div>
-                            <div class="feed-list" id="feedList"></div>
-                        </div>
-                    </section>
-
-                    <section class="trending-card" id="trendingCard">
-                        <div class="trending-card-head" id="trendingCardHead" title="折叠/展开">
-                            <span class="trending-card-title">🔥 GITHUB TRENDING</span>
-                            <span class="feed-toggle-icon" id="trendingToggleIcon">▼</span>
-                        </div>
-                        <div id="trendingCardBody">
-                            <div class="feed-list" id="trendingList"></div>
-                        </div>
-                    </section>
-                </div>
-            </div>
-        </div>
+        <div class="tiles-container" id="tilesContainer"></div>
 
         <div class="hidden-message" id="hiddenMessage" style="display:none;"></div>
     </div>
@@ -393,48 +330,6 @@
 
     <!-- 代码语言子菜单 -->
     <div class="context-menu ctx-submenu" id="ctxCodeLangMenu"></div>
-
-    <!-- ===== 五、悬浮操作菜单 ===== -->
-    <div class="dh-float-menu" id="dhFloatMenu">
-        <!-- 操作面板（默认隐藏） -->
-        <div class="dh-float-panel" id="dhFloatPanel">
-            <div class="dh-float-item" data-dh-action="sync" title="同步数据">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8a6 6 0 019-3M14 8a6 6 0 01-9 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 3v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                <span>Sync</span>
-            </div>
-            <div class="dh-float-item" data-dh-action="redo" title="刷新页面">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M1 8a7 7 0 0113-5M15 8a7 7 0 01-13 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M15 1v3h-3M1 15v-3h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                <span>Redo</span>
-            </div>
-            <div class="dh-float-item" data-dh-action="theme" title="主题设置">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.5 1.5M11.5 11.5L13 13M3 13l1.5-1.5M11.5 4.5L13 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-                <span>Theme</span>
-            </div>
-        </div>
-        <!-- 底部按钮组 -->
-        <div class="dh-float-toggle-row">
-            <button class="dh-float-btn" id="dhFloatMenuToggle" title="快捷操作" aria-label="快捷操作菜单">
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 4.5h12M3 9h12M3 13.5h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-            </button>
-            <button class="dh-float-btn" id="dhSchemeToggle" title="切换浅色/深色" aria-label="切换色彩模式">
-                <svg id="dhSchemeIcon" width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M9 1v2M9 15v2M1 9h2M15 9h2M3.3 3.3l1.4 1.4M13.3 13.3l1.4 1.4M3.3 14.7l1.4-1.4M13.3 4.7l1.4-1.4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-            </button>
-        </div>
-    </div>
-
-    <!-- 性能监控面板 -->
-    <div class="perf-monitor" id="perfMonitor" style="display:none;"></div>
-
-    <!-- 最近关闭标签页按钮 -->
-    <button class="recent-tabs-btn" id="recentTabsBtn" type="button" title="恢复最近关闭的网页" aria-label="最近关闭的网页">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8a6 6 0 019-3M14 8a6 6 0 01-9 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 3v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </button>
-
-    <!-- 最近关闭弹窗 -->
-    <div class="recent-tabs-popup" id="recentTabsPopup">
-        <div class="recent-tabs-popup-head">最近关闭的网页</div>
-        <div class="recent-tabs-popup-list" id="recentTabsList"></div>
-    </div>
 
     <!-- 固定设置入口 -->
     <button class="settings-gear-btn" id="settingsGearBtn" type="button" title="设置" aria-label="打开设置">
@@ -725,7 +620,7 @@
 
                         <h3 class="s-section-title">关于</h3>
                         <button type="button" class="s-action-btn" id="changelogBtn">
-                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 2v12M2 4h10l2 2v6.5H2V4z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 8h4M6 11h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>更新说明 v2.12.0</span>
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 2v12M2 4h10l2 2v6.5H2V4z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 8h4M6 11h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>更新说明 v2.12.1</span>
                         </button>
 
                         <div class="s-danger-zone">
@@ -745,11 +640,23 @@
         <div class="changelog-body" id="changelogBody">
                 <div class="changelog-entry">
                     <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.12.1</span>
+                        <span class="changelog-date">2026-07-06</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>修复</strong> 日常模式缺少 css/daily-layout.css 引用，导致三列布局样式不生效</li>
+                        <li><strong>修复</strong> 缺少 js/feed.js 引用，导致资讯热榜和 GitHub Trending 模块静默失效</li>
+                        <li><strong>修复</strong> 缺少 js/performance.js 引用，导致性能监控面板静默失效</li>
+                        <li><strong>修复</strong> 缺少 js/widgets.js 引用，导致左侧小部件面板（快速操作/项目看板/系统状态）静默失效</li>
+                    </ul>
+                </div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">
                         <span class="changelog-version-tag">v2.12.0</span>
                         <span class="changelog-date">2026-07-06</span>
                     </div>
                     <ul class="changelog-list">
-                        <li><strong>布局重构</strong> 日常模式全面重新设计：顶部左右分栏（问候+金句 / 时间+天气）、搜索栏+胶囊标签栏（COMMON/RECOMMENDED/FAVORITES/SETTINGS）、左侧分类侧边栏+右侧应用网格、底部双卡片面板（TRENDING NEWS + GITHUB TRENDING）、右下角悬浮操作菜单（Sync/Redo/Theme + 昼夜切换）</li>
+                        <li><strong>布局重构</strong> 日常模式全面重新设计为紧凑三列布局：顶部左右分栏（问候+金句 / 时间+天气）、搜索栏+胶囊标签栏（COMMON/RECOMMENDED/FAVORITES/SETTINGS）、左侧分类+三小部件堆叠（快速操作/项目看板/系统状态）、中间紧凑 3x4 磁贴网格、右侧热门服务双面板、右下角悬浮操作菜单（Sync/Redo/Theme + 昼夜切换）</li>
                         <li><strong>新增</strong> 9 大功能模块：天气预报、每日金句、个性化问候语、Bang Commands 快捷搜索、资讯热榜、最近关闭恢复、性能监控面板、GitHub Trending、自定义布局控制</li>
                         <li><strong>新增</strong> 设置面板"模块管理"Tab，所有新功能支持独立开关</li>
                         <li><strong>新增</strong> GitHub 搜索引擎（支持 Bang Command `gh ` 直接搜索）</li>
@@ -1109,8 +1016,6 @@
     <script src="js/ai-chat.js" defer></script>
     <script src="js/quotes.js" defer></script>
     <script src="js/weather.js" defer></script>
-    <script src="js/feed.js" defer></script>
-    <script src="js/performance.js" defer></script>
     <script src="js/favicon.js" defer></script>
     <script src="js/theme-manager.js" defer></script>
     <script src="js/theme.js" defer></script>
@@ -1123,6 +1028,9 @@
     <script src="js/export.js" defer></script>
     <script src="js/workbench.js" defer></script>
     <script src="js/events.js" defer></script>
+    <script src="js/feed.js" defer></script>
+    <script src="js/performance.js" defer></script>
+    <script src="js/widgets.js" defer></script>
     <script src="js/main.js" defer></script>
     <script src="js/matrix-bg.js"></script>
 

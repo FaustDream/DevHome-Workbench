@@ -118,28 +118,11 @@ window.DevHome = window.DevHome || {};
         wbMeShortcutSave: ns.$('#wbMeShortcutSave'),
         ctxFocusModeLabel: ns.$('#ctxFocusModeLabel'),
         ctxFocusModeKey: ns.$('#ctxFocusModeKey'),
-        // 新增功能模块 DOM
+        // 天气/问候/金句 DOM
         greetingText: ns.$('#greetingText'),
         quoteText: ns.$('#quoteText'),
         weatherWidget: ns.$('#weatherWidget'),
-        weatherPanel: ns.$('#weatherPanel'),
-        feedCard: ns.$('#feedCard'),
-        feedCardHead: ns.$('#feedCardHead'),
-        feedTabs: ns.$('#feedTabs'),
-        feedList: ns.$('#feedList'),
-        trendingCard: ns.$('#trendingCard'),
-        trendingCardHead: ns.$('#trendingCardHead'),
-        trendingList: ns.$('#trendingList'),
-        recentTabsBtn: ns.$('#recentTabsBtn'),
-        recentTabsPopup: ns.$('#recentTabsPopup'),
-        recentTabsList: ns.$('#recentTabsList'),
-        perfMonitor: ns.$('#perfMonitor'),
-        // 新布局 DOM
-        dhTabs: ns.$('#dhTabs'),
-        dhFloatMenuToggle: ns.$('#dhFloatMenuToggle'),
-        dhFloatPanel: ns.$('#dhFloatPanel'),
-        dhSchemeToggle: ns.$('#dhSchemeToggle'),
-        dhSchemeIcon: ns.$('#dhSchemeIcon')
+        weatherPanel: ns.$('#weatherPanel')
     };
 
     /* ===== 全局状态 ===== */
@@ -189,15 +172,7 @@ window.DevHome = window.DevHome || {};
         pomodoroRestDuration: 5,        // 当前休息时长
         pomodoroMode: 'default',        // 番茄钟模式
         exportFilter: 'all',            // 导出筛选
-        _currentNoteType: 'note',        // 当前编辑笔记的类型
-        // 模块显隐开关（所有新功能默认开启）
-        moduleConfig: {}
-    };
-
-    /** 便捷查询：检查指定模块是否已启用 */
-    ns.isModuleEnabled = function (moduleKey) {
-        var mc = ns.state.moduleConfig || {};
-        return mc[moduleKey] !== false; // 默认值为 true（开启）
+        _currentNoteType: 'note'         // 当前编辑笔记的类型
     };
 
 })(window.DevHome);
