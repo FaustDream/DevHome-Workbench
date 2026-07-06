@@ -762,14 +762,14 @@ window.DevHome = window.DevHome || {};
         if (state.pomodoroCountUp) {
             state._pomodoroCountUpSeconds = 0;
             _pomoUpdateTimeEls(function () { return '00:00'; });
+            _pomoUpdateProgress(100, 100); // 空环
             state._pomodoroCountUpTimer = setInterval(function () {
                 state._pomodoroCountUpSeconds = (state._pomodoroCountUpSeconds || 0) + 1;
                 var s = state._pomodoroCountUpSeconds;
                 _pomoUpdateTimeEls(function () { return _formatTime(s); });
-                // 进度环：以2小时为上限逐渐填满
-                var max = 7200;
-                var progress = Math.min(s / max, 1);
-                _pomoUpdateProgress(progress * max, 100);
+                // 进度环：以2小时为上限从空到满
+                var progress = Math.min(s / 7200, 1);
+                _pomoUpdateProgress((1 - progress) * 100, 100);
             }, 1000);
         }
 
@@ -1353,5 +1353,29 @@ window.DevHome = window.DevHome || {};
         }
         ns.updateContextMenuLabel();
     };
+
+    /* ===== 监听后台番茄钟状态（倒计时模式显示更新） ===== */
+    if (typeof chrome !== 'undefined' && chrome.runtime) {
+        chrome.runtime.onMessage.addListener(function (message) {
+            if (message.type === 'POMODORO_STATE' && message.data) {
+                var data = message.data;
+                if (state.pomodoroCountUp) return; // 正计时由本地 setInterval 控制
+                if (!data.active && data.remaining <= 0) {
+                    // 已完成，恢复初始显示
+                    var sideStart = document.getElementById('wbPomodoroSideStart');
+                    if (sideStart) { sideStart.textContent = '开始'; sideStart.classList.remove('is-running'); }
+                    ns.updatePomodoroDisplay();
+                    return;
+                }
+                var text = data.formatted || _formatTime(data.remaining);
+                _pomoUpdateTimeEls(function () { return text; });
+                var total = data.duration * 60;
+                if (total > 0) {
+                    // dashoffset: 100(空环) → 0(满环)，用 remaining/total 比例
+                    _pomoUpdateProgress(data.remaining / total * 100, 100);
+                }
+            }
+        });
+    }
 
 })(window.DevHome);
