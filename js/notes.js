@@ -414,13 +414,18 @@ window.DevHome = window.DevHome || {};
             } else {
                 dom.wbNoteContent.innerHTML = note.content || '';
             }
-            // 监听输入触发自动保存
-            dom.wbNoteContent.addEventListener('input', function () {
+            // 监听输入触发自动保存（避免重复绑定：每次打开笔记都会执行本函数，先移除旧监听）
+            if (dom.wbNoteContent._onInputHandler) {
+                dom.wbNoteContent.removeEventListener('input', dom.wbNoteContent._onInputHandler);
+            }
+            var onInputHandler = function () {
                 if (ns._triggerAutoSave) ns._triggerAutoSave();
                 // 实时更新字数
                 var wcEl = document.getElementById('wbNoteWordCount');
                 if (wcEl) wcEl.textContent = ns.countWords(dom.wbNoteContent.innerHTML) + ' 字';
-            });
+            };
+            dom.wbNoteContent._onInputHandler = onInputHandler;
+            dom.wbNoteContent.addEventListener('input', onInputHandler);
         }
 
         ns.renderNotesList(state._notesFilter, state._notesSearch);
@@ -516,7 +521,7 @@ window.DevHome = window.DevHome || {};
         }
         container.innerHTML = customTypes.map(function (t) {
             return '<button class="wb-filter-chip custom" data-filter="' + ns.escapeHtml(t.key) + '">' +
-                t.icon + ' ' + ns.escapeHtml(t.label) +
+                ns.escapeHtml(t.icon) + ' ' + ns.escapeHtml(t.label) +
                 '<span class="filter-del">×</span></button>';
         }).join('');
     };
@@ -689,7 +694,7 @@ window.DevHome = window.DevHome || {};
         function doRender() {
             badge.dataset.currentType = typeStr;
             badge.innerHTML = types.map(function (t) {
-                return '<span class="wb-type-chip">' + (icons[t] || '🏷️') + ' ' + (labels[t] || t) + '<span class="wb-type-chip-del" data-type="' + t + '">×</span></span>';
+                return '<span class="wb-type-chip">' + ns.escapeHtml(icons[t] || '🏷️') + ' ' + ns.escapeHtml(labels[t] || t) + '<span class="wb-type-chip-del" data-type="' + ns.escapeHtml(t) + '">×</span></span>';
             }).join('') + '<span class="badge-add">+</span>';
         }
     };

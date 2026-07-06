@@ -13,3 +13,6 @@ desktop.ini
 
 # CodeBuddy 工作数据
 .codebuddy/
+
+# 本地密钥配置（含敏感 API Key，禁止提交）
+js/secrets.js

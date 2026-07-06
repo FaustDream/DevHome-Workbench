@@ -135,7 +135,7 @@ window.DevHome = window.DevHome || {};
 
                 // HTML 内容提取为纯文本导出
                 var content = n.content || '';
-                if (/<[a-zA-Z][^>]*>/.test(content) || /&[a-z]+;/.test(content)) {
+                if (/<\/?[a-zA-Z][a-zA-Z0-9]*(\s[^>]*)?>/i.test(content) || /&[a-z]+;/i.test(content)) {
                     var tmp = document.createElement('div');
                     tmp.innerHTML = content;
                     content = tmp.textContent || tmp.innerText || '';
@@ -149,7 +149,8 @@ window.DevHome = window.DevHome || {};
                 md += 'created: "' + new Date(c.createdAt).toISOString() + '"\n';
                 md += '---\n\n';
                 md += '## ⚡ 快速捕获\n\n';
-                md += c.content + '\n\n';
+                // 捕获内容按纯文本导出，剥离可能携带的 HTML 标签，避免污染导出文件
+                md += String(c.content || '').replace(/<[^>]*>/g, '') + '\n\n';
             } else if (item.type === 'task') {
                 var t = item.data;
                 var quadrantLabels = { q1: '重要且紧急', q2: '重要不紧急', q3: '紧急不重要', q4: '不紧急不重要' };

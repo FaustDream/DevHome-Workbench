@@ -15,6 +15,41 @@ window.DevHome = window.DevHome || {};
         return div.innerHTML;
     };
 
+    /**
+     * 轻量 HTML 净化：用于渲染 AI 生成的 Markdown（marked.parse 输出）。
+     * 不引入第三方库，仅剔除常见的 XSS 向量：
+     *   - <script>/<style>/<iframe> 等可执行/嵌入标签
+     *   - 所有 on* 事件属性
+     *   - javascript:/data:text/html 协议的 href/src
+     * 注：本地扩展页风险有限，此为低成本防护；如需更强保障可引入 DOMPurify。
+     * @param {string} html - 待净化的 HTML 字符串
+     * @returns {string} 净化后的 HTML
+     */
+    ns.sanitizeHtml = function (html) {
+        if (!html) return '';
+        var div = document.createElement('div');
+        div.innerHTML = html;
+        // 移除可执行 / 嵌入类标签
+        div.querySelectorAll('script, style, iframe, object, embed, link, meta, base').forEach(function (el) {
+            el.remove();
+        });
+        // 清理危险属性与危险协议
+        div.querySelectorAll('*').forEach(function (el) {
+            Array.prototype.forEach.call(el.attributes, function (attr) {
+                var name = attr.name.toLowerCase();
+                var val = String(attr.value || '').trim().toLowerCase();
+                if (name.indexOf('on') === 0) {
+                    // 移除事件处理器属性（如 onclick、onerror）
+                    el.removeAttribute(attr.name);
+                } else if ((name === 'href' || name === 'src') &&
+                    (val.indexOf('javascript:') === 0 || val.indexOf('data:text/html') === 0)) {
+                    el.removeAttribute(attr.name);
+                }
+            });
+        });
+        return div.innerHTML;
+    };
+
     /* ===== 搜索引擎图标渲染 ===== */
     ns.renderEngineIcon = function (engine) {
         if (engine.badge) {

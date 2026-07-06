@@ -107,7 +107,7 @@ window.DevHome = window.DevHome || {};
             var domain = urlObj.hostname;
             var apiUrl = 'https://api.xinac.net/icon/?url=' + domain;
             ns.getFaviconFromDB(domain).then(function (cached) {
-                if (cached && cached.startsWith('data:image')) { imgElement.src = cached; return; }
+                if (cached && typeof cached === 'string' && cached.startsWith('data:image')) { imgElement.src = cached; return; }
                 imgElement.src = apiUrl;
             });
             imgElement.onerror = function () {

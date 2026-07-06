@@ -41,8 +41,8 @@ window.DevHome = window.DevHome || {};
         },
 
         add: function (tile) {
-            var newTile = Object.assign({}, tile, {
-                id: 'tile_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+        var newTile = Object.assign({}, tile, {
+            id: 'tile_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11),
                 position: this.currentTiles.length
             });
             this.currentTiles.push(newTile);
@@ -165,7 +165,7 @@ window.DevHome = window.DevHome || {};
             if (!targetPage) return false;
             // 创建副本，生成新 ID
             var copy = Object.assign({}, tile, {
-                id: 'tile_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                id: 'tile_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11),
                 position: (targetPage.tiles || []).length
             });
             if (!targetPage.tiles) targetPage.tiles = [];

@@ -294,7 +294,7 @@ window.DevHome = window.DevHome || {};
             var role = msg.role === 'user' ? 'user' : 'assistant';
             var avatar = role === 'user' ? '我' : 'AI';
             var content = role === 'assistant' && typeof marked !== 'undefined' && marked.parse
-                ? marked.parse(msg.content || '')
+                ? ns.sanitizeHtml(marked.parse(msg.content || ''))
                 : ns.escapeHtml(msg.content || '');
             html += '<div class="ai-chat-msg ' + role + '">' +
                 '<div class="ai-chat-msg-avatar">' + avatar + '</div>' +
@@ -355,7 +355,10 @@ window.DevHome = window.DevHome || {};
                 ? config.aiApi.providers[providerId]
                 : {};
             var provider = ns.getProviderById(providerId);
-            if (!provider) throw new Error('未找到供应商: ' + providerId);
+            // 自定义（OpenAI 兼容）供应商需使用通用适配器，否则无法发起请求
+            if (!provider) {
+                provider = ns.createOpenAIProvider(providerId, providerConfig);
+            }
 
             var apiKey = providerConfig.apiKey || provider.apiKey;
             var endpoint = providerConfig.endpoint || provider.endpoint;
@@ -368,13 +371,12 @@ window.DevHome = window.DevHome || {};
                 return;
             }
 
-            // 构建对话消息（取最近 20 条作为上下文）
-            var recentMessages = chatMessages.slice(-21); // user + assistant of last N
-            var contextMessages = recentMessages.slice(0, -1); // exclude latest user msg (just sent)
+            // 构建对话消息（取最近 20 条作为上下文，包含刚发送的用户问题）
+            var historyMessages = chatMessages.slice(-20);
             var apiMessages = [
                 { role: 'system', content: '你是一个智能助手，请用简洁清晰的中文回答用户的问题。如果问题涉及代码，请使用 Markdown 代码块格式输出。' }
             ];
-            contextMessages.forEach(function (m) { apiMessages.push({ role: m.role, content: m.content }); });
+            historyMessages.forEach(function (m) { apiMessages.push({ role: m.role, content: m.content }); });
 
             var response = await fetch(endpoint, {
                 method: 'POST',

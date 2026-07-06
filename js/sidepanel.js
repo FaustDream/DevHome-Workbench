@@ -114,6 +114,9 @@ window.DevHome = window.DevHome || {};
     }
 
     /* ===== 监听后台消息 ===== */
+    var pomodoroDisplayTimer = null;   // 本地自走秒定时器（SW 休眠时仍保持显示）
+    var lastPomodoroState = null;      // 最近一次番茄钟状态快照
+
     function listenMessages() {
         if (typeof chrome === 'undefined' || !chrome.runtime) return;
         chrome.runtime.onMessage.addListener(function (message) {
@@ -126,13 +129,39 @@ window.DevHome = window.DevHome || {};
         });
     }
 
+    function stopPomodoroDisplayTimer() {
+        if (pomodoroDisplayTimer) { clearInterval(pomodoroDisplayTimer); pomodoroDisplayTimer = null; }
+    }
+
+    /** 由状态快照本地推算剩余秒数（不依赖后台每秒广播） */
+    function computePomodoroRemaining(data) {
+        if (data.active && data.phaseStartAt) {
+            return Math.max(0, data.phaseTotalSeconds - Math.floor((Date.now() - data.phaseStartAt) / 1000));
+        }
+        return data.remaining || 0;
+    }
+
     function updatePomodoroUI(data) {
         if (!data) return;
+        lastPomodoroState = data;
+
+        // 运行期间启动本地自走秒，保证 SW 休眠时显示不卡住
+        if (data.active && !pomodoroDisplayTimer) {
+            pomodoroDisplayTimer = setInterval(function () {
+                if (lastPomodoroState) updatePomodoroUI(lastPomodoroState);
+            }, 1000);
+        } else if (!data.active && pomodoroDisplayTimer) {
+            stopPomodoroDisplayTimer();
+        }
+
+        var remaining = computePomodoroRemaining(data);
         if (dom.pomodoroTime) {
-            dom.pomodoroTime.textContent = data.formatted || '--:--';
+            var m = Math.floor(remaining / 60);
+            var s = remaining % 60;
+            dom.pomodoroTime.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
         }
         if (dom.pomodoroLabel) {
-            if (!data.active && data.remaining <= 0) {
+            if (!data.active && remaining <= 0) {
                 dom.pomodoroLabel.textContent = '未开始';
             } else if (data.isResting) {
                 dom.pomodoroLabel.textContent = '休息中';

@@ -48,7 +48,9 @@ window.DevHome = window.DevHome || {};
         ns.$$('.shortcut-columns-btn').forEach(function (btn) { btn.classList.toggle('active', btn.dataset.shortcutColumns === key); });
     };
 
-    /* ===== 时间更新 ===== */
+    /* ===== 时间更新 =====
+       使用 setInterval 每秒刷新（而非 requestAnimationFrame）：
+       rAF 在标签页隐藏时会暂停，导致时钟停走；且 60fps 轮询分钟级变化属于浪费。 */
     function updateTime() {
         var now = new Date();
         var minute = now.getMinutes();
@@ -63,8 +65,10 @@ window.DevHome = window.DevHome || {};
             var weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
             dom.dateDisplay.textContent = dateStr + ' ' + weekdays[now.getDay()];
         }
-        requestAnimationFrame(updateTime);
     }
+
+    // 每秒刷新一次（仅在必要时更新 DOM）
+    setInterval(updateTime, 1000);
 
     /* ===== 启动 ===== */
     ns.boot = async function () {

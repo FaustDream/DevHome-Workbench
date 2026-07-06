@@ -16,7 +16,8 @@ window.DevHome = window.DevHome || {};
             badge: '腾讯混元',
             endpoint: 'https://hunyuan.tencentcloudapi.com',
             model: 'hunyuan-lite',
-            apiKey: 'sk-KVgtp3GV6gMAvEV2dowFilqMCSc07jQUlc0pHx5I94XWZ',
+            // API Key 来自本地密钥配置文件（js/secrets.js，已 gitignore），缺失则需手动配置
+            apiKey: (ns.SECRETS && ns.SECRETS.hunyuan) || '',
             /** 请求格式适配器：标准 messages → 供应商请求 body */
             buildBody: function (model, messages) {
                 return {
@@ -38,7 +39,8 @@ window.DevHome = window.DevHome || {};
             badge: 'DeepSeek',
             endpoint: 'https://new-api.rugao.me/v1/chat/completions',
             model: 'deepseek-v4-flash',
-            apiKey: 'sk-u0W6YLj0vb9Bcc1jiPkAAT96FU185GqE7P9p2w3Djd48asDu',
+            // API Key 来自本地密钥配置文件（js/secrets.js，已 gitignore），缺失则需手动配置
+            apiKey: (ns.SECRETS && ns.SECRETS.deepseek) || '',
             /** OpenAI 兼容格式 */
             buildBody: function (model, messages) {
                 return {
@@ -62,6 +64,35 @@ window.DevHome = window.DevHome || {};
      */
     ns.getProviderById = function (providerId) {
         return ns.AI_PROVIDERS.find(function (p) { return p.id === providerId; }) || null;
+    };
+
+    /**
+     * 为自定义（OpenAI 兼容）供应商创建适配器。
+     * 自定义供应商在设置中保存的是 { name, apiKey, endpoint, model } 等字段，
+     * 统一按 OpenAI Chat Completions 标准格式构建请求与解析响应，
+     * 使 ai-chat.js / workbench.js 无需关心是否为内置供应商。
+     * @param {string} id - 供应商 ID（通常为 custom_ 前缀）
+     * @param {object} cfg - 该供应商在配置中的字段
+     */
+    ns.createOpenAIProvider = function (id, cfg) {
+        cfg = cfg || {};
+        return {
+            id: id,
+            name: cfg.name || id,
+            badge: cfg.name || id,
+            endpoint: cfg.endpoint,
+            model: cfg.model,
+            apiKey: cfg.apiKey,
+            buildBody: function (model, messages) {
+                return { model: model, messages: messages };
+            },
+            extractContent: function (data) {
+                if (data && data.choices && data.choices[0]) {
+                    return data.choices[0].message.content;
+                }
+                return null;
+            }
+        };
     };
 
     console.log('[AI] 供应商注册完成，内置 ' + ns.AI_PROVIDERS.length + ' 个供应商');

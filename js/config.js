@@ -125,12 +125,14 @@ window.DevHome = window.DevHome || {};
             activeProvider: 'hunyuan',     // 当前激活的供应商 ID
             providers: {                   // 各供应商配置（可动态扩展）
                 hunyuan: {
-                    apiKey: 'sk-KVgtp3GV6gMAvEV2dowFilqMCSc07jQUlc0pHx5I94XWZ',
+                    // API Key 来自本地密钥配置文件（js/secrets.js，已 gitignore），缺失则需手动配置
+                    apiKey: (ns.SECRETS && ns.SECRETS.hunyuan) || '',
                     endpoint: 'https://hunyuan.tencentcloudapi.com',
                     model: 'hunyuan-lite'
                 },
                 deepseek: {
-                    apiKey: 'sk-u0W6YLj0vb9Bcc1jiPkAAT96FU185GqE7P9p2w3Djd48asDu',
+                    // API Key 来自本地密钥配置文件（js/secrets.js，已 gitignore），缺失则需手动配置
+                    apiKey: (ns.SECRETS && ns.SECRETS.deepseek) || '',
                     endpoint: 'https://new-api.rugao.me/v1/chat/completions',
                     model: 'deepseek-v4-flash'
                 }
