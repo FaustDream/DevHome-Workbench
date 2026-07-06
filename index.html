@@ -211,7 +211,7 @@
                 </div>
             </main>
 
-            <!-- ========== 右侧栏：日历 + 番茄钟 + 快捷设置 (240px，可折叠) ========== -->
+            <!-- ========== 右侧栏：日历 + 番茄钟 (240px，可折叠) ========== -->
             <aside class="wb-sidebar-right" id="wbSidebarRight">
                 <!-- 折叠/展开按钮 -->
                 <button class="wb-rightbar-toggle" id="wbRightbarToggle" title="折叠/展开右侧栏">
@@ -257,11 +257,6 @@
                             <button class="wb-pomodoro-bar-btn primary" id="wbPomodoroSideStart">开始</button>
                             <button class="wb-pomodoro-bar-btn" id="wbPomodoroSideReset">重置</button>
                         </div>
-                    </div>
-
-                    <!-- 快捷设置面板 -->
-                    <div class="wb-quick-settings" id="wbQuickSettings">
-                        <h4 class="wb-quick-settings-title">快捷设置</h4>
                     </div>
                 </div>
             </aside>
@@ -591,7 +586,7 @@
 
                         <h3 class="s-section-title">关于</h3>
                         <button type="button" class="s-action-btn" id="changelogBtn">
-                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 2v12M2 4h10l2 2v6.5H2V4z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 8h4M6 11h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>更新说明 v2.13.2</span>
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 2v12M2 4h10l2 2v6.5H2V4z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 8h4M6 11h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>更新说明 v2.13.3</span>
                         </button>
 
                         <div class="s-danger-zone">
@@ -609,6 +604,16 @@
     <!-- 更新说明内容（供 Shadcn Dialog 动态读取渲染） -->
     <div id="changelogBodyTemplate" style="display:none">
         <div class="changelog-body" id="changelogBody">
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.13.3</span>
+                        <span class="changelog-date">2026-07-06</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>修复</strong> 番茄钟快捷时长按钮不再自动开始，仅选中时长，需手动点击"开始"</li>
+                        <li><strong>移除</strong> 右侧栏底部"快捷设置"占位面板</li>
+                    </ul>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">
                         <span class="changelog-version-tag">v2.13.2</span>

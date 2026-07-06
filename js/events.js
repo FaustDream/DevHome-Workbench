@@ -143,13 +143,12 @@ window.DevHome = window.DevHome || {};
         }
         if (pomoSideReset) pomoSideReset.addEventListener('click', function () { ns.resetPomodoro(); console.log('[交互] 番茄钟 重置'); });
 
-        // 圆形快捷时长按钮 — 点击即开始倒计时
+        // 圆形快捷时长按钮 — 仅选中时长，不自动开始
         document.querySelectorAll('.wb-pomodoro-quick-btn').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 var duration = parseInt(btn.dataset.duration);
                 ns.setPomodoroDuration(duration);
-                ns.startPomodoro(duration);
-                console.log('[交互] 番茄钟快捷开始 ' + duration + '分钟');
+                console.log('[交互] 番茄钟选中时长 ' + duration + '分钟');
             });
         });
 
