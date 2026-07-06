@@ -243,8 +243,6 @@ window.DevHome = window.DevHome || {};
     }
 
     function prepareTilePointer(tile, clientX, clientY) {
-        // 自定义布局关闭时，不启用长按拖拽
-        if (ns.isModuleEnabled && !ns.isModuleEnabled('dragLayout')) return;
         clearLongPressTimer();
         state.dragMoved = false; state.dragReady = false; state.dragging = tile;
         state.dragStartX = clientX; state.dragStartY = clientY;

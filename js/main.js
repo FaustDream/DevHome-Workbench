@@ -53,12 +53,12 @@ window.DevHome = window.DevHome || {};
         var now = new Date();
         var minute = now.getMinutes();
         var hour = now.getHours();
-        if (minute !== state.lastMinute) {
+        if (minute !== state.lastMinute && dom.timeMain) {
             state.lastMinute = minute;
             dom.timeMain.textContent = String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0');
         }
         var dateStr = now.getFullYear() + '年' + (now.getMonth() + 1) + '月' + now.getDate() + '日';
-        if (dateStr !== state.lastDate) {
+        if (dateStr !== state.lastDate && dom.dateDisplay) {
             state.lastDate = dateStr;
             var weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
             dom.dateDisplay.textContent = dateStr + ' ' + weekdays[now.getDay()];
@@ -119,8 +119,6 @@ window.DevHome = window.DevHome || {};
         ns.initEngine();
         ns.applyShortcutSize(storage.get('shortcut_size', ns.DEFAULT_SHORTCUT_SIZE), false);
         ns.applyShortcutColumns(storage.get('shortcut_columns', ns.DEFAULT_SHORTCUT_COLUMNS), false);
-        // 加载模块显隐配置
-        state.moduleConfig = storage.get('module_config', ns.DEFAULT_MODULE_CONFIG);
         ns.openFaviconDB();
         await ns.tileManager.load();
         ns.loadSearchHistory();
@@ -128,16 +126,10 @@ window.DevHome = window.DevHome || {};
         // ns.bgManager.load();  // 已禁用：用户可手动上传/重置背景
         ns.renderTiles();
 
-        // 初始化新功能模块（每个模块内部检查 isModuleEnabled）
-        if (ns.initQuotes) ns.initQuotes();
+        // 初始化天气模块（异步获取数据，注入每日问候卡片）
         if (ns.initWeather) ns.initWeather();
-        if (ns.initFeed) ns.initFeed();
-        if (ns.initGithubTrending) ns.initGithubTrending();
-        if (ns.initPerfMonitor) ns.initPerfMonitor();
-        // 绑定天气点击事件（需在 DOM ready 后）
-        if (ns.bindWeatherEvents) ns.bindWeatherEvents();
-        // 初始化左侧小部件面板
-        if (ns.initWidgets) ns.initWidgets();
+        // 左上角每日问候卡片
+        if (ns.initDailyGreetingCard) ns.initDailyGreetingCard();
 
         var autoFocusOn = storage.get('auto_focus', false);
         if (dom.autoFocusText) dom.autoFocusText.textContent = autoFocusOn ? '自动聚焦：开' : '自动聚焦：关';
@@ -168,8 +160,6 @@ window.DevHome = window.DevHome || {};
         // 初始化主题管理器（从 localStorage 恢复主题状态）
         if (ns.theme && typeof ns.theme.init === 'function') {
             ns.theme.init();
-            // 同步悬浮菜单图标
-            if (ns.syncFloatMenuIcons) ns.syncFloatMenuIcons();
         }
 
         // 刷新恢复：仅在页面刷新时恢复专注模式，新标签页默认日常模式

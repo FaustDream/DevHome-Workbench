@@ -101,7 +101,6 @@ window.DevHome = window.DevHome || {};
     function renderWidget(data) {
         var el = document.getElementById('weatherWidget');
         if (!el) return;
-        if (!ns.isModuleEnabled('weather')) { el.style.display = 'none'; return; }
         el.style.display = '';
         var w = getWeather(data.currentCode);
         el.innerHTML = '<span class="weather-icon">' + w.icon + '</span>'
@@ -156,18 +155,17 @@ window.DevHome = window.DevHome || {};
 
     /** 初始化天气模块 */
     ns.initWeather = async function () {
-        if (!ns.isModuleEnabled('weather')) {
-            var widget = document.getElementById('weatherWidget');
-            if (widget) widget.style.display = 'none';
-            var panel = document.getElementById('weatherPanel');
-            if (panel) panel.style.display = 'none';
-            return;
-        }
         var loc = await getLocation();
         var data = await fetchWeather(loc.lat, loc.lon);
         if (data) {
             renderWidget(data);
             renderPanel(data);
+            // 暴露天气数据给其他模块（如每日问候卡片）
+            ns.weatherData = data;
+            // 通知每日问候卡片更新天气
+            if (typeof ns.updateDailyGreetingCardWeather === 'function') {
+                ns.updateDailyGreetingCardWeather();
+            }
             console.log('[天气] 渲染完成 → ' + getWeather(data.currentCode).text + ' ' + data.currentTemp + '°C');
         }
     };

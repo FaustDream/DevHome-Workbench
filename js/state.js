@@ -16,9 +16,6 @@ window.DevHome = window.DevHome || {};
     /* ===== DOM 缓存：集中管理所有元素引用 ===== */
     ns.dom = {
         container: ns.$('.container'),
-        timeDisplay: ns.$('#timeDisplay'),
-        timeMain: ns.$('#timeMain'),
-        dateDisplay: ns.$('#dateDisplay'),
         searchContainer: ns.$('#searchContainer'),
         searchInput: ns.$('#searchInput'),
         searchButton: ns.$('#searchButton'),
@@ -117,12 +114,7 @@ window.DevHome = window.DevHome || {};
         wbMeShortcutKey: ns.$('#wbMeShortcutKey'),
         wbMeShortcutSave: ns.$('#wbMeShortcutSave'),
         ctxFocusModeLabel: ns.$('#ctxFocusModeLabel'),
-        ctxFocusModeKey: ns.$('#ctxFocusModeKey'),
-        // 天气/问候/金句 DOM
-        greetingText: ns.$('#greetingText'),
-        quoteText: ns.$('#quoteText'),
-        weatherWidget: ns.$('#weatherWidget'),
-        weatherPanel: ns.$('#weatherPanel')
+        ctxFocusModeKey: ns.$('#ctxFocusModeKey')
     };
 
     /* ===== 全局状态 ===== */

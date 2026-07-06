@@ -269,18 +269,6 @@ window.DevHome = window.DevHome || {};
         setToggle('sToggleStrict', storage.get('strict_mode', false));
         setToggle('sToggleFileSync', storage.get('file_sync', false));
 
-        // 模块显隐开关
-        var mc = state.moduleConfig || {};
-        setToggle('sToggleModuleWeather', mc.weather !== false);
-        setToggle('sToggleModuleDailyQuote', mc.dailyQuote !== false);
-        setToggle('sToggleModuleGreeting', mc.greeting !== false);
-        setToggle('sToggleModuleBang', mc.bangCommands !== false);
-        setToggle('sToggleModuleNewsFeed', mc.newsFeed !== false);
-        setToggle('sToggleModuleRecentTabs', mc.recentTabs !== false);
-        setToggle('sToggleModuleDragLayout', mc.dragLayout !== false);
-        setToggle('sToggleModulePerfMonitor', mc.perfMonitor !== false);
-        setToggle('sToggleModuleGithubTrending', mc.githubTrending !== false);
-
         // 分段选择器
         var sizeKey = ns.normalizeShortcutSize(storage.get('shortcut_size', ns.DEFAULT_SHORTCUT_SIZE));
         document.querySelectorAll('[data-shortcut-size]').forEach(function (b) { b.classList.toggle('active', b.dataset.shortcutSize === sizeKey); });
@@ -534,14 +522,6 @@ window.DevHome = window.DevHome || {};
     ns._saveFileSync = function (on) {
         ns.storage.set('file_sync', on);
         ns.showToast(on ? '文件自动同步已开启' : '文件自动同步已关闭', 'info');
-    };
-    /** 保存单个模块显隐开关到 state.moduleConfig 并持久化 */
-    ns._saveModuleConfig = function (key, enabled) {
-        var mc = ns.state.moduleConfig || {};
-        mc[key] = enabled;
-        ns.state.moduleConfig = mc;
-        ns.storage.set('module_config', JSON.parse(JSON.stringify(mc)));
-        console.log('[模块管理] ' + key + ' → ' + (enabled ? '开启' : '关闭'));
     };
     ns._saveShortcut = function () {
         var ctrlEl = document.getElementById('wbMeShortcutCtrl');

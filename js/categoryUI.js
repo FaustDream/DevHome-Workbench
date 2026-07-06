@@ -18,20 +18,14 @@ window.DevHome = window.DevHome || {};
     var plusSvg = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
     function renderCatRow() {
         if (!dom.catRow) return;
-        // 新布局：侧边栏垂直分类列表
         var buttons = state.pageNames.map(function (name, idx) {
-            var cls = idx === state.currentPage ? 'dh-category-item cat-btn active' : 'dh-category-item cat-btn';
-            return '<div class="' + cls + '" data-page="' + idx + '" role="button" tabindex="0">' +
-                '<span class="dh-cat-dot"></span>' +
+            var cls = idx === state.currentPage ? 'cat-btn active' : 'cat-btn';
+            return '<button class="' + cls + '" data-page="' + idx + '" type="button">' +
                 '<span class="cat-btn-label">' + escapeHtml(name) + '</span>' +
                 '<span class="cat-delete-btn" role="button" tabindex="0" data-cat-delete="' + idx + '" aria-label="删除分类 ' + escapeHtml(name) + '">' +
-                timesSvg + '</span></div>';
+                timesSvg + '</span></button>';
         }).join('');
-        // 添加新建分类按钮
-        var addHtml = '<div class="dh-category-item cat-btn cat-add-btn" role="button" tabindex="0" data-cat-add="true" title="新建分类">' +
-            '<span class="dh-cat-dot" style="background:var(--color-accent);opacity:0.5;"></span>' +
-            '<span class="cat-btn-label" style="color:var(--color-accent);">+ 添加</span></div>';
-        dom.catRow.innerHTML = buttons + addHtml;
+        dom.catRow.innerHTML = buttons + '<button class="cat-add-btn" type="button" data-cat-add="true" title="新建分类" aria-label="新建分类">' + plusSvg + '</button>';
         dom.catRow.classList.toggle('category-edit-mode', state.categoryEditMode);
     }
 
@@ -128,8 +122,6 @@ window.DevHome = window.DevHome || {};
     };
 
     ns.prepareCategoryPointer = function (btn, clientX, clientY) {
-        // 自定义布局关闭时，不启用分类拖拽
-        if (ns.isModuleEnabled && !ns.isModuleEnabled('dragLayout')) return;
         clearCategoryLongPressTimer();
         state.categoryDragMoved = false; state.categoryDragReady = false; state.categoryDragging = btn;
         state.dragStartX = clientX; state.dragStartY = clientY;

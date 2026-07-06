@@ -115,19 +115,18 @@ window.DevHome = window.DevHome || {};
 
     /** 根据小时返回问候语和时区标签 */
     function getGreeting(hour) {
-        if (hour >= 6 && hour < 9) return { text: 'GOOD MORNING ☀', sub: 'Focused Efficiency, Personalized Future.' };
-        if (hour >= 9 && hour < 12) return { text: 'GOOD MORNING ☀', sub: 'Focused Efficiency, Personalized Future.' };
-        if (hour >= 12 && hour < 14) return { text: 'GOOD AFTERNOON 🌤', sub: 'Take a break, then keep moving.' };
-        if (hour >= 14 && hour < 18) return { text: 'GOOD AFTERNOON 🌤', sub: 'Focused Efficiency, Personalized Future.' };
-        if (hour >= 18 && hour < 23) return { text: 'GOOD EVENING 🌙', sub: 'Reflect and recharge.' };
-        return { text: 'GOOD NIGHT 🌃', sub: 'Rest well, dream big.' };
+        if (hour >= 6 && hour < 9) return { text: '早上好 ☀', sub: '今天也要元气满满' };
+        if (hour >= 9 && hour < 12) return { text: '上午好 🌤', sub: '专注高效，一个个来' };
+        if (hour >= 12 && hour < 14) return { text: '中午好 🌞', sub: '记得吃午饭，休息一下' };
+        if (hour >= 14 && hour < 18) return { text: '下午好 🌈', sub: '下午的效率取决于现在的专注' };
+        if (hour >= 18 && hour < 23) return { text: '晚上好 🌙', sub: '收拾心情，享受夜晚' };
+        return { text: '夜深了 🌃', sub: '注意休息，明天继续' };
     }
 
     /** 更新问候语 DOM */
     function updateGreeting() {
         var el = document.getElementById('greetingText');
         if (!el) return;
-        if (!ns.isModuleEnabled('greeting')) { el.style.display = 'none'; return; }
         el.style.display = '';
         var hour = new Date().getHours();
         var g = getGreeting(hour);
@@ -138,7 +137,6 @@ window.DevHome = window.DevHome || {};
     async function renderQuote() {
         var el = document.getElementById('quoteText');
         if (!el) return;
-        if (!ns.isModuleEnabled('dailyQuote')) { el.style.display = 'none'; return; }
         el.style.display = '';
         var text = await loadDailyQuote();
         el.textContent = '「' + text + '」';

@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="css/overlays.css">
     <link rel="stylesheet" href="css/workbench.css">
     <link rel="stylesheet" href="css/ai-chat.css">
+    <link rel="stylesheet" href="css/daily-greeting-card.css">
     <!-- 主题样式：默认主题（蔚蓝），支持浅色/深色双模式 -->
     <link id="theme-default" rel="stylesheet" href="css/themes/default.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -34,6 +35,9 @@
         <div id="bgOverlay"></div>
     </div>
 
+    <!-- 每日问候卡片（左上角固定） -->
+    <section class="daily-greeting-card" id="dailyGreetingCard" aria-label="每日问候"></section>
+
     <div class="container">
         <!-- 文件配置警告条 -->
         <div class="config-warning-bar" id="configWarningBar" style="display:none;">
@@ -44,17 +48,6 @@
             <span id="configWarningText">请选择配置目录以持久化数据</span>
             <button id="configSelectDirBtn" type="button" class="config-select-dir-btn">选择目录</button>
         </div>
-
-        <div class="greeting-text" id="greetingText"></div>
-
-        <div class="time-display" id="timeDisplay" style="position:relative;">
-            <div class="time-main" id="timeMain">00:00</div>
-            <div class="date-display" id="dateDisplay">2024年1月1日 星期一</div>
-            <span class="weather-widget" id="weatherWidget" style="display:none;"></span>
-            <div class="weather-panel" id="weatherPanel"></div>
-        </div>
-
-        <div class="quote-text" id="quoteText"></div>
 
         <!-- ===== 交互核心区：搜索栏 → 分类 → 快捷方式，垂直三层 ===== -->
         <section class="dh-interactive-zone" id="dhInteractiveZone">
@@ -80,7 +73,6 @@
                     <div class="suggestions-footer" id="suggestionsFooter"></div>
                 </div>
             </div>
-        </div>
 
         <div id="catRow" class="cat-row"></div>
 
@@ -994,6 +986,7 @@
     <script src="js/ai-chat.js" defer></script>
     <script src="js/quotes.js" defer></script>
     <script src="js/weather.js" defer></script>
+    <script src="js/dailyGreetingCard.js" defer></script>
     <script src="js/favicon.js" defer></script>
     <script src="js/theme-manager.js" defer></script>
     <script src="js/theme.js" defer></script>
