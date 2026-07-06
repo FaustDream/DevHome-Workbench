@@ -65,7 +65,7 @@ window.DevHome = window.DevHome || {};
         // ===== 象限分组导航事件 =====
         var quadrantNav = document.getElementById('wbQuadrantNav');
         if (quadrantNav) {
-            // 点击委托：复选框、删除按钮、添加按钮
+            // 点击委托：复选框、更多按钮、添加按钮、菜单操作
             quadrantNav.addEventListener('click', function (e) {
                 // 复选框 → 标记完成
                 var check = e.target.closest('.wb-task-check');
@@ -74,11 +74,11 @@ window.DevHome = window.DevHome || {};
                     ns.completeQuadrantTask(check.dataset.quadrant, check.dataset.taskId);
                     return;
                 }
-                // 删除按钮 → 取消任务
-                var del = e.target.closest('.wb-task-del');
-                if (del) {
+                // 更多按钮 → 显示操作菜单
+                var moreBtn = e.target.closest('.wb-task-more-btn');
+                if (moreBtn) {
                     e.stopPropagation();
-                    ns.cancelQuadrantTask(del.dataset.quadrant, del.dataset.taskId);
+                    ns.showTaskContextMenu(moreBtn.dataset.taskId, moreBtn.dataset.quadrant, e);
                     return;
                 }
                 // 添加按钮 → 显示输入框
@@ -90,15 +90,31 @@ window.DevHome = window.DevHome || {};
                     return;
                 }
             });
-
-            // 维度下拉切换
-            quadrantNav.addEventListener('change', function (e) {
-                var sel = e.target.closest('.wb-task-selector');
-                if (!sel || !sel.value) return;
-                e.stopPropagation();
-                ns.changeTaskQuadrant(sel.dataset.taskId, sel.dataset.quadrant, sel.value);
-            });
         }
+
+        // ===== 浮动菜单操作（在 document 上委托） =====
+        document.addEventListener('click', function (e) {
+            var menuItem = e.target.closest('.wb-task-context-menu button');
+            if (!menuItem) return;
+            e.stopPropagation();
+            var action = menuItem.dataset.action;
+            var taskId = menuItem.dataset.taskId;
+            var quadrant = menuItem.dataset.quadrant;
+
+            if (action === 'move') {
+                ns.changeTaskQuadrant(taskId, menuItem.dataset.from, menuItem.dataset.to);
+                ns.hideTaskContextMenu();
+                console.log('[交互] 任务菜单 移动 ' + taskId);
+            } else if (action === 'delete') {
+                ns.cancelQuadrantTask(quadrant, taskId);
+                ns.hideTaskContextMenu();
+                console.log('[交互] 任务菜单 删除 ' + taskId);
+            } else if (action === 'link-notes') {
+                ns.showTaskLinkNotesPopup(taskId);
+                ns.hideTaskContextMenu();
+                console.log('[交互] 任务菜单 关联笔记 ' + taskId);
+            }
+        });
 
         // ===== 右侧迷你日历导航 =====
         var miniCalPrev = document.getElementById('wbMiniCalPrev');
@@ -776,6 +792,16 @@ window.DevHome = window.DevHome || {};
                     ns.renderNotesList(state._notesFilter, state._notesSearch);
                 });
             });
+        }
+        // 笔记编辑器"转为任务"按钮
+        var noteToTaskBtn = document.getElementById('wbNoteToTaskBtn');
+        if (noteToTaskBtn) {
+            noteToTaskBtn.addEventListener('click', function () {
+                if (!state.currentNote) return;
+                ns.convertNoteToTask(state.currentNote.id);
+                console.log('[交互] 笔记转任务 ' + state.currentNote.id);
+            });
+        }
         }
         // 编辑器类型徽章点击（支持多选）
         if (dom.wbNoteTypeBadge) {

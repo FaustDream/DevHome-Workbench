@@ -55,6 +55,189 @@ window.DevHome = window.DevHome || {};
         console.log('[面板] 左侧栏切换到 ' + panelName);
     };
 
+    /* ===== 任务操作浮动菜单 ===== */
+    var _taskMenuEl = null;
+
+    ns.showTaskContextMenu = function (taskId, quadrant, evt) {
+        ns.hideTaskContextMenu();
+        var qLabels = { q1: '重要且紧急', q2: '重要不紧急', q3: '紧急不重要', q4: '不紧急不重要' };
+        var otherQs = QUADRANTS.filter(function (q) { return q !== quadrant; });
+
+        var menu = document.createElement('div');
+        menu.className = 'wb-task-context-menu';
+        menu.innerHTML = otherQs.map(function (q) {
+            return '<button data-action="move" data-to="' + q + '" data-task-id="' + escapeHtml(taskId) + '" data-from="' + quadrant + '">移至' + qLabels[q] + '</button>';
+        }).join('') +
+            '<div class="wb-task-menu-sep"></div>' +
+            '<button data-action="link-notes" data-task-id="' + escapeHtml(taskId) + '" data-quadrant="' + quadrant + '">关联笔记</button>' +
+            '<button data-action="delete" data-task-id="' + escapeHtml(taskId) + '" data-quadrant="' + quadrant + '">删除任务</button>';
+
+        document.body.appendChild(menu);
+        _taskMenuEl = menu;
+
+        // 定位菜单
+        var rect = evt.target.getBoundingClientRect();
+        var top = rect.bottom + 4;
+        var left = Math.min(rect.left, window.innerWidth - 180);
+        menu.style.top = top + 'px';
+        menu.style.left = left + 'px';
+
+        // 点击外部关闭
+        var closeHandler = function (e) {
+            if (!menu.contains(e.target)) {
+                ns.hideTaskContextMenu();
+                document.removeEventListener('click', closeHandler);
+            }
+        };
+        setTimeout(function () { document.addEventListener('click', closeHandler); }, 0);
+        console.log('[面板] 打开任务操作菜单 task=' + taskId);
+    };
+
+    ns.hideTaskContextMenu = function () {
+        if (_taskMenuEl) { _taskMenuEl.remove(); _taskMenuEl = null; }
+    };
+
+    /* ===== 任务-笔记关联 ===== */
+
+    /** 将笔记关联到任务 */
+    ns.linkNoteToTask = function (taskId, noteId) {
+        var config = ns.getWorkbenchState();
+        var found = false;
+        QUADRANTS.forEach(function (q) {
+            var tasks = (config.quadrants[q] && config.quadrants[q].tasks) || [];
+            tasks.forEach(function (t) {
+                if (t.id === taskId) {
+                    if (!t.noteIds) t.noteIds = [];
+                    if (t.noteIds.indexOf(noteId) === -1) {
+                        t.noteIds.push(noteId);
+                        found = true;
+                    }
+                }
+            });
+        });
+        if (found) {
+            ns.saveWorkbenchState({ quadrants: config.quadrants });
+            state.workbench = ns.getWorkbenchState();
+            ns.renderQuadrantBoard();
+            console.log('[编辑] 笔记 ' + noteId + ' 关联到任务 ' + taskId);
+        }
+    };
+
+    /** 从任务取消关联笔记 */
+    ns.unlinkNoteFromTask = function (taskId, noteId) {
+        var config = ns.getWorkbenchState();
+        QUADRANTS.forEach(function (q) {
+            var tasks = (config.quadrants[q] && config.quadrants[q].tasks) || [];
+            tasks.forEach(function (t) {
+                if (t.id === taskId && t.noteIds) {
+                    t.noteIds = t.noteIds.filter(function (id) { return id !== noteId; });
+                }
+            });
+        });
+        ns.saveWorkbenchState({ quadrants: config.quadrants });
+        state.workbench = ns.getWorkbenchState();
+        ns.renderQuadrantBoard();
+        console.log('[编辑] 笔记 ' + noteId + ' 取消关联任务 ' + taskId);
+    };
+
+    /** 将笔记直接转为四象限任务（默认放入q2:重要不紧急） */
+    ns.convertNoteToTask = function (noteId, quadrant) {
+        quadrant = quadrant || 'q2';
+        var note = (state.notes || []).find(function (n) { return n.id === noteId; });
+        if (!note) return;
+        var title = note.title || '未命名笔记';
+        var config = ns.getWorkbenchState();
+        if (!config.quadrants[quadrant]) config.quadrants[quadrant] = { tasks: [] };
+        config.quadrants[quadrant].tasks.push({
+            id: taskId(),
+            title: title,
+            status: 'active',
+            noteIds: [noteId],
+            createdAt: Date.now()
+        });
+        ns.saveWorkbenchState({ quadrants: config.quadrants });
+        state.workbench = ns.getWorkbenchState();
+        ns.renderQuadrantBoard();
+        console.log('[编辑] 笔记转任务: ' + noteId + ' → ' + quadrant);
+    };
+
+    /** 获取任务的关联笔记列表 */
+    ns.getTaskLinkedNotes = function (taskId) {
+        var config = ns.getWorkbenchState();
+        var noteIds = [];
+        QUADRANTS.forEach(function (q) {
+            var tasks = (config.quadrants[q] && config.quadrants[q].tasks) || [];
+            var task = tasks.find(function (t) { return t.id === taskId; });
+            if (task && task.noteIds) noteIds = task.noteIds;
+        });
+        return (state.notes || []).filter(function (n) { return noteIds.indexOf(n.id) !== -1; });
+    };
+
+    /** 显示"关联笔记"选择弹窗 */
+    ns.showTaskLinkNotesPopup = function (taskId) {
+        var allNotes = state.notes || [];
+        var linkedNotes = ns.getTaskLinkedNotes(taskId);
+        var linkedIds = linkedNotes.map(function (n) { return n.id; });
+
+        var hasNotes = allNotes.length > 0;
+        var bodyHtml = hasNotes
+            ? allNotes.map(function (note) {
+                var isLinked = linkedIds.indexOf(note.id) !== -1;
+                var title = note.title || '无标题';
+                if (title.length > 25) title = title.slice(0, 25) + '...';
+                return '<label class="wb-link-note-item">' +
+                    '<input type="checkbox" value="' + escapeHtml(note.id) + '" ' + (isLinked ? 'checked' : '') + '>' +
+                    '<span>' + title + '</span></label>';
+            }).join('')
+            : '<p style="text-align:center;color:var(--color-text-tertiary);padding:16px 0;">暂无笔记，请先在主工作区创建笔记</p>';
+
+        // 创建自定义弹窗
+        var overlay = document.createElement('div');
+        overlay.className = 'wb-link-popup-overlay';
+        overlay.innerHTML = '<div class="wb-link-popup">' +
+            '<h3>关联笔记到任务</h3>' +
+            '<div class="wb-link-popup-body">' + bodyHtml + '</div>' +
+            '<div class="wb-link-popup-footer">' +
+                '<button class="wb-link-popup-cancel">取消</button>' +
+                '<button class="wb-link-popup-save">保存</button>' +
+            '</div>' +
+        '</div>';
+        document.body.appendChild(overlay);
+
+        // 点击遮罩关闭
+        overlay.addEventListener('click', function (e) {
+            if (e.target === overlay) overlay.remove();
+        });
+        // 取消按钮
+        overlay.querySelector('.wb-link-popup-cancel').addEventListener('click', function () { overlay.remove(); });
+        // 保存按钮
+        overlay.querySelector('.wb-link-popup-save').addEventListener('click', function () {
+            var checked = overlay.querySelectorAll('.wb-link-note-item input:checked');
+            var selectedIds = Array.from(checked).map(function (cb) { return cb.value; });
+            // 先取消所有旧关联
+            linkedIds.forEach(function (nid) { ns.unlinkNoteFromTaskSilent(taskId, nid); });
+            // 建立新关联
+            selectedIds.forEach(function (nid) { ns.linkNoteToTask(taskId, nid); });
+            overlay.remove();
+            console.log('[编辑] 任务 ' + taskId + ' 关联笔记 ' + selectedIds.length + ' 篇');
+        });
+    };
+
+    /** 静默取消关联（不重新渲染，用于批量操作） */
+    ns.unlinkNoteFromTaskSilent = function (taskId, noteId) {
+        var config = ns.getWorkbenchState();
+        QUADRANTS.forEach(function (q) {
+            var tasks = (config.quadrants[q] && config.quadrants[q].tasks) || [];
+            tasks.forEach(function (t) {
+                if (t.id === taskId && t.noteIds) {
+                    t.noteIds = t.noteIds.filter(function (id) { return id !== noteId; });
+                }
+            });
+        });
+        ns.saveWorkbenchState({ quadrants: config.quadrants });
+        state.workbench = ns.getWorkbenchState();
+    };
+
     /* ===== 侧边栏折叠/展开 ===== */
     ns.toggleQuadrantSidebar = function () {
         var panel = document.getElementById('wbQuadrantPanel');
@@ -324,21 +507,20 @@ window.DevHome = window.DevHome || {};
                 return;
             }
 
-            // 维度下拉选项（排除当前维度）
-            var qOptions = QUADRANTS.filter(function (q) { return q !== activeQ; });
-
-            // 维度下拉选项 HTML
-            var selectOpts = '<option value="">移至...</option>' +
-                qOptions.map(function (q) {
-                    return '<option value="' + q + '">' + qLabels[q] + '</option>';
-                }).join('');
-
+            // 渲染任务列表
             listEl.innerHTML = visibleTasks.map(function (task) {
                 var isActive = task.status === 'active' || !task.status || task.status === undefined;
                 var isCompleted = task.status === 'completed' || (!task.status && task.completed);
                 var isCancelled = task.status === 'cancelled';
                 var rowClass = isCompleted ? ' is-completed' : (isCancelled ? ' is-cancelled' : '');
                 var checkClass = isCompleted ? ' checked' : '';
+
+                // 关联笔记指示器
+                var noteIds = task.noteIds || [];
+                var noteBadge = '';
+                if (noteIds.length > 0) {
+                    noteBadge = '<span class="wb-task-note-badge" title="已关联 ' + noteIds.length + ' 篇笔记">📎' + noteIds.length + '</span>';
+                }
 
                 return '<div class="wb-task-item' + rowClass + '" ' +
                     'data-task-id="' + escapeHtml(task.id) + '" ' +
@@ -347,10 +529,11 @@ window.DevHome = window.DevHome || {};
                         ? '<button class="wb-task-check' + checkClass + '" data-task-id="' + escapeHtml(task.id) + '" data-quadrant="' + activeQ + '" title="标记完成"></button>'
                         : '<span class="wb-task-check checked" style="pointer-events:none;"></span>') +
                     '<span class="wb-task-item-title">' + escapeHtml(task.title) + '</span>' +
+                    noteBadge +
                     (isActive
-                        ? '<select class="wb-task-selector" data-task-id="' + escapeHtml(task.id) + '" data-quadrant="' + activeQ + '" title="切换维度">' + selectOpts + '</select>'
+                        ? '<button class="wb-task-more-btn" data-task-id="' + escapeHtml(task.id) + '" data-quadrant="' + activeQ + '" title="更多操作">⋮</button>'
                         : '') +
-                    '<button class="wb-task-del" data-task-id="' + escapeHtml(task.id) + '" data-quadrant="' + activeQ + '" title="取消任务">&times;</button></div>';
+                    '</div>';
             }).join('');
         });
         console.log('[面板] 四象限渲染完成 总任务=' + totalCount + ' 过滤=' + filter);

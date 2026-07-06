@@ -198,6 +198,7 @@
                             <!-- 标签属性区：标题下方横向 Pill 胶囊徽章 -->
                             <div class="wb-notes-editor-meta" id="wbNotesEditorMeta">
                                 <span class="wb-note-type-badge-editor" id="wbNoteTypeBadge"></span>
+                                <button class="wb-note-to-task-btn" id="wbNoteToTaskBtn" title="转为四象限任务" style="display:none;">转为任务</button>
                                 <div class="wb-note-type-picker" id="wbNoteTypePicker" style="display:none;">
                                     <div class="wb-type-picker-list" id="wbTypePickerList"></div>
                                 </div>
@@ -586,7 +587,7 @@
 
                         <h3 class="s-section-title">关于</h3>
                         <button type="button" class="s-action-btn" id="changelogBtn">
-                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 2v12M2 4h10l2 2v6.5H2V4z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 8h4M6 11h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>更新说明 v2.13.3</span>
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 2v12M2 4h10l2 2v6.5H2V4z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 8h4M6 11h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>更新说明 v2.13.4</span>
                         </button>
 
                         <div class="s-danger-zone">
@@ -604,6 +605,19 @@
     <!-- 更新说明内容（供 Shadcn Dialog 动态读取渲染） -->
     <div id="changelogBodyTemplate" style="display:none">
         <div class="changelog-body" id="changelogBody">
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.13.4</span>
+                        <span class="changelog-date">2026-07-06</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>改进</strong> 四象限任务操作不再挤压标题：下拉选择器和删除按钮合并为 hover 时出现的"⋮"浮动菜单</li>
+                        <li><strong>新增</strong> 任务可关联多篇笔记（noteIds 数组），关联后在任务项旁显示 📎N 徽章</li>
+                        <li><strong>新增</strong> 笔记编辑器"转为任务"按钮，一键将笔记转为四象限任务（默认放入重要不紧急）</li>
+                        <li><strong>新增</strong> 任务⋮菜单中"关联笔记"选项，弹窗多选关联/取消关联笔记</li>
+                        <li><strong>移除</strong> 旧 .wb-task-selector 下拉选择器和 .wb-task-del 删除按钮样式</li>
+                    </ul>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">
                         <span class="changelog-version-tag">v2.13.3</span>
