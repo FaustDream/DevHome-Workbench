@@ -10,7 +10,7 @@
 /* ===== 统一卡片 Token ===== */
 :root {
     --card-radius: 12px;
-    --card-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    --card-shadow: none;
     --card-border: 1px solid var(--color-glass-border);
 }
 
@@ -59,8 +59,6 @@
     background: var(--color-sidebar-bg);
     border-right: var(--card-border);
     overflow: hidden;
-    backdrop-filter: blur(20px) saturate(140%);
-    -webkit-backdrop-filter: blur(20px) saturate(140%);
     transition: width 0.3s ease;
     width: 240px;
     min-width: 240px;
@@ -112,7 +110,6 @@
     font-weight: 600;
     color: var(--color-accent);
     letter-spacing: -0.01em;
-    text-shadow: 0 0 12px var(--color-accent-glow);
 }
 .wb-sidebar-head-actions {
     display: flex;
@@ -152,7 +149,6 @@
     background: var(--color-surface-subtle);
     overflow: hidden;
     transition: all 0.2s ease;
-    box-shadow: var(--card-shadow);
 }
 .wb-quadrant-group-head {
     display: flex;
@@ -188,7 +184,6 @@
     height: 8px;
     border-radius: 50%;
     flex-shrink: 0;
-    box-shadow: 0 0 6px currentColor;
 }
 
 /* 象限内任务列表 */
@@ -601,7 +596,6 @@
 .wb-note-list-item.active {
     background: rgba(85,230,210,0.08);
     border-color: var(--color-accent);
-    box-shadow: var(--card-shadow);
 }
 .wb-note-list-item .wb-note-list-del {
     position: absolute;
@@ -810,8 +804,6 @@
     border-radius: var(--card-radius);
     background: var(--color-bg-elevated);
     box-shadow: var(--shadow-lg);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
 }
 .wb-type-picker-item {
     display: flex;
@@ -847,7 +839,6 @@
     border: var(--card-border);
     border-radius: 8px;
     background: var(--color-bg-elevated);
-    backdrop-filter: blur(12px);
     flex-wrap: wrap;
 }
 .wb-bubble-toolbar select {
@@ -898,7 +889,6 @@
     border-top: var(--card-border);
     border-radius: var(--card-radius) var(--card-radius) 0 0;
     background: var(--color-surface-subtle);
-    box-shadow: var(--card-shadow);
     flex-shrink: 0;
     margin: 0 8px;
 }
@@ -930,9 +920,8 @@
     justify-content: center;
     font-family: var(--font-mono);
     font-size: 16px;
-    font-weight: 300;
+    font-weight: 600;
     color: var(--color-accent);
-    text-shadow: 0 0 10px var(--color-accent-glow);
 }
 
 .wb-pomodoro-bar-controls {
@@ -956,7 +945,7 @@
 .wb-pomodoro-bar-btn:hover { border-color: var(--color-accent); }
 .wb-pomodoro-bar-btn.primary {
     border-color: transparent;
-    background: linear-gradient(135deg, var(--color-accent), rgba(122,215,255,0.7));
+    background: var(--color-accent);
     color: var(--color-text-inverse);
     font-weight: 600;
 }
@@ -990,14 +979,11 @@
     align-items: center;
     justify-content: center;
     padding: 0;
-    box-shadow: var(--card-shadow);
     position: relative;
 }
 .wb-pomodoro-quick-btn:hover {
     border-color: var(--color-accent);
     color: var(--color-accent);
-    transform: scale(1.08);
-    box-shadow: 0 0 12px rgba(85,230,210,0.2);
 }
 .wb-pomodoro-quick-btn.active {
     border-color: var(--color-accent);
@@ -1027,8 +1013,6 @@
     overflow-y: auto;
     scrollbar-width: none;
     padding: 14px;
-    backdrop-filter: blur(20px) saturate(140%);
-    -webkit-backdrop-filter: blur(20px) saturate(140%);
 }
 .wb-sidebar-right::-webkit-scrollbar { display: none; }
 
@@ -1041,7 +1025,6 @@
     border: var(--card-border);
     border-radius: var(--card-radius);
     background: var(--color-surface-subtle);
-    box-shadow: var(--card-shadow);
     flex-shrink: 0;
 }
 
@@ -1095,7 +1078,6 @@
     background: var(--color-accent);
     color: var(--color-text-inverse);
     font-weight: 600;
-    box-shadow: 0 0 6px rgba(85,230,210,0.2);
 }
 .wb-cal-view-btn:not(.active):hover { color: var(--color-text); }
 
@@ -1133,7 +1115,6 @@
     color: var(--color-text-inverse);
     font-weight: 700;
     background: var(--color-accent);
-    box-shadow: 0 0 8px rgba(85,230,210,0.3);
     border-radius: 50%;
 }
 .wb-cal-day.other-month { opacity: 0.18; }
@@ -1181,7 +1162,6 @@
     border: var(--card-border);
     border-radius: var(--card-radius);
     background: var(--color-surface-subtle);
-    box-shadow: var(--card-shadow);
     flex-shrink: 0;
 }
 .wb-quick-settings-title {
