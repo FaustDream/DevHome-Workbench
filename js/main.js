@@ -72,6 +72,12 @@ window.DevHome = window.DevHome || {};
 
     /* ===== 启动 ===== */
     ns.boot = async function () {
+        // 优先应用主题：必须放在最前，确保即使后续步骤（文件配置未就绪、数据加载异常等）
+        // 提前 return 或抛错，用户的浅色/深色主题也能正确生效，避免回退到 :root 深色默认值。
+        if (ns.theme && typeof ns.theme.init === 'function') {
+            ns.theme.init();
+        }
+
         // [v2.0.0] 数据迁移：localStorage → chrome.storage.local
         if (ns.storageV2 && typeof ns.storageV2.migrateFromLegacy === 'function') {
             try {
@@ -126,11 +132,7 @@ window.DevHome = window.DevHome || {};
         ns.openFaviconDB();
         await ns.tileManager.load();
         ns.loadSearchHistory();
-        // 日常模式不再自动加载自定义背景（数字雨改为手动开启）
-        // ns.bgManager.load();  // 已禁用：用户可手动上传/重置背景
         ns.renderTiles();
-
-        // 初始化天气模块（异步获取数据，注入每日问候卡片）
         if (ns.initWeather) ns.initWeather();
         // 左上角每日问候卡片
         if (ns.initDailyGreetingCard) ns.initDailyGreetingCard();
@@ -160,11 +162,6 @@ window.DevHome = window.DevHome || {};
 
         var overlay = document.getElementById('focusOverlay');
         if (overlay && document.body.classList.contains('focus-transition')) overlay.classList.add('ready');
-
-        // 初始化主题管理器（从 localStorage 恢复主题状态）
-        if (ns.theme && typeof ns.theme.init === 'function') {
-            ns.theme.init();
-        }
 
         // 刷新恢复：仅在页面刷新时恢复专注模式，新标签页默认日常模式
         var navEntry = performance.getEntriesByType('navigation')[0];
