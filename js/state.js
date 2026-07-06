@@ -166,7 +166,8 @@ window.DevHome = window.DevHome || {};
         exportFilter: 'all',            // 导出筛选
         _currentNoteType: 'note',        // 当前编辑笔记的类型
         _calendarView: 'month',          // 日历视图：month | week
-        _quadrantCollapsed: false        // 四象限侧边栏折叠状态
+        _quadrantCollapsed: false,       // 四象限侧边栏折叠状态
+        _rightbarCollapsed: false        // 右侧栏折叠状态
     };
 
 })(window.DevHome);

@@ -63,6 +63,14 @@ window.DevHome = window.DevHome || {};
         console.log('[面板] 四象限侧边栏 ' + (isCollapsed ? '折叠' : '展开'));
     };
 
+    /* ===== 右侧栏折叠/展开 ===== */
+    ns.toggleRightSidebar = function () {
+        var panel = document.getElementById('wbSidebarRight');
+        if (!panel) return;
+        var isCollapsed = panel.classList.toggle('collapsed');
+        console.log('[面板] 右侧栏（日历+番茄钟） ' + (isCollapsed ? '折叠' : '展开'));
+    };
+
     /* ===== 日历视图切换 ===== */
     ns.switchCalendarView = function (view) {
         state._calendarView = view;

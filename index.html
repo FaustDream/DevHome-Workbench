@@ -151,7 +151,7 @@
                 </div>
             </aside>
 
-            <!-- ========== 主工作区：笔记 + 番茄钟 (70%) ========== -->
+            <!-- ========== 主工作区：笔记（剩余全部空间） ========== -->
             <main class="wb-main" id="wbMain">
                 <!-- 笔记标题行：含搜索 + 新建按钮 + 过滤胶囊 -->
                 <div class="wb-notes-toolbar">
@@ -209,53 +209,60 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- 番茄钟：整合在主工作区底部 -->
-                <div class="wb-pomodoro-bar" id="wbPomodoroBar">
-                    <h4 class="wb-pomodoro-bar-title">番茄钟</h4>
-                    <div class="wb-pomodoro-bar-ring">
-                        <svg viewBox="0 0 160 160" class="wb-pomodoro-ring-bar">
-                            <circle cx="80" cy="80" r="64" fill="none" stroke="var(--color-border)" stroke-width="4"/>
-                            <circle cx="80" cy="80" r="64" fill="none" stroke="var(--color-accent)" stroke-width="4" stroke-linecap="round" id="wbPomodoroSideProgress" stroke-dasharray="402.12" stroke-dashoffset="0" transform="rotate(-90 80 80)"/>
-                        </svg>
-                        <div class="wb-pomodoro-bar-time" id="wbPomodoroSideTime">25:00</div>
-                    </div>
-                    <div class="wb-pomodoro-bar-controls">
-                        <button class="wb-pomodoro-bar-btn primary" id="wbPomodoroSideStart">开始</button>
-                        <button class="wb-pomodoro-bar-btn" id="wbPomodoroSideReset">重置</button>
-                    </div>
-                    <div class="wb-pomodoro-bar-quick">
-                        <button class="wb-pomodoro-quick-btn active" data-duration="25" title="25分钟专注">25</button>
-                        <button class="wb-pomodoro-quick-btn" data-duration="30" title="30分钟专注">30</button>
-                        <button class="wb-pomodoro-quick-btn" data-duration="45" title="45分钟专注">45</button>
-                        <button class="wb-pomodoro-quick-btn" data-duration="60" title="60分钟专注">60</button>
-                    </div>
-                </div>
             </main>
 
-            <!-- ========== 右侧栏：日历 + 快捷设置 (30%) ========== -->
+            <!-- ========== 右侧栏：日历 + 番茄钟 + 快捷设置 (240px，可折叠) ========== -->
             <aside class="wb-sidebar-right" id="wbSidebarRight">
-                <div class="wb-mini-calendar" id="wbMiniCalendar">
-                    <div class="wb-mini-cal-head">
-                        <button class="wb-mini-cal-nav" id="wbMiniCalPrev">&lt;</button>
-                        <h3 class="wb-mini-cal-title" id="wbCalendarTitle">2026年7月</h3>
-                        <button class="wb-mini-cal-nav" id="wbMiniCalNext">&gt;</button>
-                    </div>
-                    <!-- 视图切换 -->
-                    <div class="wb-cal-view-switch">
-                        <button class="wb-cal-view-btn active" data-view="month" id="wbCalViewMonth">月</button>
-                        <button class="wb-cal-view-btn" data-view="week" id="wbCalViewWeek">周</button>
-                    </div>
-                    <div class="wb-mini-cal-weekdays"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
-                    <div class="wb-mini-cal-days" id="wbCalendarDays"></div>
-                    <div class="wb-calendar-detail" id="wbCalendarDetail">
-                        <p class="wb-calendar-detail-empty">点击日期查看内容</p>
-                    </div>
-                </div>
+                <!-- 折叠/展开按钮 -->
+                <button class="wb-rightbar-toggle" id="wbRightbarToggle" title="折叠/展开右侧栏">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 3h12M2 8h12M2 13h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                </button>
 
-                <!-- 快捷设置面板 -->
-                <div class="wb-quick-settings" id="wbQuickSettings">
-                    <h4 class="wb-quick-settings-title">快捷设置</h4>
+                <div class="wb-rightbar-content" id="wbRightbarContent">
+                    <div class="wb-mini-calendar" id="wbMiniCalendar">
+                        <div class="wb-mini-cal-head">
+                            <button class="wb-mini-cal-nav" id="wbMiniCalPrev">&lt;</button>
+                            <h3 class="wb-mini-cal-title" id="wbCalendarTitle">2026年7月</h3>
+                            <button class="wb-mini-cal-nav" id="wbMiniCalNext">&gt;</button>
+                        </div>
+                        <!-- 视图切换 -->
+                        <div class="wb-cal-view-switch">
+                            <button class="wb-cal-view-btn active" data-view="month" id="wbCalViewMonth">月</button>
+                            <button class="wb-cal-view-btn" data-view="week" id="wbCalViewWeek">周</button>
+                        </div>
+                        <div class="wb-mini-cal-weekdays"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+                        <div class="wb-mini-cal-days" id="wbCalendarDays"></div>
+                        <div class="wb-calendar-detail" id="wbCalendarDetail">
+                            <p class="wb-calendar-detail-empty">点击日期查看内容</p>
+                        </div>
+                    </div>
+
+                    <!-- 番茄钟：在日历下方 -->
+                    <div class="wb-pomodoro-sidebar" id="wbPomodoroSidebar">
+                        <h4 class="wb-pomodoro-sidebar-title">番茄钟</h4>
+                        <div class="wb-pomodoro-sidebar-ring">
+                            <svg viewBox="0 0 160 160" class="wb-pomodoro-ring-bar">
+                                <circle cx="80" cy="80" r="64" fill="none" stroke="var(--color-border)" stroke-width="4"/>
+                                <circle cx="80" cy="80" r="64" fill="none" stroke="var(--color-accent)" stroke-width="4" stroke-linecap="round" id="wbPomodoroSideProgress" stroke-dasharray="402.12" stroke-dashoffset="0" transform="rotate(-90 80 80)"/>
+                            </svg>
+                            <div class="wb-pomodoro-bar-time" id="wbPomodoroSideTime">25:00</div>
+                        </div>
+                        <div class="wb-pomodoro-sidebar-quick">
+                            <button class="wb-pomodoro-quick-btn active" data-duration="25" title="25分钟专注">25</button>
+                            <button class="wb-pomodoro-quick-btn" data-duration="30" title="30分钟专注">30</button>
+                            <button class="wb-pomodoro-quick-btn" data-duration="45" title="45分钟专注">45</button>
+                            <button class="wb-pomodoro-quick-btn" data-duration="60" title="60分钟专注">60</button>
+                        </div>
+                        <div class="wb-pomodoro-sidebar-controls">
+                            <button class="wb-pomodoro-bar-btn primary" id="wbPomodoroSideStart">开始</button>
+                            <button class="wb-pomodoro-bar-btn" id="wbPomodoroSideReset">重置</button>
+                        </div>
+                    </div>
+
+                    <!-- 快捷设置面板 -->
+                    <div class="wb-quick-settings" id="wbQuickSettings">
+                        <h4 class="wb-quick-settings-title">快捷设置</h4>
+                    </div>
                 </div>
             </aside>
         </div>
@@ -584,7 +591,7 @@
 
                         <h3 class="s-section-title">关于</h3>
                         <button type="button" class="s-action-btn" id="changelogBtn">
-                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 2v12M2 4h10l2 2v6.5H2V4z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 8h4M6 11h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>更新说明 v2.13.1</span>
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 2v12M2 4h10l2 2v6.5H2V4z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 8h4M6 11h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>更新说明 v2.13.2</span>
                         </button>
 
                         <div class="s-danger-zone">
@@ -602,6 +609,20 @@
     <!-- 更新说明内容（供 Shadcn Dialog 动态读取渲染） -->
     <div id="changelogBodyTemplate" style="display:none">
         <div class="changelog-body" id="changelogBody">
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.13.2</span>
+                        <span class="changelog-date">2026-07-06</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>调整</strong> 右侧栏宽度从30%改为240px固定宽度，与左侧四象限面板一致</li>
+                        <li><strong>调整</strong> 主工作区笔记区域占据全部剩余空间（flex:1），不再按比例分配</li>
+                        <li><strong>移动</strong> 番茄钟从主工作区底部移至右侧栏日历下方</li>
+                        <li><strong>新增</strong> 右侧栏折叠/展开按钮（与左侧栏同款汉堡图标），折叠后仅48px</li>
+                        <li><strong>优化</strong> 番茄钟在侧边栏采用垂直居中布局，快捷按钮缩小为28px圆形</li>
+                        <li><strong>方案达成</strong> 左右两侧等宽240px + 可独立折叠 → 最大笔记空间</li>
+                    </ul>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">
                         <span class="changelog-version-tag">v2.13.1</span>

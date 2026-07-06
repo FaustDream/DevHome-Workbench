@@ -1,8 +1,8 @@
 /* ============================================
-   DevHome Workbench v4 - 双栏仪表盘布局
-   左侧：可折叠四象限任务面板
-   主工作区(70%)：笔记 + 番茄钟
-   右侧栏(30%)：日历 + 快捷设置
+   DevHome Workbench v5 - 双栏仪表盘布局
+   左侧：可折叠四象限任务面板 (240px)
+   主工作区：笔记（flex:1 填充全部剩余空间）
+   右侧栏：日历 + 番茄钟 + 快捷设置 (240px，可折叠)
    统一卡片 Token：--card-radius / --card-shadow / --card-border
    所有色值引用 Semantic Token 体系
    ============================================ */
@@ -44,10 +44,10 @@
     pointer-events: auto;
 }
 
-/* ===== Shell 容器：两列布局 ===== */
+/* ===== Shell 容器：两列布局，左右两侧等宽240px ===== */
 .wb-shell {
     display: grid;
-    grid-template-columns: auto 1fr 30%;
+    grid-template-columns: auto 1fr auto;
     height: 100%;
     overflow: hidden;
 }
@@ -880,34 +880,46 @@
     margin-top: 8px;
 }
 
-/* ===== 番茄钟栏：整合在主工作区底部 ===== */
-.wb-pomodoro-bar {
+/* ===== 番茄钟栏（侧边栏版，在右侧栏日历下方） ===== */
+.wb-pomodoro-sidebar {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 16px;
-    padding: 10px 16px;
-    border-top: var(--card-border);
-    border-radius: var(--card-radius) var(--card-radius) 0 0;
+    gap: 10px;
+    padding: 14px;
+    border: var(--card-border);
+    border-radius: var(--card-radius);
     background: var(--color-surface-subtle);
     flex-shrink: 0;
-    margin: 0 8px;
 }
-.wb-pomodoro-bar-title {
+.wb-pomodoro-sidebar-title {
     margin: 0;
     font-size: 11px;
     font-weight: 600;
     color: var(--color-text-secondary);
     letter-spacing: 0.04em;
-    flex-shrink: 0;
-    white-space: nowrap;
+    align-self: flex-start;
 }
 
-.wb-pomodoro-bar-ring {
+.wb-pomodoro-sidebar-ring {
     position: relative;
-    width: 56px;
-    height: 56px;
+    width: 64px;
+    height: 64px;
     flex-shrink: 0;
 }
+.wb-pomodoro-sidebar-quick {
+    display: flex;
+    gap: 6px;
+}
+.wb-pomodoro-sidebar-controls {
+    display: flex;
+    gap: 6px;
+    width: 100%;
+}
+.wb-pomodoro-sidebar-controls .wb-pomodoro-bar-btn {
+    flex: 1;
+}
+/* 番茄钟环形进度条（共用） */
 .wb-pomodoro-ring-bar {
     position: absolute;
     inset: 0;
@@ -919,16 +931,12 @@
     align-items: center;
     justify-content: center;
     font-family: var(--font-mono);
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--color-accent);
 }
 
-.wb-pomodoro-bar-controls {
-    display: flex;
-    gap: 6px;
-    flex-shrink: 0;
-}
+/* 开始/暂停/重置按钮 */
 .wb-pomodoro-bar-btn {
     padding: 6px 14px;
     border: var(--card-border);
@@ -957,21 +965,15 @@
 }
 
 /* 番茄钟圆形快捷按钮 */
-.wb-pomodoro-bar-quick {
-    display: flex;
-    gap: 6px;
-    margin-left: auto;
-    flex-shrink: 0;
-}
 .wb-pomodoro-quick-btn {
-    width: 36px;
-    height: 36px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     border: var(--card-border);
     background: var(--color-surface-subtle);
     color: var(--color-text-secondary);
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 9px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.15s ease;
@@ -1003,25 +1005,69 @@
     opacity: 0.6;
 }
 
-/* ===== 右侧栏 (30%) ===== */
+/* ===== 右侧栏 (240px，可折叠) ===== */
 .wb-sidebar-right {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
     background: var(--color-sidebar-bg);
     border-left: var(--card-border);
     overflow-y: auto;
+    overflow-x: hidden;
     scrollbar-width: none;
-    padding: 14px;
+    padding: 0;
+    transition: width 0.3s ease;
+    width: 240px;
+    min-width: 240px;
 }
 .wb-sidebar-right::-webkit-scrollbar { display: none; }
+
+/* 折叠状态 */
+.wb-sidebar-right.collapsed {
+    width: 48px;
+    min-width: 48px;
+}
+.wb-sidebar-right.collapsed .wb-rightbar-content {
+    display: none;
+}
+
+/* 右侧栏折叠/展开按钮 */
+.wb-rightbar-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 36px;
+    border: none;
+    border-bottom: var(--card-border);
+    background: transparent;
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+.wb-rightbar-toggle:hover {
+    color: var(--color-accent);
+    background: var(--color-surface-hover);
+}
+
+/* 右侧栏内容区 */
+.wb-rightbar-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 0 10px 10px;
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+.wb-rightbar-content::-webkit-scrollbar { display: none; }
 
 /* 迷你日历 */
 .wb-mini-calendar {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding: 14px;
+    padding: 12px;
     border: var(--card-border);
     border-radius: var(--card-radius);
     background: var(--color-surface-subtle);
@@ -1236,13 +1282,12 @@
     }
     .wb-quadrant-panel.collapsed { width: 100%; min-width: auto; max-height: 40px; }
     .wb-sidebar-right {
+        width: 100%; min-width: auto; max-height: 55vh;
         border-left: none; border-top: var(--card-border);
-        max-height: 45vh;
     }
+    .wb-sidebar-right.collapsed { width: 100%; min-width: auto; max-height: 40px; }
     .wb-notes-sidebar { width: 180px; min-width: 180px; }
-    .wb-pomodoro-bar { margin: 0 4px; padding: 8px 10px; gap: 8px; }
-    .wb-pomodoro-bar-quick { gap: 4px; }
-    .wb-pomodoro-quick-btn { width: 32px; height: 32px; font-size: 10px; }
+    .wb-pomodoro-sidebar { padding: 10px; gap: 8px; }
     .wb-mini-calendar { min-width: 240px; }
 }
 

@@ -54,6 +54,13 @@ window.DevHome = window.DevHome || {};
                 ns.toggleQuadrantSidebar();
             });
         }
+        // 右侧栏折叠/展开按钮
+        var rightbarToggleBtn = document.getElementById('wbRightbarToggle');
+        if (rightbarToggleBtn) {
+            rightbarToggleBtn.addEventListener('click', function () {
+                ns.toggleRightSidebar();
+            });
+        }
 
         // ===== 象限分组导航事件 =====
         var quadrantNav = document.getElementById('wbQuadrantNav');
