@@ -817,7 +817,7 @@ window.DevHome = window.DevHome || {};
                 console.log('[交互] 笔记转任务 ' + state.currentNote.id);
             });
         }
-        }
+
         // 编辑器类型徽章点击（支持多选）
         if (dom.wbNoteTypeBadge) {
             dom.wbNoteTypeBadge.addEventListener('click', function (e) {
