@@ -176,7 +176,7 @@ window.DevHome = window.DevHome || {};
         console.log('[编辑] 笔记转任务: ' + noteId + ' → ' + quadrant + (plannedAt ? ' 截止' + new Date(plannedAt).toISOString().slice(0, 16) : '') + ' 含' + plainContent.length + '字描述');
     };
 
-    /** 获取任务的关联笔记列表 */
+    /** 获取任务的关联笔记列表（去重） */
     ns.getTaskLinkedNotes = function (taskId) {
         var config = ns.getWorkbenchState();
         var noteIds = [];
@@ -185,7 +185,13 @@ window.DevHome = window.DevHome || {};
             var task = tasks.find(function (t) { return t.id === taskId; });
             if (task && task.noteIds) noteIds = task.noteIds;
         });
-        return (state.notes || []).filter(function (n) { return noteIds.indexOf(n.id) !== -1; });
+        // 去重
+        var uniqueIds = [];
+        var seen = {};
+        noteIds.forEach(function (id) {
+            if (!seen[id]) { seen[id] = true; uniqueIds.push(id); }
+        });
+        return (state.notes || []).filter(function (n) { return uniqueIds.indexOf(n.id) !== -1; });
     };
 
     /** 显示"关联笔记"选择弹窗 */
@@ -624,6 +630,15 @@ window.DevHome = window.DevHome || {};
         if (!task.plannedAt && task.deadline) task.plannedAt = task.deadline;
         delete task.completed;
         delete task.deadline;
+        // 去重 noteIds
+        if (Array.isArray(task.noteIds) && task.noteIds.length > 1) {
+            var seen = {};
+            task.noteIds = task.noteIds.filter(function (id) {
+                if (seen[id]) return false;
+                seen[id] = true;
+                return true;
+            });
+        }
         return task;
     }
 
