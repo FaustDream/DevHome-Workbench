@@ -179,14 +179,16 @@ window.DevHome = window.DevHome || {};
 
     /* ===== 笔记独立文件读写 ===== */
 
-    /** 读取笔记目录下所有独立 JSON 文件 */
+    /** 读取笔记目录下所有独立 JSON 文件（兼容旧 data.json 格式） */
     async function readIndividualNotes() {
         if (!dirHandle) return null;
         try {
             var notesDir = await dirHandle.getDirectoryHandle('notes', { create: false });
             var notes = [];
+
+            // 先尝试读取独立笔记文件（新格式）
             for await (var entry of notesDir.values()) {
-                if (entry.kind === 'file' && entry.name.endsWith('.json')) {
+                if (entry.kind === 'file' && entry.name.endsWith('.json') && entry.name !== 'data.json') {
                     try {
                         var file = await entry.getFile();
                         var note = JSON.parse(await file.text());
@@ -194,6 +196,28 @@ window.DevHome = window.DevHome || {};
                     } catch (_) { /* 跳过损坏文件 */ }
                 }
             }
+
+            // 如果独立文件为空，尝试读取旧 data.json 并自动迁移
+            if (notes.length === 0) {
+                try {
+                    var dataFileHandle = await notesDir.getFileHandle('data.json', { create: false });
+                    var dataFile = await dataFileHandle.getFile();
+                    var oldData = JSON.parse(await dataFile.text());
+                    if (Array.isArray(oldData)) {
+                        notes = oldData.filter(function (n) { return n && n.id; });
+                        console.log('[FileConfig] 从旧 data.json 恢复了 ' + notes.length + ' 条笔记');
+                        // 后台迁移：写入独立文件后删掉旧 data.json
+                        var self = this;
+                        writeIndividualNotes(notes).then(function () {
+                            notesDir.removeEntry('data.json').catch(function () {});
+                            console.log('[FileConfig] 笔记已迁移到独立文件格式');
+                        });
+                    }
+                } catch (e2) {
+                    if (e2.name !== 'NotFoundError') console.warn('[FileConfig] 读取旧 data.json 失败:', e2);
+                }
+            }
+
             return notes.length > 0 ? notes : null;
         } catch (e) {
             if (e.name === 'NotFoundError') return null;
@@ -202,7 +226,7 @@ window.DevHome = window.DevHome || {};
         }
     }
 
-    /** 将笔记数组写入独立 JSON 文件 */
+    /** 将笔记数组写入独立 JSON 文件（并清理旧 data.json） */
     async function writeIndividualNotes(notes) {
         if (!dirHandle || !Array.isArray(notes)) return;
         var notesDir = await dirHandle.getDirectoryHandle('notes', { create: true });
@@ -224,7 +248,7 @@ window.DevHome = window.DevHome || {};
             await writable.write(JSON.stringify(note, null, 2));
             await writable.close();
         }
-        // 删除不再需要的文件
+        // 删除不再需要的文件（包括旧 data.json）
         existingNames.forEach(function (name) {
             if (!writtenNames.has(name)) {
                 try { notesDir.removeEntry(name); } catch (_) {}
