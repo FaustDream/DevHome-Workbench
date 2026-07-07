@@ -49,12 +49,21 @@ window.DevHome = window.DevHome || {};
 
     /* ===== 笔记数据读写 ===== */
 
-    /** 加载笔记列表 */
+    /** 加载笔记列表（含数据迁移：补全缺失 id、wordCount，清理废弃字段） */
     ns.loadNotes = async function () {
         state.notes = await storageV2.get(storageV2.KEYS.NOTES, []);
-        // 为旧笔记补充 wordCount 字段（doc 字段已废弃）
         var migrated = false;
+        var idMigrations = [];  // 记录 ID 补全日志
+
         (state.notes || []).forEach(function (note) {
+            // 补全缺失的唯一 ID（旧版笔记可能无 id 字段，影响查找/删除/关联功能）
+            if (!note.id) {
+                var newId = noteId();
+                idMigrations.push({ oldTitle: (note.title || '').slice(0, 30), newId: newId });
+                note.id = newId;
+                migrated = true;
+            }
+            // 为旧笔记补充 wordCount 字段（doc 字段已废弃）
             if (note.wordCount === undefined) {
                 note.wordCount = ns.countWords(note.content || '');
                 migrated = true;
@@ -62,7 +71,16 @@ window.DevHome = window.DevHome || {};
             // 清理废弃的 doc 字段
             if (note.doc !== undefined) { delete note.doc; migrated = true; }
         });
-        if (migrated) await ns.saveNotes();
+
+        if (idMigrations.length > 0) {
+            console.log('[迁移] 为 ' + idMigrations.length + ' 条笔记补全 ID:', idMigrations);
+        }
+        if (migrated) {
+            console.log('[迁移] 笔记数据已迁移，共修改 ' +
+                (idMigrations.length > 0 ? idMigrations.length + ' 条ID补全, ' : '') +
+                '若干字段。');
+            await ns.saveNotes();
+        }
     };
 
     /** 保存笔记列表 */
@@ -317,8 +335,10 @@ window.DevHome = window.DevHome || {};
                 var primaryType = itemTypes[0] || 'note';
                 var icon = item._kind === 'capture' ? '⚡' : (NOTE_TYPES[primaryType] ? NOTE_TYPES[primaryType].icon : '📝');
                 var timeStr = formatRelativeTime(item.updatedAt || item.createdAt);
-                // 渲染所有类型徽章
-                var typeLabels = { note: '未分类', idea: '想法', bug: 'Bug', meeting: '会议', webclip: '剪藏', capture: '捕获' };
+                // 渲染所有类型徽章（合并自定义类型标签，避免 custom_xxxx 原始 key 暴露）
+                var typeLabels = Object.assign({
+                    note: '未分类', idea: '想法', bug: 'Bug', meeting: '会议', webclip: '剪藏', capture: '捕获'
+                }, state._customTypeLabels || {});
                 var typeBadgesHtml = item._kind === 'capture'
                     ? '<span class="wb-note-type-badge badge-capture">捕获</span>'
                     : itemTypes.map(function (t) {
@@ -511,12 +531,22 @@ window.DevHome = window.DevHome || {};
 
     /* ===== 自定义标签分类管理 ===== */
 
-    /** 加载并渲染自定义筛选标签 */
+    /** 加载并渲染自定义筛选标签（同时缓存自定义类型图标/标签映射表） */
     ns.renderCustomFilters = async function () {
         var container = dom.wbCustomFilters;
         if (!container) return;
         var config = await ns.storageV2.get(ns.storageV2.KEYS.CONFIG, ns.DEFAULT_V2_CONFIG);
         var customTypes = config.customNoteTypes || [];
+
+        // 缓存自定义类型映射表：供 renderNotesList / renderNoteTypeBadge 使用，
+        // 避免列表渲染时因 typeLabels 硬编码导致 custom_xxxx 原始 key 暴露给用户。
+        state._customTypeLabels = {};
+        state._customTypeIcons = {};
+        customTypes.forEach(function (ct) {
+            state._customTypeLabels[ct.key] = ct.label;
+            state._customTypeIcons[ct.key] = ct.icon || '🏷️';
+        });
+
         if (customTypes.length === 0) {
             container.innerHTML = '';
             return;
@@ -671,16 +701,16 @@ window.DevHome = window.DevHome || {};
 
     ns.removeCustomFilter = ns.removeFilter;
 
-    /** 渲染编辑器类型徽章（支持多标签） */
+    /** 渲染编辑器类型徽章（支持多标签，优先使用缓存映射表） */
     ns.renderNoteTypeBadge = function () {
         var badge = dom.wbNoteTypeBadge;
         if (!badge) return;
         var typeStr = state._currentNoteType || 'note';
         var types = typeStr.split(',').filter(Boolean);
         if (types.length === 0) types = ['note'];
-        var icons = { note: '📝', idea: '💡', bug: '🐛', meeting: '📋', webclip: '🔗', capture: '⚡' };
-        var labels = { note: '未分类', idea: '想法', bug: 'Bug', meeting: '会议', webclip: '剪藏', capture: '捕获' };
-        // 加载自定义类型的 icon/label
+        var icons = Object.assign({ note: '📝', idea: '💡', bug: '🐛', meeting: '📋', webclip: '🔗', capture: '⚡' }, state._customTypeIcons || {});
+        var labels = Object.assign({ note: '未分类', idea: '想法', bug: 'Bug', meeting: '会议', webclip: '剪藏', capture: '捕获' }, state._customTypeLabels || {});
+        // 如果缓存已覆盖所有类型则直接渲染，否则异步加载（兼容首次加载缓存未就绪）
         var needCustom = types.filter(function (t) { return !labels[t]; });
         if (needCustom.length > 0) {
             ns.storageV2.get(ns.storageV2.KEYS.CONFIG, ns.DEFAULT_V2_CONFIG).then(function (config) {

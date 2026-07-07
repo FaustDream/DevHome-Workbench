@@ -172,7 +172,9 @@ window.DevHome = window.DevHome || {};
         _currentNoteType: 'note',        // 当前编辑笔记的类型
         _calendarView: 'month',          // 日历视图：month | week
         _quadrantCollapsed: false,       // 四象限侧边栏折叠状态
-        _rightbarCollapsed: false        // 右侧栏折叠状态
+        _rightbarCollapsed: false,       // 右侧栏折叠状态
+        _customTypeLabels: {},           // 自定义类型标签映射表（key→label）
+        _customTypeIcons: {}             // 自定义类型图标映射表（key→icon）
     };
 
 })(window.DevHome);
