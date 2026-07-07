@@ -526,7 +526,7 @@ window.DevHome = window.DevHome || {};
             if (v2Tasks && v2Tasks.length > 0) {
                 var quadrants = { q1: { tasks: [] }, q2: { tasks: [] }, q3: { tasks: [] }, q4: { tasks: [] } };
                 v2Tasks.forEach(function (t) {
-                    if (quadrants[t.quadrant]) quadrants[t.quadrant].tasks.push(t);
+                    if (quadrants[t.quadrant]) quadrants[t.quadrant].tasks.push(normalizeTask(t));
                 });
                 state.workbench = { quadrants: quadrants };
                 ns.renderQuadrantBoard();
@@ -683,7 +683,8 @@ window.DevHome = window.DevHome || {};
     }
 
     ns.renderQuadrantBoard = function () {
-        var config = state.workbench || ns.getWorkbenchState();
+        var config = ns.getWorkbenchState();
+        state.workbench = config; // 同步清理后的数据回 state
         var filter = state._quadrantFilter || 'active';
         var totalCount = 0;
         QUADRANTS.forEach(function (q) {
