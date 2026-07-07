@@ -16,3 +16,6 @@ desktop.ini
 
 # 本地密钥配置（含敏感 API Key，禁止提交）
 js/secrets.js
+
+# Node.js 依赖（仅构建时使用，npm install 恢复）
+node_modules/

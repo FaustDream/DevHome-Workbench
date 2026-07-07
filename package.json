@@ -7,6 +7,7 @@
     "build:components": "node build.mjs",
     "build:prod": "node build.mjs --prod",
     "install:react": "node scripts/install-react.mjs",
+    "convert:notes": "node scripts/convert-notes.mjs",
     "test": "node tests/run-and-save.mjs",
     "test:run": "node tests/run-tests.mjs",
     "build": "npm run build:components && npm test",
