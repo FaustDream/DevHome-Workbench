@@ -622,11 +622,10 @@ window.DevHome = window.DevHome || {};
 
     async function init() {
         if (!isFileSystemAPISupported()) {
-            console.warn('[FileConfig] 当前浏览器不支持 File System Access API，回退到 localStorage 模式');
+            console.warn('[FileConfig] 浏览器不支持 File System Access API');
             isReady = true;
             hideWarningBar();
-            updateBadge('', '#e74c3c');
-            return { ready: true, needsMigration: false, existingData: hasLocalData(), dirName: '', unsupported: true };
+            return { ready: true, dirName: '', unsupported: true };
         }
 
         try {
@@ -636,115 +635,56 @@ window.DevHome = window.DevHome || {};
                 if (!readPermitted) {
                     dirHandle = null;
                     await clearHandleFromDB();
-                    if (hasLocalData()) {
-                        isReady = true;
-                        hideWarningBar();
-                        updateBadge('', '#e74c3c');
-                        console.log('[FileConfig] handle 权限失效，降级使用 localStorage');
-                        return { ready: true, needsMigration: false, existingData: true, dirName: '', localStorageOnly: true };
-                    }
-                    showWarningBar('请选择一个文件夹存放配置和磁贴数据', true);
+                    isReady = true;
+                    showWarningBar('目录权限已过期，请重新选择配置文件夹', true);
                     updateBadge('!', '#e74c3c');
-                    return { ready: false, needsMigration: false, existingData: false, dirName: '' };
+                    return { ready: true, dirName: '' };
                 }
 
                 dirHandle = handle;
                 var writePermitted = await verifyPermission(handle, true);
                 writePermissionPending = !writePermitted;
 
-                // 检查 manifest.json 判断是否为新格式
-                var manifest = await readManifest();
-
-                if (manifest && manifest.version >= 2) {
-                    // 新格式：从各子目录读取
-                    var categoryData = await readAllCategoryFiles();
-                    if (categoryData) {
-                        await restoreAllData(categoryData);
-                        isReady = true;
-                        updateBadge('', writePermitted ? '#e74c3c' : '#ffcc66');
-                        hideWarningBar();
-                        if (!writePermitted) {
-                            showWarningBar(
-                                '配置已从 "' + dirHandle.name + '" 读取，点击授权写入权限以启用自动同步',
-                                false
-                            );
-                        }
-                        return { ready: true, needsMigration: false, existingData: true, dirName: dirHandle.name };
-                    } else {
-                        // 有 manifest 但无可读数据文件
-                        var hasLocal = hasLocalData();
-                        if (writePermitted && hasLocal) {
-                            await writeAllCategoryFiles();
-                            showToast('已将本地数据同步到配置目录', 'success');
-                        }
-                        isReady = true;
-                        updateBadge('', writePermitted ? '#e74c3c' : '#ffcc66');
-                        hideWarningBar();
-                        return { ready: true, needsMigration: hasLocal, existingData: hasLocal, dirName: dirHandle.name };
+                // 直接按分类目录读取数据，不再依赖 manifest
+                var categoryData = await readAllCategoryFiles();
+                if (categoryData) {
+                    await restoreAllData(categoryData);
+                    isReady = true;
+                    updateBadge('', writePermitted ? '#e74c3c' : '#ffcc66');
+                    hideWarningBar();
+                    if (!writePermitted) {
+                        showWarningBar('配置已从 "' + dirHandle.name + '" 读取，点击授权写入权限', false);
                     }
-                } else {
-                    // 无 manifest → 可能为旧格式
-                    var oldData = await readOldConfigFile();
-                    if (oldData) {
-                        // 旧格式 → 迁移
-                        await migrateFromOldFormat(oldData);
-                        isReady = true;
-                        updateBadge('', writePermitted ? '#e74c3c' : '#ffcc66');
-                        hideWarningBar();
-                        return { ready: true, needsMigration: false, existingData: true, dirName: dirHandle.name };
-                    } else {
-                        // 目录为空 → 检查是否有新格式数据
-                        var catData = await readAllCategoryFiles();
-                        if (catData) {
-                            await restoreAllData(catData);
-                            isReady = true;
-                            updateBadge('', writePermitted ? '#e74c3c' : '#ffcc66');
-                            hideWarningBar();
-                            return { ready: true, needsMigration: false, existingData: true, dirName: dirHandle.name };
-                        }
-
-                        // 完全空目录
-                        var hasLocalNow = hasLocalData();
-                        if (writePermitted && hasLocalNow) {
-                            await writeAllCategoryFiles();
-                            showToast('已将 ' + getCategorySummary() + ' 同步到配置目录', 'success');
-                        }
-                        isReady = true;
-                        updateBadge('', writePermitted ? '#e74c3c' : '#ffcc66');
-                        hideWarningBar();
-                        if (!writePermitted && hasLocalNow) {
-                            showWarningBar(
-                                '配置目录 "' + dirHandle.name + '" 需要写入权限才能自动同步，请点击重新授权',
-                                false
-                            );
-                        }
-                        return { ready: true, needsMigration: hasLocalNow, existingData: hasLocalNow, dirName: dirHandle.name };
-                    }
+                    return { ready: true, dirName: dirHandle.name };
                 }
+
+                // 空目录/无数据 → 从 localStorage 同步写入
+                if (writePermitted && hasLocalData()) {
+                    await writeAllCategoryFiles();
+                    showToast('已将本地数据同步到配置目录', 'success');
+                }
+                isReady = true;
+                updateBadge('', writePermitted ? '#e74c3c' : '#ffcc66');
+                hideWarningBar();
+                return { ready: true, dirName: dirHandle.name };
+
             }
 
             // IndexedDB 无 handle
-            var hasLocalDataFlag = hasLocalData();
-            isReady = true; // 始终就绪，允许追踪脏数据和应用正常加载
-            if (hasLocalDataFlag) {
-                // 有本地数据但未选目录 → 显示提示
+            isReady = true;
+            if (hasLocalData()) {
                 showWarningBar('数据暂存浏览器中，选择一个文件夹即可永久保存', false);
                 updateBadge('!', '#ffcc66');
-                console.log('[FileConfig] 无持久化 handle，使用 localStorage 模式（数据已存在）');
-                return { ready: true, needsMigration: false, existingData: true, dirName: '', localStorageOnly: true };
+                return { ready: true, dirName: '', localStorageOnly: true };
             }
-            // 首次使用 → 显示提示引导选目录，但不阻止应用加载
             showWarningBar('请选择一个文件夹存放配置、磁贴和所有数据', false);
             updateBadge('!', '#e74c3c');
-            console.log('[FileConfig] 首次使用，等待用户选择配置目录');
-            return { ready: true, needsMigration: false, existingData: false, dirName: '', firstRun: true };
+            return { ready: true, dirName: '', firstRun: true };
 
         } catch (e) {
             console.error('[FileConfig] 初始化失败:', e);
             isReady = true;
-            hideWarningBar();
-            updateBadge('', '#e74c3c');
-            return { ready: true, needsMigration: false, existingData: hasLocalData(), dirName: '', error: e.message };
+            return { ready: true, dirName: '', error: e.message };
         }
     }
 
@@ -758,34 +698,15 @@ window.DevHome = window.DevHome || {};
             var handle = await window.showDirectoryPicker({ mode: 'readwrite' });
             dirHandle = handle;
 
-            // 检查 manifest.json 判断格式
-            var manifest = await readManifest();
-
-            if (manifest && manifest.version >= 2) {
-                // 新格式目录 → 恢复所有数据
-                var categoryData = await readAllCategoryFiles();
-                if (categoryData) {
-                    await restoreAllData(categoryData);
-                    showToast('数据已从 ' + handle.name + ' 完整恢复', 'success');
-                } else if (hasLocalData()) {
-                    await writeAllCategoryFiles();
-                    showToast('已将本地数据同步到配置目录', 'success');
-                }
+            // 直接读取分类目录数据，不再依赖 manifest
+            var categoryData = await readAllCategoryFiles();
+            if (categoryData) {
+                await restoreAllData(categoryData);
+                showToast('数据已从 ' + handle.name + ' 完整恢复', 'success');
             } else {
-                // 检查旧格式
-                var oldData = await readOldConfigFile();
-                if (oldData) {
-                    await migrateFromOldFormat(oldData);
-                    showToast('旧版配置已迁移，数据已从 ' + handle.name + ' 恢复', 'success');
-                } else if (hasLocalData()) {
-                    // 全新目录 → 写入所有数据
-                    await writeAllCategoryFiles();
-                    showToast('数据已同步到 ' + handle.name, 'success');
-                } else {
-                    // 完全空：写入初始化文件
-                    await writeAllCategoryFiles();
-                    showToast('配置目录已就绪：' + handle.name, 'success');
-                }
+                // 空目录/无数据 → 从 localStorage 同步写入
+                await writeAllCategoryFiles();
+                showToast(hasLocalData() ? '数据已同步到 ' + handle.name : '配置目录已就绪：' + handle.name, 'success');
             }
 
             await saveHandleToDB(handle);
