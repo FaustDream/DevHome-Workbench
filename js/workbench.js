@@ -96,7 +96,10 @@ window.DevHome = window.DevHome || {};
     };
 
     ns.hideTaskContextMenu = function () {
-        if (_taskMenuEl) { _taskMenuEl.remove(); _taskMenuEl = null; }
+        if (_taskMenuEl) {
+            if (_taskMenuEl.isConnected) _taskMenuEl.remove();
+            _taskMenuEl = null;
+        }
     };
 
     /* ===== 任务-笔记关联 ===== */
@@ -723,7 +726,7 @@ window.DevHome = window.DevHome || {};
         var dateInput = null;
 
         function showDetail() {
-            if (detailPanel) { detailPanel.remove(); detailPanel = null; return; }
+            if (detailPanel) { if (detailPanel.isConnected) detailPanel.remove(); detailPanel = null; return; }
             detailPanel = document.createElement('div');
             detailPanel.className = 'wb-task-input-detail';
             detailPanel.innerHTML = '<textarea placeholder="任务描述（可选）" rows="3"></textarea>' +
@@ -740,11 +743,14 @@ window.DevHome = window.DevHome || {};
             if (!title) return;
             var desc = descInput ? descInput.value.trim() : '';
             var plannedAt = dateInput && dateInput.value ? new Date(dateInput.value + 'T00:00:00').getTime() : null;
-            if (detailPanel) detailPanel.remove();
-            row.remove();
+            if (detailPanel && detailPanel.isConnected) detailPanel.remove();
+            if (row.isConnected) row.remove();
             ns.addQuadrantTask(quadrant, title, { content: desc, plannedAt: plannedAt });
         };
-        var cancelFn = function () { if (detailPanel) detailPanel.remove(); row.remove(); };
+        var cancelFn = function () {
+            if (detailPanel && detailPanel.isConnected) detailPanel.remove();
+            if (row.isConnected) row.remove();
+        };
 
         expandBtn.addEventListener('click', function (e) { e.stopPropagation(); showDetail(); });
         confirmBtn.addEventListener('click', submitFn);
@@ -813,7 +819,7 @@ window.DevHome = window.DevHome || {};
         var cancelBtn = editRow.querySelector('.wb-task-inline-cancel');
 
         var cleanup = function () {
-            editRow.remove();
+            if (editRow.isConnected) editRow.remove();
             titleEl.style.display = '';
         };
 
@@ -881,7 +887,7 @@ window.DevHome = window.DevHome || {};
         var cancelBtn = row.querySelector('.wb-task-input-cancel');
         var removeBtn = row.querySelector('.wb-task-input-expand');
 
-        var cleanup = function () { row.remove(); };
+        var cleanup = function () { if (row.isConnected) row.remove(); };
 
         var saveTime = function (plannedAt) {
             config.quadrants[quadrant].tasks = config.quadrants[quadrant].tasks.map(function (t) {
