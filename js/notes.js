@@ -388,9 +388,9 @@ window.DevHome = window.DevHome || {};
 
         if (dom.wbNotesEditorEmpty) dom.wbNotesEditorEmpty.style.display = 'none';
         if (dom.wbNotesEditorActive) dom.wbNotesEditorActive.style.display = 'flex';
-        // 显示"转为任务"按钮
-        var toTaskBtn = document.getElementById('wbNoteToTaskBtn');
-        if (toTaskBtn) toTaskBtn.style.display = isCapture ? 'none' : '';
+        // 显示"转为任务"按钮（容器级别控制显隐）
+        var toTaskWrap = document.getElementById('wbNoteToTaskWrap');
+        if (toTaskWrap) toTaskWrap.style.display = isCapture ? 'none' : '';
 
         // 捕获模式：隐藏工具栏，标题只读
         var toolbar = document.getElementById('wbNotesToolbar');
@@ -440,9 +440,11 @@ window.DevHome = window.DevHome || {};
         state.currentNote = null;
         if (dom.wbNotesEditorEmpty) dom.wbNotesEditorEmpty.style.display = 'flex';
         if (dom.wbNotesEditorActive) dom.wbNotesEditorActive.style.display = 'none';
-        // 隐藏"转为任务"按钮
-        var toTaskBtn = document.getElementById('wbNoteToTaskBtn');
-        if (toTaskBtn) toTaskBtn.style.display = 'none';
+        // 隐藏"转为任务"按钮（关闭象限选择器）
+        var toTaskWrap = document.getElementById('wbNoteToTaskWrap');
+        if (toTaskWrap) toTaskWrap.style.display = 'none';
+        var picker = document.getElementById('wbQuadrantPicker');
+        if (picker) picker.style.display = 'none';
         ns.renderNotesList(state._notesFilter, state._notesSearch);
     };
 

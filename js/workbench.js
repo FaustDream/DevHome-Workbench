@@ -69,6 +69,7 @@ window.DevHome = window.DevHome || {};
             return '<button data-action="move" data-to="' + q + '" data-task-id="' + escapeHtml(taskId) + '" data-from="' + quadrant + '">移至' + qLabels[q] + '</button>';
         }).join('') +
             '<div class="wb-task-menu-sep"></div>' +
+            '<button data-action="edit" data-task-id="' + escapeHtml(taskId) + '" data-quadrant="' + quadrant + '">编辑任务</button>' +
             '<button data-action="link-notes" data-task-id="' + escapeHtml(taskId) + '" data-quadrant="' + quadrant + '">关联笔记</button>' +
             '<button data-action="delete" data-task-id="' + escapeHtml(taskId) + '" data-quadrant="' + quadrant + '">删除任务</button>';
 
@@ -140,12 +141,14 @@ window.DevHome = window.DevHome || {};
         console.log('[编辑] 笔记 ' + noteId + ' 取消关联任务 ' + taskId);
     };
 
-    /** 将笔记直接转为四象限任务（默认放入q2:重要不紧急） */
+    /** 将笔记直接转为四象限任务（支持指定象限） */
     ns.convertNoteToTask = function (noteId, quadrant) {
         quadrant = quadrant || 'q2';
         var note = (state.notes || []).find(function (n) { return n.id === noteId; });
         if (!note) return;
         var title = note.title || '未命名笔记';
+        // 提取笔记纯文本内容作为任务描述（前500字）
+        var plainContent = (note.content || '').replace(/<[^>]*>/g, '').trim().slice(0, 500);
         var config = ns.getWorkbenchState();
         if (!config.quadrants[quadrant]) config.quadrants[quadrant] = { tasks: [] };
         config.quadrants[quadrant].tasks.push({
@@ -153,12 +156,14 @@ window.DevHome = window.DevHome || {};
             title: title,
             status: 'active',
             noteIds: [noteId],
+            content: plainContent,
+            plannedAt: null,
             createdAt: Date.now()
         });
         ns.saveWorkbenchState({ quadrants: config.quadrants });
         state.workbench = ns.getWorkbenchState();
         ns.renderQuadrantBoard();
-        console.log('[编辑] 笔记转任务: ' + noteId + ' → ' + quadrant);
+        console.log('[编辑] 笔记转任务: ' + noteId + ' → ' + quadrant + ' 含' + plainContent.length + '字描述');
     };
 
     /** 获取任务的关联笔记列表 */
@@ -274,6 +279,44 @@ window.DevHome = window.DevHome || {};
     };
 
     /* ===== 专注模式切换 ===== */
+
+    /**
+     * 【专注模式数据存储架构审计】
+     *
+     * 专注模式涉及的数据按持久化方式分为三层：
+     *
+     * 1. localStorage（同步、单页、持久化）：
+     *    - `devhome_workbench` → 四象限任务完整状态（通过 devhomeStorage.set('workbench',...) 写入）
+     *    - ns.getWorkbenchState() 读取合并默认值，退出/进入专注模式均从此恢复
+     *
+     * 2. chrome.storage.local（异步、跨页、持久化）：
+     *    - `v2/tasks` → 四象限任务的 v2 格式拷贝（含 quadrant 字段），由 saveWorkbenchState 同步写入
+     *    - `v2/config` → 专注模式快捷键配置（focusShortcut）
+     *    - `v2/behavior` → 行为仪表盘数据（streakDays, dailyStats 等）
+     *    - `v2/pomodoro_sessions` → 番茄钟历史记录
+     *    - `v2/notes` / `v2/captures` → 笔记和捕获（专注模式下笔记面板可读写）
+     *
+     * 3. 内存（state 对象，页面刷新即丢失）：
+     *    - state.currentDevhomeMode → 'daily' | 'workbench'，当前模式标志
+     *    - state.workbenchVisible → 工作台 DOM 是否可见
+     *    - state._savedPageIndex → 退出专注模式后恢复的磁贴分类页索引
+     *    - state._focusShortcut → 当前激活的快捷键配置（从 v2/config 异步加载缓存）
+     *    - state._quadrantFilter → 'active' | 'all'，当前任务列表过滤器
+     *    - state._pomodoroIsResting / _pomodoroSessionCount → 番茄钟内存状态
+     *    - state._pomodoroLastState / _pomodoroDisplayTimer → 倒计时本地推算
+     *
+     * 持久化调用链：
+     *   ns.addQuadrantTask / ns.completeQuadrantTask / ns.cancelQuadrantTask
+     *     → ns.saveWorkbenchState() → devhomeStorage.set('workbench', ...) + storageV2.set('tasks', ...)
+     *
+     * 恢复调用链：
+     *   ns.enterFocusMode() → ns.getWorkbenchState() → devhomeStorage.get('workbench')
+     *     → 再用 storageV2.get('tasks') 异步覆盖（如有更新）
+     *
+     * 命名空间隔离：
+     *   - devhomeStorage 前缀: devhome_ → 所有工作台相关数据（localStorage 级别）
+     *   - storageV2 前缀: v2/ → chrome.storage.local 统一 key 空间
+     */
 
     /** 一键切换专注模式/日常模式 */
     ns.toggleFocusMode = function () {
@@ -425,7 +468,10 @@ window.DevHome = window.DevHome || {};
     function normalizeTask(task) {
         if (!task.status) { task.status = task.completed ? 'completed' : 'active'; }
         if (!task.createdAt) task.createdAt = Date.now();
+        // 补齐时效性字段
+        if (!task.plannedAt && task.deadline) task.plannedAt = task.deadline;
         delete task.completed;
+        delete task.deadline;
         return task;
     }
 
@@ -522,13 +568,33 @@ window.DevHome = window.DevHome || {};
                     noteBadge = '<span class="wb-task-note-badge" title="已关联 ' + noteIds.length + ' 篇笔记">📎' + noteIds.length + '</span>';
                 }
 
+                // 计划时间 / 超期标记
+                var timeBadge = '';
+                if (task.plannedAt && isActive) {
+                    var plannedDate = new Date(task.plannedAt);
+                    var now = Date.now();
+                    var overdue = plannedDate.getTime() < now;
+                    var timeLabel = formatTaskTime(task.plannedAt);
+                    var timeTitle = overdue ? '已超期: ' + timeLabel : '计划: ' + timeLabel;
+                    timeBadge = '<span class="wb-task-item-time' + (overdue ? ' overdue' : '') + '" title="' + timeTitle + '">' +
+                        (overdue ? '⚠ ' : '⏰ ') + timeLabel + '</span>';
+                }
+
+                // 任务描述指示器
+                var contentBadge = '';
+                if (task.content && task.content.trim()) {
+                    contentBadge = '<span class="wb-task-note-badge" title="' + escapeHtml(task.content.trim().slice(0, 80)) + '" style="opacity:0.4;">📝</span>';
+                }
+
                 return '<div class="wb-task-item' + rowClass + '" ' +
                     'data-task-id="' + escapeHtml(task.id) + '" ' +
                     'data-quadrant="' + activeQ + '">' +
                     (isActive
                         ? '<button class="wb-task-check' + checkClass + '" data-task-id="' + escapeHtml(task.id) + '" data-quadrant="' + activeQ + '" title="标记完成"></button>'
                         : '<span class="wb-task-check checked" style="pointer-events:none;"></span>') +
-                    '<span class="wb-task-item-title">' + escapeHtml(task.title) + '</span>' +
+                    '<span class="wb-task-item-title" title="' + escapeHtml(task.title) + '">' + escapeHtml(task.title) + '</span>' +
+                    timeBadge +
+                    contentBadge +
                     noteBadge +
                     (isActive
                         ? '<button class="wb-task-more-btn" data-task-id="' + escapeHtml(task.id) + '" data-quadrant="' + activeQ + '" title="更多操作">⋮</button>'
@@ -569,12 +635,19 @@ window.DevHome = window.DevHome || {};
 
     function taskId() { return 'task_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7); }
 
-    ns.addQuadrantTask = function (quadrant, title) {
+    ns.addQuadrantTask = function (quadrant, title, opts) {
         if (!title || !title.trim()) return;
         var config = ns.getWorkbenchState();
         if (!config.quadrants[quadrant]) config.quadrants[quadrant] = { tasks: [] };
+        opts = opts || {};
         config.quadrants[quadrant].tasks.push({
-            id: taskId(), title: title.trim(), status: 'active', createdAt: Date.now()
+            id: taskId(),
+            title: title.trim(),
+            status: 'active',
+            noteIds: opts.noteIds || [],
+            content: opts.content || '',
+            plannedAt: opts.plannedAt || null,
+            createdAt: Date.now()
         });
         ns.saveWorkbenchState({ quadrants: config.quadrants });
         state.workbench = ns.getWorkbenchState();
@@ -619,7 +692,7 @@ window.DevHome = window.DevHome || {};
         ns.renderQuadrantBoard();
     };
 
-    /** 显示任务添加内联输入框（在指定象限分组内） */
+    /** 显示任务添加内联输入框（支持快速输入标题 + 展开详细模式设置描述和计划时间） */
     ns.showQuadrantInput = function (quadrant, addBtn) {
         if (!addBtn) return;
 
@@ -630,21 +703,49 @@ window.DevHome = window.DevHome || {};
         var row = document.createElement('div');
         row.className = 'wb-task-input-row';
         row.innerHTML = '<input type="text" placeholder="输入任务，回车确认..." autofocus>' +
+            '<button class="wb-task-input-expand" title="展开详细设置（描述、计划时间）">📝</button>' +
             '<button class="wb-task-input-confirm" title="确认">✓</button>' +
             '<button class="wb-task-input-cancel" title="取消">✕</button>';
         addBtn.insertAdjacentElement('beforebegin', row);
         var input = row.querySelector('input');
+        var expandBtn = row.querySelector('.wb-task-input-expand');
         var confirmBtn = row.querySelector('.wb-task-input-confirm');
         var cancelBtn = row.querySelector('.wb-task-input-cancel');
+
+        // 详细面板（默认隐藏）
+        var detailPanel = null;
+        var descInput = null;
+        var dateInput = null;
+
+        function showDetail() {
+            if (detailPanel) { detailPanel.remove(); detailPanel = null; return; }
+            detailPanel = document.createElement('div');
+            detailPanel.className = 'wb-task-input-detail';
+            detailPanel.innerHTML = '<textarea placeholder="任务描述（可选）" rows="3"></textarea>' +
+                '<input type="date" class="wb-task-input-date" placeholder="计划执行日期">';
+            row.after(detailPanel);
+            descInput = detailPanel.querySelector('textarea');
+            dateInput = detailPanel.querySelector('.wb-task-input-date');
+            // 恢复焦点到标题输入
+            input.focus();
+        }
+
         var submitFn = function () {
-            var val = input.value; row.remove();
-            if (val.trim()) ns.addQuadrantTask(quadrant, val);
+            var title = input.value.trim();
+            if (!title) return;
+            var desc = descInput ? descInput.value.trim() : '';
+            var plannedAt = dateInput && dateInput.value ? new Date(dateInput.value + 'T00:00:00').getTime() : null;
+            if (detailPanel) detailPanel.remove();
+            row.remove();
+            ns.addQuadrantTask(quadrant, title, { content: desc, plannedAt: plannedAt });
         };
-        var cancelFn = function () { row.remove(); };
+        var cancelFn = function () { if (detailPanel) detailPanel.remove(); row.remove(); };
+
+        expandBtn.addEventListener('click', function (e) { e.stopPropagation(); showDetail(); });
         confirmBtn.addEventListener('click', submitFn);
         cancelBtn.addEventListener('click', cancelFn);
         input.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter') { e.preventDefault(); submitFn(); }
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitFn(); }
             if (e.key === 'Escape') { e.preventDefault(); cancelFn(); }
         });
         setTimeout(function () { input.focus(); }, 50);
@@ -668,6 +769,72 @@ window.DevHome = window.DevHome || {};
             state.workbench = ns.getWorkbenchState();
             ns.renderQuadrantBoard();
         });
+    };
+
+    /** 内联编辑任务标题 */
+    ns.editQuadrantTask = function (taskId, quadrant) {
+        var config = ns.getWorkbenchState();
+        if (!config.quadrants[quadrant]) return;
+        var task = (config.quadrants[quadrant].tasks || []).find(function (t) { return t.id === taskId; });
+        if (!task) return;
+
+        // 查找对应 DOM 中的任务标题元素
+        var listEl = document.getElementById('wbQgList' + quadrant.toUpperCase());
+        if (!listEl) return;
+        var taskItem = listEl.querySelector('[data-task-id="' + taskId + '"]');
+        if (!taskItem) return;
+        var titleEl = taskItem.querySelector('.wb-task-item-title');
+        if (!titleEl) return;
+
+        // 如果已有内联编辑框，先清除
+        var existing = listEl.querySelector('.wb-task-inline-edit');
+        if (existing) existing.remove();
+
+        // 创建内联编辑组件
+        var editRow = document.createElement('div');
+        editRow.className = 'wb-task-inline-edit';
+        editRow.innerHTML = '<input type="text" value="' + escapeHtml(task.title) + '" placeholder="编辑任务标题...">' +
+            '<div class="wb-task-inline-edit-btns">' +
+                '<button class="wb-task-inline-save" title="保存">✓</button>' +
+                '<button class="wb-task-inline-cancel" title="取消">✕</button>' +
+            '</div>';
+
+        // 替换标题为编辑框
+        titleEl.style.display = 'none';
+        titleEl.parentNode.insertBefore(editRow, titleEl.nextSibling);
+
+        var input = editRow.querySelector('input');
+        var saveBtn = editRow.querySelector('.wb-task-inline-save');
+        var cancelBtn = editRow.querySelector('.wb-task-inline-cancel');
+
+        var cleanup = function () {
+            editRow.remove();
+            titleEl.style.display = '';
+        };
+
+        var doSave = function () {
+            var newTitle = input.value.trim();
+            cleanup();
+            if (!newTitle || newTitle === task.title) return;
+            // 更新任务标题
+            config.quadrants[quadrant].tasks = config.quadrants[quadrant].tasks.map(function (t) {
+                if (t.id === taskId) t.title = newTitle;
+                return t;
+            });
+            ns.saveWorkbenchState({ quadrants: config.quadrants });
+            state.workbench = ns.getWorkbenchState();
+            ns.renderQuadrantBoard();
+            console.log('[编辑] 任务标题更新: ' + taskId + ' → ' + newTitle.slice(0, 30));
+        };
+
+        saveBtn.addEventListener('click', doSave);
+        cancelBtn.addEventListener('click', cleanup);
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); doSave(); }
+            if (e.key === 'Escape') { e.preventDefault(); cleanup(); }
+        });
+        setTimeout(function () { input.focus(); input.select(); }, 50);
+        console.log('[编辑] 开始编辑任务标题 id=' + taskId);
     };
 
     /* ===== 番茄钟 ===== */

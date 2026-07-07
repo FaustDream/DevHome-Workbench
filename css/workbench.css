@@ -287,7 +287,7 @@
     transform: rotate(45deg);
 }
 
-/* 任务标题 */
+/* 任务标题（修复长标题溢出：单行截断 + 省略号） */
 .wb-task-item-title {
     flex: 1;
     font-size: 10px;
@@ -295,7 +295,9 @@
     color: var(--color-text);
     line-height: 1.4;
     min-width: 0;
-    word-break: break-word;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* 关联笔记徽章 */
@@ -305,6 +307,99 @@
     flex-shrink: 0;
     opacity: 0.6;
     cursor: default;
+}
+
+/* 任务计划时间/超期标记 */
+.wb-task-item-time {
+    font-size: 9px;
+    color: var(--color-text-tertiary);
+    flex-shrink: 0;
+    margin-left: 4px;
+    cursor: default;
+}
+.wb-task-item-time.overdue {
+    color: var(--color-danger);
+    font-weight: 600;
+}
+
+/* 象限选择弹出菜单（笔记转任务选择象限） */
+.wb-quadrant-picker-menu {
+    position: fixed;
+    z-index: 3100;
+    min-width: 160px;
+    background: var(--color-bg-elevated);
+    border: var(--card-border);
+    border-radius: 10px;
+    box-shadow: var(--shadow-lg);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    padding: 4px;
+    animation: wb-task-menu-in 0.12s ease;
+}
+.wb-quadrant-picker-menu button {
+    display: block;
+    width: 100%;
+    padding: 7px 12px;
+    border: none;
+    background: transparent;
+    color: var(--color-text);
+    font-size: 11px;
+    font-family: var(--font-sans);
+    text-align: left;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.1s ease;
+}
+.wb-quadrant-picker-menu button:hover {
+    background: var(--color-surface-hover);
+}
+
+/* 任务内联编辑输入框 */
+.wb-task-inline-edit {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 0;
+    animation: wb-task-menu-in 0.12s ease;
+}
+.wb-task-inline-edit input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--color-text);
+    font-size: 10px;
+    font-weight: 500;
+    font-family: var(--font-sans);
+    line-height: 1.4;
+    border-bottom: 1px solid var(--color-accent);
+    padding: 1px 2px;
+}
+.wb-task-inline-edit input::placeholder {
+    color: var(--color-text-tertiary);
+}
+.wb-task-inline-edit-btns {
+    display: flex;
+    gap: 3px;
+    flex-shrink: 0;
+}
+.wb-task-inline-edit-btns button {
+    width: 20px;
+    height: 20px;
+    border: none;
+    border-radius: 4px;
+    background: var(--color-surface);
+    color: var(--color-text);
+    cursor: pointer;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+.wb-task-inline-edit-btns button:hover {
+    background: var(--color-surface-hover);
 }
 
 /* 更多操作按钮（⋮） */
@@ -493,6 +588,62 @@
     transition: all 0.15s ease;
 }
 .wb-task-input-cancel:hover { color: var(--color-danger); }
+
+/* 内联输入扩展按钮（展开详细模式） */
+.wb-task-input-expand {
+    width: 22px; height: 22px;
+    flex-shrink: 0;
+    border: none; border-radius: 5px;
+    background: transparent;
+    color: var(--color-text-tertiary);
+    cursor: pointer; font-size: 13px;
+    transition: all 0.15s ease;
+    padding: 0; line-height: 1;
+}
+.wb-task-input-expand:hover { color: var(--color-accent); }
+
+/* 任务详细面板（描述+计划日期） */
+.wb-task-input-detail {
+    margin: 0 8px 6px;
+    padding: 8px 10px;
+    border: 1px solid rgba(85,230,210,0.18);
+    border-radius: 8px;
+    background: rgba(85,230,210,0.04);
+    animation: quadrantInputIn 0.15s ease;
+}
+.wb-task-input-detail textarea {
+    width: 100%;
+    border: none; outline: none;
+    background: transparent;
+    color: var(--color-text);
+    font-size: 10px;
+    font-family: var(--font-sans);
+    line-height: 1.5;
+    resize: vertical;
+    min-height: 48px;
+    max-height: 120px;
+}
+.wb-task-input-detail textarea::placeholder { color: var(--color-text-tertiary); }
+.wb-task-input-date {
+    width: 100%;
+    margin-top: 6px;
+    border: 1px solid var(--color-glass-border);
+    border-radius: 5px;
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-size: 10px;
+    font-family: var(--font-sans);
+    padding: 4px 8px;
+    outline: none;
+}
+.wb-task-input-date:focus { border-color: var(--color-accent); }
+
+/* 笔记转任务象限选择器包装容器 */
+.wb-note-to-task-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
 
 /* 侧栏底部 */
 .wb-sidebar-foot {

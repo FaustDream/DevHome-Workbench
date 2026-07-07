@@ -198,7 +198,16 @@
                             <!-- 标签属性区：标题下方横向 Pill 胶囊徽章 -->
                             <div class="wb-notes-editor-meta" id="wbNotesEditorMeta">
                                 <span class="wb-note-type-badge-editor" id="wbNoteTypeBadge"></span>
-                                <button class="wb-note-to-task-btn" id="wbNoteToTaskBtn" title="转为四象限任务" style="display:none;">转为任务</button>
+                                <!-- 笔记转四象限任务：点击弹出象限选择器 -->
+                                <div class="wb-note-to-task-wrap" id="wbNoteToTaskWrap" style="display:none;">
+                                    <button class="wb-note-to-task-btn" id="wbNoteToTaskBtn" title="转为四象限任务">转为任务</button>
+                                    <div class="wb-quadrant-picker-menu" id="wbQuadrantPicker" style="display:none;">
+                                        <button data-quadrant="q1">重要且紧急</button>
+                                        <button data-quadrant="q2">重要不紧急</button>
+                                        <button data-quadrant="q3">紧急不重要</button>
+                                        <button data-quadrant="q4">不紧急不重要</button>
+                                    </div>
+                                </div>
                                 <div class="wb-note-type-picker" id="wbNoteTypePicker" style="display:none;">
                                     <div class="wb-type-picker-list" id="wbTypePickerList"></div>
                                 </div>

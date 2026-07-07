@@ -105,6 +105,10 @@ window.DevHome = window.DevHome || {};
                 ns.changeTaskQuadrant(taskId, menuItem.dataset.from, menuItem.dataset.to);
                 ns.hideTaskContextMenu();
                 console.log('[交互] 任务菜单 移动 ' + taskId);
+            } else if (action === 'edit') {
+                ns.hideTaskContextMenu();
+                ns.editQuadrantTask(taskId, quadrant);
+                console.log('[交互] 任务菜单 编辑 ' + taskId);
             } else if (action === 'delete') {
                 ns.cancelQuadrantTask(quadrant, taskId);
                 ns.hideTaskContextMenu();
@@ -816,13 +820,43 @@ window.DevHome = window.DevHome || {};
                 });
             });
         }
-        // 笔记编辑器"转为任务"按钮
+        // 笔记编辑器"转为任务"按钮 — 弹出象限选择器
         var noteToTaskBtn = document.getElementById('wbNoteToTaskBtn');
-        if (noteToTaskBtn) {
-            noteToTaskBtn.addEventListener('click', function () {
+        var quadrantPicker = document.getElementById('wbQuadrantPicker');
+        if (noteToTaskBtn && quadrantPicker) {
+            noteToTaskBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
                 if (!state.currentNote) return;
-                ns.convertNoteToTask(state.currentNote.id);
-                console.log('[交互] 笔记转任务 ' + state.currentNote.id);
+                // 切换象限选择器显隐
+                var isVisible = quadrantPicker.style.display === 'block';
+                quadrantPicker.style.display = isVisible ? 'none' : 'block';
+                if (!isVisible) {
+                    // 定位到按钮下方
+                    var btnRect = noteToTaskBtn.getBoundingClientRect();
+                    quadrantPicker.style.position = 'fixed';
+                    quadrantPicker.style.top = (btnRect.bottom + 4) + 'px';
+                    quadrantPicker.style.left = btnRect.left + 'px';
+                    quadrantPicker.style.zIndex = '3100';
+                }
+                console.log('[交互] 笔记转任务 选择象限');
+            });
+            // 象限选择器按钮事件
+            quadrantPicker.addEventListener('click', function (e) {
+                var btn = e.target.closest('button');
+                if (!btn || !btn.dataset.quadrant) return;
+                e.stopPropagation();
+                var quadrant = btn.dataset.quadrant;
+                ns.convertNoteToTask(state.currentNote.id, quadrant);
+                quadrantPicker.style.display = 'none';
+                ns.showToast('已转至' + ({ q1:'重要且紧急',q2:'重要不紧急',q3:'紧急不重要',q4:'不紧急不重要' })[quadrant] + '象限', 'success');
+                console.log('[交互] 笔记转任务 选中象限=' + quadrant);
+            });
+            // 点击其他地方关闭
+            document.addEventListener('click', function hidePicker(e) {
+                if (quadrantPicker.style.display !== 'block') return;
+                if (!e.target.closest('#wbNoteToTaskWrap')) {
+                    quadrantPicker.style.display = 'none';
+                }
             });
         }
 
