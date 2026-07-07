@@ -59,18 +59,15 @@ window.DevHome = window.DevHome || {};
             { label: 'I',  title: '斜体',     action: function () { editor.chain().focus().toggleItalic().run(); },       isActive: function () { return editor.isActive('italic'); } },
             { label: 'U',  title: '下划线',   action: function () { editor.chain().focus().toggleUnderline().run(); },    isActive: function () { return editor.isActive('underline'); } },
             { label: 'S',  title: '删除线',   action: function () { editor.chain().focus().toggleStrike().run(); },       isActive: function () { return editor.isActive('strike'); } },
-            null, // 分隔符
+            null,
             { label: 'H1', title: '标题1',    action: function () { editor.chain().focus().toggleHeading({ level: 1 }).run(); }, isActive: function () { return editor.isActive('heading', { level: 1 }); } },
             { label: 'H2', title: '标题2',    action: function () { editor.chain().focus().toggleHeading({ level: 2 }).run(); }, isActive: function () { return editor.isActive('heading', { level: 2 }); } },
             { label: 'H3', title: '标题3',    action: function () { editor.chain().focus().toggleHeading({ level: 3 }).run(); }, isActive: function () { return editor.isActive('heading', { level: 3 }); } },
             null,
             { label: '•',  title: '无序列表', action: function () { editor.chain().focus().toggleBulletList().run(); },     isActive: function () { return editor.isActive('bulletList'); } },
             { label: '1.', title: '有序列表', action: function () { editor.chain().focus().toggleOrderedList().run(); },    isActive: function () { return editor.isActive('orderedList'); } },
-            { label: '❝', title: '引用',     action: function () { editor.chain().focus().toggleBlockquote().run(); },     isActive: function () { return editor.isActive('blockquote'); } },
-            { label: '</>',title:'代码块',   action: function () { editor.chain().focus().toggleCodeBlock().run(); },       isActive: function () { return editor.isActive('codeBlock'); } },
-            null,
-            { label: '↩', title: '撤销',     action: function () { editor.chain().focus().undo().run(); },                 isActive: function () { return false; }, disabled: function () { return !editor.can().undo(); } },
-            { label: '↪', title: '重做',     action: function () { editor.chain().focus().redo().run(); },                 isActive: function () { return false; }, disabled: function () { return !editor.can().redo(); } }
+            { label: '❝', title: '引用块',   action: function () { editor.chain().focus().toggleBlockquote().run(); },     isActive: function () { return editor.isActive('blockquote'); } },
+            { label: '⌨', title: '代码块',   action: function () { editor.chain().focus().toggleCodeBlock().run(); },       isActive: function () { return editor.isActive('codeBlock'); } }
         ];
 
         buttons.forEach(function (def) {
@@ -158,6 +155,108 @@ window.DevHome = window.DevHome || {};
         toolbar.style.display = 'flex';
     }
 
+    /* ===== 固定置顶工具栏（始终可见，更丰富功能） ===== */
+
+    /**
+     * 创建固定置顶工具栏，挂载到指定容器
+     * 与气泡工具栏共享同一 Editor 实例，通过事件自动同步按钮状态。
+     */
+    function createFixedToolbar(editor) {
+        var container = document.getElementById('tiptapFixedToolbar');
+        if (!container) return null;
+        // 清除旧的按钮（防止不同编辑器实例残留）
+        container.innerHTML = '';
+
+        var headingSelect = document.createElement('select');
+        headingSelect.className = 'tiptap-fixed-heading-select';
+        headingSelect.innerHTML =
+            '<option value="">正文</option>' +
+            '<option value="1">标题 1</option>' +
+            '<option value="2">标题 2</option>' +
+            '<option value="3">标题 3</option>';
+        headingSelect.addEventListener('change', function () {
+            var level = this.value;
+            if (level) {
+                editor.chain().focus().toggleHeading({ level: parseInt(level) }).run();
+            } else {
+                editor.chain().focus().setParagraph().run();
+            }
+            this.value = ''; // 重置选择器
+        });
+        container.appendChild(headingSelect);
+
+        var sep1 = document.createElement('span');
+        sep1.className = 'tiptap-fixed-sep';
+        container.appendChild(sep1);
+
+        // 按钮组定义
+        var groups = [
+            // 行内格式
+            [
+                { label: '<b>B</b>', title: '加粗 (Ctrl+B)',     action: function () { editor.chain().focus().toggleBold().run(); },          isActive: function () { return editor.isActive('bold'); } },
+                { label: '<i>I</i>', title: '斜体 (Ctrl+I)',     action: function () { editor.chain().focus().toggleItalic().run(); },        isActive: function () { return editor.isActive('italic'); } },
+                { label: '<u>U</u>', title: '下划线 (Ctrl+U)',   action: function () { editor.chain().focus().toggleUnderline().run(); },     isActive: function () { return editor.isActive('underline'); } },
+                { label: '<s>S</s>', title: '删除线',           action: function () { editor.chain().focus().toggleStrike().run(); },        isActive: function () { return editor.isActive('strike'); } }
+            ],
+            // 块级格式
+            [
+                { label: '•≡', title: '无序列表',    action: function () { editor.chain().focus().toggleBulletList().run(); },      isActive: function () { return editor.isActive('bulletList'); } },
+                { label: '1.≡',title: '有序列表',    action: function () { editor.chain().focus().toggleOrderedList().run(); },     isActive: function () { return editor.isActive('orderedList'); } },
+                { label: '❝', title: '引用块',       action: function () { editor.chain().focus().toggleBlockquote().run(); },      isActive: function () { return editor.isActive('blockquote'); } },
+                { label: '⌨', title: '代码块',       action: function () { editor.chain().focus().toggleCodeBlock().run(); },        isActive: function () { return editor.isActive('codeBlock'); } },
+                { label: '─', title: '水平分割线',    action: function () { editor.chain().focus().setHorizontalRule().run(); },       isActive: function () { return false; } }
+            ],
+            // 历史
+            [
+                { label: '↶', title: '撤销 (Ctrl+Z)', action: function () { editor.chain().focus().undo().run(); },  isActive: function () { return false; }, disabled: function () { return !editor.can().undo(); } },
+                { label: '↷', title: '重做 (Ctrl+Y)', action: function () { editor.chain().focus().redo().run(); },  isActive: function () { return false; }, disabled: function () { return !editor.can().redo(); } }
+            ]
+        ];
+
+        var allBtns = [];
+
+        groups.forEach(function (group, gIdx) {
+            if (gIdx > 0) {
+                var sep = document.createElement('span');
+                sep.className = 'tiptap-fixed-sep';
+                container.appendChild(sep);
+            }
+            group.forEach(function (def) {
+                var btn = document.createElement('button');
+                btn.className = 'tiptap-fixed-btn';
+                btn.innerHTML = def.label;
+                btn.title = def.title;
+                btn.type = 'button';
+                btn.addEventListener('mousedown', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    def.action();
+                });
+                btn._update = function () {
+                    btn.classList.toggle('active', def.isActive());
+                    if (def.disabled) btn.disabled = def.disabled();
+                };
+                btn._update();
+                container.appendChild(btn);
+                allBtns.push(btn);
+            });
+        });
+
+        // 监听编辑器状态 → 同步所有按钮
+        function syncAll() {
+            allBtns.forEach(function (b) { if (b._update) b._update(); });
+            // 同步标题选择器
+            var activeHeadings = [1, 2, 3].filter(function (l) { return editor.isActive('heading', { level: l }); });
+            headingSelect.value = activeHeadings.length > 0 ? String(activeHeadings[0]) : '';
+        }
+
+        editor.on('selectionUpdate', syncAll);
+        editor.on('transaction', syncAll);
+
+        console.log('[Tiptap] 固定置顶工具栏已创建');
+        return { container: container, btns: allBtns, syncFn: syncAll };
+    }
+
     /* ===== 公开 API ===== */
 
     ns.tiptapEditor = {
@@ -193,17 +292,23 @@ window.DevHome = window.DevHome || {};
                 }
             });
 
-            // 创建气泡工具栏
-            var toolbar = createBubbleToolbar(editor);
+            // 创建气泡工具栏（浮动的）和固定置顶工具栏
+            var bubbleToolbar = createBubbleToolbar(editor);
+            var fixedToolbar = createFixedToolbar(editor);
 
             // 点击编辑器外部区域时隐藏气泡
             document.addEventListener('mousedown', function hideBubble(e) {
-                if (!toolbar.contains(e.target) && !el.contains(e.target)) {
-                    toolbar.style.display = 'none';
+                if (!bubbleToolbar.contains(e.target) && !el.contains(e.target)) {
+                    bubbleToolbar.style.display = 'none';
                 }
             });
 
-            _instances[id] = { editor: editor, toolbar: toolbar, el: el };
+            _instances[id] = {
+                editor: editor,
+                bubbleToolbar: bubbleToolbar,
+                fixedToolbar: fixedToolbar,
+                el: el
+            };
             console.log('[Tiptap] 编辑器已创建 id=' + id);
             return id;
         },
@@ -231,7 +336,8 @@ window.DevHome = window.DevHome || {};
             var inst = _instances[id];
             if (!inst) return;
             inst.editor.destroy();
-            if (inst.toolbar && inst.toolbar.parentNode) inst.toolbar.remove();
+            if (inst.bubbleToolbar && inst.bubbleToolbar.parentNode) inst.bubbleToolbar.remove();
+            // 固定工具栏的 DOM 不清除（容器 #tiptapFixedToolbar 保留，下次 open 时复用）
             delete _instances[id];
             console.log('[Tiptap] 编辑器已销毁 id=' + id);
         },
