@@ -5,7 +5,10 @@
   "description": "DevHome Workbench - Chrome Extension",
   "scripts": {
     "build:components": "node build.mjs",
-    "install:react": "node scripts/install-react.mjs"
+    "install:react": "node scripts/install-react.mjs",
+    "test": "node tests/run-and-save.mjs",
+    "test:run": "node tests/run-tests.mjs",
+    "build": "npm run build:components && npm test"
   },
   "devDependencies": {
     "esbuild": "^0.25.0"
