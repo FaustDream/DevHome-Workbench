@@ -105,14 +105,7 @@ window.DevHome = window.DevHome || {};
             }
         }
 
-        // 目录未就绪 → 仅渲染时间和搜索栏，不加载磁贴/工作台
-        if (typeof ns.fileConfig !== 'undefined' && ns.fileConfig.isSupported() && !(ns.fileConfig.isReady())) {
-            ns.initEngine();
-            ns.loadSearchHistory();
-            ns.bindEvents();
-            updateTime();
-            return;
-        }
+        // 首次使用且未选目录 → 仍正常加载界面，警告条会提示用户选目录
         // [v2.0.0] 加载 v2 数据（笔记、捕获）+ 快捷键配置
         if (ns.notesManager) {
             try { await ns.notesManager.load(); } catch (e) { console.warn('[V2] 笔记加载失败:', e); }

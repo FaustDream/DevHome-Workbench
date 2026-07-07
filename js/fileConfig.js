@@ -588,7 +588,7 @@ window.DevHome = window.DevHome || {};
      * @param {string} [category] - 可选，指定变更的数据类别；不传则标记全部类别
      */
     function markDirty(category) {
-        if (!isReady) return;
+        // 即使目录未就绪也追踪脏数据，选目录后立即同步
         if (category) {
             dirtyCategories[category] = true;
         } else {
@@ -799,16 +799,19 @@ window.DevHome = window.DevHome || {};
 
             // IndexedDB 无 handle
             var hasLocalDataFlag = hasLocalData();
+            isReady = true; // 始终就绪，允许追踪脏数据和应用正常加载
             if (hasLocalDataFlag) {
-                isReady = true;
-                hideWarningBar();
-                updateBadge('', '#e74c3c');
+                // 有本地数据但未选目录 → 显示提示
+                showWarningBar('数据暂存浏览器中，选择一个文件夹即可永久保存', false);
+                updateBadge('!', '#ffcc66');
                 console.log('[FileConfig] 无持久化 handle，使用 localStorage 模式（数据已存在）');
                 return { ready: true, needsMigration: false, existingData: true, dirName: '', localStorageOnly: true };
             }
-            showWarningBar('请选择一个文件夹存放配置和所有数据', false);
+            // 首次使用 → 显示提示引导选目录，但不阻止应用加载
+            showWarningBar('请选择一个文件夹存放配置、磁贴和所有数据', false);
             updateBadge('!', '#e74c3c');
-            return { ready: false, needsMigration: false, existingData: false, dirName: '' };
+            console.log('[FileConfig] 首次使用，等待用户选择配置目录');
+            return { ready: true, needsMigration: false, existingData: false, dirName: '', firstRun: true };
 
         } catch (e) {
             console.error('[FileConfig] 初始化失败:', e);
