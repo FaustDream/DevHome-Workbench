@@ -553,8 +553,7 @@ window.DevHome = window.DevHome || {};
         }
         container.innerHTML = customTypes.map(function (t) {
             return '<button class="wb-filter-chip custom" data-filter="' + ns.escapeHtml(t.key) + '">' +
-                ns.escapeHtml(t.icon) + ' ' + ns.escapeHtml(t.label) +
-                '<span class="filter-del">×</span></button>';
+                ns.escapeHtml(t.icon) + ' ' + ns.escapeHtml(t.label) + '</button>';
         }).join('');
     };
 
