@@ -106,6 +106,8 @@ window.DevHome = window.DevHome || {};
         }
 
         // 首次使用且未选目录 → 仍正常加载界面，警告条会提示用户选目录
+        ns.logger && ns.logger.info('boot', '启动序列开始', { configReady: state.configReady });
+
         // [v2.0.0] 加载 v2 数据（笔记、捕获）+ 快捷键配置
         if (ns.notesManager) {
             try { await ns.notesManager.load(); } catch (e) { console.warn('[V2] 笔记加载失败:', e); }

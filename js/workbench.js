@@ -324,6 +324,10 @@ window.DevHome = window.DevHome || {};
 
     /** 一键切换专注模式/日常模式 */
     ns.toggleFocusMode = function () {
+        ns.logger && ns.logger.info('focus-mode', 'toggleFocusMode 被调用', {
+            currentMode: state.currentDevhomeMode,
+            stack: new Error().stack ? new Error().stack.split('\n').slice(1, 3).join(' | ') : ''
+        });
         if (state.currentDevhomeMode === 'workbench') {
             ns.exitFocusMode();
         } else {
@@ -334,7 +338,15 @@ window.DevHome = window.DevHome || {};
     /** 进入专注模式 */
     ns.enterFocusMode = function () {
         // 幂等性保护：已在专注模式中则忽略重复调用
-        if (state.currentDevhomeMode === 'workbench') return;
+        if (state.currentDevhomeMode === 'workbench') {
+            if (ns.logger) ns.logger.debug('focus-mode', 'enterFocusMode 跳过：已在专注模式');
+            return;
+        }
+
+        ns.logger && ns.logger.info('focus-mode', 'enterFocusMode 开始', {
+            currentPage: state.currentPage,
+            notesCount: (state.notes || []).length
+        });
 
         // 保存当前分类页索引和加载快捷键配置，退出时恢复
         state._savedPageIndex = state.currentPage;
@@ -347,35 +359,69 @@ window.DevHome = window.DevHome || {};
             });
         }
 
-        // 切换主题已由 ThemeManager 集中管理，模式切换不再操作 link media
-        // 专注模式与非专注模式共享同一套主题
+        // 隐藏日常模式专属元素
+        try {
+            var matrixCanvas = document.getElementById('matrixCanvas');
+            if (matrixCanvas) matrixCanvas.style.display = 'none';
+            var bgContainer = document.getElementById('bgContainer');
+            if (bgContainer) bgContainer.style.display = 'none';
+        } catch (e) {
+            ns.logger && ns.logger.warn('focus-mode', '隐藏日常元素失败', e.message);
+        }
 
-        // 隐藏日常模式专属元素（Matrix 数字雨 canvas 由背景管理器控制）
-        var matrixCanvas = document.getElementById('matrixCanvas');
-        if (matrixCanvas) matrixCanvas.style.display = 'none';
-        var bgContainer = document.getElementById('bgContainer');
-        if (bgContainer) bgContainer.style.display = 'none';
-
-        // 立即切换状态和 UI — 不等异步数据，否则用户看到白屏
-        console.log('[模式] 进入专注模式');
-        // 启动截止时间轮询提醒
-        if (typeof ns.startDeadlineChecker === 'function') ns.startDeadlineChecker();
+        // 切换状态
         state.workbenchVisible = true;
         state.currentDevhomeMode = 'workbench';
         state._quadrantFilter = 'active';
-        state.workbench = ns.getWorkbenchState();  // 先用 localStorage 兜底数据
-        if (dom.devhomeStage) dom.devhomeStage.classList.add('visible');
-        if (dom.container) dom.container.classList.add('devhome-dimmed');
+        state.workbench = ns.getWorkbenchState();
 
-        // 三栏初始化
-        ns.renderQuadrantBoard();
-        ns.renderMiniCalendar(new Date());
-        ns.renderCalendar(new Date());
-        ns.renderNotesList('all', '');
-        if (typeof ns.renderCustomFilters === 'function') ns.renderCustomFilters();
-        ns.updateContextMenuLabel();
+        // 显示专注模式 UI
+        try {
+            if (!dom.devhomeStage) throw new Error('devhomeStage DOM 未找到');
+            if (!dom.container) throw new Error('container DOM 未找到');
+            dom.devhomeStage.classList.add('visible');
+            dom.container.classList.add('devhome-dimmed');
+        } catch (e) {
+            ns.logger && ns.logger.error('focus-mode', '显示专注模式 UI 失败', e.message);
+            // 回滚状态
+            state.currentDevhomeMode = 'daily';
+            state.workbenchVisible = false;
+            ns.showToast && ns.showToast('进入专注模式失败，请刷新页面重试', 'error');
+            return;
+        }
 
-        // 异步加载 v2 格式的任务数据，覆盖兜底数据（如果有更新的话）
+        console.log('[模式] 进入专注模式');
+        if (typeof ns.startDeadlineChecker === 'function') ns.startDeadlineChecker();
+
+        // 渲染各模块（逐个 try-catch 防止一个模块失败阻断其他模块）
+        var renderErrors = [];
+        try { ns.renderQuadrantBoard(); } catch (e) {
+            renderErrors.push('四象限: ' + e.message);
+            ns.logger && ns.logger.error('focus-mode', 'renderQuadrantBoard 失败', e.message);
+        }
+        try { ns.renderMiniCalendar(new Date()); } catch (e) {
+            renderErrors.push('日历: ' + e.message);
+            ns.logger && ns.logger.error('focus-mode', 'renderMiniCalendar 失败', e.message);
+        }
+        try { ns.renderCalendar(new Date()); } catch (e) {
+            ns.logger && ns.logger.warn('focus-mode', 'renderCalendar 失败', e.message);
+        }
+        try { ns.renderNotesList('all', ''); } catch (e) {
+            renderErrors.push('笔记: ' + e.message);
+            ns.logger && ns.logger.error('focus-mode', 'renderNotesList 失败', e.message);
+        }
+        try { if (typeof ns.renderCustomFilters === 'function') ns.renderCustomFilters(); } catch (e) {
+            ns.logger && ns.logger.warn('focus-mode', 'renderCustomFilters 失败', e.message);
+        }
+        try { ns.updateContextMenuLabel(); } catch (e) {
+            ns.logger && ns.logger.warn('focus-mode', 'updateContextMenuLabel 失败', e.message);
+        }
+
+        if (renderErrors.length > 0) {
+            ns.logger && ns.logger.warn('focus-mode', '部分模块渲染失败', renderErrors);
+        }
+
+        // 异步加载 v2 任务数据
         storageV2.get(storageV2.KEYS.TASKS, null).then(function (v2Tasks) {
             if (v2Tasks && v2Tasks.length > 0) {
                 var quadrants = { q1: { tasks: [] }, q2: { tasks: [] }, q3: { tasks: [] }, q4: { tasks: [] } };
@@ -384,30 +430,34 @@ window.DevHome = window.DevHome || {};
                 });
                 state.workbench = { quadrants: quadrants };
                 ns.renderQuadrantBoard();
+                ns.logger && ns.logger.info('focus-mode', 'v2 任务数据已加载', { count: v2Tasks.length });
             }
-        }).catch(function () {
-            // v2 数据加载失败不影响使用，localStorage 兜底已在上面加载
+        }).catch(function (err) {
+            ns.logger && ns.logger.warn('focus-mode', 'v2 任务加载失败（使用兜底数据）', err.message);
         });
+
+        ns.logger && ns.logger.info('focus-mode', 'enterFocusMode 完成', { renderErrors: renderErrors.length });
     };
 
     /** 退出专注模式，恢复日常模式 */
     ns.exitFocusMode = function () {
-        // 幂等性保护：已退出则忽略
         if (state.currentDevhomeMode === 'daily') return;
+        ns.logger && ns.logger.info('focus-mode', 'exitFocusMode 开始');
 
-        // 主题已由 ThemeManager 集中管理，模式切换不再操作 link media
-
-        // 恢复日常模式专属元素（仅在数字雨已开启时才显示 canvas）
-        var matrixCanvas = document.getElementById('matrixCanvas');
-        if (matrixCanvas && ns.matrixRain && ns.matrixRain.isRunning()) {
-            matrixCanvas.style.display = 'block';
+        // 恢复日常模式专属元素
+        try {
+            var matrixCanvas = document.getElementById('matrixCanvas');
+            if (matrixCanvas && ns.matrixRain && ns.matrixRain.isRunning()) {
+                matrixCanvas.style.display = 'block';
+            }
+            var bgContainer = document.getElementById('bgContainer');
+            if (bgContainer) bgContainer.style.display = '';
+        } catch (e) {
+            ns.logger && ns.logger.warn('focus-mode', '恢复日常元素失败', e.message);
         }
-        var bgContainer = document.getElementById('bgContainer');
-        if (bgContainer) bgContainer.style.display = '';
 
         state.currentDevhomeMode = 'daily';
         console.log('[模式] 退出专注模式');
-        // 停止截止时间提醒
         if (typeof ns.stopDeadlineChecker === 'function') ns.stopDeadlineChecker();
         state.workbenchVisible = false;
         if (dom.devhomeStage) dom.devhomeStage.classList.remove('visible');
@@ -421,9 +471,9 @@ window.DevHome = window.DevHome || {};
                 ns.renderTiles();
                 }
         }
-        // 清理临时状态，防止下次进入专注模式恢复错误页面
         delete state._savedPageIndex;
         ns.updateContextMenuLabel();
+        ns.logger && ns.logger.info('focus-mode', 'exitFocusMode 完成');
     };
 
     /* 兼容旧入口（保留原 openWorkbenchPanel / showDailyMode / closeWorkbenchPanel） */
