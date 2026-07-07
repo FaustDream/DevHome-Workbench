@@ -276,8 +276,11 @@ window.DevHome = window.DevHome || {};
         '</div>';
         document.body.appendChild(overlay);
 
-        // 关闭
-        var closeFn = function () { overlay.remove(); };
+        // 关闭时刷新四象限面板（更新 📎 徽章）
+        var closeFn = function () {
+            overlay.remove();
+            ns.renderQuadrantBoard();
+        };
         overlay.addEventListener('click', function (e) { if (e.target === overlay) closeFn(); });
         overlay.querySelector('.wb-link-popup-cancel').addEventListener('click', closeFn);
 
@@ -306,17 +309,19 @@ window.DevHome = window.DevHome || {};
                 confirmOverlay.addEventListener('click', function (ce) { if (ce.target === confirmOverlay) confirmOverlay.remove(); });
                 confirmOverlay.querySelector('.wb-link-popup-cancel').addEventListener('click', function () { confirmOverlay.remove(); });
                 confirmOverlay.querySelector('.wb-link-popup-save').addEventListener('click', function () {
-                    ns.unlinkNoteFromTask(taskId, noteId);
+                    // 使用静默解绑（不触发 renderQuadrantBoard 重建 DOM）
+                    ns.unlinkNoteFromTaskSilent(taskId, noteId);
                     confirmOverlay.remove();
-                    // 从视图中移除该条目
-                    if (noteItem) noteItem.remove();
-                    // 更新标题中的计数
+                    // 安全移除条目（先检查父节点，防止 DOM 已被移走）
+                    if (noteItem && noteItem.parentNode) noteItem.remove();
+                    // 更新标题计数
                     var remaining = overlay.querySelectorAll('.wb-link-view-item').length;
                     var titleEl = overlay.querySelector('h3');
                     if (titleEl) titleEl.textContent = '已关联笔记（' + remaining + ' 篇）';
                     if (remaining === 0) {
                         overlay.querySelector('.wb-link-popup-body').innerHTML = '<p class="wb-link-view-empty">暂无关联笔记</p>';
                     }
+                    // 弹窗关闭时统一刷四象限（更新 📎 徽章）
                     console.log('[编辑] 从任务 ' + taskId + ' 解绑笔记 ' + noteId);
                 });
             });
