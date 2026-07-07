@@ -361,7 +361,7 @@ window.DevHome = window.DevHome || {};
                 var timeStr = formatRelativeTime(item.updatedAt || item.createdAt);
                 // 渲染所有类型徽章（合并自定义类型标签，避免 custom_xxxx 原始 key 暴露）
                 var typeLabels = Object.assign({
-                    note: '未分类', idea: '想法', bug: 'Bug', meeting: '会议', webclip: '剪藏', capture: '捕获'
+                    note: '笔记', idea: '想法', bug: 'Bug', meeting: '会议', webclip: '剪藏', capture: '捕获'
                 }, state._customTypeLabels || {});
                 var typeBadgesHtml = item._kind === 'capture'
                     ? '<span class="wb-note-type-badge badge-capture">捕获</span>'
@@ -736,7 +736,7 @@ window.DevHome = window.DevHome || {};
         var types = typeStr.split(',').filter(Boolean);
         if (types.length === 0) types = ['note'];
         var icons = Object.assign({ note: '📝', idea: '💡', bug: '🐛', meeting: '📋', webclip: '🔗', capture: '⚡' }, state._customTypeIcons || {});
-        var labels = Object.assign({ note: '未分类', idea: '想法', bug: 'Bug', meeting: '会议', webclip: '剪藏', capture: '捕获' }, state._customTypeLabels || {});
+        var labels = Object.assign({ note: '笔记', idea: '想法', bug: 'Bug', meeting: '会议', webclip: '剪藏', capture: '捕获' }, state._customTypeLabels || {});
         // 如果缓存已覆盖所有类型则直接渲染，否则异步加载（兼容首次加载缓存未就绪）
         var needCustom = types.filter(function (t) { return !labels[t]; });
         if (needCustom.length > 0) {

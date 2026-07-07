@@ -63,6 +63,11 @@ window.DevHome = window.DevHome || {};
         var qLabels = { q1: '重要且紧急', q2: '重要不紧急', q3: '紧急不重要', q4: '不紧急不重要' };
         var otherQs = QUADRANTS.filter(function (q) { return q !== quadrant; });
 
+        // 检查是否有已关联笔记
+        var linkedNotes = ns.getTaskLinkedNotes(taskId);
+        var hasLinkedNotes = linkedNotes && linkedNotes.length > 0;
+        var linkedBadge = hasLinkedNotes ? ' (' + linkedNotes.length + '篇)' : '';
+
         var menu = document.createElement('div');
         menu.className = 'wb-task-context-menu';
         menu.innerHTML = otherQs.map(function (q) {
@@ -71,6 +76,7 @@ window.DevHome = window.DevHome || {};
             '<div class="wb-task-menu-sep"></div>' +
             '<button data-action="edit" data-task-id="' + escapeHtml(taskId) + '" data-quadrant="' + quadrant + '">编辑任务</button>' +
             '<button data-action="set-time" data-task-id="' + escapeHtml(taskId) + '" data-quadrant="' + quadrant + '">设置时间</button>' +
+            (hasLinkedNotes ? '<button data-action="view-linked-notes" data-task-id="' + escapeHtml(taskId) + '" data-quadrant="' + quadrant + '">查看关联笔记' + linkedBadge + '</button>' : '') +
             '<button data-action="link-notes" data-task-id="' + escapeHtml(taskId) + '" data-quadrant="' + quadrant + '">关联笔记</button>' +
             '<button data-action="delete" data-task-id="' + escapeHtml(taskId) + '" data-quadrant="' + quadrant + '">删除任务</button>';
 
@@ -232,7 +238,90 @@ window.DevHome = window.DevHome || {};
         });
     };
 
-    /** 静默取消关联（不重新渲染，用于批量操作） */
+    /** 查看已关联笔记，支持逐条解绑 */
+    ns.showTaskLinkedNotesView = function (taskId) {
+        var linkedNotes = ns.getTaskLinkedNotes(taskId);
+        var bodyHtml = '';
+
+        if (linkedNotes.length === 0) {
+            bodyHtml = '<p class="wb-link-view-empty">暂无关联笔记</p>';
+        } else {
+            bodyHtml = linkedNotes.map(function (note) {
+                var title = note.title || '无标题';
+                var preview = (note.content || '').replace(/<[^>]*>/g, '').trim().slice(0, 80);
+                if (preview.length >= 80) preview += '...';
+                var time = note.updatedAt
+                    ? new Date(note.updatedAt).toLocaleDateString('zh-CN')
+                    : (note.createdAt ? new Date(note.createdAt).toLocaleDateString('zh-CN') : '');
+
+                return '<div class="wb-link-view-item" data-note-id="' + escapeHtml(note.id) + '">' +
+                    '<div class="wb-link-view-info">' +
+                        '<div class="wb-link-view-title">' + escapeHtml(title) + '</div>' +
+                        '<div class="wb-link-view-preview">' + escapeHtml(preview || '(无内容)') + '</div>' +
+                        (time ? '<div class="wb-link-view-time">' + time + '</div>' : '') +
+                    '</div>' +
+                    '<button class="wb-link-view-unlink" data-note-id="' + escapeHtml(note.id) + '" title="解绑此笔记">解绑</button>' +
+                '</div>';
+            }).join('');
+        }
+
+        var overlay = document.createElement('div');
+        overlay.className = 'wb-link-popup-overlay';
+        overlay.innerHTML = '<div class="wb-link-popup wb-link-view-popup">' +
+            '<h3>已关联笔记（' + linkedNotes.length + ' 篇）</h3>' +
+            '<div class="wb-link-popup-body">' + bodyHtml + '</div>' +
+            '<div class="wb-link-popup-footer">' +
+                '<button class="wb-link-popup-cancel">关闭</button>' +
+            '</div>' +
+        '</div>';
+        document.body.appendChild(overlay);
+
+        // 关闭
+        var closeFn = function () { overlay.remove(); };
+        overlay.addEventListener('click', function (e) { if (e.target === overlay) closeFn(); });
+        overlay.querySelector('.wb-link-popup-cancel').addEventListener('click', closeFn);
+
+        // 解绑按钮事件
+        overlay.querySelectorAll('.wb-link-view-unlink').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                var noteId = btn.dataset.noteId;
+                var noteItem = btn.closest('.wb-link-view-item');
+                var noteTitle = noteItem ? (noteItem.querySelector('.wb-link-view-title') || {}).textContent || '此笔记' : '此笔记';
+
+                // 二次确认
+                var confirmOverlay = document.createElement('div');
+                confirmOverlay.className = 'wb-link-popup-overlay';
+                confirmOverlay.style.zIndex = '3200';
+                confirmOverlay.innerHTML = '<div class="wb-link-popup" style="max-width:280px;">' +
+                    '<h3>确认解绑</h3>' +
+                    '<p style="padding:12px 16px;font-size:13px;color:var(--color-text-secondary);margin:0;">确定要解除与「' + noteTitle.slice(0, 20) + '」的关联吗？<br><small style="color:var(--color-text-tertiary);">仅移除关联，不删除笔记</small></p>' +
+                    '<div class="wb-link-popup-footer">' +
+                        '<button class="wb-link-popup-cancel">取消</button>' +
+                        '<button class="wb-link-popup-save" style="background:var(--color-danger);">确认解绑</button>' +
+                    '</div>' +
+                '</div>';
+                document.body.appendChild(confirmOverlay);
+
+                confirmOverlay.addEventListener('click', function (ce) { if (ce.target === confirmOverlay) confirmOverlay.remove(); });
+                confirmOverlay.querySelector('.wb-link-popup-cancel').addEventListener('click', function () { confirmOverlay.remove(); });
+                confirmOverlay.querySelector('.wb-link-popup-save').addEventListener('click', function () {
+                    ns.unlinkNoteFromTask(taskId, noteId);
+                    confirmOverlay.remove();
+                    // 从视图中移除该条目
+                    if (noteItem) noteItem.remove();
+                    // 更新标题中的计数
+                    var remaining = overlay.querySelectorAll('.wb-link-view-item').length;
+                    var titleEl = overlay.querySelector('h3');
+                    if (titleEl) titleEl.textContent = '已关联笔记（' + remaining + ' 篇）';
+                    if (remaining === 0) {
+                        overlay.querySelector('.wb-link-popup-body').innerHTML = '<p class="wb-link-view-empty">暂无关联笔记</p>';
+                    }
+                    console.log('[编辑] 从任务 ' + taskId + ' 解绑笔记 ' + noteId);
+                });
+            });
+        });
+    };
     ns.unlinkNoteFromTaskSilent = function (taskId, noteId) {
         var config = ns.getWorkbenchState();
         QUADRANTS.forEach(function (q) {

@@ -121,6 +121,10 @@ window.DevHome = window.DevHome || {};
                 ns.showTaskLinkNotesPopup(taskId);
                 ns.hideTaskContextMenu();
                 console.log('[交互] 任务菜单 关联笔记 ' + taskId);
+            } else if (action === 'view-linked-notes') {
+                ns.showTaskLinkedNotesView(taskId);
+                ns.hideTaskContextMenu();
+                console.log('[交互] 任务菜单 查看关联笔记 ' + taskId);
             }
         });
 
