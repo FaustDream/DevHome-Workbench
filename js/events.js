@@ -14,6 +14,14 @@ window.DevHome = window.DevHome || {};
     var escapeHtml = ns.escapeHtml;
 
     ns.bindEvents = function () {
+        // 防重复绑定：配置目录选择后再次调用 bindEvents() 时避免累加重复监听器
+        if (state._eventsBound) {
+            console.log('[事件] bindEvents 已绑定，跳过重复调用');
+            return;
+        }
+        state._eventsBound = true;
+        console.log('[事件] bindEvents 首次绑定');
+
         // ===== 分类按钮行事件 =====
         if (dom.catRow) {
             dom.catRow.addEventListener('click', function (e) {
