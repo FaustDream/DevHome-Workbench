@@ -527,7 +527,8 @@ window.DevHome = window.DevHome || {};
     }
 
     async function tryRecoverWritePermission() {
-        if (!dirHandle || !writePermissionPending) return true;
+        if (!dirHandle) return false; // 无 handle → 无法恢复，需重新选择目录
+        if (!writePermissionPending) return true;
         try {
             var opts = { mode: 'readwrite' };
             if (await dirHandle.queryPermission(opts) === 'granted') {
@@ -618,6 +619,37 @@ window.DevHome = window.DevHome || {};
         window.addEventListener('beforeunload', _onBeforeUnload);
     }
 
+    /* ===== chrome.storage 变更自动同步 ===== */
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
+        chrome.storage.onChanged.addListener(function (changes, areaName) {
+            if (areaName !== 'local') return;
+            if (!dirHandle || !isReady) return;
+
+            // 将 chrome.storage key 映射到 DATA_LAYOUT 类别
+            var KEY_TO_CATEGORY = {
+                'v2/notes': 'notes',
+                'v2/captures': 'captures',
+                'v2/tasks': 'tasks',
+                'v2/pomodoro_sessions': 'pomodoro',
+                'v2/behavior': 'behavior',
+                'v2/config': 'config'
+            };
+
+            Object.keys(changes).forEach(function (key) {
+                var cat = KEY_TO_CATEGORY[key];
+                if (cat) {
+                    dirtyCategories[cat] = true;
+                }
+            });
+
+            // 有脏数据 → 触发防抖写盘
+            if (Object.keys(dirtyCategories).length > 0 && !syncInProgress) {
+                if (writeTimer) clearTimeout(writeTimer);
+                writeTimer = setTimeout(function () { syncToFile(false); }, WRITE_DEBOUNCE_MS);
+            }
+        });
+    }
+
     /* ===== 启动入口 ===== */
 
     async function init() {
@@ -697,19 +729,30 @@ window.DevHome = window.DevHome || {};
         try {
             var handle = await window.showDirectoryPicker({ mode: 'readwrite' });
             dirHandle = handle;
+            console.log('[FileConfig] 用户选择了目录:', handle.name);
 
             // 直接读取分类目录数据，不再依赖 manifest
             var categoryData = await readAllCategoryFiles();
             if (categoryData) {
                 await restoreAllData(categoryData);
                 showToast('数据已从 ' + handle.name + ' 完整恢复', 'success');
+                console.log('[FileConfig] 从目录恢复了 ' + Object.keys(categoryData).length + ' 个类别');
             } else {
                 // 空目录/无数据 → 从 localStorage 同步写入
                 await writeAllCategoryFiles();
                 showToast(hasLocalData() ? '数据已同步到 ' + handle.name : '配置目录已就绪：' + handle.name, 'success');
+                console.log('[FileConfig] 本地数据已写入到目录');
             }
 
-            await saveHandleToDB(handle);
+            // 持久化 handle 到 IndexedDB
+            try {
+                await saveHandleToDB(handle);
+                console.log('[FileConfig] Handle 已保存到 IndexedDB');
+            } catch (dbErr) {
+                console.error('[FileConfig] 保存 Handle 到 IndexedDB 失败:', dbErr);
+                showWarningBar('目录已选择但未能保存状态，刷新后可能需要重新选择', false);
+            }
+
             isReady = true;
             writePermissionPending = false;
             updateBadge('', '#e74c3c');
