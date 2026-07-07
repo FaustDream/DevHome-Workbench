@@ -49,6 +49,19 @@ window.DevHome = window.DevHome || {};
 
     /* ===== 笔记数据读写 ===== */
 
+    /** 加载自定义类型标签到内存缓存，供渲染使用（避免 custom_xxxx 显示） */
+    ns.loadCustomTypeLabels = async function () {
+        var config = await ns.storageV2.get(ns.storageV2.KEYS.CONFIG, ns.DEFAULT_V2_CONFIG);
+        var customTypes = config.customNoteTypes || [];
+        state._customTypeLabels = {};
+        state._customTypeIcons = {};
+        customTypes.forEach(function (ct) {
+            state._customTypeLabels[ct.key] = ct.label;
+            state._customTypeIcons[ct.key] = ct.icon || '🏷️';
+        });
+        console.log('[标签] 已加载 ' + customTypes.length + ' 个自定义类型');
+    };
+
     /** 加载笔记列表（含数据迁移：补全缺失 id、wordCount，清理废弃字段） */
     ns.loadNotes = async function () {
         state.notes = await storageV2.get(storageV2.KEYS.NOTES, []);
@@ -81,6 +94,9 @@ window.DevHome = window.DevHome || {};
                 '若干字段。');
             await ns.saveNotes();
         }
+
+        // 加载自定义类型标签到缓存，确保 renderNotesList 首次渲染就能显示正确业务名称
+        await ns.loadCustomTypeLabels();
     };
 
     /** 保存笔记列表 */
@@ -330,10 +346,14 @@ window.DevHome = window.DevHome || {};
             }
             group.items.forEach(function (item) {
                 var isActive = state.currentNote && state.currentNote.id === item.id;
-                // 多类型支持：取第一个类型做主图标
+                // 多类型支持：取第一个类型做主图标（优先内置图标，再取自定义缓存图标）
                 var itemTypes = (item.type || 'note').split(',').filter(Boolean);
                 var primaryType = itemTypes[0] || 'note';
-                var icon = item._kind === 'capture' ? '⚡' : (NOTE_TYPES[primaryType] ? NOTE_TYPES[primaryType].icon : '📝');
+                var icon = item._kind === 'capture'
+                    ? '⚡'
+                    : (NOTE_TYPES[primaryType]
+                        ? NOTE_TYPES[primaryType].icon
+                        : ((state._customTypeIcons || {})[primaryType] || '📝'));
                 var timeStr = formatRelativeTime(item.updatedAt || item.createdAt);
                 // 渲染所有类型徽章（合并自定义类型标签，避免 custom_xxxx 原始 key 暴露）
                 var typeLabels = Object.assign({
