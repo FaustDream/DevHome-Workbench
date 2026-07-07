@@ -1,4 +1,4 @@
-/* DevHome Workbench - 编译组件: button.jsx */
+/* DevHome Workbench - button.jsx (development) */
 var button = (() => {
   var __defProp = Object.defineProperty;
   var __getOwnPropSymbols = Object.getOwnPropertySymbols;

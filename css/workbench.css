@@ -1886,3 +1886,249 @@
 }
 
 body > * { position: relative; z-index: 1; }
+
+/* ===== React 交互式数据看板 ===== */
+.db-dashboard {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.db-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.db-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0;
+}
+.db-streak-badge {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-accent);
+    background: rgba(85,230,210,0.08);
+    padding: 4px 10px;
+    border-radius: 20px;
+}
+
+/* 统计卡片行 */
+.db-cards-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+.db-stat-card {
+    background: var(--color-surface-subtle);
+    border: 1px solid var(--color-glass-border);
+    border-radius: 12px;
+    padding: 14px 12px;
+    text-align: center;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+    position: relative;
+    overflow: hidden;
+}
+.db-stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--accent, var(--color-accent));
+}
+.db-stat-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent, var(--color-accent));
+}
+.db-stat-icon {
+    font-size: 22px;
+    margin-bottom: 4px;
+}
+.db-stat-num {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--color-text);
+    line-height: 1.2;
+}
+.db-stat-label {
+    font-size: 10px;
+    color: var(--color-text-tertiary);
+    margin-top: 2px;
+}
+
+/* 7 日热力图 */
+.db-bottom-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+.db-heatmap {
+    background: var(--color-surface-subtle);
+    border: 1px solid var(--color-glass-border);
+    border-radius: 12px;
+    padding: 12px 14px;
+}
+.db-heatmap-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    margin-bottom: 8px;
+}
+.db-heatmap-row {
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+}
+.db-heatmap-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+.db-heatmap-day {
+    font-size: 10px;
+    color: var(--color-text-tertiary);
+}
+.db-heatmap-dot {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--color-surface-muted);
+    border: 1px solid var(--color-glass-border);
+    transition: all 0.2s ease;
+}
+.db-heatmap-cell.active .db-heatmap-dot {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    box-shadow: 0 0 8px var(--color-accent-glow);
+}
+.db-heatmap-cell.active .db-heatmap-day {
+    color: var(--color-accent);
+    font-weight: 600;
+}
+
+/* 番茄钟环形进度 */
+.db-pomodoro-ring {
+    background: var(--color-surface-subtle);
+    border: 1px solid var(--color-glass-border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+.db-pomodoro-ring svg { flex-shrink: 0; }
+.db-pomodoro-center {
+    position: absolute;
+    text-align: center;
+    pointer-events: none;
+}
+.db-pomodoro-big {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-text);
+    line-height: 1;
+}
+.db-pomodoro-sub {
+    font-size: 10px;
+    color: var(--color-text-tertiary);
+}
+.db-pomodoro-label {
+    font-size: 10px;
+    color: var(--color-text-secondary);
+    margin-top: 2px;
+}
+.db-pomodoro-ring {
+    position: relative;
+}
+
+/* 空状态 */
+.db-empty {
+    text-align: center;
+    padding: 32px 16px;
+    color: var(--color-text-tertiary);
+    font-size: 12px;
+}
+
+/* ===== React 通知系统 ===== */
+.rt-toast-container {
+    position: fixed;
+    top: 12px;
+    right: 16px;
+    z-index: 9000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+    max-width: 380px;
+    width: calc(100% - 32px);
+}
+.rt-toast-item {
+    pointer-events: auto;
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-glass-border);
+    border-radius: 10px;
+    box-shadow: var(--shadow-lg);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    overflow: hidden;
+    animation: toastSlideIn 0.25s ease;
+}
+.rt-toast-item.rt-toast-exit {
+    animation: toastSlideOut 0.2s ease forwards;
+}
+@keyframes toastSlideIn {
+    from { opacity: 0; transform: translateX(40px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes toastSlideOut {
+    from { opacity: 1; transform: translateX(0); }
+    to   { opacity: 0; transform: translateX(40px); }
+}
+.rt-toast-body {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+}
+.rt-toast-icon {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700;
+    flex-shrink: 0;
+    color: #fff;
+}
+.rt-toast-success { background: var(--color-success); }
+.rt-toast-error   { background: var(--color-danger); }
+.rt-toast-warning { background: var(--color-warning); }
+.rt-toast-info    { background: var(--color-accent); }
+.rt-toast-msg {
+    flex: 1; min-width: 0;
+    font-size: 12px; color: var(--color-text);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rt-toast-action {
+    padding: 3px 10px; border: 1px solid var(--color-accent); border-radius: 5px;
+    background: transparent; color: var(--color-accent);
+    font-size: 11px; font-weight: 600; cursor: pointer;
+    flex-shrink: 0; font-family: var(--font-sans);
+    transition: all 0.1s ease;
+}
+.rt-toast-action:hover { background: var(--color-accent); color: var(--color-text-inverse); }
+.rt-toast-close {
+    width: 20px; height: 20px; border: none; border-radius: 4px;
+    background: transparent; color: var(--color-text-tertiary);
+    font-size: 14px; cursor: pointer; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+}
+.rt-toast-close:hover { background: var(--color-surface-hover); color: var(--color-text); }
+.rt-toast-progress { height: 2px; background: var(--color-glass-border); }
+.rt-toast-progress-bar {
+    height: 100%;
+    background: var(--accent, var(--color-accent));
+    transition: width 0.1s linear;
+}

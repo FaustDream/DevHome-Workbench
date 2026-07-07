@@ -1,4 +1,4 @@
-/* DevHome Workbench - 编译组件: changelog-dialog.jsx */
+/* DevHome Workbench - changelog-dialog.jsx (development) */
 var changelogDialog = (() => {
   var __defProp = Object.defineProperty;
   var __defProps = Object.defineProperties;

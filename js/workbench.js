@@ -926,6 +926,18 @@ window.DevHome = window.DevHome || {};
         return dt.getTime();
     };
 
+    /** 挂载 React 通知系统容器（首次调用时创建，幂等） */
+    ns.initReactToast = function () {
+        var root = document.getElementById('reactToastRoot');
+        if (!root || !window.ReactDOM || !window.ToastApp) return;
+        if (root._reactInited) return;
+        var toastRoot = ReactDOM.createRoot(root);
+        toastRoot.render(React.createElement(window.ToastApp.ToastContainer));
+        root._reactInited = true;
+        root._reactRoot = toastRoot;
+        console.log('[面板] React Toast 通知系统已挂载');
+    };
+
     /** 启动截止时间轮询提醒：每分钟扫描活跃任务，到期前2分钟或已超期时弹Toast */
     (function () {
         var _deadlineNotified = {}; // 已提醒的 taskId 集合，避免重复弹窗
@@ -1280,14 +1292,6 @@ window.DevHome = window.DevHome || {};
         var totalFocusMin = todaySessions.reduce(function (sum, s) { return sum + (s.duration || 0); }, 0);
 
         // 连续打卡
-        var streak = behavior.streakDays || 0;
-        if (dom.wbMeStreakNum) dom.wbMeStreakNum.textContent = streak;
-        if (dom.wbMeStatTasks) dom.wbMeStatTasks.textContent = behavior.totalCompleted || 0;
-        if (dom.wbMeStatPomodoros) dom.wbMeStatPomodoros.textContent = todaySessions.length;
-        if (dom.wbMeStatFocus) dom.wbMeStatFocus.textContent = totalFocusMin;
-        if (dom.wbMeStatNotes) dom.wbMeStatNotes.textContent = (state.notes || []).length;
-
-        // 更新今日打卡
         var todayBehavior = behavior.dailyStats && behavior.dailyStats[todayStr];
         if (!todayBehavior || !todayBehavior.streakDay) {
             behavior.lastActiveDate = todayStr;
@@ -1295,8 +1299,35 @@ window.DevHome = window.DevHome || {};
             if (!behavior.dailyStats) behavior.dailyStats = {};
             behavior.dailyStats[todayStr] = Object.assign({}, behavior.dailyStats[todayStr] || {}, { streakDay: true });
             await storageV2.set(storageV2.KEYS.BEHAVIOR, behavior);
-            if (dom.wbMeStreakNum) dom.wbMeStreakNum.textContent = behavior.streakDays;
         }
+
+        // React 渲染：设置全局数据并触发看板刷新
+        window.__dashboardData = {
+            streak: behavior.streakDays || 0,
+            totalCompleted: behavior.totalCompleted || 0,
+            totalPomodoros: todaySessions.length,
+            totalFocusMinutes: totalFocusMin,
+            totalNotes: (state.notes || []).length,
+            dailyStats: behavior.dailyStats || {}
+        };
+
+        var root = document.getElementById('reactDashboardRoot');
+        if (root && window.ReactDOM && window.DashboardApp) {
+            // 首次渲染用 createRoot，后续用 __refreshDashboard
+            if (!root._reactInited) {
+                var reactRoot = ReactDOM.createRoot(root);
+                reactRoot.render(React.createElement(window.DashboardApp.Dashboard));
+                root._reactInited = true;
+                root._reactRoot = reactRoot;
+            } else if (window.__refreshDashboard) {
+                window.__refreshDashboard();
+            }
+        } else {
+            // 回退：更新原 DOM（dashboard.js 未加载）
+            if (dom.wbMeStreakNum) dom.wbMeStreakNum.textContent = behavior.streakDays || 0;
+        }
+
+        console.log('[面板] 行为数据看板已刷新 连续' + behavior.streakDays + '天');
     };
 
     /* ===== AI 调用引擎 ===== */

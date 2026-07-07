@@ -1,4 +1,4 @@
-/* DevHome Workbench - 编译组件: tile-form-dialog.jsx */
+/* DevHome Workbench - tile-form-dialog.jsx (development) */
 var tileFormDialog = (() => {
   // js/components/ui/tile-form-dialog.jsx
   var { createElement: h, useState, useEffect, useRef } = React;

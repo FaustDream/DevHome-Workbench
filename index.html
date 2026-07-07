@@ -544,14 +544,9 @@
                     <section class="s-tab" data-s-tab="data">
                         <!-- 行为面板（工作台模式） -->
                         <div id="wbSettingsStatsWrap" data-mode="workbench" style="display:none;">
-                            <h3 class="s-section-title">统计数据</h3>
-                            <div class="s-stats" id="wbSettingsStats">
-                                <div class="s-stat-card"><span class="s-stat-num" id="wbMeStreakNum">0</span><span class="s-stat-label">连续打卡</span></div>
-                                <div class="s-stat-card"><span class="s-stat-num" id="wbMeStatTasks">0</span><span class="s-stat-label">完成任务</span></div>
-                                <div class="s-stat-card"><span class="s-stat-num" id="wbMeStatPomodoros">0</span><span class="s-stat-label">番茄钟</span></div>
-                                <div class="s-stat-card"><span class="s-stat-num" id="wbMeStatFocus">0</span><span class="s-stat-label">专注分钟</span></div>
-                                <div class="s-stat-card"><span class="s-stat-num" id="wbMeStatNotes">0</span><span class="s-stat-label">笔记</span></div>
-                            </div>
+                            <h3 class="s-section-title">行为数据看板</h3>
+                            <!-- React 交互式数据看板挂载点（替代原生 DOM 统计卡片） -->
+                            <div id="reactDashboardRoot"></div>
                         </div>
 
                         <h3 class="s-section-title">导出中心</h3>
@@ -1077,6 +1072,9 @@
     <script src="js/ui-components/button.js" defer></script>
     <script src="js/ui-components/dialog.js" defer></script>
     <script src="js/ui-components/confirm-dialog.js" defer></script>
+    <!-- React 交互式数据看板（替代原生统计卡片） -->
+    <script src="js/ui-components/dashboard.js" defer></script>
+    <script src="js/ui-components/toast.js" defer></script>
     <script src="js/ui-components/prompt-dialog.js" defer></script>
     <script src="js/ui-components/tile-form-dialog.js" defer></script>
     <script src="js/ui-components/changelog-dialog.js" defer></script>
@@ -1116,8 +1114,7 @@
     <script src="js/main.js" defer></script>
     <script src="js/matrix-bg.js"></script>
 
-
-
-
+    <!-- React 应用挂载点 -->
+    <div id="reactToastRoot"></div>
 </body>
 </html>

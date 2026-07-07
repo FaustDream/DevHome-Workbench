@@ -167,6 +167,9 @@ window.DevHome = window.DevHome || {};
             localStorage.removeItem('_devhome_last_mode');
         }
 
+        // 挂载 React 通知系统（幂等，首次调用时创建 ReactDOM root）
+        if (typeof ns.initReactToast === 'function') ns.initReactToast();
+
         // 监听页面关闭/刷新，保存当前模式（覆盖 F5 和浏览器刷新按钮）
         window.addEventListener('beforeunload', function () {
             if (state.currentDevhomeMode !== 'daily') {

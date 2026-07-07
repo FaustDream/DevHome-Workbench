@@ -1,4 +1,4 @@
-/* DevHome Workbench - 编译组件: prompt-dialog.jsx */
+/* DevHome Workbench - prompt-dialog.jsx (development) */
 var promptDialog = (() => {
   // js/components/ui/prompt-dialog.jsx
   var { createElement: h, useState, useEffect, useRef } = React;
