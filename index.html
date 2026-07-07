@@ -198,7 +198,7 @@
                             <!-- 标签属性区：标题下方横向 Pill 胶囊徽章 -->
                             <div class="wb-notes-editor-meta" id="wbNotesEditorMeta">
                                 <span class="wb-note-type-badge-editor" id="wbNoteTypeBadge"></span>
-                                <!-- 笔记转四象限任务：点击弹出象限选择器 -->
+                                <!-- 笔记转四象限任务：先选象限 → 再设截止时间（可选） -->
                                 <div class="wb-note-to-task-wrap" id="wbNoteToTaskWrap" style="display:none;">
                                     <button class="wb-note-to-task-btn" id="wbNoteToTaskBtn" title="转为四象限任务">转为任务</button>
                                     <div class="wb-quadrant-picker-menu" id="wbQuadrantPicker" style="display:none;">
@@ -206,6 +206,18 @@
                                         <button data-quadrant="q2">重要不紧急</button>
                                         <button data-quadrant="q3">紧急不重要</button>
                                         <button data-quadrant="q4">不紧急不重要</button>
+                                    </div>
+                                    <!-- 第二层：截止时间选择器（选完象限后出现） -->
+                                    <div class="wb-quadrant-picker-menu wb-task-time-picker" id="wbTaskTimePicker" style="display:none;">
+                                        <div class="wb-time-picker-label">设置截止时间（可选）</div>
+                                        <div class="wb-time-picker-row">
+                                            <input type="date" id="wbTaskTimeDate" class="wb-time-picker-date">
+                                            <input type="time" id="wbTaskTimeTime" class="wb-time-picker-time">
+                                        </div>
+                                        <div class="wb-time-picker-actions">
+                                            <button class="wb-time-picker-skip" id="wbTimePickerSkip">跳过（不设时间）</button>
+                                            <button class="wb-time-picker-confirm" id="wbTimePickerConfirm">确认转换</button>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="wb-note-type-picker" id="wbNoteTypePicker" style="display:none;">

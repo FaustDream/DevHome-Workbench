@@ -109,6 +109,10 @@ window.DevHome = window.DevHome || {};
                 ns.hideTaskContextMenu();
                 ns.editQuadrantTask(taskId, quadrant);
                 console.log('[交互] 任务菜单 编辑 ' + taskId);
+            } else if (action === 'set-time') {
+                ns.hideTaskContextMenu();
+                ns.setTaskTime(taskId, quadrant);
+                console.log('[交互] 任务菜单 设置时间 ' + taskId);
             } else if (action === 'delete') {
                 ns.cancelQuadrantTask(quadrant, taskId);
                 ns.hideTaskContextMenu();
@@ -840,22 +844,96 @@ window.DevHome = window.DevHome || {};
                 }
                 console.log('[交互] 笔记转任务 选择象限');
             });
-            // 象限选择器按钮事件
+            // 象限选择器按钮事件 → 展示时间选择器（第二层）
             quadrantPicker.addEventListener('click', function (e) {
                 var btn = e.target.closest('button');
                 if (!btn || !btn.dataset.quadrant) return;
                 e.stopPropagation();
                 var quadrant = btn.dataset.quadrant;
-                ns.convertNoteToTask(state.currentNote.id, quadrant);
                 quadrantPicker.style.display = 'none';
-                ns.showToast('已转至' + ({ q1:'重要且紧急',q2:'重要不紧急',q3:'紧急不重要',q4:'不紧急不重要' })[quadrant] + '象限', 'success');
-                console.log('[交互] 笔记转任务 选中象限=' + quadrant);
+                // 展示时间选择器
+                var timePicker = document.getElementById('wbTaskTimePicker');
+                if (timePicker) {
+                    var btnRect = noteToTaskBtn.getBoundingClientRect();
+                    timePicker.style.position = 'fixed';
+                    timePicker.style.top = (btnRect.bottom + 4) + 'px';
+                    timePicker.style.left = btnRect.left + 'px';
+                    timePicker.style.zIndex = '3100';
+                    timePicker.style.display = 'block';
+                    // 暂存选中的象限
+                    timePicker._quadrant = quadrant;
+                    // 重置日期时间为空
+                    var dateInput = document.getElementById('wbTaskTimeDate');
+                    var timeInput = document.getElementById('wbTaskTimeTime');
+                    if (dateInput) dateInput.value = '';
+                    if (timeInput) timeInput.value = '';
+                    // 自动聚焦日期
+                    if (dateInput) setTimeout(function () { dateInput.focus(); }, 50);
+                }
+                console.log('[交互] 笔记转任务 选中象限=' + quadrant + ' 等待设置时间');
             });
-            // 点击其他地方关闭
+
+            // 时间选择器：确认转换（带截止时间）
+            var confirmBtn = document.getElementById('wbTimePickerConfirm');
+            if (confirmBtn) {
+                confirmBtn.addEventListener('click', function () {
+                    var timePicker = document.getElementById('wbTaskTimePicker');
+                    var quadrant = timePicker && timePicker._quadrant;
+                    if (!quadrant || !state.currentNote) return;
+                    var plannedAt = ns._readTimePickerValue('wbTaskTimeDate', 'wbTaskTimeTime');
+                    ns.convertNoteToTask(state.currentNote.id, quadrant, plannedAt);
+                    if (timePicker) timePicker.style.display = 'none';
+                    var timeLabel = plannedAt ? ' 截止' + _formatPlannedAt(plannedAt) : '';
+                    ns.showToast('已转至' + ({ q1:'重要且紧急',q2:'重要不紧急',q3:'紧急不重要',q4:'不紧急不重要' })[quadrant] + '象限' + timeLabel, 'success');
+                    console.log('[交互] 笔记转任务 quadrant=' + quadrant + ' plannedAt=' + (plannedAt || '无'));
+                });
+            }
+
+            // 时间选择器：跳过（不设时间）
+            var skipBtn = document.getElementById('wbTimePickerSkip');
+            if (skipBtn) {
+                skipBtn.addEventListener('click', function () {
+                    var timePicker = document.getElementById('wbTaskTimePicker');
+                    var quadrant = timePicker && timePicker._quadrant;
+                    if (!quadrant || !state.currentNote) return;
+                    ns.convertNoteToTask(state.currentNote.id, quadrant, null);
+                    if (timePicker) timePicker.style.display = 'none';
+                    ns.showToast('已转至' + ({ q1:'重要且紧急',q2:'重要不紧急',q3:'紧急不重要',q4:'不紧急不重要' })[quadrant] + '象限', 'success');
+                    console.log('[交互] 笔记转任务 quadrant=' + quadrant + ' 无截止时间');
+                });
+            }
+
+            // 辅助：读取日期时间选择器的值并转为时间戳
+            ns._readTimePickerValue = function (dateId, timeId) {
+                var dateEl = document.getElementById(dateId);
+                var timeEl = document.getElementById(timeId);
+                if (!dateEl || !dateEl.value) return null;
+                var dateStr = dateEl.value; // YYYY-MM-DD
+                var timeStr = timeEl && timeEl.value ? timeEl.value : '23:59'; // HH:MM 默认当天结束
+                var dt = new Date(dateStr + 'T' + timeStr + ':00');
+                if (isNaN(dt.getTime())) return null;
+                return dt.getTime();
+            };
+
+            function _formatPlannedAt(ts) {
+                if (!ts) return '';
+                var d = new Date(ts);
+                var y = d.getFullYear();
+                var m = String(d.getMonth() + 1).padStart(2, '0');
+                var day = String(d.getDate()).padStart(2, '0');
+                var h = String(d.getHours()).padStart(2, '0');
+                var min = String(d.getMinutes()).padStart(2, '0');
+                return y + '-' + m + '-' + day + ' ' + h + ':' + min;
+            }
+            // 点击其他地方关闭象限选择器和时间选择器
             document.addEventListener('click', function hidePicker(e) {
-                if (quadrantPicker.style.display !== 'block') return;
+                var pickerVisible = quadrantPicker.style.display === 'block';
+                var timePicker = document.getElementById('wbTaskTimePicker');
+                var timePickerVisible = timePicker && timePicker.style.display === 'block';
+                if (!pickerVisible && !timePickerVisible) return;
                 if (!e.target.closest('#wbNoteToTaskWrap')) {
                     quadrantPicker.style.display = 'none';
+                    if (timePicker) timePicker.style.display = 'none';
                 }
             });
         }

@@ -70,6 +70,7 @@ window.DevHome = window.DevHome || {};
         }).join('') +
             '<div class="wb-task-menu-sep"></div>' +
             '<button data-action="edit" data-task-id="' + escapeHtml(taskId) + '" data-quadrant="' + quadrant + '">编辑任务</button>' +
+            '<button data-action="set-time" data-task-id="' + escapeHtml(taskId) + '" data-quadrant="' + quadrant + '">设置时间</button>' +
             '<button data-action="link-notes" data-task-id="' + escapeHtml(taskId) + '" data-quadrant="' + quadrant + '">关联笔记</button>' +
             '<button data-action="delete" data-task-id="' + escapeHtml(taskId) + '" data-quadrant="' + quadrant + '">删除任务</button>';
 
@@ -141,8 +142,8 @@ window.DevHome = window.DevHome || {};
         console.log('[编辑] 笔记 ' + noteId + ' 取消关联任务 ' + taskId);
     };
 
-    /** 将笔记直接转为四象限任务（支持指定象限） */
-    ns.convertNoteToTask = function (noteId, quadrant) {
+    /** 将笔记直接转为四象限任务（支持指定象限和截止时间） */
+    ns.convertNoteToTask = function (noteId, quadrant, plannedAt) {
         quadrant = quadrant || 'q2';
         var note = (state.notes || []).find(function (n) { return n.id === noteId; });
         if (!note) return;
@@ -157,13 +158,13 @@ window.DevHome = window.DevHome || {};
             status: 'active',
             noteIds: [noteId],
             content: plainContent,
-            plannedAt: null,
+            plannedAt: plannedAt || null,
             createdAt: Date.now()
         });
         ns.saveWorkbenchState({ quadrants: config.quadrants });
         state.workbench = ns.getWorkbenchState();
         ns.renderQuadrantBoard();
-        console.log('[编辑] 笔记转任务: ' + noteId + ' → ' + quadrant + ' 含' + plainContent.length + '字描述');
+        console.log('[编辑] 笔记转任务: ' + noteId + ' → ' + quadrant + (plannedAt ? ' 截止' + new Date(plannedAt).toISOString().slice(0, 16) : '') + ' 含' + plainContent.length + '字描述');
     };
 
     /** 获取任务的关联笔记列表 */
@@ -354,6 +355,8 @@ window.DevHome = window.DevHome || {};
 
         // 立即切换状态和 UI — 不等异步数据，否则用户看到白屏
         console.log('[模式] 进入专注模式');
+        // 启动截止时间轮询提醒
+        if (typeof ns.startDeadlineChecker === 'function') ns.startDeadlineChecker();
         state.workbenchVisible = true;
         state.currentDevhomeMode = 'workbench';
         state._quadrantFilter = 'active';
@@ -401,6 +404,8 @@ window.DevHome = window.DevHome || {};
 
         state.currentDevhomeMode = 'daily';
         console.log('[模式] 退出专注模式');
+        // 停止截止时间提醒
+        if (typeof ns.stopDeadlineChecker === 'function') ns.stopDeadlineChecker();
         state.workbenchVisible = false;
         if (dom.devhomeStage) dom.devhomeStage.classList.remove('visible');
         if (dom.container) dom.container.classList.remove('devhome-dimmed');
@@ -836,6 +841,120 @@ window.DevHome = window.DevHome || {};
         setTimeout(function () { input.focus(); input.select(); }, 50);
         console.log('[编辑] 开始编辑任务标题 id=' + taskId);
     };
+
+    /** 弹出时间选择器修改已有任务的截止时间 */
+    ns.setTaskTime = function (taskId, quadrant) {
+        var config = ns.getWorkbenchState();
+        if (!config.quadrants[quadrant]) return;
+        var task = (config.quadrants[quadrant].tasks || []).find(function (t) { return t.id === taskId; });
+        if (!task) return;
+
+        // 构建一个行内时间编辑面板
+        var listEl = document.getElementById('wbQgList' + quadrant.toUpperCase());
+        if (!listEl) return;
+        var existing = listEl.querySelector('.wb-task-inline-time-edit');
+        if (existing) existing.remove();
+
+        var row = document.createElement('div');
+        row.className = 'wb-task-inline-time-edit';
+        // 从 plannedAt 还原日期和时间
+        var curDate = task.plannedAt ? new Date(task.plannedAt) : null;
+        var dateVal = curDate ? curDate.getFullYear() + '-' + String(curDate.getMonth() + 1).padStart(2, '0') + '-' + String(curDate.getDate()).padStart(2, '0') : '';
+        var timeVal = curDate ? String(curDate.getHours()).padStart(2, '0') + ':' + String(curDate.getMinutes()).padStart(2, '0') : '';
+        row.innerHTML = '<span style="font-size:10px;color:var(--color-text-secondary);margin-right:4px;">截止:</span>' +
+            '<input type="date" class="wb-time-picker-date" value="' + dateVal + '" style="flex:1;">' +
+            '<input type="time" class="wb-time-picker-time" value="' + timeVal + '" style="flex:1;">' +
+            '<button class="wb-task-input-confirm" title="保存">✓</button>' +
+            '<button class="wb-task-input-cancel" title="清除">✕</button>' +
+            '<button class="wb-task-input-expand" title="移除时间" style="font-size:11px;">🗑</button>';
+
+        var taskItem = listEl.querySelector('[data-task-id="' + taskId + '"]');
+        if (taskItem) {
+            taskItem.insertAdjacentElement('afterend', row);
+        } else {
+            listEl.insertBefore(row, listEl.firstChild);
+        }
+
+        var dateInput = row.querySelector('input[type="date"]');
+        var timeInput = row.querySelector('input[type="time"]');
+        var confirmBtn = row.querySelector('.wb-task-input-confirm');
+        var cancelBtn = row.querySelector('.wb-task-input-cancel');
+        var removeBtn = row.querySelector('.wb-task-input-expand');
+
+        var cleanup = function () { row.remove(); };
+
+        var saveTime = function (plannedAt) {
+            config.quadrants[quadrant].tasks = config.quadrants[quadrant].tasks.map(function (t) {
+                if (t.id === taskId) t.plannedAt = plannedAt;
+                return t;
+            });
+            ns.saveWorkbenchState({ quadrants: config.quadrants });
+            state.workbench = ns.getWorkbenchState();
+            ns.renderQuadrantBoard();
+            console.log('[编辑] 任务 ' + taskId + ' 截止时间 ' + (plannedAt ? '更新' : '已移除'));
+        };
+
+        confirmBtn.addEventListener('click', function () {
+            var plannedAt = ns._readTimePickerValueEl(dateInput, timeInput);
+            cleanup();
+            saveTime(plannedAt);
+        });
+        cancelBtn.addEventListener('click', cleanup);
+        removeBtn.addEventListener('click', function () {
+            cleanup();
+            saveTime(null);
+        });
+
+        // 自动聚焦日期输入
+        if (dateInput) setTimeout(function () { dateInput.focus(); }, 50);
+        console.log('[编辑] 设置任务时间 id=' + taskId);
+    };
+
+    /** 从已有的 date/time DOM 元素读取时间戳（供 setTaskTime 内联使用） */
+    ns._readTimePickerValueEl = function (dateEl, timeEl) {
+        if (!dateEl || !dateEl.value) return null;
+        var dateStr = dateEl.value;
+        var timeStr = timeEl && timeEl.value ? timeEl.value : '23:59';
+        var dt = new Date(dateStr + 'T' + timeStr + ':00');
+        if (isNaN(dt.getTime())) return null;
+        return dt.getTime();
+    };
+
+    /** 启动截止时间轮询提醒：每分钟扫描活跃任务，到期前2分钟或已超期时弹Toast */
+    (function () {
+        var _deadlineNotified = {}; // 已提醒的 taskId 集合，避免重复弹窗
+        var _deadlineTimer = null;
+
+        ns.startDeadlineChecker = function () {
+            if (_deadlineTimer) return;
+            _deadlineTimer = setInterval(function () {
+                if (state.currentDevhomeMode !== 'workbench') return;
+                var config = state.workbench || ns.getWorkbenchState();
+                if (!config || !config.quadrants) return;
+                QUADRANTS.forEach(function (q) {
+                    var tasks = (config.quadrants[q] && config.quadrants[q].tasks) || [];
+                    tasks.forEach(function (task) {
+                        if (task.status !== 'active' || !task.plannedAt) return;
+                        var remaining = task.plannedAt - Date.now();
+                        // 超期 或 剩余不足 2 分钟且未提醒
+                        if (remaining <= 0 || (remaining < 120000 && remaining > 0)) {
+                            if (_deadlineNotified[task.id]) return;
+                            _deadlineNotified[task.id] = true;
+                            var label = remaining <= 0 ? '已超期' : '即将到期';
+                            var title = (task.title || '').slice(0, 30);
+                            ns.showToast('⏰ ' + label + ': ' + title, remaining <= 0 ? 'warning' : 'info');
+                            console.log('[提醒] 截止时间 ' + label + ' task=' + task.id + ' title=' + title);
+                        }
+                    });
+                });
+            }, 60000); // 每分钟检查一次
+        };
+
+        ns.stopDeadlineChecker = function () {
+            if (_deadlineTimer) { clearInterval(_deadlineTimer); _deadlineTimer = null; }
+            _deadlineNotified = {};
+        };
+    })();
 
     /* ===== 番茄钟 ===== */
     /** 辅助：更新番茄钟时间显示 */
