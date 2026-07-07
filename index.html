@@ -355,16 +355,10 @@
         </div>
     </div>
 
-    <!-- 编辑器右键菜单（专注模式，已精简：去掉 B/I/U/标题/颜色，气泡工具栏覆盖） -->
+    <!-- 编辑器右键菜单（专注模式，已精简：去掉代码块、引用块、B/I/U/标题/颜色，气泡工具栏覆盖） -->
     <div class="context-menu" id="editorContextMenu">
-        <div class="context-menu-item ctx-has-submenu" id="ctxCodeSubmenu" data-submenu="code">
-            <span>&lt;/&gt; 插入代码块</span>
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" class="ctx-sub-arrow"><path d="M3 2l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-        <div class="context-menu-item" data-editor-action="blockquote">
-            <span>❝ 引用块</span>
-        </div>
-        <div class="context-menu-divider"></div>
+
+
         <div class="context-menu-item" data-editor-action="copy">
             <span>📋 复制</span><kbd class="doc-kbd ctx-kbd">Ctrl+C</kbd>
         </div>
@@ -376,8 +370,6 @@
         </div>
     </div>
 
-    <!-- 代码语言子菜单 -->
-    <div class="context-menu ctx-submenu" id="ctxCodeLangMenu"></div>
 
     <!-- 固定设置入口 -->
     <button class="settings-gear-btn" id="settingsGearBtn" type="button" title="设置" aria-label="打开设置">

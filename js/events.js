@@ -215,7 +215,6 @@ window.DevHome = window.DevHome || {};
         var editorMenu = document.getElementById('editorContextMenu');
         if (editorMenu) {
             editorMenu.addEventListener('mousedown', function (e) {
-                if (e.target.closest('.ctx-has-submenu')) return;
                 var item = e.target.closest('.context-menu-item');
                 if (!item || !item.dataset.editorAction) return;
                 e.preventDefault();

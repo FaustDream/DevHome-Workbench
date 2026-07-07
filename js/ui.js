@@ -449,7 +449,6 @@ window.DevHome = window.DevHome || {};
     function hideEditorMenu() {
         var menu = document.getElementById('editorContextMenu');
         if (menu) menu.classList.remove('visible');
-        ns.hideCodeLangMenu();
     }
 
     /** 编辑器右键菜单项处理（contenteditable 精简版：copy/paste） */
@@ -463,56 +462,6 @@ window.DevHome = window.DevHome || {};
     };
 
 
-
-    /* ===== 代码语言子菜单 ===== */
-    var CODE_LANGUAGES = [
-        { key: '', label: '纯文本' },
-        { key: 'javascript', label: 'JavaScript' },
-        { key: 'typescript', label: 'TypeScript' },
-        { key: 'python', label: 'Python' },
-        { key: 'java', label: 'Java' },
-        { key: 'cpp', label: 'C++' },
-        { key: 'csharp', label: 'C#' },
-        { key: 'go', label: 'Go' },
-        { key: 'rust', label: 'Rust' },
-        { key: 'ruby', label: 'Ruby' },
-        { key: 'php', label: 'PHP' },
-        { key: 'swift', label: 'Swift' },
-        { key: 'kotlin', label: 'Kotlin' },
-        { key: 'sql', label: 'SQL' },
-        { key: 'html', label: 'HTML' },
-        { key: 'css', label: 'CSS' },
-        { key: 'json', label: 'JSON' },
-        { key: 'yaml', label: 'YAML' },
-        { key: 'bash', label: 'Bash' },
-        { key: 'markdown', label: 'Markdown' }
-    ];
-
-    ns.showCodeLangMenu = function (anchorItem) {
-        var menu = document.getElementById('ctxCodeLangMenu');
-        if (!menu) return;
-        menu.innerHTML = CODE_LANGUAGES.map(function (l) {
-            return '<div class="ctx-code-lang-item" data-lang="' + l.key + '">' + l.label + '</div>';
-        }).join('');
-        menu.classList.add('visible');
-        var anchorRect = anchorItem.getBoundingClientRect();
-        menu.style.position = 'fixed';
-        menu.style.left = (anchorRect.right + 4) + 'px';
-        menu.style.top = anchorRect.top + 'px';
-        menu.style.zIndex = '2830';
-        var menuRect = menu.getBoundingClientRect();
-        if (menuRect.right > window.innerWidth - 8) {
-            menu.style.left = (anchorRect.left - menuRect.width - 4) + 'px';
-        }
-        if (menuRect.bottom > window.innerHeight - 8) {
-            menu.style.top = (anchorRect.bottom - menuRect.height) + 'px';
-        }
-    };
-
-    ns.hideCodeLangMenu = function () {
-        var menu = document.getElementById('ctxCodeLangMenu');
-        if (menu) menu.classList.remove('visible');
-    };
 
     /* ===== 设置面板保存辅助 ===== */
     ns._saveStrictMode = function (on) {
