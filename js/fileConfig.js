@@ -37,23 +37,23 @@ window.DevHome = window.DevHome || {};
     'use strict';
 
     /* ===== 常量 ===== */
-    var MANIFEST_FILE = 'manifest.json';
-    var MANIFEST_VERSION = 2;
-    var OLD_CONFIG_FILE = 'devhome-config.json'; // 旧版单文件格式，迁移后删除
     var INDEXEDDB_NAME = 'DevHomeFileConfig';
     var INDEXEDDB_STORE = 'handles';
     var HANDLE_KEY = 'directoryHandle';
-    var WRITE_DEBOUNCE_MS = 1000;  // 1 秒防抖，减少数据丢失窗口
+    var WRITE_DEBOUNCE_MS = 1000;  // 1 秒防抖
 
-    /** 数据类别 → 子目录 + 文件名 映射 */
+    /**
+     * 数据类别 → 子目录 + 文件名 映射
+     * 笔记为独立文件（每个笔记一个 JSON），其他类别为单文件
+     */
     var DATA_LAYOUT = {
-        notes:      { dir: 'notes',    file: 'data.json', desc: '笔记' },
-        captures:   { dir: 'captures', file: 'data.json', desc: '快速捕获' },
-        tasks:      { dir: 'tasks',    file: 'data.json', desc: '四象限任务' },
-        tiles:      { dir: 'tiles',    file: 'data.json', desc: '磁贴与分类' },
-        pomodoro:   { dir: 'pomodoro', file: 'data.json', desc: '番茄钟记录' },
-        behavior:   { dir: 'behavior', file: 'data.json', desc: '行为追踪' },
-        config:     { dir: 'config',   file: 'app.json',  desc: '应用配置' }
+        notes:      { dir: 'notes',    desc: '笔记',     individual: true },
+        captures:   { dir: 'captures', desc: '快速捕获',  file: 'captures.json' },
+        tasks:      { dir: 'tasks',    desc: '四象限任务', file: 'tasks.json' },
+        tiles:      { dir: 'tiles',    desc: '磁贴与分类', file: 'tiles.json' },
+        pomodoro:   { dir: 'pomodoro', desc: '番茄钟记录', file: 'pomodoro.json' },
+        behavior:   { dir: 'behavior', desc: '行为追踪',  file: 'behavior.json' },
+        config:     { dir: 'config',   desc: '应用配置',  file: 'app.json' }
     };
 
     /** localStorage 缓存键前缀（用于收集数据） */
@@ -143,53 +143,17 @@ window.DevHome = window.DevHome || {};
 
     /* ===== 分类文件读写 ===== */
 
-    /** 从子目录读取一个数据文件 */
+    /** 从子目录读取一个类别的数据（支持独立文件和单文件两种模式） */
     async function readCategoryFile(category) {
         if (!dirHandle) return null;
         var layout = DATA_LAYOUT[category];
         if (!layout) return null;
+        // 笔记：独立文件模式
+        if (layout.individual) return readIndividualNotes();
+        // 其他：单文件模式
         try {
             var subDir = await dirHandle.getDirectoryHandle(layout.dir, { create: false });
             var fileHandle = await subDir.getFileHandle(layout.file, { create: false });
-            var file = await fileHandle.getFile();
-            var text = await file.text();
-            return JSON.parse(text);
-        } catch (e) {
-            if (e.name === 'NotFoundError') return null;
-            throw e;
-        }
-    }
-
-    /** 将数据写入子目录文件 */
-    async function writeCategoryFile(category, data) {
-        if (!dirHandle) throw new Error('目录未授权');
-        var layout = DATA_LAYOUT[category];
-        if (!layout) throw new Error('未知数据类别: ' + category);
-        var subDir = await dirHandle.getDirectoryHandle(layout.dir, { create: true });
-        var fileHandle = await subDir.getFileHandle(layout.file, { create: true });
-        var writable = await fileHandle.createWritable();
-        await writable.write(JSON.stringify(data, null, 2));
-        await writable.close();
-    }
-
-    /** 写入 manifest.json */
-    async function writeManifest() {
-        if (!dirHandle) return;
-        var fileHandle = await dirHandle.getFileHandle(MANIFEST_FILE, { create: true });
-        var writable = await fileHandle.createWritable();
-        await writable.write(JSON.stringify({
-            version: MANIFEST_VERSION,
-            app: 'DevHome Workbench',
-            updatedAt: new Date().toISOString()
-        }, null, 2));
-        await writable.close();
-    }
-
-    /** 读取 manifest.json */
-    async function readManifest() {
-        if (!dirHandle) return null;
-        try {
-            var fileHandle = await dirHandle.getFileHandle(MANIFEST_FILE, { create: false });
             var file = await fileHandle.getFile();
             return JSON.parse(await file.text());
         } catch (e) {
@@ -198,34 +162,74 @@ window.DevHome = window.DevHome || {};
         }
     }
 
-    /* ===== 旧版格式兼容 ===== */
+    /** 将数据写入子目录（支持独立文件和单文件两种模式） */
+    async function writeCategoryFile(category, data) {
+        if (!dirHandle) throw new Error('目录未授权');
+        var layout = DATA_LAYOUT[category];
+        if (!layout) throw new Error('未知数据类别: ' + category);
+        // 笔记：独立文件模式
+        if (layout.individual) return writeIndividualNotes(data);
+        // 其他：单文件模式
+        var subDir = await dirHandle.getDirectoryHandle(layout.dir, { create: true });
+        var fileHandle = await subDir.getFileHandle(layout.file, { create: true });
+        var writable = await fileHandle.createWritable();
+        await writable.write(JSON.stringify(data, null, 2));
+        await writable.close();
+    }
 
-    /** 读取旧版 devhome-config.json（v1 单文件格式） */
-    async function readOldConfigFile() {
+    /* ===== 笔记独立文件读写 ===== */
+
+    /** 读取笔记目录下所有独立 JSON 文件 */
+    async function readIndividualNotes() {
         if (!dirHandle) return null;
         try {
-            var fileHandle = await dirHandle.getFileHandle(OLD_CONFIG_FILE, { create: false });
-            var file = await fileHandle.getFile();
-            var text = await file.text();
-            var data = JSON.parse(text);
-            // 检查是否是旧格式（有 syncVersion 字段且 = 1）
-            if (data.syncVersion) return data;
-            return null;
+            var notesDir = await dirHandle.getDirectoryHandle('notes', { create: false });
+            var notes = [];
+            for await (var entry of notesDir.values()) {
+                if (entry.kind === 'file' && entry.name.endsWith('.json')) {
+                    try {
+                        var file = await entry.getFile();
+                        var note = JSON.parse(await file.text());
+                        if (note && note.id) notes.push(note);
+                    } catch (_) { /* 跳过损坏文件 */ }
+                }
+            }
+            return notes.length > 0 ? notes : null;
         } catch (e) {
             if (e.name === 'NotFoundError') return null;
-            throw e;
+            console.warn('[FileConfig] 读取独立笔记失败:', e);
+            return null;
         }
     }
 
-    /** 删除旧版 devhome-config.json */
-    async function deleteOldConfigFile() {
-        if (!dirHandle) return;
-        try {
-            await dirHandle.removeEntry(OLD_CONFIG_FILE);
-            console.log('[FileConfig] 已删除旧版配置文件 devhome-config.json');
-        } catch (e) {
-            if (e.name !== 'NotFoundError') console.warn('[FileConfig] 删除旧配置文件失败:', e);
+    /** 将笔记数组写入独立 JSON 文件 */
+    async function writeIndividualNotes(notes) {
+        if (!dirHandle || !Array.isArray(notes)) return;
+        var notesDir = await dirHandle.getDirectoryHandle('notes', { create: true });
+        // 收集已存在的文件名
+        var existingNames = new Set();
+        for await (var e of notesDir.values()) {
+            if (e.kind === 'file' && e.name.endsWith('.json')) {
+                existingNames.add(e.name);
+            }
         }
+        // 写入每个笔记
+        var writtenNames = new Set();
+        for (var i = 0; i < notes.length; i++) {
+            var note = notes[i];
+            var fileName = (note.id || ('note_' + i)) + '.json';
+            writtenNames.add(fileName);
+            var fileHandle = await notesDir.getFileHandle(fileName, { create: true });
+            var writable = await fileHandle.createWritable();
+            await writable.write(JSON.stringify(note, null, 2));
+            await writable.close();
+        }
+        // 删除不再需要的文件
+        existingNames.forEach(function (name) {
+            if (!writtenNames.has(name)) {
+                try { notesDir.removeEntry(name); } catch (_) {}
+            }
+        });
     }
 
     /* ===== 数据收集与恢复 ===== */
@@ -442,12 +446,10 @@ window.DevHome = window.DevHome || {};
                     await writeCategoryFile(cat, data[cat]);
                 } catch (e) {
                     console.warn('[FileConfig] 写入 ' + DATA_LAYOUT[cat].desc + ' 失败:', e);
-                    // 继续写入其他类别，不因一个失败而中断
                 }
             }
         }
 
-        await writeManifest();
         lastSyncTime = Date.now();
         lastSyncError = null;
     }
@@ -472,81 +474,6 @@ window.DevHome = window.DevHome || {};
         }
 
         return hasAny ? data : null;
-    }
-
-    /* ===== 迁移：旧版单文件格式 → 新版分类目录 ===== */
-
-    /** 将旧版 devhome-config.json 迁移到新的分类目录结构 */
-    async function migrateFromOldFormat(oldData) {
-        console.log('[FileConfig] 检测到旧版配置文件，开始迁移...');
-
-        // 将旧格式数据拆分为新格式各类别
-        var newData = {};
-
-        // notes 和 captures 在旧格式中已存在
-        if (Array.isArray(oldData.notes)) newData.notes = oldData.notes;
-        if (Array.isArray(oldData.captures)) newData.captures = oldData.captures;
-
-        // tiles：合并 pages, pageNames, settings, popupSettings
-        newData.tiles = {
-            pages: Array.isArray(oldData.pages) ? oldData.pages : [],
-            pageNames: Array.isArray(oldData.pageNames) ? oldData.pageNames : [],
-            settings: oldData.settings || {},
-            popupSettings: oldData.popupSettings || null
-        };
-
-        // tasks：从旧格式 workbench 提取
-        var tasks = [];
-        if (oldData.workbench && oldData.workbench.quadrants) {
-            ['q1', 'q2', 'q3', 'q4'].forEach(function (q) {
-                var qt = oldData.workbench.quadrants[q];
-                if (qt && qt.tasks) {
-                    qt.tasks.forEach(function (t) {
-                        tasks.push({
-                            id: t.id || ('task_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7)),
-                            title: t.title || '',
-                            description: t.description || '',
-                            quadrant: q,
-                            status: t.status || (t.completed ? 'completed' : 'active'),
-                            noteId: null,
-                            pomodoroCount: 0,
-                            createdAt: t.createdAt || Date.now(),
-                            completedAt: t.completedAt || (t.completed ? Date.now() : null),
-                            cancelledAt: t.cancelledAt || null
-                        });
-                    });
-                }
-            });
-        }
-        newData.tasks = tasks;
-
-        // 其他类别初始化为空
-        newData.pomodoro = [];
-        newData.behavior = null;
-        newData.config = null;
-
-        // 写入新格式
-        var categories = Object.keys(DATA_LAYOUT);
-        for (var i = 0; i < categories.length; i++) {
-            var cat = categories[i];
-            if (newData[cat] !== undefined) {
-                try {
-                    await writeCategoryFile(cat, newData[cat]);
-                } catch (e) {
-                    console.warn('[FileConfig] 迁移写入 ' + DATA_LAYOUT[cat].desc + ' 失败:', e);
-                }
-            }
-        }
-        await writeManifest();
-
-        // 删除旧文件
-        await deleteOldConfigFile();
-
-        // 恢复数据
-        await restoreAllData(newData);
-
-        console.log('[FileConfig] 旧格式迁移完成');
-        return newData;
     }
 
     /* ===== 警告条 ===== */
@@ -660,7 +587,6 @@ window.DevHome = window.DevHome || {};
                     }
                 }
             }
-            await writeManifest();
             dirtyCategories = {};   // 清空脏标记
             lastSyncTime = Date.now();
             lastSyncError = null;

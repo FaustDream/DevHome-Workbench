@@ -169,7 +169,11 @@ window.DevHome = window.DevHome || {};
         // 执行实际删除
         var delPromise = kind === 'capture' ? ns.deleteCapture(id) : ns.deleteNote(id);
         delPromise.then(function () {
-            if (state.currentNote && state.currentNote.id === id) ns.closeNoteEditor();
+            if (state.currentNote && state.currentNote.id === id) {
+                ns.closeNoteEditor().catch(function (e) {
+                    console.warn('[警告] closeNoteEditor 失败:', e.message);
+                });
+            }
             ns.renderNotesList(state._notesFilter, state._notesSearch);
             if (kind === 'capture') ns.renderCaptures();
         });
@@ -473,9 +477,9 @@ window.DevHome = window.DevHome || {};
     };
 
     /** 关闭笔记编辑器 */
-    ns.closeNoteEditor = function () {
+    ns.closeNoteEditor = async function () {
         if (state.currentNote) {
-            ns.saveCurrentNote();
+            await ns.saveCurrentNote();
         }
         // 销毁 Tiptap 实例
         if (_tiptapInstanceId && ns.tiptapEditor) {
@@ -520,7 +524,10 @@ window.DevHome = window.DevHome || {};
             wordCount = ns.countWords(docHTML);
         }
 
-        await ns.updateNote(state.currentNote.id, {
+        var noteId = state.currentNote ? state.currentNote.id : null;
+        if (!noteId) return;
+
+        await ns.updateNote(noteId, {
             title: title || '无标题',
             content: docHTML,
             wordCount: wordCount,
@@ -528,9 +535,9 @@ window.DevHome = window.DevHome || {};
             tags: existingDateTags
         });
 
-        var updated = state.notes.find(function (n) { return n.id === state.currentNote.id; });
+        var updated = state.notes.find(function (n) { return n.id === noteId; });
         if (updated) state.currentNote = updated;
-        console.log('[编辑] 保存笔记 id=' + state.currentNote.id + ' 类型=' + type + ' 字数=' + wordCount);
+        console.log('[编辑] 保存笔记 id=' + noteId + ' 类型=' + type + ' 字数=' + wordCount);
     };
 
     /* ===== 暴露 API ===== */
