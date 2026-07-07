@@ -1,4 +1,4 @@
-/* DevHome Workbench - Shadcn/ui 编译组件: dialog.jsx */
+/* DevHome Workbench - 编译组件: dialog.jsx */
 var dialog = (() => {
   // js/components/ui/dialog.jsx
   var { createElement: h, useState, useEffect, useCallback } = React;

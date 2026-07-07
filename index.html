@@ -225,7 +225,10 @@
                                 </div>
                             </div>
                             <div class="wb-notes-editor-body" id="wbNoteEditorBody">
-                                <div id="wbNoteContent" class="wb-note-editable" placeholder="在此编写内容..."></div>
+                                <!-- Tiptap 富文本编辑器挂载点 -->
+                                <div class="tiptap-editor-wrapper" id="wbTipTapWrapper">
+                                    <div id="wbNoteContent" class="wb-note-editable" placeholder="在此编写内容..."></div>
+                                </div>
                                 <div class="wb-note-word-count" id="wbNoteWordCount">0 字</div>
                             </div>
                         </div>
@@ -1102,6 +1105,8 @@
     <script src="js/categoryUI.js" defer></script>
     <script src="js/ui.js" defer></script>
     <script src="js/search.js" defer></script>
+    <!-- Tiptap 富文本编辑器（ProseMirror 内核 + StarterKit 扩展） -->
+    <script src="js/tiptap-bundle.js" defer></script>
     <script src="js/notes.js" defer></script>
     <script src="js/export.js" defer></script>
     <script src="js/workbench.js" defer></script>

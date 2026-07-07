@@ -420,7 +420,10 @@ window.DevHome = window.DevHome || {};
         await storageV2.set(storageV2.KEYS.CAPTURES, state.captures);
     };
 
-    /** 打开笔记/捕获进行编辑 */
+    /** Tiptap 编辑器实例 ID，用于在 open/close 间传递 */
+    var _tiptapInstanceId = null;
+
+    /** 打开笔记/捕获进行编辑（使用 Tiptap 富文本编辑器） */
     ns.openNoteEditor = function (note) {
         state.currentNote = note;
         var isCapture = note._kind === 'capture' || note.type === 'capture';
@@ -428,44 +431,42 @@ window.DevHome = window.DevHome || {};
 
         if (dom.wbNotesEditorEmpty) dom.wbNotesEditorEmpty.style.display = 'none';
         if (dom.wbNotesEditorActive) dom.wbNotesEditorActive.style.display = 'flex';
-        // 显示"转为任务"按钮（容器级别控制显隐）
         var toTaskWrap = document.getElementById('wbNoteToTaskWrap');
         if (toTaskWrap) toTaskWrap.style.display = isCapture ? 'none' : '';
 
-        // 捕获模式：隐藏工具栏，标题只读
-        var toolbar = document.getElementById('wbNotesToolbar');
-        if (toolbar) toolbar.style.display = isCapture ? 'none' : 'flex';
-
-        // 捕获模式：标题和类型用只读样式
+        // 标题
         if (dom.wbNoteTitle) {
             dom.wbNoteTitle.value = note.title || '';
             dom.wbNoteTitle.readOnly = isCapture;
             dom.wbNoteTitle.style.opacity = isCapture ? '0.7' : '';
         }
-        // 渲染类型标签（支持多标签逗号分隔）
         state._currentNoteType = note.type || 'note';
         ns.renderNoteTypeBadge();
 
-        // 使用 contenteditable 编辑器（笔记和捕获均适用）
-        if (dom.wbNoteContent) {
-            dom.wbNoteContent.setAttribute('contenteditable', 'true');
+        // 使用 Tiptap 富文本编辑器
+        if (dom.wbNoteContent && ns.tiptapEditor) {
+            // 销毁旧实例
+            if (_tiptapInstanceId) { ns.tiptapEditor.destroy(_tiptapInstanceId); _tiptapInstanceId = null; }
+
+            var content = note.content || '';
             if (isCapture) {
-                dom.wbNoteContent.innerHTML = ns.escapeHtml(note.content || '').replace(/\n/g, '<br>');
-            } else {
-                dom.wbNoteContent.innerHTML = note.content || '';
+                // 捕获：纯文本渲染
+                content = ns.escapeHtml(content || '').replace(/\n/g, '<br>');
             }
-            // 监听输入触发自动保存（避免重复绑定：每次打开笔记都会执行本函数，先移除旧监听）
-            if (dom.wbNoteContent._onInputHandler) {
-                dom.wbNoteContent.removeEventListener('input', dom.wbNoteContent._onInputHandler);
-            }
-            var onInputHandler = function () {
-                if (ns._triggerAutoSave) ns._triggerAutoSave();
-                // 实时更新字数
-                var wcEl = document.getElementById('wbNoteWordCount');
-                if (wcEl) wcEl.textContent = ns.countWords(dom.wbNoteContent.innerHTML) + ' 字';
-            };
-            dom.wbNoteContent._onInputHandler = onInputHandler;
-            dom.wbNoteContent.addEventListener('input', onInputHandler);
+
+            _tiptapInstanceId = ns.tiptapEditor.create('#wbNoteContent', content, {
+                id: 'note_editor',
+                editable: !isCapture,
+                onUpdate: function () {
+                    if (ns._triggerAutoSave) ns._triggerAutoSave();
+                    // 实时更新字数
+                    var wcEl = document.getElementById('wbNoteWordCount');
+                    if (wcEl) {
+                        var html = ns.tiptapEditor.getHTML(_tiptapInstanceId);
+                        wcEl.textContent = ns.countWords(html) + ' 字';
+                    }
+                }
+            });
         }
 
         ns.renderNotesList(state._notesFilter, state._notesSearch);
@@ -473,14 +474,17 @@ window.DevHome = window.DevHome || {};
 
     /** 关闭笔记编辑器 */
     ns.closeNoteEditor = function () {
-        // 先保存当前编辑内容（防止自动保存防抖未触发导致数据丢失）
         if (state.currentNote) {
             ns.saveCurrentNote();
+        }
+        // 销毁 Tiptap 实例
+        if (_tiptapInstanceId && ns.tiptapEditor) {
+            ns.tiptapEditor.destroy(_tiptapInstanceId);
+            _tiptapInstanceId = null;
         }
         state.currentNote = null;
         if (dom.wbNotesEditorEmpty) dom.wbNotesEditorEmpty.style.display = 'flex';
         if (dom.wbNotesEditorActive) dom.wbNotesEditorActive.style.display = 'none';
-        // 隐藏"转为任务"按钮（关闭象限选择器）
         var toTaskWrap = document.getElementById('wbNoteToTaskWrap');
         if (toTaskWrap) toTaskWrap.style.display = 'none';
         var picker = document.getElementById('wbQuadrantPicker');
@@ -488,21 +492,19 @@ window.DevHome = window.DevHome || {};
         ns.renderNotesList(state._notesFilter, state._notesSearch);
     };
 
-    /** 保存当前编辑的笔记/捕获（纯 contenteditable） */
+    /** 保存当前编辑的笔记/捕获（从 Tiptap 获取内容） */
     ns.saveCurrentNote = async function () {
         if (!state.currentNote) return;
         var isCapture = state.currentNote._kind === 'capture' || state.currentNote.type === 'capture';
 
-        // 捕获类型
         if (isCapture) {
-            var capContent = dom.wbNoteContent ? dom.wbNoteContent.innerHTML : '';
+            var capContent = (_tiptapInstanceId && ns.tiptapEditor) ? ns.tiptapEditor.getHTML(_tiptapInstanceId) : '';
             await ns.updateCapture(state.currentNote.id, capContent);
             ns.renderCaptures();
             ns.renderNotesList(state._notesFilter, state._notesSearch);
             return;
         }
 
-        // 笔记模式：从 contenteditable 获取内容
         var title = dom.wbNoteTitle ? dom.wbNoteTitle.value.trim() : '';
         var type = state._currentNoteType || 'note';
         var existingDateTags = (state.currentNote.tags || []).filter(function (t) { return /^\d{4}-\d{2}-\d{2}$/.test(t); });
@@ -510,10 +512,9 @@ window.DevHome = window.DevHome || {};
             existingDateTags = [dateTag(state.currentNote.createdAt || Date.now())];
         }
 
-        var docHTML = dom.wbNoteContent ? dom.wbNoteContent.innerHTML : '';
+        var docHTML = (_tiptapInstanceId && ns.tiptapEditor) ? ns.tiptapEditor.getHTML(_tiptapInstanceId) : '';
         var wordCount = ns.countWords(docHTML);
 
-        // 安全保护：内容为空时保留原有数据
         if (!docHTML && state.currentNote.content) {
             docHTML = state.currentNote.content;
             wordCount = ns.countWords(docHTML);

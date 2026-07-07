@@ -1,4 +1,4 @@
-/* DevHome Workbench - Shadcn/ui 编译组件: confirm-dialog.jsx */
+/* DevHome Workbench - 编译组件: confirm-dialog.jsx */
 var confirmDialog = (() => {
   // js/components/ui/confirm-dialog.jsx
   var { createElement: h } = React;
