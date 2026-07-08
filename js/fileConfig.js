@@ -462,6 +462,17 @@ window.DevHome = window.DevHome || {};
                localStorage.getItem(CACHE_PREFIX + 'tasks') !== null;
     }
 
+    /** 检查目录数据是否非空 */
+    function hasAnyCategoryData(data) {
+        if (!data) return false;
+        return Object.keys(data).some(function (k) {
+            var v = data[k];
+            if (Array.isArray(v)) return v.length > 0;
+            if (v && typeof v === 'object' && k === 'tiles') return (v.pages || []).length > 0;
+            return v !== null && v !== undefined;
+        });
+    }
+
     /* ===== 分类文件写入（全量） ===== */
 
     /** 将所有类别数据写入对应子目录文件 */
@@ -716,57 +727,44 @@ window.DevHome = window.DevHome || {};
             var handle = await loadHandleFromDB();
             if (handle) {
                 console.log('[FileConfig] 从 IndexedDB 恢复 handle:', handle.name);
-                // 先静默查询权限（不弹窗），无手势时 requestPermission 可能失败
-                var readPermitted = await verifyPermissionQuiet(handle, false);
-                console.log('[FileConfig] read 权限静默查询:', readPermitted ? 'granted' : 'denied/prompt');
-                if (!readPermitted) {
-                    // 权限暂不可用但保留 handle → 等用户点击警告条时再请求（有手势）
-                    dirHandle = handle;
-                    isReady = true;
-                    showWarningBar('点击恢复 "' + handle.name + '" 的目录权限', false);
-                    updateBadge('!', '#ffcc66');
-                    return { ready: true, dirName: handle.name, needsReauth: true };
-                }
-
                 dirHandle = handle;
-                var writePermitted = await verifyPermissionQuiet(handle, true);
-                writePermissionPending = !writePermitted;
-
-                // 直接按分类目录读取数据
-                var categoryData = await readAllCategoryFiles();
-                if (categoryData) {
-                    await restoreAllData(categoryData);
-                    isReady = true;
-                    updateBadge('', writePermitted ? '#e74c3c' : '#ffcc66');
-                    hideWarningBar();
-                    if (!writePermitted) {
-                        showWarningBar('配置已从 "' + dirHandle.name + '" 读取，点击授权写入权限', false);
-                    }
-                    return { ready: true, dirName: dirHandle.name };
-                }
-
-                // 空目录/无数据 → 从 localStorage 同步写入
-                if (writePermitted && hasLocalData()) {
-                    await writeAllCategoryFiles();
-                    showToast('已将本地数据同步到配置目录', 'success');
-                }
                 isReady = true;
-                updateBadge('', writePermitted ? '#e74c3c' : '#ffcc66');
+
+                // 静默尝试恢复权限，不阻塞启动
+                var readPermitted = await verifyPermissionQuiet(handle, false);
+                console.log('[FileConfig] 权限静默查询:', readPermitted ? 'granted' : 'prompt');
+
+                if (readPermitted) {
+                    writePermissionPending = !(await verifyPermissionQuiet(handle, true));
+                    // 权限可用 → 后台静默从文件读数据覆盖
+                    var categoryData = await readAllCategoryFiles();
+                    if (categoryData && hasAnyCategoryData(categoryData)) {
+                        await restoreAllData(categoryData);
+                        console.log('[FileConfig] 已从文件恢复数据');
+                    } else if (!writePermissionPending && hasLocalData()) {
+                        // 文件为空但有本地数据 → 写入
+                        writeAllCategoryFiles().catch(function () {});
+                    }
+                    updateBadge('', writePermissionPending ? '#ffcc66' : '#e74c3c');
+                } else {
+                    // 权限暂不可用 → 使用本地存储，不弹警告条
+                    updateBadge('·', '#ffcc66');
+                    console.log('[FileConfig] handle 已在，权限暂不可用（浏览器重启正常现象），使用本地存储');
+                }
                 hideWarningBar();
-                return { ready: true, dirName: dirHandle.name };
-
+                return { ready: true, dirName: handle.name };
             }
 
-            // IndexedDB 无 handle
+            // IndexedDB 无 handle → 正常使用本地存储
             isReady = true;
-            if (hasLocalData()) {
-                showWarningBar('数据暂存浏览器中，选择一个文件夹即可永久保存', false);
-                updateBadge('!', '#ffcc66');
-                return { ready: true, dirName: '', localStorageOnly: true };
+            hideWarningBar();
+            if (!hasLocalData()) {
+                // 真正首次使用 → 静默，不弹窗
+                updateBadge('', '#e74c3c');
+                return { ready: true, dirName: '', firstRun: true };
             }
-            showWarningBar('请选择一个文件夹存放配置、磁贴和所有数据', false);
-            updateBadge('!', '#e74c3c');
-            return { ready: true, dirName: '', firstRun: true };
+            updateBadge('', '#e74c3c');
+            return { ready: true, dirName: '', localStorageOnly: true };
 
         } catch (e) {
             console.error('[FileConfig] 初始化失败:', e);
