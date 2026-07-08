@@ -486,7 +486,7 @@ window.DevHome = window.DevHome || {};
                 try {
                     await writeCategoryFile(cat, data[cat]);
                 } catch (e) {
-                    console.warn('[FileConfig] 写入 ' + DATA_LAYOUT[cat].desc + ' 失败:', e);
+                    console.warn('[FileConfig] 写入 ' + DATA_LAYOUT[cat].desc + ' 失败:', e.name, e.message);
                 }
             }
         }
@@ -647,7 +647,7 @@ window.DevHome = window.DevHome || {};
                     try {
                         await writeCategoryFile(cat, data[cat]);
                     } catch (e) {
-                        console.warn('[FileConfig] 写入 ' + DATA_LAYOUT[cat].desc + ' 失败:', e);
+                        console.warn('[FileConfig] 写入 ' + DATA_LAYOUT[cat].desc + ' 失败:', e.name, e.message);
                     }
                 }
             }
