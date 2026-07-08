@@ -582,8 +582,28 @@ window.DevHome = window.DevHome || {};
         if (dom.configSelectDirBtn) {
             dom.configSelectDirBtn.addEventListener('click', async function () {
                 if (!ns.fileConfig) return;
-                // 如果 write 权限待授权（dirHandle 已存在），先尝试仅恢复 write 权限
-                // 这样避免弹出完整的目录选择器
+                // 先尝试恢复 read 权限（有用户手势，requestPermission 可弹窗）
+                if (ns.fileConfig._tryRecoverRead && typeof ns.fileConfig._tryRecoverRead === 'function') {
+                    var readOk = await ns.fileConfig._tryRecoverRead();
+                    if (readOk) {
+                        // read 权限恢复 → 尝试读盘恢复数据
+                        try {
+                            ns.fileConfig.hideWarningBar();
+                            ns.fileConfig.updateBadge('', '#ffcc66');
+                            await ns.fileConfig.syncToFile();
+                        } catch (_) { /* 读盘可选 */ }
+                        ns.applyShortcutSize(storage.get('shortcut_size', ns.DEFAULT_SHORTCUT_SIZE), false);
+                        ns.applyShortcutColumns(storage.get('shortcut_columns', ns.DEFAULT_SHORTCUT_COLUMNS), false);
+                        ns.openFaviconDB();
+                        await ns.tileManager.load();
+                        ns.loadSearchHistory();
+                        ns.renderTiles();
+                        ns.refreshCatRowIfVisible();
+                        ns.syncSettingsControls();
+                        return;
+                    }
+                }
+                // 再尝试恢复 write 权限
                 if (ns.fileConfig._tryRecoverWrite && typeof ns.fileConfig._tryRecoverWrite === 'function') {
                     var recovered = await ns.fileConfig._tryRecoverWrite();
                     if (recovered) {

@@ -130,6 +130,17 @@ window.DevHome = window.DevHome || {};
 
     /* ===== 权限检测 ===== */
 
+    /** 静默查询权限（仅 query，不弹窗） */
+    async function verifyPermissionQuiet(handle, withWrite) {
+        var opts = { mode: withWrite ? 'readwrite' : 'read' };
+        try {
+            return (await handle.queryPermission(opts)) === 'granted';
+        } catch (_) {
+            return false;
+        }
+    }
+
+    /** 带弹窗的权限检测（需要用户手势） */
     async function verifyPermission(handle, withWrite) {
         var opts = { mode: withWrite ? 'readwrite' : 'read' };
         try {
@@ -531,6 +542,20 @@ window.DevHome = window.DevHome || {};
         writeTimer = setTimeout(function () { syncToFile(false); }, WRITE_DEBOUNCE_MS);
     }
 
+    /** 恢复目录读取权限（需要用户手势） */
+    async function tryRecoverReadPermission() {
+        if (!dirHandle) return false;
+        try {
+            var granted = await verifyPermission(dirHandle, false);
+            if (granted) {
+                hideWarningBar();
+                updateBadge('', '#e74c3c');
+                return true;
+            }
+            return false;
+        } catch (_) { return false; }
+    }
+
     async function tryRecoverWritePermission() {
         if (!dirHandle) return false; // 无 handle → 无法恢复，需重新选择目录
         if (!writePermissionPending) return true;
@@ -668,21 +693,22 @@ window.DevHome = window.DevHome || {};
         try {
             var handle = await loadHandleFromDB();
             if (handle) {
-                var readPermitted = await verifyPermission(handle, false);
+                // 先静默查询权限（不弹窗），无手势时 requestPermission 可能失败
+                var readPermitted = await verifyPermissionQuiet(handle, false);
                 if (!readPermitted) {
-                    dirHandle = null;
-                    await clearHandleFromDB();
+                    // 权限暂不可用但保留 handle → 等用户点击警告条时再请求（有手势）
+                    dirHandle = handle;
                     isReady = true;
-                    showWarningBar('目录权限已过期，请重新选择配置文件夹', true);
-                    updateBadge('!', '#e74c3c');
-                    return { ready: true, dirName: '' };
+                    showWarningBar('点击恢复 "' + handle.name + '" 的目录权限', false);
+                    updateBadge('!', '#ffcc66');
+                    return { ready: true, dirName: handle.name, needsReauth: true };
                 }
 
                 dirHandle = handle;
-                var writePermitted = await verifyPermission(handle, true);
+                var writePermitted = await verifyPermissionQuiet(handle, true);
                 writePermissionPending = !writePermitted;
 
-                // 直接按分类目录读取数据，不再依赖 manifest
+                // 直接按分类目录读取数据
                 var categoryData = await readAllCategoryFiles();
                 if (categoryData) {
                     await restoreAllData(categoryData);
@@ -823,6 +849,7 @@ window.DevHome = window.DevHome || {};
         markDirty: markDirty,
         syncToFile: function () { return syncToFile(true); },
         _tryRecoverWrite: tryRecoverWritePermission,
+        _tryRecoverRead: tryRecoverReadPermission,
         isReady: function () { return isReady; },
         getDirName: function () { return dirHandle ? dirHandle.name : ''; },
         getSyncInfo: function () {
