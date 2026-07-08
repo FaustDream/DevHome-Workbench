@@ -1,0 +1,3 @@
+17:23:36 WARN [test] 警告消息 
+17:23:36 ERROR [test] 错误消息 
+17:23:36 WARN [module2] msg 
