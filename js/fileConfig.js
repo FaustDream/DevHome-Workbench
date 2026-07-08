@@ -628,13 +628,9 @@ window.DevHome = window.DevHome || {};
         }
 
         if (writePermissionPending) {
-            try {
-                var recovered = await tryRecoverWritePermission();
-                if (!recovered) {
-                    console.warn('[FileConfig] 写入跳过：write 权限待用户授权');
-                    return;
-                }
-            } catch (_) { return; }
+            // 后台防抖触发 → 无用户手势，requestPermission 会失败 → 静默跳过
+            // 数据仍在 localStorage 中，下次权限可用时会自动同步
+            return;
         }
 
         syncInProgress = true;
@@ -747,7 +743,8 @@ window.DevHome = window.DevHome || {};
                     }
                     updateBadge('', writePermissionPending ? '#ffcc66' : '#e74c3c');
                 } else {
-                    // 权限暂不可用 → 使用本地存储，不弹警告条
+                    // 权限暂不可用 → 使用本地存储，不弹警告条，禁止文件写入
+                    writePermissionPending = true;
                     updateBadge('·', '#ffcc66');
                     console.log('[FileConfig] handle 已在，权限暂不可用（浏览器重启正常现象），使用本地存储');
                 }
