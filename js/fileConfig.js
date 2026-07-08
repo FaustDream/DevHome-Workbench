@@ -93,13 +93,20 @@ window.DevHome = window.DevHome || {};
     }
 
     function saveHandleToDB(handle) {
+        console.log('[FileConfig] IndexedDB 保存 handle:', handle.name);
         return openHandlesDB().then(function (db) {
             return new Promise(function (resolve, reject) {
                 var tx = db.transaction(INDEXEDDB_STORE, 'readwrite');
                 var store = tx.objectStore(INDEXEDDB_STORE);
                 store.put(handle, HANDLE_KEY);
-                tx.oncomplete = function () { resolve(); };
-                tx.onerror = function () { reject(tx.error); };
+                tx.oncomplete = function () {
+                    console.log('[FileConfig] IndexedDB 保存成功:', handle.name);
+                    resolve();
+                };
+                tx.onerror = function () {
+                    console.error('[FileConfig] IndexedDB 保存失败:', tx.error);
+                    reject(tx.error);
+                };
             });
         });
     }
@@ -110,8 +117,15 @@ window.DevHome = window.DevHome || {};
                 var tx = db.transaction(INDEXEDDB_STORE, 'readonly');
                 var store = tx.objectStore(INDEXEDDB_STORE);
                 var request = store.get(HANDLE_KEY);
-                request.onsuccess = function () { resolve(request.result || null); };
-                request.onerror = function () { reject(request.error); };
+                request.onsuccess = function () {
+                    var result = request.result || null;
+                    console.log('[FileConfig] IndexedDB 读取 handle:', result ? (result.name || '存在') : 'null');
+                    resolve(result);
+                };
+                request.onerror = function () {
+                    console.error('[FileConfig] IndexedDB 读取 handle 失败:', request.error);
+                    reject(request.error);
+                };
             });
         });
     }
@@ -542,12 +556,20 @@ window.DevHome = window.DevHome || {};
         writeTimer = setTimeout(function () { syncToFile(false); }, WRITE_DEBOUNCE_MS);
     }
 
-    /** 恢复目录读取权限（需要用户手势） */
+    /** 恢复目录权限（需要用户手势，使用 readwrite 匹配原始授权模式） */
     async function tryRecoverReadPermission() {
         if (!dirHandle) return false;
         try {
-            var granted = await verifyPermission(dirHandle, false);
-            if (granted) {
+            // 必须用 readwrite 模式 — 原始 showDirectoryPicker 授予的就是 readwrite
+            var opts = { mode: 'readwrite' };
+            if ((await dirHandle.queryPermission(opts)) === 'granted') {
+                writePermissionPending = false;
+                hideWarningBar();
+                updateBadge('', '#e74c3c');
+                return true;
+            }
+            if ((await dirHandle.requestPermission(opts)) === 'granted') {
+                writePermissionPending = false;
                 hideWarningBar();
                 updateBadge('', '#e74c3c');
                 return true;
@@ -693,8 +715,10 @@ window.DevHome = window.DevHome || {};
         try {
             var handle = await loadHandleFromDB();
             if (handle) {
+                console.log('[FileConfig] 从 IndexedDB 恢复 handle:', handle.name);
                 // 先静默查询权限（不弹窗），无手势时 requestPermission 可能失败
                 var readPermitted = await verifyPermissionQuiet(handle, false);
+                console.log('[FileConfig] read 权限静默查询:', readPermitted ? 'granted' : 'denied/prompt');
                 if (!readPermitted) {
                     // 权限暂不可用但保留 handle → 等用户点击警告条时再请求（有手势）
                     dirHandle = handle;
