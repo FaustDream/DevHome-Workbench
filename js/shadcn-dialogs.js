@@ -57,83 +57,27 @@
 
     // ========== Prompt 弹窗 ==========
 
-    /**
-     * 注册内联 Prompt 组件（非 hooks 实现，确保与 showConfirm 一致的渲染路径）
-     */
-    var PromptDialogImpl = function (props) {
-        // 函数组件：用 ref 在 DOM 层管理输入值（绕开 hooks）
-        var inputRef = null;
-        var value = props.defaultValue || '';
-
-        function setRef(el) { inputRef = el; }
-        function handleOk() {
-            if (inputRef) value = inputRef.value;
-            unmountAll();
-            props.onResolve(value.trim() || null);
-        }
-        function handleCancel() {
-            unmountAll();
-            props.onResolve(null);
-        }
-
-        // auto-focus after mount
-        setTimeout(function () {
-            if (inputRef) { inputRef.focus(); inputRef.select(); }
-        }, 100);
-
-        return React.createElement(window.ShadcnDialog.Dialog, { open: true },
-            React.createElement(window.ShadcnDialog.DialogOverlay, { onClick: handleCancel }),
-            React.createElement(window.ShadcnDialog.DialogContent, null,
-                React.createElement(window.ShadcnDialog.DialogHeader, null,
-                    React.createElement(window.ShadcnDialog.DialogTitle, null, props.title || '请输入')
-                ),
-                React.createElement('input', {
-                    ref: setRef,
-                    type: 'text',
-                    defaultValue: props.defaultValue || '',
-                    placeholder: props.message || '',
-                    autoComplete: 'off',
-                    onKeyDown: function (e) {
-                        if (e.key === 'Enter') { e.preventDefault(); handleOk(); }
-                        if (e.key === 'Escape') { e.preventDefault(); handleCancel(); }
-                    },
-                    style: {
-                        width: '100%', padding: '10px 14px',
-                        border: '1px solid var(--color-border)',
-                        borderRadius: '10px', background: 'var(--color-input-bg)',
-                        color: 'var(--color-text)', fontSize: '14px',
-                        fontFamily: 'var(--font-sans)', outline: 'none',
-                        margin: '8px 0 4px', boxSizing: 'border-box'
-                    }
-                }),
-                React.createElement(window.ShadcnDialog.DialogFooter, null,
-                    React.createElement(window.ShadcnButton,
-                        { variant: 'outline', onClick: handleCancel },
-                        props.cancelLabel || '取消'
-                    ),
-                    React.createElement(window.ShadcnButton,
-                        { variant: 'default', onClick: handleOk },
-                        props.okLabel || '确定'
-                    )
-                )
-            )
-        );
-    };
-
     function showPrompt(message, opts) {
         opts = opts || {};
         console.log('[Shadcn弹窗] prompt:', (opts.title || '请输入'), message);
         return new Promise(function (resolve) {
-            reactRoot().render(React.createElement(PromptDialogImpl, {
+            // 直接用 ShadcnConfirmDialog 测试渲染通道
+            reactRoot().render(React.createElement(window.ShadcnConfirmDialog, {
                 open: true,
-                title: opts.title || '请输入',
-                message: message,
-                defaultValue: opts.defaultValue || '',
+                title: (opts.title || '请输入') + ' — 输入' + (opts.defaultValue ? ' [默认: ' + opts.defaultValue + ']' : ''),
+                message: message || '请输入',
                 okLabel: opts.okLabel || '确定',
                 cancelLabel: opts.cancelLabel || '取消',
                 onResolve: function (result) {
-                    unmountAll();
-                    resolve(result);
+                    if (result) {
+                        // 用户点了确定 → 再用原生 prompt 取输入值
+                        var name = window.prompt(message || '请输入', opts.defaultValue || '');
+                        unmountAll();
+                        resolve(name && name.trim() ? name.trim() : null);
+                    } else {
+                        unmountAll();
+                        resolve(null);
+                    }
                 },
             }));
         });
