@@ -732,11 +732,17 @@ window.DevHome = window.DevHome || {};
                 var rowClass = isCompleted ? ' is-completed' : (isCancelled ? ' is-cancelled' : '');
                 var checkClass = isCompleted ? ' checked' : '';
 
-                // 关联笔记指示器
-                var noteIds = task.noteIds || [];
+                // 关联笔记指示器（清理已删除笔记的引用）
+                var rawNoteIds = task.noteIds || [];
+                var existingNoteIds = {};
+                (state.notes || []).forEach(function (n) { existingNoteIds[n.id] = true; });
+                var validNoteIds = rawNoteIds.filter(function (nid) { return existingNoteIds[nid]; });
+                if (validNoteIds.length !== rawNoteIds.length) {
+                    task.noteIds = validNoteIds; // 清理孤立引用
+                }
                 var noteBadge = '';
-                if (noteIds.length > 0) {
-                    noteBadge = '<span class="wb-task-note-badge" title="已关联 ' + noteIds.length + ' 篇笔记">📎' + noteIds.length + '</span>';
+                if (validNoteIds.length > 0) {
+                    noteBadge = '<span class="wb-task-note-badge" title="已关联 ' + validNoteIds.length + ' 篇笔记">📎' + validNoteIds.length + '</span>';
                 }
 
                 // 计划时间 / 超期标记

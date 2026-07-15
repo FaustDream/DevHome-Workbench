@@ -301,6 +301,10 @@ window.DevHome = window.DevHome || {};
             }
             ns.renderNotesList(state._notesFilter, state._notesSearch);
             if (kind === 'capture') ns.renderCaptures();
+            // 刷新四象限看板（清理已删除笔记的任务关联计数）
+            if (kind === 'note' && typeof ns.renderQuadrantBoard === 'function') {
+                ns.renderQuadrantBoard();
+            }
         });
 
         // 弹出带撤销按钮的 Toast

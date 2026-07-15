@@ -108,6 +108,11 @@ window.DevHome = window.DevHome || {};
                     ns.renderNotebookDropdown();
                     dom.wbNotebookDropdownMenu.style.display = 'none';
                     ns.renderNotesList(state._notesFilter, state._notesSearch);
+                    // 如果当前编辑的笔记不属于新笔记本，关闭编辑器
+                    if (notebookId && state.currentNote && state.currentNote.notebookId !== notebookId) {
+                        ns.closeNoteEditor();
+                        console.log('[交互] 笔记本筛选 关闭编辑器（笔记不在本笔记本）');
+                    }
                     console.log('[交互] 笔记本筛选 ' + (notebookId || '全部'));
                 });
                 // 长按 → 重命名/删除
