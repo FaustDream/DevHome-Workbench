@@ -652,6 +652,47 @@
         <div class="changelog-body" id="changelogBody">
                 <div class="changelog-entry">
                     <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.19.3</span>
+                        <span class="changelog-date">2026-07-15</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>新增</strong> 番茄钟关联四象限任务：侧边栏下拉选择器，选中后在计时和通知中显示任务名称</li>
+                        <li><strong>增强</strong> 番茄钟通知包含关联任务信息，会话记录保存 taskTitle</li>
+                        <li><strong>优化</strong> 笔记本新建/重命名改用纯 DOM 弹窗（规避 Shadcn PromptDialog React 渲染链问题）</li>
+                        <li><strong>优化</strong> 切换笔记本筛选时，当前编辑笔记不属于新笔记本则自动关闭编辑器</li>
+                        <li><strong>优化</strong> 笔记删除后自动刷新四象限任务关联计数，清理孤立引用</li>
+                        <li><strong>优化</strong> 专注模式右键菜单隐藏日常专属项（新建/删除/重命名分类）</li>
+                        <li><strong>简化</strong> 四象限任务不再显示未完成/已完成计数，只保留任务列表</li>
+                        <li><strong>优化</strong> Inter 字体本地化至 fonts/inter-var.woff2，移除 Google Fonts 外部 CDN，离线秒开</li>
+                        <li><strong>修复</strong> 问候卡片 z-index 与容器弹窗层叠冲突</li>
+                    </ul>
+                </div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.19.0</span>
+                        <span class="changelog-date">2026-07-15</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>新增</strong> 笔记本（Notebook）容器型分类：每条笔记可归属一个笔记本，支持筛选、重命名、删除</li>
+                        <li><strong>新增</strong> 专注模式工具栏：笔记本下拉选择器 + 新建笔记/笔记本/标签图标按钮</li>
+                        <li><strong>新增</strong> 编辑器内笔记本归属徽章，点击弹出选择器快速迁移笔记</li>
+                        <li><strong>新增</strong> 长按笔记本菜单项可重命名或删除笔记本（删笔记本不删笔记）</li>
+                        <li><strong>新增</strong> 笔记数据模型新增 updatedAt 修改时间字段，自动在保存时更新</li>
+                        <li><strong>设计决策</strong> 笔记本扁平结构、一对一归属、notebookId=null 允许未分类、独立存储</li>
+                    </ul>
+                </div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.18.4</span>
+                        <span class="changelog-date">2026-07-15</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>新增</strong> 富文本编辑器工具栏支持任务列表（checkbox），每条带复选框可勾选完成</li>
+                        <li><strong>新增</strong> 专注模式下禁用 Ctrl+S 保存网页（数据已后台实时保存）</li>
+                    </ul>
+                </div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">
                         <span class="changelog-version-tag">v2.14.0</span>
                         <span class="changelog-date">2026-07-06</span>
                     </div>
