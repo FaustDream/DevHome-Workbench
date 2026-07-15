@@ -130,11 +130,12 @@ window.DevHome = window.DevHome || {};
                         }
                         ctxMenu.innerHTML = [
                             { label: '✏️ 重命名', action: function () {
-                                var newName = window.prompt('重命名笔记本：', nb.name);
-                                if (newName && newName.trim() && newName.trim() !== nb.name) {
-                                    ns.renameNotebook(nbId, newName.trim());
-                                    ns.renderNotebookDropdown();
-                                }
+                                ns.showPrompt('请输入新名称', { title: '重命名笔记本', defaultValue: nb.name }).then(function (newName) {
+                                    if (newName && newName.trim() && newName.trim() !== nb.name) {
+                                        ns.renameNotebook(nbId, newName.trim());
+                                        ns.renderNotebookDropdown();
+                                    }
+                                });
                             }},
                             { label: '🗑️ 删除', action: function () {
                                 ns.showConfirm('删除笔记本「' + nb.name + '」，笔记将移回未分类。确定？', { title: '删除笔记本' }).then(function (ok) {
@@ -179,12 +180,13 @@ window.DevHome = window.DevHome || {};
         if (wbNotebookAddBtn) {
             wbNotebookAddBtn.addEventListener('click', function () {
                 console.log('[交互] 工具栏 新建笔记本');
-                var name = window.prompt('笔记本名称：', '');
-                if (name && name.trim()) {
-                    ns.createNotebook(name.trim()).then(function () {
-                        ns.renderNotebookDropdown();
-                    });
-                }
+                ns.showPrompt('请输入笔记本名称', { title: '新建笔记本' }).then(function (name) {
+                    if (name && name.trim()) {
+                        ns.createNotebook(name.trim()).then(function () {
+                            ns.renderNotebookDropdown();
+                        });
+                    }
+                });
             });
         }
         // 新建标签
