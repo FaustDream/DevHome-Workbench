@@ -708,17 +708,12 @@ window.DevHome = window.DevHome || {};
 
         QUADRANTS.forEach(function (activeQ) {
             var listEl = document.getElementById('wbQgList' + activeQ.toUpperCase());
-            var countEl = document.getElementById('wbQgCount' + activeQ.toUpperCase());
             var allTasks = (config.quadrants[activeQ] && config.quadrants[activeQ].tasks) || [];
             var visibleTasks = getVisibleTasks(allTasks);
 
-            // 更新计数
-            if (countEl) {
-                var activeCount = allTasks.filter(function (t) { return t.status === 'active' || !t.status; }).length;
-                countEl.textContent = activeCount !== allTasks.length
-                    ? activeCount + '/' + allTasks.length
-                    : String(allTasks.length);
-            }
+            // 隐藏任务计数徽章（只显示任务列表）
+            var countEl = document.getElementById('wbQgCount' + activeQ.toUpperCase());
+            if (countEl) countEl.textContent = '';
 
             if (!listEl) return;
 

@@ -115,9 +115,10 @@ window.DevHome = window.DevHome || {};
         e.preventDefault(); e.stopPropagation();
         if (e.target.closest('.tile')) return;
         // 根据当前模式动态更新菜单项文案和图标
+        var isFocus = state.currentDevhomeMode !== 'daily';
         var wbItem = dom.blankContextMenu.querySelector('[data-action="openWorkbench"]');
         if (wbItem) {
-            var isDaily = state.currentDevhomeMode === 'daily';
+            var isDaily = !isFocus;
             wbItem.querySelector('span').textContent = isDaily ? '进入专注模式' : '退出专注模式';
             var wbIcon = wbItem.querySelector('svg');
             if (wbIcon) {
@@ -126,6 +127,11 @@ window.DevHome = window.DevHome || {};
                     : '<path d="M2 7h10M7 2l-5 5 5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
             }
         }
+        // 专注模式下隐藏日常专用菜单项（新建分类、删除分类、重命名分类等）
+        var dailyOnlyItems = dom.blankContextMenu.querySelectorAll('.ctx-daily-only');
+        dailyOnlyItems.forEach(function (item) {
+            item.style.display = isFocus ? 'none' : '';
+        });
         dom.blankContextMenu.classList.add('visible');
         var menuRect = dom.blankContextMenu.getBoundingClientRect();
         var vw = window.innerWidth, vh = window.innerHeight;
