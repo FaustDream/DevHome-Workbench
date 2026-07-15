@@ -393,6 +393,12 @@ window.DevHome = window.DevHome || {};
         // ===== 键盘快捷键 =====
         document.addEventListener('keydown', function (e) {
             if (e.key === '/' && document.activeElement !== dom.searchInput) { e.preventDefault(); dom.searchInput.focus(); }
+            // 专注模式下禁用 Ctrl+S 保存网页（数据已后台实时自动保存）
+            if (state.currentDevhomeMode === 'workbench' && (e.ctrlKey || e.metaKey) && e.key === 's' && !e.shiftKey && !e.altKey) {
+                e.preventDefault();
+                console.log('[专注] 拦截 Ctrl+S，数据已自动保存');
+                return;
+            }
             if (e.key === 'Escape') {
                 // 判断是否需要拦截 ESC 行为
                 var isFocusMode = state.currentDevhomeMode !== 'daily';
