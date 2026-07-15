@@ -30,22 +30,15 @@
         return rootInstance;
     }
 
-    /** 卸载当前弹窗，重置渲染 */
+    /** 卸载当前弹窗 */
     function unmountAll() {
         try { reactRoot().render(null); } catch (_) {}
     }
 
     // ========== Confirm 弹窗 ==========
 
-    /**
-     * 显示确认弹窗（替代原生 confirm）
-     * @param {string} message - 提示消息
-     * @param {object} [opts] - 可选 { title, okLabel, cancelLabel }
-     * @returns {Promise<boolean>}
-     */
     function showConfirm(message, opts) {
         opts = opts || {};
-        unmountAll();
         return new Promise(function (resolve) {
             console.log('[Shadcn弹窗] confirm:', (opts.title || '确认'), message);
             reactRoot().render(React.createElement(window.ShadcnConfirmDialog, {
@@ -64,15 +57,8 @@
 
     // ========== Prompt 弹窗 ==========
 
-    /**
-     * 显示输入弹窗（替代原生 prompt）
-     * @param {string} message - 提示消息
-     * @param {object} [opts] - 可选 { title, defaultValue, okLabel, cancelLabel }
-     * @returns {Promise<string|null>}
-     */
     function showPrompt(message, opts) {
         opts = opts || {};
-        unmountAll();
         return new Promise(function (resolve) {
             console.log('[Shadcn弹窗] prompt:', (opts.title || '请输入'), message);
             reactRoot().render(React.createElement(window.ShadcnPromptDialog, {
@@ -92,15 +78,7 @@
 
     // ========== 磁贴编辑弹窗 ==========
 
-    /**
-     * 显示磁贴编辑弹窗
-     * @param {string} title - 弹窗标题
-     * @param {string} initialName - 初始名称
-     * @param {string} initialUrl - 初始网址
-     * @returns {Promise<{name:string, url:string}|null>}
-     */
     function showTileForm(title, initialName, initialUrl) {
-        unmountAll();
         return new Promise(function (resolve) {
             console.log('[Shadcn弹窗] tileForm:', title, 'name=' + initialName);
             reactRoot().render(React.createElement(window.ShadcnTileFormDialog, {
@@ -122,11 +100,7 @@
 
     // ========== 更新说明弹窗 ==========
 
-    /**
-     * 显示更新说明弹窗
-     */
     function showChangelog() {
-        unmountAll();
         console.log('[Shadcn弹窗] changelog');
         reactRoot().render(React.createElement(window.ShadcnChangelogDialog, {
             open: true,

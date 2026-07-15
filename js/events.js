@@ -175,22 +175,26 @@ window.DevHome = window.DevHome || {};
                 });
             });
         }
-        // 新建笔记本
+        // 新建笔记本（防重入）
+        var _nbAddDialogOpen = false;
         var wbNotebookAddBtn = document.getElementById('wbNotebookAddBtn');
         if (wbNotebookAddBtn) {
             wbNotebookAddBtn.addEventListener('click', function () {
+                if (_nbAddDialogOpen) return;
+                _nbAddDialogOpen = true;
                 console.log('[交互] 工具栏 点击新建笔记本');
                 ns.showPrompt('笔记本名称：', { title: '新建笔记本' }).then(function (name) {
+                    _nbAddDialogOpen = false;
                     if (name && name.trim()) {
                         ns.createNotebook(name.trim()).then(function () {
                             ns.renderNotebookDropdown();
                         });
                     }
                 }).catch(function (err) {
+                    _nbAddDialogOpen = false;
                     console.error('[错误] 新建笔记本失败', err);
                 });
             });
-        }
         // 新建标签
         // 新建标签
         var wbTagAddBtn = document.getElementById('wbTagAddBtn');
