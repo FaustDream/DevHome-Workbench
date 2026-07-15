@@ -153,6 +153,14 @@
 
             <!-- ========== 主工作区：笔记（剩余全部空间） ========== -->
             <main class="wb-main" id="wbMain">
+                <!-- 笔记本选择器（专注模式顶部） -->
+                <div class="wb-notebook-selector" id="wbNotebookSelector">
+                    <div class="wb-notebook-chips" id="wbNotebookChips">
+                        <button class="wb-notebook-chip active" data-notebook-id="">全部笔记</button>
+                    </div>
+                    <button class="wb-notebook-add-btn" id="wbNotebookAddBtn" title="新建笔记本">+</button>
+                </div>
+
                 <!-- 笔记标题行：含搜索 + 新建按钮 + 过滤胶囊 -->
                 <div class="wb-notes-toolbar">
                     <div class="wb-notes-toolbar-left">
@@ -198,6 +206,7 @@
                             <!-- 标签属性区：标题下方横向 Pill 胶囊徽章 -->
                             <div class="wb-notes-editor-meta" id="wbNotesEditorMeta">
                                 <span class="wb-note-type-badge-editor" id="wbNoteTypeBadge"></span>
+                                <span class="wb-note-notebook-badge" id="wbNotebookBadge" title="点击切换笔记本">📓 未分类</span>
                                 <!-- 笔记转四象限任务：先选象限 → 再设截止时间（可选） -->
                                 <div class="wb-note-to-task-wrap" id="wbNoteToTaskWrap" style="display:none;">
                                     <button class="wb-note-to-task-btn" id="wbNoteToTaskBtn" title="转为四象限任务">转为任务</button>

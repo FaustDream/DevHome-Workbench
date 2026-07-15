@@ -50,6 +50,7 @@ window.DevHome = window.DevHome || {};
         notes:      { dir: 'notes',    desc: '笔记',     individual: true },
         captures:   { dir: 'captures', desc: '快速捕获',  file: 'captures.json' },
         tasks:      { dir: 'tasks',    desc: '四象限任务', file: 'tasks.json' },
+        notebooks:  { dir: 'notebooks', desc: '笔记本',  file: 'notebooks.json' },
         tiles:      { dir: 'tiles',    desc: '磁贴与分类', file: 'tiles.json' },
         pomodoro:   { dir: 'pomodoro', desc: '番茄钟记录', file: 'pomodoro.json' },
         behavior:   { dir: 'behavior', desc: '行为追踪',  file: 'behavior.json' },
@@ -283,6 +284,12 @@ window.DevHome = window.DevHome || {};
             result.captures = capturesRaw ? JSON.parse(capturesRaw) : [];
         } catch (_) { result.captures = []; }
 
+        // 笔记本数据
+        try {
+            var notebooksRaw = localStorage.getItem(CACHE_PREFIX + 'notebooks');
+            result.notebooks = notebooksRaw ? JSON.parse(notebooksRaw) : [];
+        } catch (_) { result.notebooks = []; }
+
         // 四象限任务（优先 v2/tasks，回退 devhome_workbench）
         try {
             var tasksRaw = localStorage.getItem(CACHE_PREFIX + 'tasks');
@@ -404,6 +411,17 @@ window.DevHome = window.DevHome || {};
             } catch (e) {
                 try { localStorage.setItem(CACHE_PREFIX + 'captures', JSON.stringify(configData.captures)); } catch (_) {}
                 console.warn('[FileConfig] 捕获恢复失败，已降级到缓存:', e);
+            }
+        }
+
+        // 笔记本 → chrome.storage.local
+        if (Array.isArray(configData.notebooks)) {
+            try {
+                await ns.storageV2.set(ns.storageV2.KEYS.NOTEBOOKS, configData.notebooks);
+                console.log('[FileConfig] 恢复了 ' + configData.notebooks.length + ' 个笔记本');
+            } catch (e) {
+                try { localStorage.setItem(CACHE_PREFIX + 'notebooks', JSON.stringify(configData.notebooks)); } catch (_) {}
+                console.warn('[FileConfig] 笔记本恢复失败，已降级到缓存:', e);
             }
         }
 
@@ -689,6 +707,7 @@ window.DevHome = window.DevHome || {};
                 'v2/notes': 'notes',
                 'v2/captures': 'captures',
                 'v2/tasks': 'tasks',
+                'v2/notebooks': 'notebooks',
                 'v2/pomodoro_sessions': 'pomodoro',
                 'v2/behavior': 'behavior',
                 'v2/config': 'config'

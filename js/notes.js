@@ -86,6 +86,11 @@ window.DevHome = window.DevHome || {};
                 note.updatedAt = note.createdAt || Date.now();
                 migrated = true;
             }
+            // 为旧笔记补充 notebookId 字段（默认 null = 未分类）
+            if (note.notebookId === undefined) {
+                note.notebookId = null;
+                migrated = true;
+            }
             // 清理废弃的 doc 字段
             if (note.doc !== undefined) { delete note.doc; migrated = true; }
         });
@@ -109,7 +114,7 @@ window.DevHome = window.DevHome || {};
         await storageV2.set(storageV2.KEYS.NOTES, state.notes);
     };
 
-    /** 创建新笔记（自动添加日期标签） */
+    /** 创建新笔记（自动添加日期标签，继承当前笔记本筛选或上次选择的笔记本） */
     ns.createNote = async function (data) {
         var now = Date.now();
         var userTags = data.tags || [];
@@ -117,6 +122,9 @@ window.DevHome = window.DevHome || {};
         if (userTags.indexOf(dt) === -1) {
             userTags = [dt].concat(userTags);
         }
+        // 确定笔记本归属：优先当前筛选的笔记本 → 上次选择的笔记本 → null
+        var notebookId = data.notebookId !== undefined ? data.notebookId
+            : (state._notebookFilter || state._lastNotebookId || null);
         var note = {
             id: data.id || noteId(),
             title: data.title || '无标题',
@@ -127,6 +135,7 @@ window.DevHome = window.DevHome || {};
             sourceUrl: data.sourceUrl || '',
             sourceTitle: data.sourceTitle || '',
             status: 'active',
+            notebookId: notebookId,                            // 笔记本归属（null = 未分类）
             createdAt: data.createdAt || now,
             updatedAt: now
         };
@@ -150,6 +159,109 @@ window.DevHome = window.DevHome || {};
         state.notes = state.notes.filter(function (n) { return n.id !== id; });
         await ns.saveNotes();
     };
+
+    /* ===== 笔记本 CRUD ===== */
+
+    /** 加载笔记本列表 */
+    ns.loadNotebooks = async function () {
+        state.notebooks = await storageV2.get(storageV2.KEYS.NOTEBOOKS, []);
+        // 迁移旧数据：确保每个笔记本都有 order 字段
+        var migrated = false;
+        state.notebooks.forEach(function (nb, i) {
+            if (!nb.order) { nb.order = Date.now() + i; migrated = true; }
+        });
+        if (migrated) await ns.saveNotebooks();
+        console.log('[笔记本] 加载了 ' + state.notebooks.length + ' 个笔记本');
+    };
+
+    /** 保存笔记本列表 */
+    ns.saveNotebooks = async function () {
+        await storageV2.set(storageV2.KEYS.NOTEBOOKS, state.notebooks);
+    };
+
+    /** 创建笔记本 */
+    ns.createNotebook = async function (name) {
+        var now = Date.now();
+        var nb = { id: notebookId(), name: name, createdAt: now, updatedAt: now, order: now };
+        state.notebooks.push(nb);
+        state.notebooks.sort(function (a, b) { return a.order - b.order; });
+        await ns.saveNotebooks();
+        console.log('[笔记本] 创建 id=' + nb.id + ' 名称=' + name);
+        return nb;
+    };
+
+    /** 重命名笔记本 */
+    ns.renameNotebook = async function (id, newName) {
+        var nb = state.notebooks.find(function (n) { return n.id === id; });
+        if (!nb) return;
+        nb.name = newName;
+        nb.updatedAt = Date.now();
+        await ns.saveNotebooks();
+        console.log('[笔记本] 重命名 id=' + id + ' → ' + newName);
+    };
+
+    /** 删除笔记本（笔记 notebookId 置 null，不删除笔记） */
+    ns.deleteNotebook = async function (id) {
+        var nb = state.notebooks.find(function (n) { return n.id === id; });
+        if (!nb) return;
+        // 将该笔记本下的所有笔记移到未分类
+        var count = 0;
+        state.notes.forEach(function (n) {
+            if (n.notebookId === id) { n.notebookId = null; count++; }
+        });
+        if (count > 0) await ns.saveNotes();
+        // 删除笔记本
+        state.notebooks = state.notebooks.filter(function (n) { return n.id !== id; });
+        await ns.saveNotebooks();
+        // 如果当前筛选的是被删除的笔记本，重置筛选
+        if (state._notebookFilter === id) {
+            state._notebookFilter = null;
+            ns.renderNotebookChips();
+            ns.renderNotesList(state._notesFilter, state._notesSearch);
+        }
+        ns.showToast('笔记本「' + nb.name + '」已删除，' + count + ' 条笔记移回未分类', 'success');
+        console.log('[笔记本] 删除 id=' + id + ' 名称=' + nb.name + ' 笔记数=' + count);
+    };
+
+    /** 渲染笔记本选择器 chips */
+    ns.renderNotebookChips = function () {
+        var chipsContainer = dom.wbNotebookChips;
+        if (!chipsContainer) return;
+        // 排序
+        state.notebooks.sort(function (a, b) { return a.order - b.order; });
+        // 构建 chips
+        var html = '<button class="wb-notebook-chip' + (!state._notebookFilter ? ' active' : '') + '" data-notebook-id="">全部笔记</button>';
+        state.notebooks.forEach(function (nb) {
+            html += '<button class="wb-notebook-chip' + (state._notebookFilter === nb.id ? ' active' : '') + '" data-notebook-id="' + nb.id + '">' + ns.escapeHtml(nb.name) + '</button>';
+        });
+        chipsContainer.innerHTML = html;
+    };
+
+    /** 渲染编辑器内笔记本归属徽章 */
+    ns.renderNotebookBadge = function () {
+        var badge = dom.wbNotebookBadge;
+        if (!badge) return;
+        var note = state.currentNote;
+        if (!note || (note._kind === 'capture' || note.type === 'capture')) {
+            badge.style.display = 'none';
+            return;
+        }
+        badge.style.display = '';
+        var notebookId = note.notebookId;
+        if (notebookId) {
+            var nb = state.notebooks.find(function (n) { return n.id === notebookId; });
+            badge.textContent = '📓 ' + (nb ? nb.name : '未知笔记本');
+            badge.dataset.notebookId = notebookId;
+        } else {
+            badge.textContent = '📓 未分类';
+            badge.dataset.notebookId = '';
+        }
+    };
+
+    /** 生成笔记本唯一 ID */
+    function notebookId() {
+        return 'nb_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+    }
 
     /* ===== 删除撤销队列 ===== */
 
@@ -295,12 +407,22 @@ window.DevHome = window.DevHome || {};
         var items = [];
         state.notes.filter(function (n) { return n.status === 'active'; }).forEach(function (n) {
             items.push({ id: n.id, type: n.type, title: n.title, content: n.content, tags: n.tags,
-                createdAt: n.createdAt, updatedAt: n.updatedAt, sourceUrl: n.sourceUrl, _kind: 'note', _data: n });
+                createdAt: n.createdAt, updatedAt: n.updatedAt, notebookId: n.notebookId, sourceUrl: n.sourceUrl, _kind: 'note', _data: n });
         });
         state.captures.forEach(function (c) {
             items.push({ id: c.id, type: 'capture', title: c.content.slice(0, 40), content: c.content,
                 tags: c.tags || [], createdAt: c.createdAt, updatedAt: c.createdAt, _kind: 'capture', _data: c });
         });
+
+        // 按笔记本筛选（顶层筛选，仅对笔记生效，捕获不受笔记本体系影响）
+        var notebookFilter = state._notebookFilter;
+        if (notebookFilter) {
+            items = items.filter(function (item) {
+                // 捕获始终不受笔记本筛选影响（在"全部笔记"视角中显示）
+                if (item._kind === 'capture') return false;
+                return item.notebookId === notebookFilter;
+            });
+        }
 
         // 按类型筛选：支持多标签匹配（如 type = "note,idea"）
         if (typeFilter === 'uncategorized') {
@@ -454,6 +576,7 @@ window.DevHome = window.DevHome || {};
         }
         state._currentNoteType = note.type || 'note';
         ns.renderNoteTypeBadge();
+        ns.renderNotebookBadge();
 
         // 使用 Tiptap 富文本编辑器
         if (dom.wbNoteContent && ns.tiptapEditor) {
@@ -540,7 +663,8 @@ window.DevHome = window.DevHome || {};
             content: docHTML,
             wordCount: wordCount,
             type: type,
-            tags: existingDateTags
+            tags: existingDateTags,
+            notebookId: state.currentNote.notebookId !== undefined ? state.currentNote.notebookId : null
         });
 
         var updated = state.notes.find(function (n) { return n.id === noteId; });
@@ -556,6 +680,12 @@ window.DevHome = window.DevHome || {};
         create: ns.createNote,
         update: ns.updateNote,
         delete: ns.deleteNote,
+        loadNotebooks: ns.loadNotebooks,
+        createNotebook: ns.createNotebook,
+        renameNotebook: ns.renameNotebook,
+        deleteNotebook: ns.deleteNotebook,
+        renderNotebookChips: ns.renderNotebookChips,
+        renderNotebookBadge: ns.renderNotebookBadge,
         loadCaptures: ns.loadCaptures,
         addCapture: ns.addCapture,
         renderCaptures: ns.renderCaptures,

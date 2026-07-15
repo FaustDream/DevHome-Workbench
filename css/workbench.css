@@ -854,6 +854,86 @@
     overflow: hidden;
 }
 
+/* ===== 笔记本选择器（专注模式顶部） ===== */
+.wb-notebook-selector {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--color-glass-border);
+    background: var(--color-surface-subtle);
+}
+.wb-notebook-chips {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    flex: 1;
+}
+.wb-notebook-chips::-webkit-scrollbar { display: none; }
+.wb-notebook-chip {
+    padding: 3px 10px;
+    border: 1px solid var(--color-glass-border);
+    border-radius: 12px;
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: 11px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: all .15s ease;
+}
+.wb-notebook-chip:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text);
+}
+.wb-notebook-chip.active {
+    background: var(--color-accent);
+    color: var(--color-text-inverse);
+    border-color: var(--color-accent);
+}
+.wb-notebook-add-btn {
+    width: 24px; height: 24px;
+    border: 1px dashed var(--color-glass-border);
+    border-radius: 12px;
+    background: transparent;
+    color: var(--color-text-tertiary);
+    font-size: 14px;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .15s ease;
+}
+.wb-notebook-add-btn:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    background: rgba(85,230,210,0.05);
+}
+
+/* 编辑器内笔记本归属徽章 */
+.wb-note-notebook-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    border: 1px solid var(--color-glass-border);
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    background: var(--color-surface-subtle);
+    transition: all .15s ease;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.wb-note-notebook-badge:hover {
+    border-color: var(--color-accent);
+    color: var(--color-text);
+}
+
 /* 笔记工具栏 */
 .wb-notes-toolbar {
     display: flex;

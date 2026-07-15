@@ -70,7 +70,7 @@ window.DevHome = window.DevHome || {};
         }
 
         // 所有持久化数据变更时标记对应文件脏，触发 1 秒防抖写盘
-        var keyToCategory = { notes: 'notes', captures: 'captures', tasks: 'tasks',
+        var keyToCategory = { notes: 'notes', captures: 'captures', tasks: 'tasks', notebooks: 'notebooks',
             pomodoro_sessions: 'pomodoro', behavior: 'behavior', config: 'config' };
         var category = keyToCategory[key];
         if (category && ns.fileConfig && typeof ns.fileConfig.markDirty === 'function') {
@@ -189,7 +189,7 @@ window.DevHome = window.DevHome || {};
         if (!isAvailable()) {
             // 从缓存收集
             var result = {};
-            var keys = ['config', 'notes', 'captures', 'tasks', 'pomodoro_sessions', 'behavior', 'encouragement_pool'];
+            var keys = ['config', 'notes', 'captures', 'tasks', 'notebooks', 'pomodoro_sessions', 'behavior', 'encouragement_pool'];
             keys.forEach(function (k) {
                 result[k] = getFromCache(k, null);
             });
@@ -225,6 +225,7 @@ window.DevHome = window.DevHome || {};
             NOTES: 'notes',
             CAPTURES: 'captures',
             TASKS: 'tasks',
+            NOTEBOOKS: 'notebooks',
             POMODORO_SESSIONS: 'pomodoro_sessions',
             BEHAVIOR: 'behavior',
             ENCOURAGEMENT_POOL: 'encouragement_pool'

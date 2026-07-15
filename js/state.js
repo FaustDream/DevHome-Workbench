@@ -114,7 +114,11 @@ window.DevHome = window.DevHome || {};
         wbMeShortcutKey: ns.$('#wbMeShortcutKey'),
         wbMeShortcutSave: ns.$('#wbMeShortcutSave'),
         ctxFocusModeLabel: ns.$('#ctxFocusModeLabel'),
-        ctxFocusModeKey: ns.$('#ctxFocusModeKey')
+        ctxFocusModeKey: ns.$('#ctxFocusModeKey'),
+        // 笔记本 DOM
+        wbNotebookSelector: ns.$('#wbNotebookSelector'),
+        wbNotebookChips: ns.$('#wbNotebookChips'),
+        wbNotebookBadge: ns.$('#wbNotebookBadge')
     };
 
     /* ===== 全局状态 ===== */
@@ -174,7 +178,10 @@ window.DevHome = window.DevHome || {};
         _quadrantCollapsed: false,       // 四象限侧边栏折叠状态
         _rightbarCollapsed: false,       // 右侧栏折叠状态
         _customTypeLabels: {},           // 自定义类型标签映射表（key→label）
-        _customTypeIcons: {}             // 自定义类型图标映射表（key→icon）
+        _customTypeIcons: {},            // 自定义类型图标映射表（key→icon）
+        notebooks: [],                    // 笔记本列表
+        _notebookFilter: null,           // 当前筛选的笔记本 ID（null = 全部笔记）
+        _lastNotebookId: null            // 上次选中的笔记本 ID（跨会话记住）
     };
 
 })(window.DevHome);

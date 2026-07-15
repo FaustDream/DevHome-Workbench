@@ -70,6 +70,112 @@ window.DevHome = window.DevHome || {};
             });
         }
 
+        // ===== 笔记本选择器事件 =====
+        var notebookSelector = document.getElementById('wbNotebookSelector');
+        if (notebookSelector) {
+            // 长按检测 → 重命名/删除笔记本
+            var nbLongPressTimer = null;
+            var nbLongPressTarget = null;
+            notebookSelector.addEventListener('pointerdown', function (e) {
+                var chip = e.target.closest('.wb-notebook-chip:not([data-notebook-id=""])');
+                if (!chip) return;
+                nbLongPressTarget = chip;
+                nbLongPressTimer = setTimeout(function () {
+                    var nbId = nbLongPressTarget.dataset.notebookId;
+                    var nb = state.notebooks.find(function (n) { return n.id === nbId; });
+                    if (!nb) return;
+                    // 弹出操作菜单：重命名 / 删除
+                    var actions = [
+                        { label: '重命名', action: function () {
+                            ns.showPrompt('笔记本名称：', { title: '重命名笔记本', defaultValue: nb.name }).then(function (newName) {
+                                if (newName && newName.trim() && newName.trim() !== nb.name) {
+                                    ns.renameNotebook(nbId, newName.trim());
+                                    ns.renderNotebookChips();
+                                }
+                            });
+                        }},
+                        { label: '删除笔记本', action: function () {
+                            ns.showConfirm('删除笔记本「' + nb.name + '」，其中的笔记将移回未分类。确定？', { title: '删除笔记本' }).then(function (ok) {
+                                if (ok) ns.deleteNotebook(nbId);
+                            });
+                        }}
+                    ];
+                    // 简单操作弹窗
+                    var menu = document.getElementById('wbNotebookCtxMenu');
+                    if (!menu) {
+                        menu = document.createElement('div');
+                        menu.id = 'wbNotebookCtxMenu';
+                        menu.style.cssText = 'position:fixed;background:var(--color-bg-elevated);border:1px solid var(--color-border-active);border-radius:8px;padding:4px;z-index:3100;box-shadow:var(--shadow-lg);min-width:140px;';
+                        document.body.appendChild(menu);
+                    }
+                    menu.innerHTML = actions.map(function (a) {
+                        return '<div class="wb-notebook-menu-item" style="padding:8px 12px;cursor:pointer;border-radius:4px;font-size:13px;color:var(--color-text);">' + ns.escapeHtml(a.label) + '</div>';
+                    }).join('');
+                    var chipRect = nbLongPressTarget.getBoundingClientRect();
+                    menu.style.top = (chipRect.bottom + 4) + 'px';
+                    menu.style.left = chipRect.left + 'px';
+                    menu.style.display = 'block';
+                    menu.onclick = function (ev) { ev.stopPropagation(); };
+                    menu.querySelectorAll('.wb-notebook-menu-item').forEach(function (item, i) {
+                        item.addEventListener('click', function () {
+                            menu.style.display = 'none';
+                            actions[i].action();
+                            console.log('[交互] 笔记本长按 ' + actions[i].label);
+                        });
+                    });
+                    // 点击外部关闭
+                    setTimeout(function () {
+                        document.addEventListener('click', function hideCtx() {
+                            menu.style.display = 'none';
+                            document.removeEventListener('click', hideCtx);
+                        });
+                    }, 0);
+                    nbLongPressTarget = null;
+                    console.log('[交互] 笔记本长按 ' + nb.name);
+                }, 800);
+            });
+            notebookSelector.addEventListener('pointerup', function () {
+                if (nbLongPressTimer) { clearTimeout(nbLongPressTimer); nbLongPressTimer = null; }
+                nbLongPressTarget = null;
+            });
+            notebookSelector.addEventListener('pointerleave', function () {
+                if (nbLongPressTimer) { clearTimeout(nbLongPressTimer); nbLongPressTimer = null; }
+                nbLongPressTarget = null;
+            });
+
+            notebookSelector.addEventListener('click', function (e) {
+                // Chip 点击 → 切换笔记本筛选
+                var chip = e.target.closest('.wb-notebook-chip');
+                if (chip) {
+                    var notebookId = chip.dataset.notebookId || null;
+                    state._notebookFilter = notebookId;
+                    if (notebookId) state._lastNotebookId = notebookId;
+                    // 持久化上次选择的笔记本
+                    ns.storageV2.get(ns.storageV2.KEYS.CONFIG, ns.DEFAULT_V2_CONFIG).then(function (config) {
+                        config.lastNotebookId = notebookId;
+                        ns.storageV2.set(ns.storageV2.KEYS.CONFIG, config);
+                    });
+                    ns.renderNotebookChips();
+                    ns.renderNotesList(state._notesFilter, state._notesSearch);
+                    console.log('[交互] 笔记本筛选 ' + (notebookId || '全部'));
+                    return;
+                }
+                // 添加按钮 → 新建笔记本
+                var addBtn = e.target.closest('#wbNotebookAddBtn');
+                if (addBtn) {
+                    ns.showPrompt('笔记本名称：', { title: '新建笔记本' }).then(function (name) {
+                        if (name && name.trim()) {
+                            ns.createNotebook(name.trim()).then(function () {
+                                ns.renderNotebookChips();
+                            });
+                        }
+                    });
+                    console.log('[交互] 新建笔记本');
+                    return;
+                }
+            });
+        }
+
         // ===== 象限分组导航事件 =====
         var quadrantNav = document.getElementById('wbQuadrantNav');
         if (quadrantNav) {
@@ -972,6 +1078,64 @@ window.DevHome = window.DevHome || {};
                     quadrantPicker.style.display = 'none';
                     if (timePicker) timePicker.style.display = 'none';
                 }
+            });
+        }
+
+        // 编辑器内笔记本徽章点击 → 弹出笔记本切换选择器
+        if (dom.wbNotebookBadge) {
+            dom.wbNotebookBadge.addEventListener('click', function (e) {
+                e.preventDefault(); e.stopPropagation();
+                if (!state.currentNote) return;
+                // 构建选项列表
+                var options = [{ id: '', label: '未分类' }];
+                state.notebooks.forEach(function (nb) {
+                    options.push({ id: nb.id, label: nb.name });
+                });
+                // 简单列表弹窗选择
+                if (typeof ns.showTaskQuadrantPicker === 'function') {
+                    // 复用现有的选择器模式
+                }
+                // 展示选择器：用 confirm/prompt 方式实现
+                var html = '<div style="max-height:300px;overflow-y:auto;">';
+                options.forEach(function (opt) {
+                    var isCurrent = (state.currentNote.notebookId || '') === opt.id;
+                    html += '<div class="wb-notebook-pick-item' + (isCurrent ? ' active' : '') + '" data-nb-id="' + opt.id + '" style="padding:8px 12px;cursor:pointer;border-radius:6px;font-size:13px;' + (isCurrent ? 'background:var(--color-accent);color:var(--color-text-inverse);' : '') + '">' + (opt.id ? '📓 ' : '📂 ') + ns.escapeHtml(opt.label) + '</div>';
+                });
+                html += '</div>';
+                // 创建临时浮层
+                var pop = document.getElementById('wbNotebookPickPop');
+                if (!pop) {
+                    pop = document.createElement('div');
+                    pop.id = 'wbNotebookPickPop';
+                    pop.style.cssText = 'position:fixed;background:var(--color-bg-elevated);border:1px solid var(--color-border-active);border-radius:12px;padding:8px;z-index:3100;box-shadow:var(--shadow-lg);min-width:180px;';
+                    document.body.appendChild(pop);
+                }
+                pop.innerHTML = html;
+                var badgeRect = dom.wbNotebookBadge.getBoundingClientRect();
+                pop.style.top = (badgeRect.bottom + 4) + 'px';
+                pop.style.left = badgeRect.left + 'px';
+                pop.style.display = 'block';
+                console.log('[交互] 打开笔记本切换选择器');
+                // 点击选项
+                pop.onclick = function (ev) {
+                    var item = ev.target.closest('.wb-notebook-pick-item');
+                    if (!item) return;
+                    var nbId = item.dataset.nbId || null;
+                    state.currentNote.notebookId = nbId || null;
+                    ns.renderNotebookBadge();
+                    ns._triggerAutoSave();
+                    pop.style.display = 'none';
+                    console.log('[交互] 切换笔记本归属 ' + (nbId || '未分类'));
+                };
+                // 点击外部关闭
+                setTimeout(function () {
+                    document.addEventListener('click', function hidePop(ev) {
+                        if (!pop.contains(ev.target) && ev.target !== dom.wbNotebookBadge) {
+                            pop.style.display = 'none';
+                            document.removeEventListener('click', hidePop);
+                        }
+                    });
+                }, 0);
             });
         }
 

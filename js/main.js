@@ -108,10 +108,16 @@ window.DevHome = window.DevHome || {};
         // 首次使用且未选目录 → 仍正常加载界面，警告条会提示用户选目录
         ns.logger && ns.logger.info('boot', '启动序列开始', { configReady: state.configReady });
 
-        // [v2.0.0] 加载 v2 数据（笔记、捕获）+ 快捷键配置
+        // [v2.0.0] 加载 v2 数据（笔记、捕获、笔记本）+ 快捷键配置
         if (ns.notesManager) {
             try { await ns.notesManager.load(); } catch (e) { console.warn('[V2] 笔记加载失败:', e); }
             try { await ns.notesManager.loadCaptures(); } catch (e) { console.warn('[V2] 捕获加载失败:', e); }
+            try { await ns.notesManager.loadNotebooks(); } catch (e) { console.warn('[V2] 笔记本加载失败:', e); }
+            // 加载上次选择的笔记本 ID（持久化在 config）
+            try {
+                var v2Config = await ns.storageV2.get(ns.storageV2.KEYS.CONFIG, ns.DEFAULT_V2_CONFIG);
+                ns.state._lastNotebookId = v2Config.lastNotebookId || null;
+            } catch (_) {}
         }
         // 加载专注模式快捷键
         if (ns.storageV2) {
