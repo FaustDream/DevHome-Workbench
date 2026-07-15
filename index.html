@@ -153,37 +153,45 @@
 
             <!-- ========== 主工作区：笔记（剩余全部空间） ========== -->
             <main class="wb-main" id="wbMain">
-                <!-- 笔记本选择器（专注模式顶部） -->
-                <div class="wb-notebook-selector" id="wbNotebookSelector">
-                    <div class="wb-notebook-chips" id="wbNotebookChips">
-                        <button class="wb-notebook-chip active" data-notebook-id="">全部笔记</button>
-                    </div>
-                    <button class="wb-notebook-add-btn" id="wbNotebookAddBtn" title="新建笔记本">+</button>
-                </div>
-
-                <!-- 笔记标题行：含搜索 + 新建按钮 + 过滤胶囊 -->
+                <!-- 笔记标题行：搜索 + 笔记本下拉 + 新建操作 -->
                 <div class="wb-notes-toolbar">
                     <div class="wb-notes-toolbar-left">
                         <div class="wb-notes-search">
                             <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.5 13.5L18 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
                             <input type="text" id="wbNotesSearch" placeholder="搜索笔记..." autocomplete="off">
                         </div>
-                        <button class="wb-notes-add-btn" id="wbNotesAddBtn" title="新建笔记">
-                            <svg width="16" height="16" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                        </button>
+                        <!-- 笔记本下拉选择器 -->
+                        <div class="wb-notebook-dropdown" id="wbNotebookDropdown">
+                            <button class="wb-notebook-dropdown-btn" id="wbNotebookDropdownBtn" title="切换笔记本">
+                                <span class="wb-notebook-dropdown-icon">📓</span>
+                                <span class="wb-notebook-dropdown-label" id="wbNotebookDropdownLabel">全部笔记</span>
+                                <span class="wb-notebook-dropdown-arrow">▾</span>
+                            </button>
+                            <div class="wb-notebook-dropdown-menu" id="wbNotebookDropdownMenu" style="display:none;">
+                                <div class="wb-notebook-dropdown-item active" data-notebook-id="">📂 全部笔记</div>
+                            </div>
+                        </div>
                     </div>
                     <div class="wb-notes-toolbar-right">
-                        <div class="wb-notes-filters" id="wbNotesFilters">
-                            <button class="wb-filter-chip active" data-filter="all">全部</button>
-                            <button class="wb-filter-chip" data-filter="uncategorized">未分类</button>
-                            <button class="wb-filter-chip" data-filter="note">笔记</button>
-                            <button class="wb-filter-chip" data-filter="capture">捕获</button>
-                            <button class="wb-filter-chip" data-filter="idea">想法</button>
-                            <button class="wb-filter-chip" data-filter="bug">Bug</button>
-                            <button class="wb-filter-chip" data-filter="meeting">会议</button>
-                            <span id="wbCustomFilters"></span>
-                            <button class="wb-filter-add-btn" id="wbFilterAddBtn" title="新增标签">+</button>
+                        <div class="wb-notes-toolbar-actions" id="wbNotesToolbarActions">
+                            <button class="wb-notes-action-btn" id="wbNotesAddBtn" title="新建笔记">📝</button>
+                            <button class="wb-notes-action-btn" id="wbNotebookAddBtn" title="新建笔记本">📓</button>
+                            <button class="wb-notes-action-btn" id="wbTagAddBtn" title="新建标签">🏷️</button>
                         </div>
+                    </div>
+                </div>
+                <!-- 标签筛选行 -->
+                <div class="wb-notes-filter-bar">
+                    <div class="wb-notes-filters" id="wbNotesFilters">
+                        <button class="wb-filter-chip active" data-filter="all">全部</button>
+                        <button class="wb-filter-chip" data-filter="uncategorized">未分类</button>
+                        <button class="wb-filter-chip" data-filter="note">笔记</button>
+                        <button class="wb-filter-chip" data-filter="capture">捕获</button>
+                        <button class="wb-filter-chip" data-filter="idea">想法</button>
+                        <button class="wb-filter-chip" data-filter="bug">Bug</button>
+                        <button class="wb-filter-chip" data-filter="meeting">会议</button>
+                        <span id="wbCustomFilters"></span>
+                        <button class="wb-filter-add-btn" id="wbFilterAddBtn" title="新建标签">+</button>
                     </div>
                 </div>
 

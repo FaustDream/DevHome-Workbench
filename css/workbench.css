@@ -854,64 +854,98 @@
     overflow: hidden;
 }
 
-/* ===== 笔记本选择器（专注模式顶部） ===== */
-.wb-notebook-selector {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    border-bottom: 1px solid var(--color-glass-border);
-    background: var(--color-surface-subtle);
-}
-.wb-notebook-chips {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    overflow-x: auto;
-    scrollbar-width: none;
-    flex: 1;
-}
-.wb-notebook-chips::-webkit-scrollbar { display: none; }
-.wb-notebook-chip {
-    padding: 3px 10px;
-    border: 1px solid var(--color-glass-border);
-    border-radius: 12px;
-    background: transparent;
-    color: var(--color-text-secondary);
-    font-size: 11px;
-    cursor: pointer;
-    white-space: nowrap;
+/* ===== 笔记本下拉选择器（工具栏内） ===== */
+.wb-notebook-dropdown {
+    position: relative;
     flex-shrink: 0;
-    transition: all .15s ease;
 }
-.wb-notebook-chip:hover {
-    background: var(--color-surface-hover);
+.wb-notebook-dropdown-btn {
+    display: flex; align-items: center; gap: 4px;
+    padding: 4px 10px;
+    border: 1px solid var(--color-glass-border);
+    border-radius: 6px;
+    background: var(--color-surface-subtle);
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all .15s ease;
+    white-space: nowrap;
+}
+.wb-notebook-dropdown-btn:hover {
+    border-color: var(--color-accent);
     color: var(--color-text);
 }
-.wb-notebook-chip.active {
+.wb-notebook-dropdown-icon { font-size: 13px; }
+.wb-notebook-dropdown-label {
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.wb-notebook-dropdown-arrow {
+    font-size: 8px;
+    margin-left: 2px;
+    opacity: 0.5;
+}
+.wb-notebook-dropdown-menu {
+    position: fixed;
+    z-index: 3100;
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border-active);
+    border-radius: 10px;
+    padding: 4px;
+    min-width: 180px;
+    max-height: 320px;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+}
+.wb-notebook-dropdown-item {
+    padding: 7px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--color-text);
+    display: flex; align-items: center; gap: 6px;
+    transition: background .1s;
+}
+.wb-notebook-dropdown-item:hover {
+    background: var(--color-surface-hover);
+}
+.wb-notebook-dropdown-item.active {
     background: var(--color-accent);
     color: var(--color-text-inverse);
-    border-color: var(--color-accent);
-}
-.wb-notebook-add-btn {
-    width: 24px; height: 24px;
-    border: 1px dashed var(--color-glass-border);
-    border-radius: 12px;
-    background: transparent;
-    color: var(--color-text-tertiary);
-    font-size: 14px;
-    cursor: pointer;
-    flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    transition: all .15s ease;
-}
-.wb-notebook-add-btn:hover {
-    border-color: var(--color-accent);
-    color: var(--color-accent);
-    background: rgba(85,230,210,0.05);
 }
 
-/* 编辑器内笔记本归属徽章 */
+/* 工具栏操作按钮 */
+.wb-notes-toolbar-actions {
+    display: flex; align-items: center; gap: 2px;
+}
+.wb-notes-action-btn {
+    width: 28px; height: 28px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .15s ease;
+    padding: 0;
+}
+.wb-notes-action-btn:hover {
+    background: var(--color-surface-hover);
+    border-color: var(--color-glass-border);
+}
+
+/* 标签筛选行 */
+.wb-notes-filter-bar {
+    display: flex;
+    align-items: center;
+    padding: 6px 16px;
+    border-bottom: 1px solid var(--color-glass-border);
+    background: var(--color-surface-subtle);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.wb-notes-filter-bar::-webkit-scrollbar { display: none; }
 .wb-note-notebook-badge {
     display: inline-flex;
     align-items: center;

@@ -116,8 +116,12 @@ window.DevHome = window.DevHome || {};
         ctxFocusModeLabel: ns.$('#ctxFocusModeLabel'),
         ctxFocusModeKey: ns.$('#ctxFocusModeKey'),
         // 笔记本 DOM
-        wbNotebookSelector: ns.$('#wbNotebookSelector'),
-        wbNotebookChips: ns.$('#wbNotebookChips'),
+        wbNotebookDropdown: ns.$('#wbNotebookDropdown'),
+        wbNotebookDropdownBtn: ns.$('#wbNotebookDropdownBtn'),
+        wbNotebookDropdownLabel: ns.$('#wbNotebookDropdownLabel'),
+        wbNotebookDropdownMenu: ns.$('#wbNotebookDropdownMenu'),
+        wbNotebookAddBtn: ns.$('#wbNotebookAddBtn'),
+        wbTagAddBtn: ns.$('#wbTagAddBtn'),
         wbNotebookBadge: ns.$('#wbNotebookBadge')
     };
 

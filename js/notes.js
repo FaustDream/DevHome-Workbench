@@ -223,18 +223,26 @@ window.DevHome = window.DevHome || {};
         console.log('[笔记本] 删除 id=' + id + ' 名称=' + nb.name + ' 笔记数=' + count);
     };
 
-    /** 渲染笔记本选择器 chips */
-    ns.renderNotebookChips = function () {
-        var chipsContainer = dom.wbNotebookChips;
-        if (!chipsContainer) return;
-        // 排序
+    /** 渲染笔记本下拉菜单 + 更新按钮标签 */
+    ns.renderNotebookDropdown = function () {
+        // 更新下拉按钮标签
+        if (dom.wbNotebookDropdownLabel) {
+            if (state._notebookFilter) {
+                var currentNb = state.notebooks.find(function (n) { return n.id === state._notebookFilter; });
+                dom.wbNotebookDropdownLabel.textContent = currentNb ? currentNb.name : '未知笔记本';
+            } else {
+                dom.wbNotebookDropdownLabel.textContent = '全部笔记';
+            }
+        }
+        // 填充下拉菜单
+        var menu = dom.wbNotebookDropdownMenu;
+        if (!menu) return;
         state.notebooks.sort(function (a, b) { return a.order - b.order; });
-        // 构建 chips
-        var html = '<button class="wb-notebook-chip' + (!state._notebookFilter ? ' active' : '') + '" data-notebook-id="">全部笔记</button>';
+        var html = '<div class="wb-notebook-dropdown-item' + (!state._notebookFilter ? ' active' : '') + '" data-notebook-id="">📂 全部笔记</div>';
         state.notebooks.forEach(function (nb) {
-            html += '<button class="wb-notebook-chip' + (state._notebookFilter === nb.id ? ' active' : '') + '" data-notebook-id="' + nb.id + '">' + ns.escapeHtml(nb.name) + '</button>';
+            html += '<div class="wb-notebook-dropdown-item' + (state._notebookFilter === nb.id ? ' active' : '') + '" data-notebook-id="' + nb.id + '">📓 ' + ns.escapeHtml(nb.name) + '</div>';
         });
-        chipsContainer.innerHTML = html;
+        menu.innerHTML = html;
     };
 
     /** 渲染编辑器内笔记本归属徽章 */
@@ -684,7 +692,7 @@ window.DevHome = window.DevHome || {};
         createNotebook: ns.createNotebook,
         renameNotebook: ns.renameNotebook,
         deleteNotebook: ns.deleteNotebook,
-        renderNotebookChips: ns.renderNotebookChips,
+        renderNotebookDropdown: ns.renderNotebookDropdown,
         renderNotebookBadge: ns.renderNotebookBadge,
         loadCaptures: ns.loadCaptures,
         addCapture: ns.addCapture,

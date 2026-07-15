@@ -513,8 +513,8 @@ window.DevHome = window.DevHome || {};
         try { if (typeof ns.renderCustomFilters === 'function') ns.renderCustomFilters(); } catch (e) {
             ns.logger && ns.logger.warn('focus-mode', 'renderCustomFilters 失败', e.message);
         }
-        try { if (typeof ns.renderNotebookChips === 'function') ns.renderNotebookChips(); } catch (e) {
-            ns.logger && ns.logger.warn('focus-mode', 'renderNotebookChips 失败', e.message);
+        try { if (typeof ns.renderNotebookDropdown === 'function') ns.renderNotebookDropdown(); } catch (e) {
+            ns.logger && ns.logger.warn('focus-mode', 'renderNotebookDropdown 失败', e.message);
         }
         try { ns.updateContextMenuLabel(); } catch (e) {
             ns.logger && ns.logger.warn('focus-mode', 'updateContextMenuLabel 失败', e.message);
