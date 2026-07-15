@@ -1189,8 +1189,9 @@ window.DevHome = window.DevHome || {};
         }
 
         // 编辑器内笔记本徽章点击 → 弹出笔记本切换选择器
-        if (dom.wbNotebookBadge) {
-            dom.wbNotebookBadge.addEventListener('click', function (e) {
+        var notebookBadge = document.getElementById('wbNotebookBadge');
+        if (notebookBadge) {
+            notebookBadge.addEventListener('click', function (e) {
                 e.preventDefault(); e.stopPropagation();
                 if (!state.currentNote) return;
                 // 构建选项列表
@@ -1218,7 +1219,7 @@ window.DevHome = window.DevHome || {};
                     document.body.appendChild(pop);
                 }
                 pop.innerHTML = html;
-                var badgeRect = dom.wbNotebookBadge.getBoundingClientRect();
+                var badgeRect = notebookBadge.getBoundingClientRect();
                 pop.style.top = (badgeRect.bottom + 4) + 'px';
                 pop.style.left = badgeRect.left + 'px';
                 pop.style.display = 'block';
@@ -1237,7 +1238,7 @@ window.DevHome = window.DevHome || {};
                 // 点击外部关闭
                 setTimeout(function () {
                     document.addEventListener('click', function hidePop(ev) {
-                        if (!pop.contains(ev.target) && ev.target !== dom.wbNotebookBadge) {
+                        if (!pop.contains(ev.target) && ev.target !== notebookBadge) {
                             pop.style.display = 'none';
                             document.removeEventListener('click', hidePop);
                         }
