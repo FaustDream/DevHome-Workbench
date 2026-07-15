@@ -195,7 +195,7 @@ window.DevHome = window.DevHome || {};
                     console.error('[错误] 新建笔记本失败', err);
                 });
             });
-        // 新建标签
+        }
         // 新建标签
         var wbTagAddBtn = document.getElementById('wbTagAddBtn');
         if (wbTagAddBtn) {
