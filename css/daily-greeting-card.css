@@ -3,7 +3,7 @@
     position: fixed;
     top: 24px;
     left: 24px;
-    z-index: 100;
+    z-index: 1; /* 与 body > * 同级，让容器内弹窗遮罩能覆盖卡片 */
     width: 420px;
     padding: 36px 32px 32px;
     /* 背景跟随主题：浅色模式白色，深色模式深色面板 */
