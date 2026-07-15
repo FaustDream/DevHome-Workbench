@@ -55,74 +55,87 @@
         });
     }
 
-    // ========== Prompt 弹窗（内联实现） ==========
+    // ========== Prompt 弹窗 ==========
+
+    /**
+     * 注册内联 Prompt 组件（非 hooks 实现，确保与 showConfirm 一致的渲染路径）
+     */
+    var PromptDialogImpl = function (props) {
+        // 函数组件：用 ref 在 DOM 层管理输入值（绕开 hooks）
+        var inputRef = null;
+        var value = props.defaultValue || '';
+
+        function setRef(el) { inputRef = el; }
+        function handleOk() {
+            if (inputRef) value = inputRef.value;
+            unmountAll();
+            props.onResolve(value.trim() || null);
+        }
+        function handleCancel() {
+            unmountAll();
+            props.onResolve(null);
+        }
+
+        // auto-focus after mount
+        setTimeout(function () {
+            if (inputRef) { inputRef.focus(); inputRef.select(); }
+        }, 100);
+
+        return React.createElement(window.ShadcnDialog.Dialog, { open: true },
+            React.createElement(window.ShadcnDialog.DialogOverlay, { onClick: handleCancel }),
+            React.createElement(window.ShadcnDialog.DialogContent, null,
+                React.createElement(window.ShadcnDialog.DialogHeader, null,
+                    React.createElement(window.ShadcnDialog.DialogTitle, null, props.title || '请输入')
+                ),
+                React.createElement('input', {
+                    ref: setRef,
+                    type: 'text',
+                    defaultValue: props.defaultValue || '',
+                    placeholder: props.message || '',
+                    autoComplete: 'off',
+                    onKeyDown: function (e) {
+                        if (e.key === 'Enter') { e.preventDefault(); handleOk(); }
+                        if (e.key === 'Escape') { e.preventDefault(); handleCancel(); }
+                    },
+                    style: {
+                        width: '100%', padding: '10px 14px',
+                        border: '1px solid var(--color-border)',
+                        borderRadius: '10px', background: 'var(--color-input-bg)',
+                        color: 'var(--color-text)', fontSize: '14px',
+                        fontFamily: 'var(--font-sans)', outline: 'none',
+                        margin: '8px 0 4px', boxSizing: 'border-box'
+                    }
+                }),
+                React.createElement(window.ShadcnDialog.DialogFooter, null,
+                    React.createElement(window.ShadcnButton,
+                        { variant: 'outline', onClick: handleCancel },
+                        props.cancelLabel || '取消'
+                    ),
+                    React.createElement(window.ShadcnButton,
+                        { variant: 'default', onClick: handleOk },
+                        props.okLabel || '确定'
+                    )
+                )
+            )
+        );
+    };
 
     function showPrompt(message, opts) {
         opts = opts || {};
+        console.log('[Shadcn弹窗] prompt:', (opts.title || '请输入'), message);
         return new Promise(function (resolve) {
-            var h = React.createElement;
-            var defVal = opts.defaultValue || '';
-            var title = opts.title || '请输入';
-
-            // 内联函数组件，捕获输入
-            function PromptInner() {
-                // 检测 React 环境
-                if (typeof React.useState !== 'function') {
-                    console.error('[Shadcn弹窗] React.useState 不可用! React:', typeof React);
-                    return h('div', { style: { position:'fixed',top:'50%',left:'50%',zIndex:9999,background:'white',padding:40 } }, 'React hooks 不可用');
-                }
-                var sv;
-                try {
-                    sv = React.useState(defVal);
-                } catch (e) {
-                    console.error('[Shadcn弹窗] useState 报错:', e);
-                    return h('div', { style: { position:'fixed',top:'50%',left:'50%',zIndex:9999,background:'white',padding:40 } }, 'useState error: ' + e.message);
-                }
-                var value = sv[0];
-                var setValue = sv[1];
-
-                var handleOk = function () { unmountAll(); resolve(value.trim() || null); };
-                var handleCancel = function () { unmountAll(); resolve(null); };
-
-                return h(window.ShadcnDialog.Dialog, { open: true },
-                    h(window.ShadcnDialog.DialogOverlay, { onClick: handleCancel }),
-                    h(window.ShadcnDialog.DialogContent, null,
-                        h(window.ShadcnDialog.DialogHeader, null,
-                            h(window.ShadcnDialog.DialogTitle, null, title)
-                        ),
-                        h('input', {
-                            type: 'text', defaultValue: defVal,
-                            placeholder: message || '',
-                            autoComplete: 'off',
-                            onKeyDown: function (e) {
-                                if (e.key === 'Enter') { handleOk(); }
-                                if (e.key === 'Escape') { handleCancel(); }
-                            },
-                            style: {
-                                width: '100%', padding: '10px 14px',
-                                border: '1px solid var(--color-border)',
-                                borderRadius: '10px', background: 'var(--color-input-bg)',
-                                color: 'var(--color-text)', fontSize: '14px',
-                                fontFamily: 'var(--font-sans)', outline: 'none',
-                                margin: '8px 0 4px', boxSizing: 'border-box'
-                            }
-                        }),
-                        h(window.ShadcnDialog.DialogFooter, null,
-                            h(window.ShadcnButton, { variant: 'outline', onClick: handleCancel }, '取消'),
-                            h(window.ShadcnButton, { variant: 'default', onClick: handleOk }, '确定')
-                        )
-                    )
-                );
-            }
-
-            console.log('[Shadcn弹窗] prompt 开始渲染:', title, message);
-            try {
-                reactRoot().render(h(PromptInner));
-                console.log('[Shadcn弹窗] prompt render() 调用完成');
-            } catch (e) {
-                console.error('[Shadcn弹窗] prompt render 失败:', e.message, e.stack);
-                unmountAll(); resolve(null);
-            }
+            reactRoot().render(React.createElement(PromptDialogImpl, {
+                open: true,
+                title: opts.title || '请输入',
+                message: message,
+                defaultValue: opts.defaultValue || '',
+                okLabel: opts.okLabel || '确定',
+                cancelLabel: opts.cancelLabel || '取消',
+                onResolve: function (result) {
+                    unmountAll();
+                    resolve(result);
+                },
+            }));
         });
     }
 
