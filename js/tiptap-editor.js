@@ -213,6 +213,19 @@ window.DevHome = window.DevHome || {};
             ]
         ];
 
+        // 非捕获笔记时追加"转为任务"操作按钮
+        var currentNote = ns.state && ns.state.currentNote;
+        var isCapture = currentNote && (currentNote._kind === 'capture' || currentNote.type === 'capture');
+        if (currentNote && !isCapture) {
+            groups.push([
+                { label: '☑', title: '转为四象限任务', action: function () {
+                    var toTaskBtn = document.getElementById('wbNoteToTaskBtn');
+                    if (toTaskBtn) toTaskBtn.click();
+                    console.log('[交互] 工具栏 转为任务');
+                }, isActive: function () { return false; } }
+            ]);
+        }
+
         var allBtns = [];
 
         groups.forEach(function (group, gIdx) {
