@@ -55,24 +55,66 @@
         });
     }
 
-    // ========== Prompt 弹窗 ==========
+    // ========== Prompt 弹窗（内联实现，不依赖编译组件） ==========
 
     function showPrompt(message, opts) {
         opts = opts || {};
         return new Promise(function (resolve) {
-            console.log('[Shadcn弹窗] prompt:', (opts.title || '请输入'), message);
-            reactRoot().render(React.createElement(window.ShadcnPromptDialog, {
-                open: true,
-                title: opts.title || '请输入',
-                message: message,
-                defaultValue: opts.defaultValue || '',
-                okLabel: opts.okLabel || '确定',
-                cancelLabel: opts.cancelLabel || '取消',
-                onResolve: function (result) {
-                    unmountAll();
-                    resolve(result);
-                },
-            }));
+            var h = React.createElement;
+            var defVal = opts.defaultValue || '';
+            var title = opts.title || '请输入';
+            var okLabel = opts.okLabel || '确定';
+            var cancelLabel = opts.cancelLabel || '取消';
+
+            // 用 useState 管理输入值 — 通过函数式组件包裹
+            function PromptWrapper() {
+                var stateArr = React.useState(defVal);
+                var value = stateArr[0];
+                var setValue = stateArr[1];
+                var inputRef = React.useRef(null);
+
+                React.useEffect(function () {
+                    setTimeout(function () {
+                        if (inputRef.current) { inputRef.current.focus(); inputRef.current.select(); }
+                    }, 100);
+                }, []);
+
+                var handleOk = function () { unmountAll(); resolve(value.trim() || null); };
+                var handleCancel = function () { unmountAll(); resolve(null); };
+                var handleKeyDown = function (e) {
+                    if (e.key === 'Enter') { e.preventDefault(); handleOk(); }
+                    if (e.key === 'Escape') { e.preventDefault(); handleCancel(); }
+                };
+
+                var inputStyle = {
+                    width: '100%', padding: '10px 14px', border: '1px solid var(--color-border)',
+                    borderRadius: '10px', background: 'var(--color-input-bg)', color: 'var(--color-text)',
+                    fontSize: '14px', fontFamily: 'var(--font-sans)', outline: 'none',
+                    margin: '8px 0 4px', boxSizing: 'border-box'
+                };
+
+                return h(window.ShadcnDialog.Dialog, { open: true },
+                    h(window.ShadcnDialog.DialogOverlay, { onClick: handleCancel }),
+                    h(window.ShadcnDialog.DialogContent, null,
+                        h(window.ShadcnDialog.DialogHeader, null,
+                            h(window.ShadcnDialog.DialogTitle, null, title)
+                        ),
+                        h('input', {
+                            ref: inputRef, type: 'text', value: value,
+                            onChange: function (e) { setValue(e.target.value); },
+                            onKeyDown: handleKeyDown, placeholder: message || '',
+                            autoComplete: 'off', style: inputStyle
+                        }),
+                        h(window.ShadcnDialog.DialogFooter, null,
+                            h(window.ShadcnButton, { variant: 'outline', onClick: handleCancel }, cancelLabel),
+                            h(window.ShadcnButton, { variant: 'default', onClick: handleOk }, okLabel)
+                        )
+                    )
+                );
+            }
+
+            console.log('[Shadcn弹窗] prompt:', title, message);
+            reactRoot().render(h(PromptWrapper));
         });
     }
 
