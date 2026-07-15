@@ -41,6 +41,7 @@ var POMODORO_STORAGE_KEY = 'v2/pomodoro_state';
 var pomodoroState = {
     active: false,           // 是否处于运行（含工作/休息）中
     taskId: null,
+    taskTitle: '',           // 关联的四象限任务名称
     duration: 25,            // 工作总时长（分钟）
     restDuration: 5,         // 休息时长（分钟）
     type: 'default',         // default | focus
@@ -218,6 +219,7 @@ function startPomodoro(params) {
     pomodoroState.restDuration = params.restDuration || 5;
     pomodoroState.type = params.type || 'default';
     pomodoroState.taskId = params.taskId || null;
+    pomodoroState.taskTitle = params.taskTitle || '';
     pomodoroState.isResting = false;
     pomodoroState.autoCycle = params.autoCycle !== false; // 默认开启
     pomodoroState.sessionCount = 0;
@@ -259,11 +261,12 @@ function pomodoroPhaseEnd() {
         pomodoroState.remaining = pomodoroState.phaseTotalSeconds;
 
         var restQuote = randomQuote(REST_COMPLETE_QUOTES);
+        var taskMsg = pomodoroState.taskTitle ? '\n任务：' + pomodoroState.taskTitle : '';
         chrome.notifications.create('pomodoro-rest-done', {
             type: 'basic',
             iconUrl: 'icons/icon48.png',
             title: '休息结束 — ' + restQuote,
-            message: '开始第 ' + (pomodoroState.sessionCount + 1) + ' 轮专注，' + pomodoroState.duration + ' 分钟',
+            message: '开始第 ' + (pomodoroState.sessionCount + 1) + ' 轮专注，' + pomodoroState.duration + ' 分钟' + taskMsg,
             priority: 1
         });
 
@@ -284,11 +287,12 @@ function pomodoroPhaseEnd() {
             pomodoroState.remaining = pomodoroState.phaseTotalSeconds;
 
             var workQuote = randomQuote(WORK_COMPLETE_QUOTES);
+            var taskMsg2 = pomodoroState.taskTitle ? '\n任务：' + pomodoroState.taskTitle : '';
             chrome.notifications.create('pomodoro-done', {
                 type: 'basic',
                 iconUrl: 'icons/icon48.png',
                 title: '工作完成！' + workQuote,
-                message: '休息 ' + pomodoroState.restDuration + ' 分钟 — ' + randomQuote(REST_START_QUOTES),
+                message: '休息 ' + pomodoroState.restDuration + ' 分钟 — ' + randomQuote(REST_START_QUOTES) + taskMsg2,
                 priority: 1
             });
 
@@ -306,11 +310,12 @@ function pomodoroPhaseEnd() {
             pomodoroState.phaseTotalSeconds = 0;
 
             var doneQuote = randomQuote(WORK_COMPLETE_QUOTES);
+            var taskMsg3 = pomodoroState.taskTitle ? '\n任务：' + pomodoroState.taskTitle : '';
             chrome.notifications.create('pomodoro-done', {
                 type: 'basic',
                 iconUrl: 'icons/icon48.png',
                 title: '番茄钟完成！' + doneQuote,
-                message: '你今天已经完成了 ' + pomodoroState.sessionCount + ' 个番茄',
+                message: '你今天已经完成了 ' + pomodoroState.sessionCount + ' 个番茄' + taskMsg3,
                 priority: 1
             });
 
@@ -388,6 +393,7 @@ async function savePomodoroSession() {
         sessions.push({
             id: 'pom_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
             taskId: pomodoroState.taskId,
+            taskTitle: pomodoroState.taskTitle || '',
             duration: pomodoroState.duration,
             restDuration: pomodoroState.restDuration,
             type: pomodoroState.type,

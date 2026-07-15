@@ -516,6 +516,9 @@ window.DevHome = window.DevHome || {};
         try { if (typeof ns.renderNotebookDropdown === 'function') ns.renderNotebookDropdown(); } catch (e) {
             ns.logger && ns.logger.warn('focus-mode', 'renderNotebookDropdown 失败', e.message);
         }
+        try { if (typeof ns.renderPomodoroTaskSelector === 'function') ns.renderPomodoroTaskSelector(); } catch (e) {
+            ns.logger && ns.logger.warn('focus-mode', 'renderPomodoroTaskSelector 失败', e.message);
+        }
         try { ns.updateContextMenuLabel(); } catch (e) {
             ns.logger && ns.logger.warn('focus-mode', 'updateContextMenuLabel 失败', e.message);
         }
@@ -1229,6 +1232,35 @@ window.DevHome = window.DevHome || {};
         _pomoUpdateProgress(0, 100);
     };
 
+    /** 渲染番茄钟任务选择器下拉 */
+    ns.renderPomodoroTaskSelector = function () {
+        var sel = document.getElementById('wbPomodoroTaskSelect');
+        if (!sel) return;
+        var config = ns.getWorkbenchState();
+        var options = '<option value="">无关联</option>';
+        var quadrants = ['q1', 'q2', 'q3', 'q4'];
+        var qLabels = { q1: '重急', q2: '重缓', q3: '轻急', q4: '轻缓' };
+        quadrants.forEach(function (q) {
+            var tasks = (config.quadrants[q] && config.quadrants[q].tasks) || [];
+            tasks.forEach(function (t) {
+                if (t.status === 'active') {
+                    options += '<option value="' + t.id + '">[' + qLabels[q] + '] ' + ns.escapeHtml(t.title.slice(0, 20)) + '</option>';
+                }
+            });
+        });
+        var currentVal = sel.value;
+        sel.innerHTML = options;
+        if (currentVal) {
+            // 保持之前的选择（如果该任务仍存在）
+            var exists = sel.querySelector('option[value="' + currentVal + '"]');
+            if (exists) sel.value = currentVal;
+        }
+        sel.addEventListener('change', function () {
+            state._pomodoroTaskId = sel.value || null;
+            console.log('[编辑] 番茄钟关联任务 ' + (state._pomodoroTaskId || '无'));
+        });
+    };
+
     /** 启动番茄钟，支持直接传入时长参数 */
     ns.startPomodoro = function (duration) {
         // 如果传入时长，先设置
@@ -1259,6 +1291,18 @@ window.DevHome = window.DevHome || {};
 
         // 通知后台 service worker（倒计时需要，正计时发送大时长用于通知节点）
         if (typeof chrome !== 'undefined' && chrome.runtime) {
+            var taskId = state._pomodoroTaskId || null;
+            var taskTitle = '';
+            if (taskId) {
+                var config = ns.getWorkbenchState();
+                var quadrants = ['q1', 'q2', 'q3', 'q4'];
+                quadrants.forEach(function (q) {
+                    var tasks = (config.quadrants[q] && config.quadrants[q].tasks) || [];
+                    tasks.forEach(function (t) {
+                        if (t.id === taskId) taskTitle = t.title;
+                    });
+                });
+            }
             chrome.runtime.sendMessage({
                 type: 'POMODORO_START',
                 data: {
@@ -1266,7 +1310,9 @@ window.DevHome = window.DevHome || {};
                     restDuration: state.pomodoroRestDuration,
                     type: state.pomodoroMode,
                     countUp: state.pomodoroCountUp,
-                    autoCycle: state.pomodoroAutoCycle
+                    autoCycle: state.pomodoroAutoCycle,
+                    taskId: taskId,
+                    taskTitle: taskTitle
                 }
             });
         }
