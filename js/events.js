@@ -176,21 +176,26 @@ window.DevHome = window.DevHome || {};
             });
         }
         // 新建笔记本
-        if (dom.wbNotebookAddBtn) {
-            dom.wbNotebookAddBtn.addEventListener('click', function () {
+        var wbNotebookAddBtn = document.getElementById('wbNotebookAddBtn');
+        if (wbNotebookAddBtn) {
+            wbNotebookAddBtn.addEventListener('click', function () {
+                console.log('[交互] 工具栏 点击新建笔记本');
                 ns.showPrompt('笔记本名称：', { title: '新建笔记本' }).then(function (name) {
                     if (name && name.trim()) {
                         ns.createNotebook(name.trim()).then(function () {
                             ns.renderNotebookDropdown();
-                            console.log('[交互] 工具栏 新建笔记本');
                         });
                     }
+                }).catch(function (err) {
+                    console.error('[错误] 新建笔记本失败', err);
                 });
             });
         }
         // 新建标签
-        if (dom.wbTagAddBtn) {
-            dom.wbTagAddBtn.addEventListener('click', function () {
+        // 新建标签
+        var wbTagAddBtn = document.getElementById('wbTagAddBtn');
+        if (wbTagAddBtn) {
+            wbTagAddBtn.addEventListener('click', function () {
                 if (typeof ns.startInlineCustomFilter === 'function') {
                     ns.startInlineCustomFilter();
                     console.log('[交互] 工具栏 新建标签');
