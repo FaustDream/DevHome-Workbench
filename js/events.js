@@ -186,7 +186,6 @@ window.DevHome = window.DevHome || {};
                     });
                 }
             });
-            });
         }
         // 新建标签
         var wbTagAddBtn = document.getElementById('wbTagAddBtn');
