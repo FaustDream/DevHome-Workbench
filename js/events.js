@@ -130,12 +130,44 @@ window.DevHome = window.DevHome || {};
                         }
                         ctxMenu.innerHTML = [
                             { label: '✏️ 重命名', action: function () {
-                                ns.showPrompt('请输入新名称', { title: '重命名笔记本', defaultValue: nb.name }).then(function (newName) {
-                                    if (newName && newName.trim() && newName.trim() !== nb.name) {
-                                        ns.renameNotebook(nbId, newName.trim());
-                                        ns.renderNotebookDropdown();
-                                    }
+                                var overlay = document.createElement('div');
+                                overlay.style.cssText = 'position:fixed;inset:0;z-index:2900;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;';
+                                var dialog = document.createElement('div');
+                                dialog.style.cssText = 'background:var(--color-bg-elevated);border:1px solid var(--color-border-active);border-radius:20px;padding:20px;width:min(90vw,380px);box-shadow:var(--shadow-lg);';
+                                var title = document.createElement('h3');
+                                title.textContent = '重命名笔记本';
+                                title.style.cssText = 'font-size:16px;font-weight:600;color:var(--color-text);margin:0 0 8px;';
+                                var input = document.createElement('input');
+                                input.type = 'text'; input.value = nb.name;
+                                input.style.cssText = 'width:100%;padding:10px 14px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-input-bg);color:var(--color-text);font-size:14px;font-family:var(--font-sans);outline:none;margin:8px 0 12px;box-sizing:border-box;';
+                                var footer = document.createElement('div');
+                                footer.style.cssText = 'display:flex;justify-content:flex-end;gap:8px;padding-top:12px;border-top:1px solid var(--color-border);';
+                                [['取消', false], ['确定', true]].forEach(function (cfg) {
+                                    var btn = document.createElement('button');
+                                    btn.textContent = cfg[0];
+                                    btn.style.cssText = cfg[1]
+                                        ? 'padding:8px 16px;border:none;border-radius:10px;background:var(--color-accent);color:var(--color-text-inverse);font-size:13px;cursor:pointer;'
+                                        : 'padding:8px 16px;border:1px solid var(--color-border);border-radius:10px;background:transparent;color:var(--color-text);font-size:13px;cursor:pointer;';
+                                    btn.addEventListener('click', function () {
+                                        document.body.removeChild(overlay);
+                                        if (cfg[1] && input.value.trim() && input.value.trim() !== nb.name) {
+                                            ns.renameNotebook(nbId, input.value.trim());
+                                            ns.renderNotebookDropdown();
+                                        }
+                                    });
+                                    footer.appendChild(btn);
                                 });
+                                input.addEventListener('keydown', function (ev) {
+                                    if (ev.key === 'Enter') { footer.querySelectorAll('button')[1].click(); }
+                                    if (ev.key === 'Escape') { footer.querySelectorAll('button')[0].click(); }
+                                });
+                                overlay.addEventListener('click', function (ev) {
+                                    if (ev.target === overlay) footer.querySelectorAll('button')[0].click();
+                                });
+                                dialog.appendChild(title); dialog.appendChild(input); dialog.appendChild(footer);
+                                overlay.appendChild(dialog);
+                                document.body.appendChild(overlay);
+                                setTimeout(function () { input.focus(); input.select(); }, 50);
                             }},
                             { label: '🗑️ 删除', action: function () {
                                 ns.showConfirm('删除笔记本「' + nb.name + '」，笔记将移回未分类。确定？', { title: '删除笔记本' }).then(function (ok) {
@@ -178,15 +210,60 @@ window.DevHome = window.DevHome || {};
         // 新建笔记本
         var wbNotebookAddBtn = document.getElementById('wbNotebookAddBtn');
         if (wbNotebookAddBtn) {
-            wbNotebookAddBtn.addEventListener('click', function () {
-                console.log('[交互] 工具栏 新建笔记本');
-                ns.showPrompt('请输入笔记本名称', { title: '新建笔记本' }).then(function (name) {
-                    if (name && name.trim()) {
-                        ns.createNotebook(name.trim()).then(function () {
-                            ns.renderNotebookDropdown();
-                        });
-                    }
+            // 防止重复绑定
+            if (wbNotebookAddBtn._nbEventBound) { console.log('[诊断] 新建笔记本按钮已绑定，跳过'); }
+            wbNotebookAddBtn._nbEventBound = true;
+            wbNotebookAddBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                console.log('[交互] 工具栏 新建笔记本 (click count check)');
+                // 纯 DOM 弹窗，不依赖 React/Shadcn
+                if (document.getElementById('nbPlainPrompt')) return; // 已打开
+                var overlay = document.createElement('div');
+                overlay.id = 'nbPlainPrompt';
+                overlay.style.cssText = 'position:fixed;inset:0;z-index:2900;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;';
+                var dialog = document.createElement('div');
+                dialog.style.cssText = 'background:var(--color-bg-elevated);border:1px solid var(--color-border-active);border-radius:20px;padding:20px;width:min(90vw,380px);box-shadow:var(--shadow-lg);';
+                var title = document.createElement('h3');
+                title.textContent = '新建笔记本';
+                title.style.cssText = 'font-size:16px;font-weight:600;color:var(--color-text);margin:0 0 8px;';
+                var input = document.createElement('input');
+                input.type = 'text';
+                input.placeholder = '请输入笔记本名称';
+                input.style.cssText = 'width:100%;padding:10px 14px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-input-bg);color:var(--color-text);font-size:14px;font-family:var(--font-sans);outline:none;margin:8px 0 12px;box-sizing:border-box;';
+                var footer = document.createElement('div');
+                footer.style.cssText = 'display:flex;justify-content:flex-end;gap:8px;padding-top:12px;border-top:1px solid var(--color-border);';
+                [['取消', 'outline'], ['确定', 'default']].forEach(function (cfg) {
+                    var btn = document.createElement('button');
+                    btn.textContent = cfg[0];
+                    btn.style.cssText = cfg[1] === 'default'
+                        ? 'padding:8px 16px;border:none;border-radius:10px;background:var(--color-accent);color:var(--color-text-inverse);font-size:13px;cursor:pointer;'
+                        : 'padding:8px 16px;border:1px solid var(--color-border);border-radius:10px;background:transparent;color:var(--color-text);font-size:13px;cursor:pointer;';
+                    btn.addEventListener('click', function () {
+                        document.body.removeChild(overlay);
+                        if (cfg[0] === '确定') {
+                            var name = input.value.trim();
+                            if (name) {
+                                ns.createNotebook(name).then(function () {
+                                    ns.renderNotebookDropdown();
+                                });
+                            }
+                        }
+                    });
+                    footer.appendChild(btn);
                 });
+                input.addEventListener('keydown', function (ev) {
+                    if (ev.key === 'Enter') { footer.querySelectorAll('button')[1].click(); }
+                    if (ev.key === 'Escape') { footer.querySelectorAll('button')[0].click(); }
+                });
+                overlay.addEventListener('click', function (ev) {
+                    if (ev.target === overlay) footer.querySelectorAll('button')[0].click();
+                });
+                dialog.appendChild(title);
+                dialog.appendChild(input);
+                dialog.appendChild(footer);
+                overlay.appendChild(dialog);
+                document.body.appendChild(overlay);
+                setTimeout(function () { input.focus(); input.select(); }, 50);
             });
         }
         // 新建标签
