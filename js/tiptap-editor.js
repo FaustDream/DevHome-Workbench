@@ -19,6 +19,8 @@
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
+import TaskList from '@tiptap/extension-task-list';
+import TaskItem from '@tiptap/extension-task-item';
 
 window.DevHome = window.DevHome || {};
 
@@ -39,6 +41,13 @@ window.DevHome = window.DevHome || {};
         }),
         Placeholder.configure({
             placeholder: '在此编写内容...'
+        }),
+        TaskList.configure({
+            HTMLAttributes: { class: 'tiptap-task-list' }
+        }),
+        TaskItem.configure({
+            HTMLAttributes: { class: 'tiptap-task-item' },
+            nested: true
         })
     ];
 
@@ -64,10 +73,11 @@ window.DevHome = window.DevHome || {};
             { label: 'H2', title: '标题2',    action: function () { editor.chain().focus().toggleHeading({ level: 2 }).run(); }, isActive: function () { return editor.isActive('heading', { level: 2 }); } },
             { label: 'H3', title: '标题3',    action: function () { editor.chain().focus().toggleHeading({ level: 3 }).run(); }, isActive: function () { return editor.isActive('heading', { level: 3 }); } },
             null,
-            { label: '•',  title: '无序列表', action: function () { editor.chain().focus().toggleBulletList().run(); },     isActive: function () { return editor.isActive('bulletList'); } },
-            { label: '1.', title: '有序列表', action: function () { editor.chain().focus().toggleOrderedList().run(); },    isActive: function () { return editor.isActive('orderedList'); } },
-            { label: '❝', title: '引用块',   action: function () { editor.chain().focus().toggleBlockquote().run(); },     isActive: function () { return editor.isActive('blockquote'); } },
-            { label: '⌨', title: '代码块',   action: function () { editor.chain().focus().toggleCodeBlock().run(); },       isActive: function () { return editor.isActive('codeBlock'); } }
+            { label: '•',  title: '无序列表',   action: function () { editor.chain().focus().toggleBulletList().run(); },     isActive: function () { return editor.isActive('bulletList'); } },
+            { label: '1.', title: '有序列表',   action: function () { editor.chain().focus().toggleOrderedList().run(); },    isActive: function () { return editor.isActive('orderedList'); } },
+            { label: '☑', title: '任务列表',   action: function () { editor.chain().focus().toggleTaskList().run(); },       isActive: function () { return editor.isActive('taskList'); } },
+            { label: '❝', title: '引用块',     action: function () { editor.chain().focus().toggleBlockquote().run(); },     isActive: function () { return editor.isActive('blockquote'); } },
+            { label: '⌨', title: '代码块',     action: function () { editor.chain().focus().toggleCodeBlock().run(); },       isActive: function () { return editor.isActive('codeBlock'); } }
         ];
 
         buttons.forEach(function (def) {
@@ -202,6 +212,7 @@ window.DevHome = window.DevHome || {};
             [
                 { label: '•≡', title: '无序列表',    action: function () { editor.chain().focus().toggleBulletList().run(); },      isActive: function () { return editor.isActive('bulletList'); } },
                 { label: '1.≡',title: '有序列表',    action: function () { editor.chain().focus().toggleOrderedList().run(); },     isActive: function () { return editor.isActive('orderedList'); } },
+                { label: '☑≡',title: '任务列表',    action: function () { editor.chain().focus().toggleTaskList().run(); },        isActive: function () { return editor.isActive('taskList'); } },
                 { label: '❝', title: '引用块',       action: function () { editor.chain().focus().toggleBlockquote().run(); },      isActive: function () { return editor.isActive('blockquote'); } },
                 { label: '⌨', title: '代码块',       action: function () { editor.chain().focus().toggleCodeBlock().run(); },        isActive: function () { return editor.isActive('codeBlock'); } },
                 { label: '─', title: '水平分割线',    action: function () { editor.chain().focus().setHorizontalRule().run(); },       isActive: function () { return false; } }
@@ -212,19 +223,6 @@ window.DevHome = window.DevHome || {};
                 { label: '↷', title: '重做 (Ctrl+Y)', action: function () { editor.chain().focus().redo().run(); },  isActive: function () { return false; }, disabled: function () { return !editor.can().redo(); } }
             ]
         ];
-
-        // 非捕获笔记时追加"转为任务"操作按钮
-        var currentNote = ns.state && ns.state.currentNote;
-        var isCapture = currentNote && (currentNote._kind === 'capture' || currentNote.type === 'capture');
-        if (currentNote && !isCapture) {
-            groups.push([
-                { label: '☑', title: '转为四象限任务', action: function () {
-                    var toTaskBtn = document.getElementById('wbNoteToTaskBtn');
-                    if (toTaskBtn) toTaskBtn.click();
-                    console.log('[交互] 工具栏 转为任务');
-                }, isActive: function () { return false; } }
-            ]);
-        }
 
         var allBtns = [];
 
