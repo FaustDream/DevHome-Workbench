@@ -81,6 +81,11 @@ window.DevHome = window.DevHome || {};
                 note.wordCount = ns.countWords(note.content || '');
                 migrated = true;
             }
+            // 为旧笔记补充 updatedAt 修改时间（回退到 createdAt，避免列表中时间为空）
+            if (!note.updatedAt) {
+                note.updatedAt = note.createdAt || Date.now();
+                migrated = true;
+            }
             // 清理废弃的 doc 字段
             if (note.doc !== undefined) { delete note.doc; migrated = true; }
         });
@@ -225,13 +230,15 @@ window.DevHome = window.DevHome || {};
 
     /** 添加快速捕获 */
     ns.addCapture = async function (content) {
+        var now = Date.now();
         var cap = {
             id: captureId(),
             content: content.trim(),
             doc: null,                 // 捕获不需要 ProseMirror 编辑
             wordCount: 0,              // 保持数据结构一致
             tags: [],
-            createdAt: Date.now()
+            createdAt: now,
+            updatedAt: now
         };
         state.captures.unshift(cap);
         await storageV2.set(storageV2.KEYS.CAPTURES, state.captures);
@@ -421,6 +428,7 @@ window.DevHome = window.DevHome || {};
         var cap = state.captures.find(function (c) { return c.id === id; });
         if (!cap) return;
         cap.content = content;
+        cap.updatedAt = Date.now();
         await storageV2.set(storageV2.KEYS.CAPTURES, state.captures);
     };
 
