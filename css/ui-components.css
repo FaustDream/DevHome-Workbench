@@ -1,0 +1,249 @@
+/* ============================================
+   DevHome Workbench — 统一 UI 组件样式层
+   
+   职责：所有弹窗、输入框、按钮等交互组件的统一基础样式。
+   React/Shadcn 与原生 DOM 组件共享同一套 CSS 变量与基础样式。
+   
+   使用方式：在 index.html 中于 base.css 之后、模块 CSS 之前引入。
+   ============================================ */
+
+/* ===== 统一弹窗遮罩层 ===== */
+.ui-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2800;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: uiFadeIn 0.15s ease;
+}
+
+/* ===== 统一弹窗容器 ===== */
+.ui-dialog {
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border-active);
+    border-radius: 20px;
+    padding: 20px;
+    width: min(90vw, 420px);
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+    animation: uiScaleIn 0.2s ease;
+}
+
+.ui-dialog-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0 0 8px 0;
+}
+
+.ui-dialog-body {
+    margin: 8px 0 12px 0;
+    color: var(--color-text-secondary);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.ui-dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-top: 12px;
+    border-top: 1px solid var(--color-border);
+}
+
+/* ===== 统一输入框 ===== */
+.ui-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    background: var(--color-input-bg);
+    color: var(--color-text);
+    font-size: 14px;
+    font-family: var(--font-sans);
+    outline: none;
+    margin: 8px 0;
+    box-sizing: border-box;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.ui-input:focus {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px var(--color-accent-disabled);
+}
+.ui-input::placeholder {
+    color: var(--color-text-tertiary);
+}
+
+/* ===== 统一按钮 ===== */
+.ui-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* 主按钮 */
+.ui-btn-primary {
+    background: var(--color-accent);
+    color: var(--color-text-inverse);
+    font-weight: 500;
+}
+.ui-btn-primary:hover { opacity: 0.9; }
+.ui-btn-primary:active { opacity: 0.85; }
+.ui-btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* 次要/描边按钮 */
+.ui-btn-outline {
+    background: transparent;
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+}
+.ui-btn-outline:hover {
+    background: var(--color-surface-hover);
+    border-color: var(--color-border-hover);
+}
+
+/* 危险按钮 */
+.ui-btn-danger {
+    background: var(--color-danger);
+    color: white;
+}
+.ui-btn-danger:hover { opacity: 0.9; }
+
+/* 幽灵按钮 */
+.ui-btn-ghost {
+    background: transparent;
+    color: var(--color-text-secondary);
+}
+.ui-btn-ghost:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text);
+}
+
+/* ===== 统一面包屑/徽章/标签 ===== */
+.ui-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.4;
+    background: var(--color-surface-subtle);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.ui-badge:hover {
+    background: var(--color-surface-hover);
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+.ui-badge.active {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: var(--color-text-inverse);
+}
+
+/* ===== 统一下拉菜单 ===== */
+.ui-dropdown-menu {
+    position: fixed;
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border-active);
+    border-radius: 12px;
+    padding: 8px;
+    z-index: 3100;
+    box-shadow: var(--shadow-lg);
+    min-width: 160px;
+    animation: uiScaleIn 0.12s ease;
+}
+.ui-dropdown-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--color-text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.1s ease;
+}
+.ui-dropdown-item:hover {
+    background: var(--color-surface-hover);
+}
+.ui-dropdown-item.active {
+    background: var(--color-accent);
+    color: var(--color-text-inverse);
+}
+.ui-dropdown-item.danger {
+    color: var(--color-danger);
+}
+.ui-dropdown-item.danger:hover {
+    background: var(--color-danger-bg-08);
+}
+
+/* ===== 动画关键帧 ===== */
+@keyframes uiFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@keyframes uiScaleIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* ===== Toast 通知 ===== */
+.ui-toast-container {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3500;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+}
+.ui-toast {
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-family: var(--font-sans);
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border-active);
+    color: var(--color-text);
+    box-shadow: var(--shadow-lg);
+    animation: uiToastIn 0.3s ease, uiToastOut 0.3s ease 2.7s forwards;
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.ui-toast.success { border-color: var(--color-success); }
+.ui-toast.error { border-color: var(--color-danger); }
+.ui-toast.warning { border-color: var(--color-warning); }
+
+@keyframes uiToastIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes uiToastOut {
+    from { opacity: 1; }
+    to { opacity: 0; transform: translateY(-8px); }
+}

@@ -107,78 +107,77 @@ window.DevHome = window.DevHome || {};
 
     /* ===== 启动 ===== */
     ns.boot = async function () {
-        // 优先应用主题：必须放在最前，确保即使后续步骤（文件配置未就绪、数据加载异常等）
-        // 提前 return 或抛错，用户的浅色/深色主题也能正确生效，避免回退到 :root 深色默认值。
+        var perfBoot = performance.now();
+
+        // === Phase 0: 主题 & 同步初始化（0ms 开销） ===
         if (ns.theme && typeof ns.theme.init === 'function') {
             ns.theme.init();
         }
 
-        // [v2.0.0] 数据迁移：localStorage → chrome.storage.local
+        // === Phase 1: 并行执行独立异步操作 ===
+        var migrationPromise = Promise.resolve();
+        var configPromise = Promise.resolve({ ready: false });
+        var v2DataPromise = Promise.resolve();
+
         if (ns.storageV2 && typeof ns.storageV2.migrateFromLegacy === 'function') {
-            try {
-                var migrationResult = await ns.storageV2.migrateFromLegacy();
-                if (migrationResult.migrated) {
-                    console.log('%c[StorageV2] %c迁移完成：' + migrationResult.count + ' 条任务',
-                        'color:#47f0a2;font-weight:bold', 'color:#b0b0b0');
-                }
-            } catch (e) {
+            migrationPromise = ns.storageV2.migrateFromLegacy().catch(function (e) {
                 console.warn('[StorageV2] 迁移异常，不影响正常使用:', e);
-            }
+            });
         }
 
-        // [v1.3.0] 优先初始化文件配置系统
-        var configStatus;
         if (ns.fileConfig && typeof ns.fileConfig.init === 'function') {
-            configStatus = await ns.fileConfig.init();
-            state.configReady = configStatus.ready;
-            if (ns.fileConfig.isSupported()) {
-                console.log('%c[FileConfig] %c配置目录' + (configStatus.ready ? '已就绪' : '未设置') + '%c%s',
-                    'color:#47f0a2;font-weight:bold',
-                    'color:#b0b0b0',
-                    configStatus.dirName ? 'color:#47f0a2' : 'color:#ffcc66',
-                    configStatus.dirName ? ' [' + configStatus.dirName + ']' : '');
-            }
+            configPromise = ns.fileConfig.init().then(function (status) {
+                state.configReady = status.ready;
+                if (ns.fileConfig.isSupported()) {
+                    console.log('%c[FileConfig] %c配置目录' + (status.ready ? '已就绪' : '未设置') + '%c%s',
+                        'color:#47f0a2;font-weight:bold', 'color:#b0b0b0',
+                        status.dirName ? 'color:#47f0a2' : 'color:#ffcc66',
+                        status.dirName ? ' [' + status.dirName + ']' : '');
+                }
+                return status;
+            }).catch(function () { return { ready: false }; });
         }
 
-        // 首次使用且未选目录 → 仍正常加载界面，警告条会提示用户选目录
+        // 并行等待迁移和文件配置（两者无依赖关系）
+        var [migrationResult, configStatus] = await Promise.all([migrationPromise, configPromise]);
+
+        if (migrationResult && migrationResult.migrated) {
+            console.log('%c[StorageV2] %c迁移完成：' + migrationResult.count + ' 条任务',
+                'color:#47f0a2;font-weight:bold', 'color:#b0b0b0');
+        }
+
         ns.logger && ns.logger.info('boot', '启动序列开始', { configReady: state.configReady });
 
-        // [v2.0.0] 加载 v2 数据（笔记、捕获、笔记本）+ 快捷键配置
-        if (ns.notesManager) {
-            try { await ns.notesManager.load(); } catch (e) { console.warn('[V2] 笔记加载失败:', e); }
-            try { await ns.notesManager.loadCaptures(); } catch (e) { console.warn('[V2] 捕获加载失败:', e); }
-            try { await ns.notesManager.loadNotebooks(); } catch (e) { console.warn('[V2] 笔记本加载失败:', e); }
-            // 加载上次选择的笔记本 ID（持久化在 config）
-            try {
-                var v2Config = await ns.storageV2.get(ns.storageV2.KEYS.CONFIG, ns.DEFAULT_V2_CONFIG);
-                ns.state._lastNotebookId = v2Config.lastNotebookId || null;
-            } catch (_) {}
-        }
-        // 加载专注模式快捷键
-        if (ns.storageV2) {
-            try {
-                var v2Config = await ns.storageV2.get(ns.storageV2.KEYS.CONFIG, ns.DEFAULT_V2_CONFIG);
-                ns.state._focusShortcut = v2Config.focusShortcut || { ctrl: true, shift: false, alt: false, key: 'k' };
-            } catch (e) { }
-        }
-
+        // === Phase 2: 立即渲染首屏 UI（不等数据加载完） ===
         ns.initEngine();
         ns.applyShortcutSize(storage.get('shortcut_size', ns.DEFAULT_SHORTCUT_SIZE), false);
         ns.applyShortcutColumns(storage.get('shortcut_columns', ns.DEFAULT_SHORTCUT_COLUMNS), false);
-        // F5 布局系统：启动时应用保存的布局配置
         ns.applyLayoutConfig();
         ns.openFaviconDB();
-        await ns.tileManager.load();
-        ns.loadSearchHistory();
-        ns.renderTiles();
-        if (ns.initWeather) ns.initWeather();
-        // 左上角每日问候卡片
-        if (ns.initDailyGreetingCard) ns.initDailyGreetingCard();
-        // 右上角日程倒计时卡片
-        if (ns.initCountdown) ns.initCountdown();
-        // 壁纸功能初始化（加载已保存的壁纸和设置）
-        if (ns.initWallpaper) ns.initWallpaper();
 
+        // 磁贴数据加载与首屏渲染并行
+        var tilesLoadPromise = ns.tileManager.load();
+        ns.loadSearchHistory();
+        ns.renderTiles(); // 先用缓存数据渲染，后台加载新数据后再刷新
+        updateTime();
+
+        // === Phase 3: V2 数据并行加载 ===
+        if (ns.notesManager) {
+            // 并行加载笔记、捕获、笔记本、配置
+            v2DataPromise = Promise.all([
+                ns.notesManager.load().catch(function (e) { console.warn('[V2] 笔记加载失败:', e); }),
+                ns.notesManager.loadCaptures().catch(function (e) { console.warn('[V2] 捕获加载失败:', e); }),
+                ns.notesManager.loadNotebooks().catch(function (e) { console.warn('[V2] 笔记本加载失败:', e); }),
+                ns.storageV2.get(ns.storageV2.KEYS.CONFIG, ns.DEFAULT_V2_CONFIG).then(function (v2Config) {
+                    ns.state._lastNotebookId = v2Config.lastNotebookId || null;
+                    ns.state._focusShortcut = v2Config.focusShortcut || ns.state._focusShortcut || { ctrl: true, shift: false, alt: false, key: 'k' };
+                }).catch(function () {})
+            ]);
+        }
+
+        await tilesLoadPromise;
+
+        // === Phase 4: 同步 UI 状态 ===
         var autoFocusOn = storage.get('auto_focus', false);
         if (dom.autoFocusText) dom.autoFocusText.textContent = autoFocusOn ? '自动聚焦：开' : '自动聚焦：关';
         if (autoFocusOn) setTimeout(function () { if (dom.searchInput) dom.searchInput.focus(); }, 150);
@@ -191,18 +190,29 @@ window.DevHome = window.DevHome || {};
                 state.currentPage = lastPage;
                 ns.tileManager.updateCurrentTiles();
                 ns.renderTiles();
-                }
+            }
         }
 
         ns.applyCategoryButtonMode(true, false);
         ns.syncSettingsControls();
-        // 同步任务通知设置面板状态
-        if (ns.syncTaskNotifySettings) ns.syncTaskNotifySettings();
         ns.bindEvents();
-        updateTime();
 
+        // === Phase 5: 延迟加载非首屏模块（不阻塞启动） ===
+        requestAnimationFrame(function () {
+            // 延迟加载天气、问候卡片、倒计时、壁纸、番茄钟状态
+            if (ns.initWeather) ns.initWeather();
+            if (ns.initDailyGreetingCard) ns.initDailyGreetingCard();
+            if (ns.initCountdown) ns.initCountdown();
+            if (ns.initWallpaper) ns.initWallpaper();
+            if (ns.syncTaskNotifySettings) ns.syncTaskNotifySettings();
+            // React 通知系统
+            if (typeof ns.initReactToast === 'function') ns.initReactToast();
+        });
+
+        // === Phase 6: 日志 & 收尾 ===
         var loadTime = (performance.now() - ns.perfStart).toFixed(2);
-        console.log('%c[TabPage] %cLoaded in ' + loadTime + 'ms', 'color:#4a9eff;font-weight:bold', 'color:#b0b0b0');
+        console.log('%c[TabPage] %cLoaded in ' + loadTime + 'ms (boot: ' + (performance.now() - perfBoot).toFixed(2) + 'ms)',
+            'color:#4a9eff;font-weight:bold', 'color:#b0b0b0');
 
         var overlay = document.getElementById('focusOverlay');
         if (overlay && document.body.classList.contains('focus-transition')) overlay.classList.add('ready');
@@ -218,10 +228,7 @@ window.DevHome = window.DevHome || {};
             localStorage.removeItem('_devhome_last_mode');
         }
 
-        // 挂载 React 通知系统（幂等，首次调用时创建 ReactDOM root）
-        if (typeof ns.initReactToast === 'function') ns.initReactToast();
-
-        // 监听页面关闭/刷新，保存当前模式（覆盖 F5 和浏览器刷新按钮）
+        // 监听页面关闭/刷新，保存当前模式
         window.addEventListener('beforeunload', function () {
             if (state.currentDevhomeMode !== 'daily') {
                 localStorage.setItem('_devhome_last_mode', state.currentDevhomeMode);

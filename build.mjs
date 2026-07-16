@@ -20,7 +20,8 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const isProd = process.argv.includes('--prod');
-const doBundle = process.argv.includes('--bundle');
+const noBundle = process.argv.includes('--no-bundle');
+const doBundle = !noBundle; // bundle 现在是默认行为，用 --no-bundle 跳过
 
 // 根据模式调整构建参数
 const minify = isProd;
@@ -94,7 +95,7 @@ const tiptapSize = tiptapResult.outputFiles.reduce((s, f) => s + f.bytes, 0);
 writeFileSync(join(__dirname, 'js', 'tiptap-bundle.js'), tiptapResult.outputFiles[0].contents);
 console.log('[build] ✓ tiptap-editor.js → js/tiptap-bundle.js (' + formatSize(tiptapSize) + ')');
 
-// ===== 3. [--bundle] 业务代码打包 =====
+// ===== 3. 业务代码打包（默认开启，--no-bundle 跳过） =====
 if (doBundle) {
     console.log('[build] 打包业务代码...');
     // 业务 JS 依赖顺序（与 index.html 中 <script> 标签顺序一致）
@@ -105,6 +106,7 @@ if (doBundle) {
         'js/logger.js',
         'js/storage.js',
         'js/storageV2.js',
+        'js/dataService.js',
         'js/fileConfig.js',
         'js/state.js',
         'js/utils.js',
@@ -114,10 +116,12 @@ if (doBundle) {
         'js/quotes.js',
         'js/weather.js',
         'js/dailyGreetingCard.js',
+        'js/countdown.js',
         'js/favicon.js',
         'js/theme-manager.js',
         'js/bgManager.js',
         'js/pageManager.js',
+        'js/linkOpener.js',
         'js/tiles.js',
         'js/categoryUI.js',
         'js/ui.js',
@@ -125,7 +129,27 @@ if (doBundle) {
         'js/notes.js',
         'js/export.js',
         'js/workbench.js',
+        // 事件模块（按领域拆分）
+        'js/events/category-events.js',
+        'js/events/notebook-events.js',
+        'js/events/toolbar-events.js',
+        'js/events/quadrant-events.js',
+        'js/events/calendar-events.js',
+        'js/events/pomodoro-events.js',
+        'js/events/filter-events.js',
+        'js/events/settings-events.js',
+        'js/events/search-events.js',
+        'js/events/global-events.js',
+        'js/events/misc-events.js',
         'js/events.js',
+        // 工作台私有模块
+        'js/workbench_private/_quadrant-tasks.js',
+        'js/workbench_private/_notes-workbench.js',
+        'js/workbench_private/_pomodoro.js',
+        'js/workbench_private/_calendar.js',
+        'js/workbench_private/_dashboard.js',
+        // 壁纸模块
+        'js/wallpaper.js',
         'js/main.js'
     ];
 
@@ -173,6 +197,7 @@ if (doBundle) {
         'css/themes/default.css',
         'css/base.css',
         'css/fonts.css',
+        'css/ui-components.css',
         'css/time-search.css',
         'css/tiles.css',
         'css/overlays.css',
