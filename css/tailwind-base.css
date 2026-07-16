@@ -17,7 +17,7 @@
     --tw-text-primary: var(--color-text, #e0e6ed);
     --tw-text-secondary: var(--color-text-secondary, #8899aa);
     --tw-accent: var(--color-accent, #55e6d2);
-    --tw-border: var(--color-border, rgba(255,255,255,0.06));
+    --tw-border: var(--color-border, var(--color-surface-muted));
     --tw-radius: var(--radius-md, 12px);
 }
 
@@ -35,8 +35,8 @@
     --muted-foreground: var(--color-text-tertiary);
     --accent: var(--color-accent);
     --accent-foreground: var(--color-text-inverse);
-    --destructive: var(--color-danger, #ff4757);
-    --destructive-foreground: #fff;
+    --destructive: var(--color-danger);
+    --destructive-foreground: var(--color-text-inverse);
     --border: var(--color-border);
     --input: var(--color-input-bg);
     --ring: var(--color-accent);

@@ -182,8 +182,9 @@ window.DevHome = window.DevHome || {};
         ns.tileManager.currentTiles.forEach(function (tile, index) {
             var a = document.createElement('a');
             a.className = 'tile';
+            // 磁贴通过点击事件打开链接（新标签页），href 仅用于右键"在新标签页中打开链接"
             a.href = tile.url;
-            a.target = '_self';
+            a.target = '_blank';
             a.rel = 'noopener noreferrer';
             a.title = tile.label;
             a.dataset.tileId = tile.id;

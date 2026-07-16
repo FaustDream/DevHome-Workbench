@@ -1,23 +1,19 @@
 {
   "manifest_version": 3,
   "name": "DevHome Workbench",
-  "version": "2.19.5",
+  "version": "2.22.3",
   "author": "凌致",
   "description": "综合性开发工作台——融合任务、笔记、日历、番茄钟、网页剪藏、AI总结与行为追踪的个人工作操作系统",
     "permissions": [
         "storage",
         "unlimitedStorage",
-        "bookmarks",
-        "history",
-        "downloads",
         "tabs",
         "sidePanel",
         "contextMenus",
         "notifications",
         "alarms",
         "scripting",
-        "clipboardRead",
-        "geolocation"
+        "clipboardRead"
     ],
   "chrome_url_overrides": {
     "newtab": "index.html"
@@ -68,10 +64,10 @@
   "web_accessible_resources": [
     {
       "resources": ["defaults.json"],
-      "matches": ["<all_urls>"]
+      "matches": ["chrome-extension://*/*"]
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https:; connect-src 'self' https:; object-src 'self'"
+    "extension_pages": "script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https:; connect-src 'self' https://api.bing.com/ https://api.xinac.net/ https://hunyuan.tencentcloudapi.com/ https://new-api.rugao.me/ https://api.open-meteo.com/ https://v1.hitokoto.cn/ https://api.github.com/ https://gh-trending-api.herokuapp.com/; object-src 'self'"
   }
 }

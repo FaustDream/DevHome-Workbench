@@ -1,0 +1,160 @@
+/* ============================================
+   DevHome Workbench - workbench-notes.css
+   笔记列表、笔记本、工具栏、搜索、标签
+   所有色值引用 Semantic Token 体系
+   拆分自 workbench.css (原 2377行)
+   ============================================ */
+
+/* ===== 笔记本下拉选择器 ===== */
+.wb-notebook-dropdown { position: relative; flex-shrink: 0; }
+.wb-notebook-dropdown-btn {
+    display: flex; align-items: center; gap: 4px; padding: 4px 10px;
+    border: 1px solid var(--color-glass-border); border-radius: 6px;
+    background: var(--color-surface-subtle); color: var(--color-text-secondary);
+    font-size: 12px; cursor: pointer; transition: all .15s ease; white-space: nowrap;
+}
+.wb-notebook-dropdown-btn:hover { border-color: var(--color-accent); color: var(--color-text); }
+.wb-notebook-dropdown-icon { font-size: 13px; }
+.wb-notebook-dropdown-label { max-width: 100px; overflow: hidden; text-overflow: ellipsis; }
+.wb-notebook-dropdown-arrow { font-size: 8px; margin-left: 2px; opacity: 0.5; }
+.wb-notebook-dropdown-menu {
+    position: fixed; z-index: 3100; background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border-active); border-radius: 10px;
+    padding: 4px; min-width: 180px; max-height: 320px; overflow-y: auto; box-shadow: var(--shadow-lg);
+}
+.wb-notebook-dropdown-item {
+    padding: 7px 12px; border-radius: 6px; font-size: 13px; cursor: pointer;
+    color: var(--color-text); display: flex; align-items: center; gap: 6px; transition: background .1s;
+}
+.wb-notebook-dropdown-item:hover { background: var(--color-surface-hover); }
+.wb-notebook-dropdown-item.active { background: var(--color-accent); color: var(--color-text-inverse); }
+
+/* 工具栏操作按钮 */
+.wb-notes-toolbar-actions { display: flex; align-items: center; gap: 2px; }
+.wb-notes-action-btn {
+    width: 28px; height: 28px; border: 1px solid transparent; border-radius: 6px;
+    background: transparent; font-size: 14px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: all .15s ease; padding: 0;
+}
+.wb-notes-action-btn:hover { background: var(--color-surface-hover); border-color: var(--color-glass-border); }
+
+/* 标签筛选行 */
+.wb-notes-filter-bar {
+    display: flex; align-items: center; padding: 6px 16px;
+    border-bottom: 1px solid var(--color-glass-border); background: var(--color-surface-subtle);
+    overflow-x: auto; scrollbar-width: none;
+}
+.wb-notes-filter-bar::-webkit-scrollbar { display: none; }
+.wb-note-notebook-badge {
+    display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px;
+    border-radius: 10px; border: 1px solid var(--color-glass-border);
+    font-size: 11px; color: var(--color-text-secondary); cursor: pointer;
+    background: var(--color-surface-subtle); transition: all .15s ease;
+    max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.wb-note-notebook-badge:hover { border-color: var(--color-accent); color: var(--color-text); }
+
+/* 笔记工具栏 */
+.wb-notes-toolbar {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 12px 16px; border-bottom: var(--card-border); flex-shrink: 0;
+}
+.wb-notes-toolbar-left { display: flex; align-items: center; gap: 8px; }
+.wb-notes-search {
+    display: flex; align-items: center; gap: 8px; padding: 6px 12px;
+    border: var(--card-border); border-radius: 10px; background: var(--color-input-bg); min-width: 180px;
+}
+.wb-notes-search svg { flex-shrink: 0; color: var(--color-text-tertiary); }
+.wb-notes-search input {
+    border: 0; outline: 0; background: transparent; color: var(--color-text);
+    font-family: var(--font-sans); font-size: 12px; width: 100%;
+}
+.wb-notes-search input::placeholder { color: var(--color-text-tertiary); }
+.wb-notes-add-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border: var(--card-border); border-radius: 8px;
+    background: transparent; color: var(--color-accent); cursor: pointer; transition: all 0.15s ease;
+}
+.wb-notes-add-btn:hover { background: var(--color-accent-bg-10); border-color: var(--color-accent); }
+.wb-notes-toolbar-right { overflow-x: auto; scrollbar-width: none; }
+.wb-notes-toolbar-right::-webkit-scrollbar { display: none; }
+.wb-notes-filters { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+.wb-filter-chip {
+    padding: 4px 10px; border: var(--card-border); border-radius: 8px;
+    background: transparent; color: var(--color-text-secondary);
+    font-family: var(--font-sans); font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.15s ease;
+}
+.wb-filter-chip:hover { border-color: var(--color-border-hover); color: var(--color-text); }
+.wb-filter-chip.active {
+    border-color: transparent; background: var(--color-accent-bg-12);
+    color: var(--color-accent); font-weight: 600;
+}
+.wb-filter-add-btn {
+    padding: 4px 9px; border: 1px dashed var(--color-glass-border); border-radius: 8px;
+    background: transparent; color: var(--color-text-tertiary);
+    font-size: 13px; cursor: pointer; transition: all 0.15s ease; margin-left: 2px;
+}
+.wb-filter-add-btn:hover { border-color: var(--color-accent); color: var(--color-accent); }
+.wb-filter-chip-editing {
+    cursor: text !important; outline: none;
+    border-color: var(--color-accent) !important; min-width: 80px;
+}
+.wb-filter-chip-editing::placeholder { color: var(--color-text-tertiary); }
+.wb-notes-filters.delete-mode .wb-filter-chip:not(.always) { position: relative; border-color: var(--color-danger-border-30); }
+.filter-del {
+    position: absolute; top: -6px; right: -6px; width: 16px; height: 16px;
+    border-radius: 50%; background: var(--color-danger-bg-85); color: var(--color-text-inverse);
+    font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; line-height: 1; animation: filterDelIn 0.15s ease;
+}
+@keyframes filterDelIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+
+/* ===== 笔记列表 ===== */
+.wb-notes-list { display: flex; flex-direction: column; gap: 2px; }
+
+.wb-note-list-item {
+    position: relative; display: flex; flex-direction: column; gap: 3px;
+    padding: 9px 10px; border-radius: var(--card-radius); border: 1px solid transparent;
+    cursor: pointer; transition: all 0.15s ease; overflow: hidden;
+}
+.wb-note-list-item:hover { background: var(--color-surface-hover); border-color: var(--color-glass-border); }
+.wb-note-list-item.active { background: var(--color-accent-bg-08); border-color: var(--color-accent); }
+.wb-note-list-item .wb-note-list-del {
+    position: absolute; top: 6px; right: 8px; opacity: 0; width: 20px; height: 20px;
+    border: none; border-radius: 5px; background: transparent; color: var(--color-text-tertiary);
+    font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.12s ease; padding: 0;
+}
+.wb-note-list-item:hover .wb-note-list-del { opacity: 1; }
+.wb-note-list-del:hover { color: var(--color-danger); background: var(--color-danger-bg-10); }
+.wb-note-list-title { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.wb-note-list-title-text {
+    flex: 1; font-size: 12px; font-weight: 500; color: var(--color-text);
+    line-height: 1.4; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 20px;
+}
+
+.wb-note-type-badge {
+    display: inline-block; padding: 1px 6px; border-radius: 4px;
+    font-size: 9px; font-weight: 600; letter-spacing: 0.02em; flex-shrink: 0;
+}
+.badge-capture { background: var(--color-accent-bg-15); color: var(--color-warning); }
+.badge-note    { background: var(--color-accent-bg-15); color: var(--color-note-badge-note); }
+.badge-idea    { background: var(--color-accent-bg-15); color: var(--color-accent); }
+.badge-bug     { background: var(--color-danger-bg-15); color: var(--color-danger); }
+.badge-meeting { background: var(--color-accent-bg-15); color: var(--color-info); }
+.badge-webclip { background: var(--color-accent-bg-15); color: var(--color-note-badge-webclip); }
+.wb-note-list-item:not(.show-badge) .wb-note-type-badge { display: none; }
+.wb-note-list-item.active .wb-note-type-badge,
+.wb-note-list-item:hover .wb-note-type-badge { display: inline-block; }
+
+.wb-note-list-meta { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--color-text-tertiary); flex-wrap: wrap; }
+.wb-note-date-badge { font-size: 9px; color: var(--color-accent); font-weight: 500; }
+.wb-note-tag-chip {
+    display: inline-block; padding: 1px 5px; border-radius: 4px;
+    background: var(--color-surface-muted); color: var(--color-text-tertiary);
+    font-size: 9px; font-weight: 500;
+}
+.wb-note-date-group {
+    padding: 8px 10px 3px; font-size: 10px; font-weight: 600;
+    color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.08em;
+}

@@ -52,6 +52,8 @@ window.DevHome = window.DevHome || {};
     /* ===== 网络联想词 ===== */
     var suggestionDebounce = null;
     function fetchOnlineSuggestions(query, callback) {
+        // 搜索建议开关：当用户关闭时跳过网络请求，仅保留本地历史+磁贴匹配
+        if (!ns.getSearchConfig || !ns.getSearchConfig().showSuggestions) { callback([]); return; }
         var url = 'https://api.bing.com/osjson.aspx?query=' + encodeURIComponent(query);
         fetch(url).then(function (r) { return r.json(); }).then(function (data) {
             if (Array.isArray(data) && Array.isArray(data[1])) callback(data[1]); else callback([]);
@@ -59,6 +61,8 @@ window.DevHome = window.DevHome || {};
     }
 
     ns.renderSuggestions = function () {
+        // 搜索建议开关：关闭时不渲染
+        if (ns.getSearchConfig && !ns.getSearchConfig().showSuggestions) { ns.hideSuggestions(); return; }
         var query = dom.searchInput.value, suggestions = ns.buildSuggestions(query);
         updateSuggestionDOM(suggestions, query);
         var q = query.trim().toLowerCase();
@@ -140,7 +144,7 @@ window.DevHome = window.DevHome || {};
     };
 
     ns.applySuggestion = function (sug) {
-        if (sug.type === 'tile') { window.open(sug.url, '_self', 'noopener,noreferrer'); dom.searchInput.value = ''; ns.hideSuggestions(); dom.searchInput.blur(); }
+        if (sug.type === 'tile') { ns.openUrl(sug.url); dom.searchInput.value = ''; ns.hideSuggestions(); dom.searchInput.blur(); }
         else { dom.searchInput.value = sug.text; ns.hideSuggestions(); ns.doSearch(); }
     };
 
@@ -149,7 +153,9 @@ window.DevHome = window.DevHome || {};
         var query = dom.searchInput.value.trim();
         if (!query) { dom.searchInput.focus(); return; }
         ns.addSearchHistory(query); ns.hideSuggestions();
-        window.location.href = state.engineUrl + encodeURIComponent(query);
+        // 保留内容开关：关闭时搜索后清空输入框
+        if (!ns.getSearchConfig || !ns.getSearchConfig().retainContent) { dom.searchInput.value = ''; }
+        ns.openUrl(state.engineUrl + encodeURIComponent(query));
     };
 
     /* ===== 搜索引擎 ===== */
@@ -189,5 +195,25 @@ window.DevHome = window.DevHome || {};
     ns.handleSearchInput = function () { ns.renderSuggestions(); };
     ns.handleSearchFocus = function () { ns.renderSuggestions(); };
     ns.handleSearchBlur = function () { setTimeout(function () { if (!document.activeElement.closest('.suggestion-item')) ns.hideSuggestions(); }, 200); };
+
+    /* ===== 搜索框设置管理 ===== */
+    ns.getSearchConfig = function () {
+        if (!ns.storage) return ns.DEFAULT_SEARCH_CONFIG;
+        var saved = ns.storage.get('searchConfig') || {};
+        return Object.assign({}, ns.DEFAULT_SEARCH_CONFIG, saved);
+    };
+    ns.applySearchConfig = function (config) {
+        var dom = ns.dom;
+        if (!dom.searchButton) return;
+        // 隐藏搜索按钮
+        dom.searchButton.style.display = config.hideSearchButton ? 'none' : '';
+        // 搜索框尺寸
+        var wrapper = dom.searchContainer || document.querySelector('.search-wrapper');
+        if (wrapper) {
+            wrapper.style.maxWidth = config.searchWidth + 'px';
+            wrapper.style.borderRadius = config.searchRadius + 'px';
+            wrapper.style.opacity = config.searchOpacity;
+        }
+    };
 
 })(window.DevHome);

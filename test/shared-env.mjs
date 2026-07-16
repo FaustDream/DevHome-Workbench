@@ -9,6 +9,16 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, '..');
 
+/** 从 manifest.json 动态读取版本号 */
+function getProjectVersion() {
+    try {
+        const manifest = JSON.parse(readFileSync(resolve(projectRoot, 'manifest.json'), 'utf8'));
+        return manifest.version || 'unknown';
+    } catch (_) {
+        return 'unknown';
+    }
+}
+
 /* ===== DOM Mock 工厂 ===== */
 export function mockEl() {
     const el = {
@@ -234,7 +244,7 @@ function generateMarkdownReport(name, total, pass, fail, pct, elapsed, results, 
     report += `- **失败**: ${fail} ✗\n`;
     report += `- **通过率**: ${pct}%\n`;
     report += `- **耗时**: ${elapsed}ms\n`;
-    report += `- **项目**: DevHome Workbench v2.18.1\n\n`;
+    report += `- **项目**: DevHome Workbench v${getProjectVersion()}\n\n`;
 
     if (results.length > 0) {
         report += `## 测试明细\n\n`;

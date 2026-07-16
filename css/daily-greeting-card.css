@@ -30,19 +30,7 @@
     z-index: 0;
 }
 
-/* 左下角暖色装饰光晕 */
-.daily-greeting-card::after {
-    content: '';
-    position: absolute;
-    bottom: -40px;
-    left: -40px;
-    width: 120px;
-    height: 120px;
-    /* 暖橙色调，浅色模式下几乎不可见，深色模式下提供氛围光 */
-    background: radial-gradient(circle, rgba(200, 160, 100, 0.15), transparent 70%);
-    pointer-events: none;
-    z-index: 0;
-}
+/* 清爽感：移除左下角暖色装饰光晕，卡片仅保留右上角 accent 光晕 */
 
 /* ---- 第1层：日期 + 天气（顶部行，左右分布） ---- */
 .dgc-top-row {

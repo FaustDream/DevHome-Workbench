@@ -10,9 +10,15 @@
     <link rel="stylesheet" href="css/time-search.css">
     <link rel="stylesheet" href="css/tiles.css">
     <link rel="stylesheet" href="css/overlays.css">
-    <link rel="stylesheet" href="css/workbench.css">
+    <link rel="stylesheet" href="css/workbench-layout.css">
+    <link rel="stylesheet" href="css/workbench-components.css">
+    <link rel="stylesheet" href="css/workbench-notes.css">
+    <link rel="stylesheet" href="css/workbench-editor.css">
     <link rel="stylesheet" href="css/ai-chat.css">
     <link rel="stylesheet" href="css/daily-greeting-card.css">
+    <link rel="stylesheet" href="css/countdown.css">
+    <link rel="stylesheet" href="css/wallpaper.css">
+    <link rel="stylesheet" href="css/animations.css">
     <!-- 主题样式：默认主题（蔚蓝），支持浅色/深色双模式 -->
     <link id="theme-default" rel="stylesheet" href="css/themes/default.css">
     <!-- 字体本地化，无需外部 CDN；fonts.css 引用 ../fonts/inter-var.woff2 -->
@@ -493,6 +499,82 @@
                             <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 8a6 6 0 0110-4M14 8a6 6 0 01-10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 3v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>重置背景</span>
                         </button>
 
+                        <h3 class="s-section-title">搜索框设置</h3>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">显示搜索建议</span><span class="s-row-desc">输入时展示网络联想词和历史记录</span></div>
+                            <label class="s-toggle"><input type="checkbox" id="searchSuggestionsToggle" checked><span class="s-toggle-thumb"></span></label>
+                        </div>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">保留搜索内容</span><span class="s-row-desc">搜索后不清空输入框内容</span></div>
+                            <label class="s-toggle"><input type="checkbox" id="searchRetainToggle"><span class="s-toggle-thumb"></span></label>
+                        </div>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">隐藏搜索按钮</span><span class="s-row-desc">仅通过 Enter 键触发搜索</span></div>
+                            <label class="s-toggle"><input type="checkbox" id="searchHideBtnToggle"><span class="s-toggle-thumb"></span></label>
+                        </div>
+                        <label class="s-slider-row">
+                            <span>搜索框宽度 <span class="slider-value" id="searchWidthValue">560px</span></span>
+                            <input type="range" id="searchWidthSlider" min="320" max="960" value="560" step="10" class="context-slider">
+                        </label>
+                        <label class="s-slider-row">
+                            <span>搜索框圆角 <span class="slider-value" id="searchRadiusValue">24px</span></span>
+                            <input type="range" id="searchRadiusSlider" min="8" max="36" value="24" step="2" class="context-slider">
+                        </label>
+                        <label class="s-slider-row">
+                            <span>搜索框不透明度 <span class="slider-value" id="searchOpacityValue">1</span></span>
+                            <input type="range" id="searchOpacitySlider" min="50" max="100" value="100" step="5" class="context-slider">
+                        </label>
+
+                        <!-- F5: 布局系统 -->
+                        <h3 class="s-section-title">布局设置</h3>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">布局模式</span></div>
+                            <div class="s-row-right">
+                                <div class="s-seg" id="layoutModeSeg">
+                                    <button class="s-seg-btn" data-layout-mode="preset">预设</button>
+                                    <button class="s-seg-btn" data-layout-mode="custom">自定义</button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 预设布局模式 -->
+                        <div id="layoutPresetWrap">
+                            <div class="s-row">
+                                <div class="s-row-left"><span class="s-row-label">预设布局</span></div>
+                                <div class="s-row-right">
+                                    <select id="layoutPresetSelect" class="s-input" style="width:160px;">
+                                        <option value="2x4">2x4 (8个)</option>
+                                        <option value="2x5">2x5 (10个)</option>
+                                        <option value="2x6" selected>2x6 (12个)</option>
+                                        <option value="2x7">2x7 (14个)</option>
+                                        <option value="3x3">3x3 (9个)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 自定义布局模式 -->
+                        <div id="layoutCustomWrap" style="display:none;">
+                            <label class="s-slider-row">
+                                <span>列数 <span class="slider-value" id="layoutColsVal">6</span></span>
+                                <input type="range" id="layoutColsSlider" min="2" max="8" value="6" step="1" class="context-slider">
+                            </label>
+                            <label class="s-slider-row">
+                                <span>行数 <span class="slider-value" id="layoutRowsVal">2</span></span>
+                                <input type="range" id="layoutRowsSlider" min="1" max="6" value="2" step="1" class="context-slider">
+                            </label>
+                            <label class="s-slider-row">
+                                <span>列间距 <span class="slider-value" id="layoutColGapVal">24px</span></span>
+                                <input type="range" id="layoutColGapSlider" min="8" max="48" value="24" step="2" class="context-slider">
+                            </label>
+                            <label class="s-slider-row">
+                                <span>行间距 <span class="slider-value" id="layoutRowGapVal">24px</span></span>
+                                <input type="range" id="layoutRowGapSlider" min="8" max="48" value="24" step="2" class="context-slider">
+                            </label>
+                            <label class="s-slider-row">
+                                <span>图标大小 <span class="slider-value" id="layoutIconVal">56px</span></span>
+                                <input type="range" id="layoutIconSlider" min="32" max="80" value="56" step="4" class="context-slider">
+                            </label>
+                        </div>
+
                         <h3 class="s-section-title">色彩模式</h3>
                         <div class="s-theme-cards" id="sThemeCards">
                             <button class="s-theme-card active" data-scheme="light" title="明亮清爽的浅色界面">
@@ -503,6 +585,95 @@
                                 <span class="s-theme-swatch" style="background:#0a1628;"><i style="background:#55e6d2;"></i></span>
                                 <span class="s-theme-name">深色</span>
                             </button>
+                        </div>
+
+                        <!-- F4: 视图缩放 -->
+                        <h3 class="s-section-title">视图缩放</h3>
+                        <label class="s-slider-row">
+                            <span>缩放比例 <span class="slider-value" id="viewScaleValue">1.00</span></span>
+                            <input type="range" id="viewScaleSlider" min="0.6" max="1.5" step="0.05" value="1.0" class="context-slider">
+                        </label>
+
+                        <!-- F6: 图标设置 -->
+                        <h3 class="s-section-title">图标设置</h3>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">隐藏名称</span><span class="s-row-desc">仅显示图标，隐藏磁贴下方文字</span></div>
+                            <label class="s-toggle"><input type="checkbox" id="tileHideLabelToggle"><span class="s-toggle-thumb"></span></label>
+                        </div>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">图标阴影</span><span class="s-row-desc">为图标添加柔和阴影效果</span></div>
+                            <label class="s-toggle"><input type="checkbox" id="tileIconShadowToggle"><span class="s-toggle-thumb"></span></label>
+                        </div>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">启动动画</span><span class="s-row-desc">磁贴加载时依次淡入</span></div>
+                            <label class="s-toggle"><input type="checkbox" id="tileEnterAnimToggle"><span class="s-toggle-thumb"></span></label>
+                        </div>
+                        <label class="s-slider-row">
+                            <span>磁贴圆角 <span class="slider-value" id="tileRadiusValue">auto</span></span>
+                            <input type="range" id="tileRadiusSlider" min="0" max="24" step="1" value="0" class="context-slider">
+                        </label>
+                        <label class="s-slider-row">
+                            <span>磁贴不透明度 <span class="slider-value" id="tileOpacityValue">1.0</span></span>
+                            <input type="range" id="tileOpacitySlider" min="30" max="100" step="5" value="100" class="context-slider">
+                        </label>
+
+                        <!-- F8: 字体设置 -->
+                        <h3 class="s-section-title">字体设置</h3>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">文字阴影</span><span class="s-row-desc">为时间/日期/问候文字添加阴影</span></div>
+                            <label class="s-toggle"><input type="checkbox" id="fontTextShadowToggle"><span class="s-toggle-thumb"></span></label>
+                        </div>
+                        <label class="s-slider-row" id="fontShadowStrengthRow" style="display:none;">
+                            <span>阴影强度 <span class="slider-value" id="fontShadowStrengthValue">4px</span></span>
+                            <input type="range" id="fontShadowStrengthSlider" min="2" max="16" step="1" value="4" class="context-slider">
+                        </label>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">字号大小</span></div>
+                            <div class="s-row-right">
+                                <div class="s-seg" id="fontSizePresetSeg">
+                                    <button class="s-seg-btn" data-font-size="0.85">小</button>
+                                    <button class="s-seg-btn" data-font-size="1.0">标准</button>
+                                    <button class="s-seg-btn" data-font-size="1.15">大</button>
+                                    <button class="s-seg-btn" data-font-size="1.3">超大</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">文字颜色</span></div>
+                            <div class="s-row-right">
+                                <div class="s-seg" id="fontColorPresetSeg">
+                                    <button class="s-seg-btn" data-font-color="theme">跟随主题</button>
+                                    <button class="s-seg-btn" data-font-color="white">白色</button>
+                                    <button class="s-seg-btn" data-font-color="lightgray">浅灰</button>
+                                    <button class="s-seg-btn" data-font-color="custom">自定义</button>
+                                </div>
+                            </div>
+                        </div>
+                        <label class="s-slider-row" id="fontCustomColorRow" style="display:none;">
+                            <span>自定义颜色 <span class="slider-value" id="fontCustomColorValue">#ffffff</span></span>
+                            <input type="color" id="fontCustomColorPicker" value="#ffffff" class="context-slider">
+                        </label>
+
+                        <!-- F9: 动画效果 -->
+                        <h3 class="s-section-title">动画效果</h3>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">动画类型</span></div>
+                            <div class="s-row-right">
+                                <div class="s-seg" id="animTypeSeg">
+                                    <button class="s-seg-btn" data-anim-type="fade">淡入</button>
+                                    <button class="s-seg-btn" data-anim-type="slide-up">上滑</button>
+                                    <button class="s-seg-btn" data-anim-type="scale">缩放</button>
+                                    <button class="s-seg-btn" data-anim-type="none">无</button>
+                                </div>
+                            </div>
+                        </div>
+                        <label class="s-slider-row">
+                            <span>动画速度 <span class="slider-value" id="animSpeedValue">1.0x</span></span>
+                            <input type="range" id="animSpeedSlider" min="0.5" max="2.0" step="0.1" value="1.0" class="context-slider">
+                        </label>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">减少动画</span><span class="s-row-desc">禁用所有过渡和动画效果</span></div>
+                            <label class="s-toggle"><input type="checkbox" id="animReduceToggle"><span class="s-toggle-thumb"></span></label>
                         </div>
                     </section>
 
@@ -560,6 +731,24 @@
 
                     <!-- Tab 3: 数据与备份 -->
                     <section class="s-tab" data-s-tab="data">
+                        <!-- 任务到期通知 -->
+                        <h3 class="s-section-title">任务通知</h3>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">任务到期提醒</span><span class="s-row-desc">四象限任务到期时通过系统通知提醒</span></div>
+                            <label class="s-toggle" id="sToggleTaskNotify"><input type="checkbox" id="taskNotifyToggle"><span class="s-toggle-thumb"></span></label>
+                        </div>
+                        <div class="s-row" id="taskNotifyRemindRow" style="display:none;">
+                            <div class="s-row-left"><span class="s-row-label">提前提醒</span></div>
+                            <div class="s-row-right">
+                                <select id="remindBeforeSelect" class="s-input" style="width:120px;">
+                                    <option value="5">5 分钟前</option>
+                                    <option value="10">10 分钟前</option>
+                                    <option value="15" selected>15 分钟前</option>
+                                    <option value="30">30 分钟前</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <!-- 行为面板（工作台模式） -->
                         <div id="wbSettingsStatsWrap" data-mode="workbench" style="display:none;">
                             <h3 class="s-section-title">行为数据看板</h3>
@@ -1157,10 +1346,12 @@
     <script src="js/quotes.js" defer></script>
     <script src="js/weather.js" defer></script>
     <script src="js/dailyGreetingCard.js" defer></script>
+    <script src="js/countdown.js" defer></script>
     <script src="js/favicon.js" defer></script>
     <script src="js/theme-manager.js" defer></script>
     <script src="js/bgManager.js" defer></script>
     <script src="js/pageManager.js" defer></script>
+    <script src="js/linkOpener.js" defer></script>
     <script src="js/tiles.js" defer></script>
     <script src="js/categoryUI.js" defer></script>
     <script src="js/ui.js" defer></script>
@@ -1170,9 +1361,33 @@
     <script src="js/notes.js" defer></script>
     <script src="js/export.js" defer></script>
     <script src="js/workbench.js" defer></script>
+    <!-- workbench 子模块（按依赖顺序：先任务后关联） -->
+    <script src="js/workbench_private/_quadrant-tasks.js" defer></script>
+    <script src="js/workbench_private/_notes-workbench.js" defer></script>
+    <script src="js/workbench_private/_pomodoro.js" defer></script>
+    <script src="js/workbench_private/_calendar.js" defer></script>
+    <script src="js/workbench_private/_dashboard.js" defer></script>
     <script src="js/events.js" defer></script>
+    <script src="js/wallpaper.js" defer></script>
     <script src="js/main.js" defer></script>
     <script src="js/matrix-bg.js"></script>
+
+    <!-- 壁纸功能 -->
+    <button id="wallpaperBtn" class="wallpaper-btn" title="壁纸设置" aria-label="壁纸设置">&#x1F5BC;</button>
+    <div id="wallpaperPanel" class="wallpaper-panel">
+        <button id="wallpaperUpload" class="s-action-btn">上传壁纸</button>
+        <label class="s-slider-row"><span>模糊度</span>
+            <input type="range" id="wallpaperBlur" min="0" max="20" value="0" class="context-slider">
+        </label>
+        <label class="s-slider-row"><span>遮罩度</span>
+            <input type="range" id="wallpaperOverlay" min="0" max="100" value="30" class="context-slider">
+        </label>
+        <button id="wallpaperReset" class="s-action-btn">重置</button>
+    </div>
+    <input type="file" id="wallpaperFileInput" accept="image/*" hidden>
+
+    <!-- 倒计时卡片容器（日常模式右上角） -->
+    <div id="countdownRoot"></div>
 
     <!-- React 应用挂载点 -->
     <div id="reactToastRoot"></div>

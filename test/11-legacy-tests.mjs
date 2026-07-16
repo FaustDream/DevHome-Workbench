@@ -4,7 +4,7 @@
  * 基于 BDD Example Mapping，测试纯逻辑层（不依赖 DOM/Chrome API）。
  * 模块通过 IIFE + window.DevHome 命名空间交互。
  * 
- * 运行: node tests/run-tests.mjs
+ * 运行: node test/11-legacy-tests.mjs
  */
 import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';

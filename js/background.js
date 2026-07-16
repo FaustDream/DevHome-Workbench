@@ -36,7 +36,10 @@ function randomQuote(pool) {
    说明：Service Worker 随时可能被浏览器休眠/销毁，内存中的 setInterval 不可靠。
    因此状态持久化到 chrome.storage.local，并以「阶段开始时间戳 + 阶段总时长」推导剩余秒数，
    计时与阶段切换交由 chrome.alarms（精确 when）在 SW 唤醒时可靠推进；
-   同时保留内存 setInterval 仅用于存活期间向 UI 每秒广播一次。 */
+   同时保留内存 setInterval 仅用于存活期间向 UI 每秒广播一次。
+
+   连接管理：使用 chrome.runtime.connect() 长连接替代每秒 sendMessage，
+   减少消息序列化开销，提升番茄钟计时精度。 */
 var POMODORO_STORAGE_KEY = 'v2/pomodoro_state';
 var pomodoroState = {
     active: false,           // 是否处于运行（含工作/休息）中
@@ -53,6 +56,7 @@ var pomodoroState = {
     remaining: 0             // 当前阶段剩余秒数（暂停时冻结；运行时由时间戳推导）
 };
 var pomodoroTimer = null;    // 存活期间的 setInterval 句柄（仅用于广播）
+var pomodoroPorts = [];      // 活跃的长连接端口列表（替代 sendMessage 广播）
 var _phaseEndInProgress = false; // 防重入标记：防止 alarm 和 restore 同时触发 phaseEnd
 
 /** 由阶段开始时间戳推导当前剩余秒数（不受 SW 休眠影响） */
@@ -146,6 +150,11 @@ chrome.contextMenus.onClicked.addListener(function (info, tab) {
 
 /**
  * 处理网页剪藏：将选中文字保存为笔记
+ *
+ * 注意：Service Worker 中无法加载页面级 storageV2 模块（依赖 localStorage 和 DOM），
+ * 因此直接操作 chrome.storage.local。页面端 storageV2.get('notes') 优先读取
+ * chrome.storage.local，会自动同步到 localStorage 缓存，确保数据一致性。
+ * 文件写盘由 storageV2.set() 中的 markDirty() 触发，在页面端下次写入时自动同步。
  */
 async function handleClipCapture(text, tab) {
     var clipData = {
@@ -162,7 +171,7 @@ async function handleClipCapture(text, tab) {
     };
 
     try {
-        // 保存到 chrome.storage.local
+        // 读取现有笔记并追加剪藏
         var result = await chrome.storage.local.get('v2/notes');
         var notes = result['v2/notes'] || [];
         notes.unshift(clipData);
@@ -423,6 +432,9 @@ chrome.alarms.onAlarm.addListener(async function (alarm) {
     if (alarm.name === 'pomodoro-phase') {
         console.log('[Background] alarm 触发阶段切换');
         await pomodoroPhaseEnd();
+    } else if (alarm.name === 'task-due-check') {
+        console.log('[Background] alarm 触发任务到期检查');
+        await checkTaskDueNotifications();
     }
 });
 
@@ -445,6 +457,17 @@ chrome.notifications.onClicked.addListener(function (notificationId) {
             }
         });
         // 清除通知
+        chrome.notifications.clear(notificationId);
+    } else if (notificationId.startsWith('task-due-')) {
+        // 任务到期通知点击 → 打开工作台并进入专注模式
+        chrome.tabs.query({ url: chrome.runtime.getURL('index.html') }, function (tabs) {
+            if (tabs && tabs.length > 0) {
+                chrome.tabs.update(tabs[0].id, { active: true });
+                chrome.windows.update(tabs[0].windowId, { focused: true });
+            } else {
+                chrome.tabs.create({ url: 'index.html' });
+            }
+        });
         chrome.notifications.clear(notificationId);
     }
 });
@@ -475,6 +498,7 @@ async function savePomodoroSession() {
 
 /**
  * 广播番茄钟状态给所有连接的 runtime
+ * 优先通过长连接端口（port.postMessage）广播，无连接时回退到 sendMessage。
  * 额外携带 phaseStartAt / phaseTotalSeconds，供页面端在 SW 休眠时本地推算倒计时。
  */
 function broadcastPomodoroState() {
@@ -492,13 +516,39 @@ function broadcastPomodoroState() {
         phaseStartAt: pomodoroState.phaseStartAt,
         phaseTotalSeconds: pomodoroState.phaseTotalSeconds
     };
-    chrome.runtime.sendMessage({
-        type: 'POMODORO_STATE',
-        data: state
-    }).catch(function () {
-        // 无监听者，忽略
-    });
+    var msg = { type: 'POMODORO_STATE', data: state };
+
+    // 优先通过长连接端口广播（无序列化开销，性能更好）
+    if (pomodoroPorts.length > 0) {
+        pomodoroPorts = pomodoroPorts.filter(function (port) {
+            try {
+                port.postMessage(msg);
+                return true;
+            } catch (_) {
+                return false; // 端口已断开，移除
+            }
+        });
+    } else {
+        // 无活跃端口时回退到 sendMessage（兼容旧页面或未建立连接的情况）
+        chrome.runtime.sendMessage(msg).catch(function () {
+            // 无监听者，忽略
+        });
+    }
 }
+
+/* ===== 番茄钟长连接管理 =====
+   页面端通过 chrome.runtime.connect({ name: 'pomodoro' }) 建立长连接，
+   之后每秒广播通过 port.postMessage 推送，替代高频 sendMessage 减少开销。 */
+chrome.runtime.onConnect.addListener(function (port) {
+    if (port.name !== 'pomodoro') return;
+    pomodoroPorts.push(port);
+    console.log('[Background] 番茄钟长连接已建立，当前端口数:', pomodoroPorts.length);
+
+    port.onDisconnect.addListener(function () {
+        pomodoroPorts = pomodoroPorts.filter(function (p) { return p !== port; });
+        console.log('[Background] 番茄钟长连接已断开，剩余端口数:', pomodoroPorts.length);
+    });
+});
 
 /* ===== 消息处理 ===== */
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
@@ -555,6 +605,102 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     }
     return true; // 保持通道开启以支持异步响应
 });
+
+/* ===== 任务到期通知 ===== */
+
+/** 任务到期通知已发送的任务 ID 集合（避免同一轮次重复通知） */
+var _taskDueNotified = {};
+
+/**
+ * 检查四象限任务是否即将到期，发送 Chrome 通知。
+ * 由 chrome.alarms('task-due-check', { periodInMinutes: 15 }) 触发。
+ *
+ * 逻辑：
+ *   1. 读取 chrome.storage.local 中的 v2/tasks（四象限任务数据）
+ *   2. 读取 localStorage 中的 taskNotifySettings（通知开关 + 提前分钟数）
+ *   3. 遍历任务，检查 dueDate 是否在接下来 remindBefore 分钟内到期且未完成
+ *   4. 符合条件的任务发送 chrome.notifications
+ */
+async function checkTaskDueNotifications() {
+    try {
+        // 读取通知设置（localStorage 在 SW 中不可用，改为从 chrome.storage.local 读取）
+        var notifyResult = await chrome.storage.local.get('v2/taskNotifySettings');
+        var notifySettings = notifyResult['v2/taskNotifySettings'];
+        if (!notifySettings || !notifySettings.enabled) return;
+
+        var remindBefore = notifySettings.remindBefore || 15; // 提前分钟数
+
+        // 读取任务数据
+        var tasksResult = await chrome.storage.local.get('v2/tasks');
+        var tasks = tasksResult['v2/tasks'];
+        if (!tasks || !Array.isArray(tasks) || tasks.length === 0) return;
+
+        var now = Date.now();
+        var checkWindow = remindBefore * 60 * 1000; // 检查窗口（毫秒）
+
+        tasks.forEach(function (task) {
+            // 只检查活跃任务（未完成/未取消）
+            if (task.status !== 'active') return;
+
+            // 必须有截止时间
+            if (!task.dueDate && !task.plannedAt) return;
+
+            var dueTime = task.dueDate ? new Date(task.dueDate).getTime() : task.plannedAt;
+            if (!dueTime || isNaN(dueTime)) return;
+
+            // 检查是否在通知窗口内（即将到期）
+            var remaining = dueTime - now;
+            if (remaining > 0 && remaining <= checkWindow) {
+                // 避免重复通知（同一任务在同一轮次只通知一次）
+                if (_taskDueNotified[task.id]) return;
+                _taskDueNotified[task.id] = true;
+
+                var minutesLeft = Math.round(remaining / 60000);
+                var title = (task.title || '').slice(0, 40);
+                var notificationId = 'task-due-' + task.id;
+
+                sendPomodoroNotification(notificationId, {
+                    type: 'basic',
+                    iconUrl: 'icons/icon128.png',
+                    title: '\u23F0 \u4EFB\u52A1\u5373\u5C06\u5230\u671F',
+                    message: '\u300C' + title + '\u300D\u8FD8\u6709 ' + minutesLeft + ' \u5206\u949F\u5230\u671F',
+                    priority: 2,
+                    requireInteraction: true
+                });
+
+                console.log('[Background] 任务到期通知: ' + title + ' 剩余' + minutesLeft + '分钟');
+            } else if (remaining <= 0) {
+                // 已超期，也通知一次
+                if (_taskDueNotified[task.id]) return;
+                _taskDueNotified[task.id] = true;
+
+                var title2 = (task.title || '').slice(0, 40);
+                var notificationId2 = 'task-due-' + task.id;
+
+                sendPomodoroNotification(notificationId2, {
+                    type: 'basic',
+                    iconUrl: 'icons/icon128.png',
+                    title: '\u26A0\uFE0F \u4EFB\u52A1\u5DF2\u8D85\u671F',
+                    message: '\u300C' + title2 + '\u300D\u5DF2\u8FC7\u671F\uFF0C\u8BF7\u5C3D\u5FEB\u5904\u7406',
+                    priority: 2,
+                    requireInteraction: true
+                });
+
+                console.log('[Background] 任务超期通知: ' + title2);
+            }
+        });
+    } catch (e) {
+        console.warn('[Background] 任务到期检查失败:', e);
+    }
+}
+
+/** 注册任务到期检查 alarm（每 15 分钟触发一次） */
+try {
+    chrome.alarms.create('task-due-check', { periodInMinutes: 15 });
+    console.log('[Background] 已注册任务到期检查 alarm（每15分钟）');
+} catch (e) {
+    console.warn('[Background] 注册任务到期 alarm 失败:', e);
+}
 
 // 启动时尝试恢复番茄钟状态（兜底，覆盖 onStartup 未触发的情况）
 restorePomodoroState();

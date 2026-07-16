@@ -77,6 +77,12 @@ window.DevHome = window.DevHome || {};
         '不完美的行动胜过完美的计划'
     ];
 
+    /** 任务到期通知默认配置 */
+    ns.DEFAULT_TASK_NOTIFY_CONFIG = {
+        enabled: false,
+        remindBefore: 15   // 提前分钟数（5/10/15/30）
+    };
+
     /** 空状态幽默文案 */
     ns.EMPTY_STATE_MESSAGES = {
         captures: [
@@ -161,6 +167,32 @@ window.DevHome = window.DevHome || {};
             enabled: false             // 文件自动同步默认关闭
         },
         customNoteTypes: []            // 用户自定义笔记类型 [{key, icon, label}]
+    };
+    ns.DEFAULT_SEARCH_CONFIG = {
+        showSuggestions: true,       // 搜索建议开关
+        retainContent: false,        // 保留搜索框内容
+        hideSearchButton: false,     // 隐藏搜索按钮
+        searchWidth: 560,            // 搜索框宽度 (px)
+        searchRadius: 24,            // 搜索框圆角 (px)
+        searchOpacity: 1             // 搜索框不透明度 (0.5-1.0)
+    };
+
+    /* ===== F4 视图缩放默认值 ===== */
+    ns.DEFAULT_VIEW_SCALE = 1.0;
+
+    /* ===== F5 布局系统预设配置 ===== */
+    ns.LAYOUT_PRESETS = {
+        '2x4': { columns: 4, maxItems: 8,  iconRatio: 0.56 },
+        '2x5': { columns: 5, maxItems: 10, iconRatio: 0.52 },
+        '2x6': { columns: 6, maxItems: 12, iconRatio: 0.50 },
+        '2x7': { columns: 7, maxItems: 14, iconRatio: 0.46 },
+        '3x3': { columns: 3, maxItems: 9,  iconRatio: 0.60 }
+    };
+    /** F5 布局系统默认配置 */
+    ns.DEFAULT_LAYOUT_CONFIG = {
+        mode: 'preset',   // 'preset' | 'custom'
+        preset: '2x6',
+        custom: { columns: 6, rows: 2, colGap: 24, rowGap: 24, iconSize: 56 }
     };
 
     /* ===== 默认磁贴缓存相关 ===== */

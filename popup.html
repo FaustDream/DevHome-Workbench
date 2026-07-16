@@ -4,76 +4,68 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DevHome Workbench</title>
+    <!-- 引用主题 Semantic Token 体系，popup 自动响应浅色/深色模式 -->
+    <link id="theme-default" rel="stylesheet" href="css/themes/default.css">
+    <link rel="stylesheet" href="css/tokens.css">
+    <link rel="stylesheet" href="css/base.css">
     <style>
-        :root {
-            --bg: #f5f0e8;
-            --bg-card: #faf7f2;
-            --bg-hover: #e8e0d4;
-            --accent: #c0692a;
-            --accent-dim: rgba(192,105,42,0.08);
-            --text: #2d2820;
-            --text-secondary: #6e6860;
-            --text-tertiary: #9a948c;
-            --border: rgba(0,0,0,0.06);
-            --radius: 8px;
-        }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             width: 380px;
             min-height: 200px;
-            background: var(--bg);
-            color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--color-bg);
+            color: var(--color-text);
+            font-family: var(--font-sans);
             font-size: 14px;
-            padding: 16px;
+            padding: var(--spacing-md);
         }
         .popup-header {
             display: flex;
             align-items: center;
             gap: 10px;
-            margin-bottom: 16px;
+            margin-bottom: var(--spacing-md);
             padding-bottom: 12px;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid var(--color-border);
         }
         .popup-header h1 {
             font-size: 16px;
             font-weight: 600;
-            color: var(--text);
+            color: var(--color-text);
         }
         .popup-header .version {
-            font-size: 11px;
-            color: var(--text-tertiary);
+            font-size: var(--font-size-xs);
+            color: var(--color-text-tertiary);
         }
         .popup-search {
             width: 100%;
             padding: 10px 14px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            background: var(--bg-card);
-            color: var(--text);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            background: var(--color-input-bg);
+            color: var(--color-text);
             font-size: 14px;
             font-family: inherit;
             outline: none;
             margin-bottom: 12px;
         }
         .popup-search:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px var(--accent-dim);
+            border-color: var(--color-accent);
+            box-shadow: 0 0 0 3px var(--color-accent-disabled);
         }
         .popup-actions {
             display: flex;
-            gap: 8px;
+            gap: var(--spacing-sm);
             flex-wrap: wrap;
         }
         .popup-btn {
             flex: 1;
             min-width: 80px;
-            padding: 8px 14px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            background: var(--bg-card);
-            color: var(--text-secondary);
-            font-size: 13px;
+            padding: var(--spacing-sm) 14px;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            background: var(--color-surface-subtle);
+            color: var(--color-text-secondary);
+            font-size: var(--font-size-sm);
             font-family: inherit;
             cursor: pointer;
             text-align: center;
@@ -82,14 +74,14 @@
             display: inline-block;
         }
         .popup-btn:hover {
-            background: var(--bg-hover);
-            border-color: var(--accent);
-            color: var(--accent);
+            background: var(--color-surface-hover);
+            border-color: var(--color-accent);
+            color: var(--color-accent);
         }
         .popup-btn.primary {
-            background: var(--accent);
-            border-color: var(--accent);
-            color: #fff;
+            background: var(--color-accent);
+            border-color: var(--color-accent);
+            color: var(--color-text-inverse);
             font-weight: 600;
         }
         .popup-btn.primary:hover {
@@ -98,7 +90,7 @@
         .popup-shortcuts {
             margin-top: 12px;
             padding-top: 12px;
-            border-top: 1px solid var(--border);
+            border-top: 1px solid var(--color-border);
         }
         .popup-shortcuts .kbd-group {
             display: flex;
@@ -106,20 +98,20 @@
             flex-wrap: wrap;
         }
         .popup-shortcuts kbd {
-            padding: 2px 8px;
-            border: 1px solid var(--border);
+            padding: 2px var(--spacing-sm);
+            border: 1px solid var(--color-border);
             border-radius: 4px;
-            background: var(--bg-card);
-            font-size: 11px;
-            color: var(--text-tertiary);
-            font-family: 'SF Mono', 'Consolas', monospace;
+            background: var(--color-kbd-bg);
+            font-size: var(--font-size-xs);
+            color: var(--color-text-tertiary);
+            font-family: var(--font-mono);
         }
     </style>
 </head>
 <body>
     <div class="popup-header">
         <h1>DevHome Workbench</h1>
-        <span class="version">v2.0.0</span>
+        <span class="version">v2.19.5</span>
     </div>
 
     <input type="text" class="popup-search" id="popupSearch"

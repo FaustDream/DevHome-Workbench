@@ -61,6 +61,10 @@ body.focus-transition .focus-overlay.ready {
     --shortcut-label-bottom: 8px;
     --shortcut-add-icon: 28px;
     --shortcut-columns: 6;
+    /* F5 布局系统 */
+    --shortcut-row-gap: 24px;
+    --shortcut-max-rows: auto;
+    --shortcut-rows-mode: auto;   /* auto | manual */
     --daily-content-top: 78px;
 
     /* Z 层级 */
@@ -68,10 +72,33 @@ body.focus-transition .focus-overlay.ready {
     --z-floating: 2000;
     --z-context-menu: 2700;
     --z-modal: 3000;
+
+    /* F4 视图缩放默认值 */
+    --view-scale: 1;
+
+    /* F6 图标设置默认值 */
+    --tile-label-display: block;
+    --tile-icon-shadow: none;
+    --tile-radius-override: auto;
+    --tile-opacity: 1;
+
+    /* F8 字体设置默认值 */
+    --text-shadow-strength: none;
+    --font-size-multiplier: 1;
+    --font-color-override: initial;
+
+    /* F9 动画速度默认值 */
+    --animation-speed-multiplier: 1;
 }
 
 /* ===== 全局 Reset ===== */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ===== 键盘焦点可见性（无障碍） ===== */
+:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+}
 
 html {
     font-size: 16px;
@@ -316,9 +343,9 @@ body::before {
     pointer-events: none;
     animation: wbToastIn 0.25s ease, wbToastOut 0.3s ease 2.2s forwards;
 }
-.wb-toast.info    { background: rgba(85,230,210,0.12); border: 1px solid rgba(85,230,210,0.25); color: var(--color-accent); }
-.wb-toast.success { background: rgba(71,240,162,0.12); border: 1px solid rgba(71,240,162,0.25); color: #47f0a2; }
-.wb-toast.error   { background: rgba(255,107,107,0.12); border: 1px solid rgba(255,107,107,0.25); color: #ff6b6b; }
+.wb-toast.info    { background: var(--color-accent-bg-12); border: 1px solid var(--color-accent-border-20); color: var(--color-accent); }
+.wb-toast.success { background: var(--color-accent-bg-12); border: 1px solid var(--color-accent-border-20); color: var(--color-success); }
+.wb-toast.error   { background: var(--color-danger-bg-12); border: 1px solid var(--color-danger-border-20); color: var(--color-danger-hover); }
 
 /* Action Toast（带操作按钮，如撤销） */
 .wb-toast-action {

@@ -7,6 +7,9 @@
     margin: 0 auto;
     justify-content: center;
     max-width: 100%;
+    /* F4 视图缩放 */
+    transform: scale(var(--view-scale, 1));
+    transform-origin: top center;
 }
 .cat-row.visible { display: flex; }
 .cat-btn {
@@ -36,7 +39,7 @@
     color: var(--color-text-inverse) !important;
     border-color: transparent !important;
     font-weight: 700;
-    box-shadow: 0 0 16px rgba(71, 240, 162, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--color-accent-shadow), var(--shadow-md);
     transform: scale(1.06);
 }
 
@@ -47,9 +50,9 @@
 .cat-add-btn {
     width: 28px;
     height: 28px;
-    border: 1px dashed rgba(85, 230, 210, 0.46);
+    border: 1px dashed var(--color-accent-border-46);
     border-radius: 16px;
-    background: rgba(85, 230, 210, 0.08);
+    background: var(--color-accent-bg-08);
     color: var(--color-accent);
     display: grid;
     place-items: center;
@@ -57,8 +60,8 @@
     transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
 }
 .cat-add-btn:hover {
-    background: rgba(85, 230, 210, 0.16);
-    border-color: rgba(85, 230, 210, 0.70);
+    background: var(--color-accent-bg-16);
+    border-color: var(--color-accent-border-70);
     transform: translateY(-1px);
 }
 .cat-delete-btn {
@@ -68,10 +71,10 @@
     z-index: 3;
     width: 18px;
     height: 18px;
-    border: 1px solid rgba(255, 255, 255, 0.32);
+    border: 1px solid var(--color-popup-item-border);
     border-radius: var(--radius-full);
-    background: rgba(255, 71, 87, 0.94);
-    color: #fff;
+    background: var(--color-danger-bg-94);
+    color: var(--color-text-inverse);
     display: grid;
     place-items: center;
     font-size: 9px;
@@ -79,7 +82,7 @@
     transform: scale(0.78);
     pointer-events: none;
     transition: opacity var(--transition-fast), transform var(--transition-fast), background var(--transition-fast);
-    box-shadow: 0 6px 16px rgba(255, 71, 87, 0.22);
+    box-shadow: var(--color-danger-shadow);
 }
 .cat-delete-btn i { pointer-events: none; }
 .cat-row.category-edit-mode .cat-delete-btn {
@@ -95,11 +98,11 @@
 .cat-btn.dragging {
     opacity: 0.9;
     transform: rotate(1deg) scale(1.02);
-    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.32);
+    box-shadow: var(--shadow-lg);
 }
 .cat-btn.drag-over {
-    border-color: rgba(85, 230, 210, 0.88);
-    box-shadow: 0 0 0 2px rgba(85, 230, 210, 0.18);
+    border-color: var(--color-accent-border-88);
+    box-shadow: 0 0 0 2px var(--color-accent-border-18);
 }
 
 /* ===== Tiles Container ===== */
@@ -109,12 +112,18 @@
     display: grid;
     grid-template-columns: repeat(var(--shortcut-columns), var(--shortcut-container));
     gap: var(--shortcut-gap);
+    /* F5 布局系统：行间距由 CSS 变量控制，支持自定义模式 */
+    row-gap: var(--shortcut-row-gap);
+    grid-auto-rows: auto;
     justify-items: center;
     justify-content: center;
     opacity: 1;
     transition: opacity var(--transition-normal), transform var(--transition-normal);
     position: relative;
     min-height: calc(var(--shortcut-container) * 2 + var(--shortcut-gap));
+    /* F4 视图缩放 */
+    transform: scale(var(--view-scale, 1));
+    transform-origin: top center;
 }
 
 .tiles-container.page-transition {
@@ -126,7 +135,7 @@
     width: 100%;
     height: var(--shortcut-container);
     min-height: auto;
-    border-radius: var(--shortcut-radius);
+    border-radius: var(--tile-radius-override, var(--shortcut-radius));
     /* 弱化边框，改用极淡背景 + 轻柔阴影界定卡片边缘 */
     background: var(--color-surface-subtle);
     box-shadow: var(--shadow-sm);
@@ -147,6 +156,8 @@
     -webkit-user-select: none;
     touch-action: none;
     grid-row: auto;
+    /* F6 不透明度 */
+    opacity: var(--tile-opacity, 1);
 }
 
 .tile-delete-btn {
@@ -156,10 +167,10 @@
     z-index: 3;
     width: 20px;
     height: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.32);
+    border: 1px solid var(--color-popup-item-border);
     border-radius: var(--radius-full);
-    background: rgba(255, 71, 87, 0.92);
-    color: #fff;
+    background: var(--color-danger-bg-92);
+    color: var(--color-text-inverse);
     display: grid;
     place-items: center;
     font-size: 10px;
@@ -168,7 +179,7 @@
     transform: scale(0.78);
     pointer-events: none;
     transition: opacity var(--transition-fast), transform var(--transition-fast), background var(--transition-fast);
-    box-shadow: 0 6px 16px rgba(255, 71, 87, 0.22);
+    box-shadow: var(--color-danger-shadow);
 }
 
 .tile-delete-btn i { pointer-events: none; }
@@ -194,15 +205,7 @@
     background: var(--color-danger-hover);
 }
 
-.tile::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: var(--shortcut-radius);
-    background: linear-gradient(135deg, rgba(255,255,255,0.06), transparent 50%);
-    pointer-events: none;
-}
-
+/* 清爽感：移除磁贴伪渐变装饰层，卡片保持干净平面效果 */
 .tile:hover {
     background: var(--color-surface-hover);
     transform: translateY(-2px);
@@ -217,7 +220,7 @@
     transform: scale(1.02);
     box-shadow: var(--shadow-lg);
     border-color: var(--color-accent);
-    background: rgba(85, 230, 210, 0.12);
+    background: var(--color-tile-drag-bg);
     overflow: hidden;
     transition: none;
 }
@@ -232,7 +235,7 @@
 
 .tile.drag-over {
     border-color: var(--color-accent);
-    background: rgba(85, 230, 210, 0.10);
+    background: var(--color-tile-drag-over);
     transition: border-color 0.1s ease, background 0.1s ease;
 }
 
@@ -245,11 +248,14 @@
     max-width: var(--shortcut-icon);
     max-height: var(--shortcut-icon);
     flex-shrink: 0;
+    /* F6 图标阴影 */
+    filter: var(--tile-icon-shadow, none);
 }
 
 .tile-icon-wrap .tile-img { width: var(--shortcut-icon); height: var(--shortcut-icon); object-fit: contain; border-radius: 8px; }
 
 .tile-label {
+    display: var(--tile-label-display, block);
     font-size: var(--shortcut-label-size);
     font-weight: 500;
     line-height: 1.3;
@@ -296,9 +302,9 @@
 }
 
 .suggestions-clear-btn {
-    border: 1px solid rgba(85, 230, 210, 0.26);
+    border: 1px solid var(--color-accent-border-20);
     border-radius: var(--radius-full);
-    background: rgba(85, 230, 210, 0.10);
+    background: var(--color-accent-bg-10);
     color: var(--color-accent);
     padding: 4px 10px;
     font-size: var(--font-size-xs);
@@ -306,8 +312,8 @@
     transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
 }
 .suggestions-clear-btn:hover {
-    background: rgba(85, 230, 210, 0.18);
-    border-color: rgba(85, 230, 210, 0.46);
+    background: var(--color-accent-bg-18);
+    border-color: var(--color-accent-border-46);
     color: var(--color-text);
 }
 
@@ -327,8 +333,8 @@
     transition: all var(--transition-fast);
     user-select: none;
 }
-.suggestion-item:hover { background: rgba(85, 230, 210, 0.12); color: var(--color-accent); }
-.suggestion-item.active { background: rgba(85, 230, 210, 0.08); color: var(--color-accent); }
+.suggestion-item:hover { background: var(--color-accent-bg-12); color: var(--color-accent); }
+.suggestion-item.active { background: var(--color-accent-bg-08); color: var(--color-accent); }
 .suggestion-item i, .suggestion-item svg { width: 16px; text-align: center; color: var(--color-text-tertiary); }
 
 .suggestion-empty {
@@ -355,8 +361,8 @@
     width: var(--shortcut-icon);
     height: var(--shortcut-icon);
     border-radius: var(--shortcut-radius);
-    background: rgba(85, 230, 210, 0.10);
-    border: 2px dashed rgba(85, 230, 210, 0.46);
+    background: var(--color-tile-bg);
+    border: 2px dashed var(--color-accent-border-46);
     color: var(--color-accent);
     cursor: pointer;
     display: flex;
@@ -365,5 +371,20 @@
     font-size: var(--shortcut-add-icon);
     transition: all var(--transition-fast);
 }
-.add-tile-btn:hover { background: rgba(85, 230, 210, 0.18); transform: scale(1.05); }
+.add-tile-btn:hover { background: var(--color-accent-bg-18); transform: scale(1.05); }
 .add-tile-btn:active { transform: scale(0.95); }
+
+/* ===== 磁贴网格响应式断点 ===== */
+@media (max-width: 768px) {
+    .tiles-container {
+        grid-template-columns: repeat(4, var(--shortcut-container));
+        max-width: calc(var(--shortcut-container) * 4 + var(--shortcut-gap) * 3);
+    }
+}
+@media (max-width: 480px) {
+    .tiles-container {
+        grid-template-columns: repeat(3, var(--shortcut-container));
+        max-width: calc(var(--shortcut-container) * 3 + var(--shortcut-gap) * 2);
+        gap: calc(var(--shortcut-gap) * 0.75);
+    }
+}

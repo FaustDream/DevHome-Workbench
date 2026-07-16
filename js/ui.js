@@ -467,6 +467,74 @@ window.DevHome = window.DevHome || {};
         hideEditorMenu();
     };
 
+    /* ===== 通用弹窗工厂函数（消除 4+ 处重复的 overlay → dialog → 事件模式） ===== */
+
+    /**
+     * 创建通用模态弹窗
+     * @param {string} title - 弹窗标题
+     * @param {string} bodyHTML - 弹窗主体 HTML
+     * @param {string} footerHTML - 弹窗底部 HTML（按钮区）
+     * @param {object} [opts] - 可选配置
+     * @param {string} [opts.className] - 额外 CSS 类名
+     * @param {number} [opts.maxWidth] - 最大宽度，默认 380px
+     * @param {function} [opts.onClose] - 关闭回调
+     * @returns {{ overlay: HTMLElement, dialog: HTMLElement, close: function }} 弹窗控制器
+     */
+    ns.createModal = function (title, bodyHTML, footerHTML, opts) {
+        opts = opts || {};
+        var maxWidth = opts.maxWidth || 380;
+
+        // 创建遮罩层
+        var overlay = document.createElement('div');
+        overlay.className = 'wb-modal-overlay' + (opts.className ? ' ' + opts.className : '');
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:2900;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;';
+
+        // 创建弹窗
+        var dialog = document.createElement('div');
+        dialog.className = 'wb-modal-dialog';
+        dialog.style.cssText = 'background:var(--color-bg-elevated);border:1px solid var(--color-border-active);border-radius:20px;padding:20px;width:min(90vw,' + maxWidth + 'px);box-shadow:var(--shadow-lg);';
+
+        // 标题
+        var titleEl = document.createElement('h3');
+        titleEl.textContent = title;
+        titleEl.style.cssText = 'font-size:16px;font-weight:600;color:var(--color-text);margin:0 0 8px;';
+
+        // 主体
+        var bodyEl = document.createElement('div');
+        bodyEl.innerHTML = bodyHTML;
+
+        // 底部按钮区
+        var footerEl = document.createElement('div');
+        footerEl.innerHTML = footerHTML;
+
+        dialog.appendChild(titleEl);
+        dialog.appendChild(bodyEl);
+        dialog.appendChild(footerEl);
+        overlay.appendChild(dialog);
+
+        // 关闭方法
+        var closeFn = function () {
+            if (overlay.isConnected) overlay.remove();
+            if (opts.onClose) opts.onClose();
+        };
+
+        // 点击遮罩关闭
+        overlay.addEventListener('click', function (e) {
+            if (e.target === overlay) closeFn();
+        });
+
+        // 插入到 body
+        document.body.appendChild(overlay);
+
+        return {
+            overlay: overlay,
+            dialog: dialog,
+            bodyEl: bodyEl,
+            footerEl: footerEl,
+            close: closeFn
+        };
+    };
+
 
 
     /* ===== 设置面板保存辅助 ===== */

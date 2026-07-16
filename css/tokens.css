@@ -77,7 +77,68 @@
     --font-mono:            /* 等宽/代码字体 */ ;
     --font-display:         /* 展示/标题字体 */ ;
 
+    /* ===== 交互背景 (Interaction Backgrounds，避免模块 CSS 中硬编码 rgba) ===== */
+    --color-accent-bg-04:   /* accent 4% 背景 */ ;
+    --color-accent-bg-05:   /* accent 5% 背景 */ ;
+    --color-accent-bg-06:   /* accent 6% 背景 */ ;
+    --color-accent-bg-08:   /* accent 8% 背景 */ ;
+    --color-accent-bg-10:   /* accent 10% 背景 */ ;
+    --color-accent-bg-12:   /* accent 12% 背景 */ ;
+    --color-accent-bg-15:   /* accent 15% 背景 */ ;
+    --color-accent-bg-16:   /* accent 16% 背景 */ ;
+    --color-accent-bg-18:   /* accent 18% 背景 */ ;
+    --color-accent-border-18: /* accent 18% 边框 */ ;
+    --color-accent-border-20: /* accent 20% 边框 */ ;
+    --color-accent-border-30: /* accent 30% 边框 */ ;
+    --color-accent-border-46: /* accent 46% 边框 */ ;
+    --color-accent-border-56: /* accent 56% 边框 */ ;
+    --color-accent-border-70: /* accent 70% 边框 */ ;
+    --color-accent-border-88: /* accent 88% 边框 */ ;
+    --color-danger-bg-08:   /* danger 8% 背景 */ ;
+    --color-danger-bg-10:   /* danger 10% 背景 */ ;
+    --color-danger-bg-12:   /* danger 12% 背景 */ ;
+    --color-danger-bg-15:   /* danger 15% 背景 */ ;
+    --color-danger-bg-20:   /* danger 20% 背景 */ ;
+    --color-danger-bg-85:   /* danger 85% 背景（删除按钮等） */ ;
+    --color-danger-bg-92:   /* danger 92% 背景 */ ;
+    --color-danger-bg-94:   /* danger 94% 背景 */ ;
+    --color-danger-border-20: /* danger 20% 边框 */ ;
+    --color-danger-border-30: /* danger 30% 边框 */ ;
+    --color-danger-border-60: /* danger 60% 边框 */ ;
+    --color-danger-shadow:  /* danger 阴影 */ ;
+    --color-accent-shadow:  /* accent 发光阴影 */ ;
+    --color-scrollbar-thumb: /* 滚动条滑块颜色 */ ;
+    --color-tile-bg:        /* 磁贴默认背景 */ ;
+    --color-tile-drag-bg:   /* 磁贴拖拽背景 */ ;
+    --color-tile-drag-over: /* 磁贴拖拽悬停背景 */ ;
+    --color-popup-item-bg:  /* popup 预览项背景 */ ;
+    --color-popup-item-border: /* popup 预览项边框 */ ;
+    --color-popup-phone-border: /* popup 手机模拟边框 */ ;
+    --color-note-badge-note: /* 笔记徽章·笔记类型色 */ ;
+    --color-note-badge-webclip: /* 笔记徽章·剪藏类型色 */ ;
+    --color-pomodoro-running-text: /* 番茄钟运行中文字色 */ ;
+
+    /* ===== 背景效果 ===== */
+    --bg-blur: 0px;           /* 壁纸模糊度（通过 wallpaper.js 动态更新） */ ;
+
     /* ===== 梯度 (Gradients) ===== */
     --gradient-page:        /* 页面背景梯度（复合值，可为 none 用纯色） */ ;
     --gradient-overlay:     /* 背景图片遮罩梯度 */ ;
+
+    /* ===== F4 视图缩放 ===== */
+    --view-scale:           /* 视图缩放比例 */ ;
+
+    /* ===== F6 图标设置 ===== */
+    --tile-label-display:       /* 磁贴名称显示/隐藏 */ ;
+    --tile-icon-shadow:         /* 图标阴影滤镜 */ ;
+    --tile-radius-override:     /* 磁贴圆角覆盖 */ ;
+    --tile-opacity:             /* 磁贴不透明度 */ ;
+
+    /* ===== F8 字体设置 ===== */
+    --text-shadow-strength:     /* 文字阴影强度 */ ;
+    --font-size-multiplier:     /* 字号倍率 */ ;
+    --font-color-override:      /* 文字颜色覆盖（空=跟随主题） */ ;
+
+    /* ===== F9 动画效果 ===== */
+    --animation-speed-multiplier: /* 动画速度倍率 */ ;
 }

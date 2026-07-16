@@ -3,7 +3,7 @@
  * 直接 import 每个测试模块，顺序执行并汇总结果。
  */
 import { resolve } from 'node:path';
-import { writeFileSync, mkdirSync, existsSync, statSync } from 'node:fs';
+import { writeFileSync, mkdirSync, existsSync, statSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
@@ -11,19 +11,37 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const projectRoot = resolve(__dirname, '..');
 const docsDir = resolve(__dirname, 'docs');
 
+/** 从 manifest.json 动态读取版本号 */
+function getVersion() {
+    try {
+        const manifest = JSON.parse(readFileSync(resolve(projectRoot, 'manifest.json'), 'utf8'));
+        return manifest.version || 'unknown';
+    } catch (_) {
+        return 'unknown';
+    }
+}
+const projectVersion = getVersion();
+
 if (!existsSync(docsDir)) mkdirSync(docsDir, { recursive: true });
 
 const testModules = [
-    { name: '单元测试', file: '01-unit-test.mjs', report: '01-unit-test-report.md', weight: 25 },
+    { name: '单元测试', file: '01-unit-test.mjs', report: '01-unit-test-report.md', weight: 15 },
     { name: '自动化测试', file: '02-automation-test.mjs', report: '02-automation-test-report.md', weight: 10 },
-    { name: '功能测试', file: '03-functional-test.mjs', report: '03-functional-test-report.md', weight: 15 },
+    { name: '功能测试', file: '03-functional-test.mjs', report: '03-functional-test-report.md', weight: 10 },
     { name: '非功能测试', file: '04-nonfunctional-test.mjs', report: '04-nonfunctional-test-report.md', weight: 10 },
-    { name: '回归测试', file: '05-regression-test.mjs', report: '05-regression-test-report.md', weight: 15 },
+    { name: '回归测试', file: '05-regression-test.mjs', report: '05-regression-test-report.md', weight: 10 },
     { name: '环境测试', file: '06-environment-test.mjs', report: '06-environment-test-report.md', weight: 5 },
-    { name: '安全测试', file: '07-security-test.mjs', report: '07-security-test-report.md', weight: 10 },
+    { name: '安全测试', file: '07-security-test.mjs', report: '07-security-test-report.md', weight: 5 },
     { name: '代码静态分析', file: '08-static-analysis.mjs', report: '08-static-analysis-report.md', weight: 5 },
-    { name: '边界值&幻觉测试', file: '09-boundary-hallucination.mjs', report: '09-boundary-hallucination-test-report.md', weight: 10 },
+    { name: '边界值&幻觉测试', file: '09-boundary-hallucination.mjs', report: '09-boundary-hallucination-test-report.md', weight: 5 },
     { name: '覆盖率检查', file: '10-coverage-check.mjs', report: '10-coverage-report.md', weight: 5 },
+    { name: '旧版BDD测试(T7)', file: '11-legacy-tests.mjs', report: '11-legacy-tests-report.md', weight: 5 },
+    { name: 'storageV2测试(T3)', file: '12-storage-test.mjs', report: '12-storage-test-report.md', weight: 5 },
+    { name: 'notes.js测试(T1)', file: '13-notes-test.mjs', report: '13-notes-test-report.md', weight: 5 },
+    { name: 'fileConfig测试(T2)', file: '14-fileconfig-test.mjs', report: '14-fileconfig-test-report.md', weight: 5 },
+    { name: 'background测试(T4)', file: '15-background-test.mjs', report: '15-background-test-report.md', weight: 5 },
+    { name: 'events.js测试(T5)', file: '16-events-test.mjs', report: '16-events-test-report.md', weight: 5 },
+    { name: 'main.js测试(T6)', file: '17-main-test.mjs', report: '17-main-test-report.md', weight: 5 },
 ];
 
 const allResults = [];
@@ -104,7 +122,7 @@ const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
 let report = '';
 report += `# DevHome Workbench — 综合测试总览\n\n`;
 report += `- **生成时间**: ${now}\n`;
-report += `- **项目**: DevHome Workbench v2.18.1\n`;
+report += `- **项目**: DevHome Workbench v${projectVersion}\n`;
 report += `- **执行模式**: 全量测试 (${testModules.length} 项)\n\n`;
 
 report += `## 执行摘要\n\n`;

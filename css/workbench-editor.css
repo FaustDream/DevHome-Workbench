@@ -1,0 +1,177 @@
+/* ============================================
+   DevHome Workbench - workbench-editor.css
+   Tiptap 编辑器、气泡工具栏、固定置顶工具栏
+   所有色值引用 Semantic Token 体系
+   拆分自 workbench.css (原 2377行)
+   ============================================ */
+
+/* ===== 笔记编辑器布局 ===== */
+.wb-notes-editor {
+    flex: 1; display: flex; flex-direction: column; min-width: 0;
+    overflow-y: auto; scrollbar-width: thin;
+    scrollbar-color: var(--color-scrollbar-thumb) transparent;
+}
+.wb-notes-editor::-webkit-scrollbar { width: 4px; }
+.wb-notes-editor::-webkit-scrollbar-thumb { background: var(--color-scrollbar-thumb); border-radius: 2px; }
+
+.wb-notes-editor-empty {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 12px; color: var(--color-text-tertiary); font-size: 13px;
+}
+.wb-notes-editor-active { flex: 1; display: flex; flex-direction: column; padding: 16px 20px; }
+
+.wb-notes-editor-head { display: flex; align-items: center; margin-bottom: 8px; }
+.wb-note-title-input {
+    border: 0; outline: 0; background: transparent; color: var(--color-text);
+    font-family: var(--font-sans); font-size: 18px; font-weight: 600;
+    letter-spacing: -0.02em; width: 100%;
+}
+.wb-note-title-input::placeholder { color: var(--color-text-tertiary); }
+
+/* 标签属性区 */
+.wb-notes-editor-meta {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+    margin-bottom: 14px; position: relative; min-height: 26px;
+}
+.wb-type-chip {
+    display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px;
+    border: var(--card-border); border-radius: 12px; font-size: 10px; font-weight: 500;
+    color: var(--color-text-secondary); background: var(--color-surface-subtle);
+    cursor: default; transition: background 0.15s ease, border-color 0.15s ease; user-select: none;
+}
+.wb-type-chip:hover { border-color: var(--color-border-active); background: var(--color-surface-hover); }
+.wb-type-chip-del {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 14px; height: 14px; border-radius: 50%; margin-left: 1px;
+    font-size: 10px; line-height: 1; cursor: pointer;
+    color: var(--color-text-tertiary); transition: all 0.15s ease;
+}
+.wb-type-chip-del:hover { background: var(--color-danger-bg-20); color: var(--color-danger); }
+.badge-add {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 22px; height: 22px; border: 1px dashed var(--color-border-active); border-radius: 11px;
+    font-size: 12px; font-weight: 600; color: var(--color-text-tertiary);
+    cursor: pointer; transition: all 0.15s ease; user-select: none;
+}
+.badge-add:hover { color: var(--color-accent); border-color: var(--color-accent); background: var(--color-accent-bg-06); }
+.wb-note-type-picker {
+    position: absolute; top: 100%; left: 0; margin-top: 6px; z-index: 200;
+    min-width: 180px; padding: 8px 4px; border: var(--card-border);
+    border-radius: var(--card-radius); background: var(--color-bg-elevated); box-shadow: var(--shadow-lg);
+}
+.wb-type-picker-item {
+    display: flex; align-items: center; gap: 8px; padding: 6px 10px;
+    border-radius: 8px; font-size: 12px; font-weight: 500;
+    color: var(--color-text-secondary); cursor: pointer;
+    transition: background 0.12s ease; user-select: none;
+}
+.wb-type-picker-item:hover { background: var(--color-surface-hover); color: var(--color-text); }
+.wb-type-picker-item.active .wb-type-picker-check { color: var(--color-accent); }
+
+/* 气泡工具栏 */
+.wb-bubble-toolbar {
+    display: flex; align-items: center; gap: 4px; margin-bottom: 12px;
+    padding: 5px 7px; border: var(--card-border); border-radius: 8px;
+    background: var(--color-bg-elevated); flex-wrap: wrap;
+}
+.wb-bubble-toolbar select { border: 0; background: transparent; color: var(--color-text-secondary); font-size: 11px; cursor: pointer; outline: none; }
+.wb-bubble-toolbar button {
+    padding: 3px 9px; border: none; border-radius: 5px; background: transparent;
+    color: var(--color-text-secondary); cursor: pointer; font-size: 11px; transition: all 0.15s ease;
+}
+.wb-bubble-toolbar button:hover { background: var(--color-surface-hover); color: var(--color-text); }
+.wb-bubble-sep { width: 1px; height: 14px; background: var(--color-glass-border); }
+
+/* ===== Tiptap 编辑器样式 ===== */
+.tiptap-editor-wrapper { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.tiptap-editor-wrapper .ProseMirror {
+    flex: 1; outline: none; font-size: 14px; line-height: 1.7;
+    color: var(--color-text); caret-color: var(--color-accent); padding: 0;
+    word-wrap: break-word; overflow-wrap: break-word; min-height: 200px;
+}
+.tiptap-editor-wrapper .ProseMirror p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder); float: left; color: var(--color-text-tertiary);
+    pointer-events: none; height: 0;
+}
+.ProseMirror h1 { font-size: 22px; font-weight: 700; margin: 12px 0 6px; line-height: 1.3; }
+.ProseMirror h2 { font-size: 18px; font-weight: 600; margin: 10px 0 4px; line-height: 1.3; }
+.ProseMirror h3 { font-size: 15px; font-weight: 600; margin: 8px 0 4px; line-height: 1.4; }
+.ProseMirror p  { margin: 2px 0; }
+.ProseMirror ul, .ProseMirror ol { padding-left: 20px; margin: 4px 0; }
+.ProseMirror li { margin: 2px 0; }
+
+/* 任务列表 */
+.ProseMirror ul[data-type="taskList"] { list-style: none; padding-left: 4px; }
+.ProseMirror ul[data-type="taskList"] li { display: flex; align-items: flex-start; gap: 6px; margin: 2px 0; }
+.ProseMirror ul[data-type="taskList"] li > label { flex-shrink: 0; margin-top: 3px; user-select: none; }
+.ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--color-accent); cursor: pointer; margin: 0; }
+.ProseMirror ul[data-type="taskList"] li > div { flex: 1; min-width: 0; }
+.ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-through; opacity: 0.5; }
+.ProseMirror blockquote {
+    border-left: 3px solid var(--color-accent); padding: 4px 12px; margin: 6px 0;
+    color: var(--color-text-secondary); background: var(--color-surface-subtle); border-radius: 0 4px 4px 0;
+}
+.ProseMirror code { background: var(--color-surface); padding: 1px 5px; border-radius: 4px; font-family: var(--font-mono); font-size: .92em; color: var(--color-accent); }
+.ProseMirror pre {
+    background: var(--color-surface-muted); border: 1px solid var(--color-glass-border); border-radius: 6px;
+    padding: 10px 14px; margin: 6px 0; font-family: var(--font-mono); font-size: 12px;
+    line-height: 1.5; overflow-x: auto; white-space: pre-wrap; word-break: break-all;
+}
+.ProseMirror pre code { background: none; padding: 0; font-size: inherit; color: var(--color-text); }
+.ProseMirror hr { border: none; border-top: 1px solid var(--color-glass-border); margin: 12px 0; }
+
+/* Tiptap 浮动气泡工具栏 */
+.tiptap-bubble-toolbar {
+    display: none; align-items: center; gap: 2px; padding: 4px 6px;
+    background: var(--color-bg-elevated); border: 1px solid var(--color-glass-border);
+    border-radius: 10px; box-shadow: var(--shadow-lg);
+    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+    z-index: 2800; user-select: none; animation: bubbleIn .12s ease;
+}
+@keyframes bubbleIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+.tiptap-bubble-btn {
+    width: 28px; height: 28px; border: none; border-radius: 6px; background: transparent;
+    color: var(--color-text-secondary); font-size: 12px; font-weight: 600;
+    font-family: var(--font-sans); cursor: pointer; display: flex; align-items: center;
+    justify-content: center; padding: 0; transition: all .1s ease; flex-shrink: 0;
+}
+.tiptap-bubble-btn:hover { background: var(--color-surface-hover); color: var(--color-text); }
+.tiptap-bubble-btn.active { background: var(--color-accent); color: var(--color-text-inverse); }
+.tiptap-bubble-btn:disabled { opacity: .3; cursor: default; }
+.tiptap-bubble-sep { width: 1px; height: 14px; background: var(--color-glass-border); margin: 0 2px; flex-shrink: 0; }
+
+/* Tiptap 固定置顶工具栏 */
+.tiptap-fixed-toolbar {
+    display: flex; align-items: center; gap: 2px; padding: 4px 8px;
+    background: var(--color-bg-elevated); border: var(--card-border);
+    border-radius: 8px; margin-bottom: 8px; flex-shrink: 0; flex-wrap: wrap;
+    position: sticky; top: 0; z-index: 99;
+    box-shadow: var(--shadow-sm); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+}
+.tiptap-fixed-btn {
+    width: 30px; height: 28px; border: none; border-radius: 5px;
+    background: transparent; color: var(--color-text-secondary);
+    font-size: 12px; font-family: var(--font-sans); cursor: pointer;
+    display: flex; align-items: center; justify-content: center; padding: 0;
+    transition: all 0.1s ease; flex-shrink: 0;
+}
+.tiptap-fixed-btn:hover { background: var(--color-surface-hover); color: var(--color-text); }
+.tiptap-fixed-btn.active { background: var(--color-accent); color: var(--color-text-inverse); }
+.tiptap-fixed-btn:disabled { opacity: 0.3; cursor: default; }
+.tiptap-fixed-heading-select {
+    height: 28px; padding: 0 6px; border: 1px solid var(--color-glass-border); border-radius: 5px;
+    background: var(--color-surface); color: var(--color-text);
+    font-size: 11px; font-family: var(--font-sans); cursor: pointer; outline: none; flex-shrink: 0;
+}
+.tiptap-fixed-heading-select:focus { border-color: var(--color-accent); }
+.tiptap-fixed-sep { width: 1px; height: 18px; background: var(--color-glass-border); margin: 0 4px; flex-shrink: 0; }
+
+/* 编辑器 body + 字数统计 */
+.wb-notes-editor-body { flex: 1; display: flex; flex-direction: column; }
+.wb-note-editable {
+    flex: 1; border: 0; outline: 0; background: transparent;
+    color: var(--color-text); font-family: var(--font-sans);
+    font-size: 13px; line-height: 1.7; resize: none; padding: 0;
+}
+.wb-note-editable:empty::before { content: attr(placeholder); color: var(--color-text-tertiary); }
+.wb-note-word-count { text-align: right; font-size: 10px; color: var(--color-text-tertiary); margin-top: 8px; }

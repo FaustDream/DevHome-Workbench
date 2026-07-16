@@ -2,26 +2,31 @@
  * DevHome Workbench - 构建脚本
  *
  * 用法:
- *   node build.mjs           # 开发构建（不压缩，含 sourcemap）
- *   node build.mjs --prod    # 生产构建（压缩 + 不含 sourcemap）
+ *   node build.mjs              # 开发构建（不压缩，含 sourcemap）
+ *   node build.mjs --prod       # 生产构建（压缩 + 不含 sourcemap）
+ *   node build.mjs --bundle     # 业务代码打包为 js/bundle.js
+ *   node build.mjs --prod --bundle  # 生产模式 + 业务代码打包
  *
  * 构建目标:
  *   1. 编译 js/components/ui/*.jsx → js/ui-components/*.js（React 组件）
  *   2. 打包 js/tiptap-editor.js → js/tiptap-bundle.js（Tiptap 编辑器）
+ *   3. [--bundle] 业务代码打包：js/main.js + 所有依赖 → js/bundle.js
+ *   4. [--bundle] CSS 合并：12 个 CSS 文件按顺序合并 → css/bundle.css
  */
 import * as esbuild from 'esbuild';
-import { readdirSync, mkdirSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { readdirSync, mkdirSync, existsSync, readFileSync, writeFileSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const isProd = process.argv.includes('--prod');
+const doBundle = process.argv.includes('--bundle');
 
 // 根据模式调整构建参数
 const minify = isProd;
 const sourcemap = isProd ? false : 'inline';
 const modeLabel = isProd ? 'production' : 'development';
-console.log('[build] 构建模式: ' + modeLabel);
+console.log('[build] 构建模式: ' + modeLabel + (doBundle ? ' + bundle' : ''));
 
 const srcDir = join(__dirname, 'js', 'components', 'ui');
 const outDir = join(__dirname, 'js', 'ui-components');
@@ -89,15 +94,138 @@ const tiptapSize = tiptapResult.outputFiles.reduce((s, f) => s + f.bytes, 0);
 writeFileSync(join(__dirname, 'js', 'tiptap-bundle.js'), tiptapResult.outputFiles[0].contents);
 console.log('[build] ✓ tiptap-editor.js → js/tiptap-bundle.js (' + formatSize(tiptapSize) + ')');
 
+// ===== 3. [--bundle] 业务代码打包 =====
+if (doBundle) {
+    console.log('[build] 打包业务代码...');
+    // 业务 JS 依赖顺序（与 index.html 中 <script> 标签顺序一致）
+    // 注意：不包含 React/Tiptap/Shadcn 编译产物和外部库（marked/dayjs）
+    const businessFiles = [
+        'js/secrets.js',
+        'js/config.js',
+        'js/logger.js',
+        'js/storage.js',
+        'js/storageV2.js',
+        'js/fileConfig.js',
+        'js/state.js',
+        'js/utils.js',
+        'js/ai-providers.js',
+        'js/ai-modules.js',
+        'js/ai-chat.js',
+        'js/quotes.js',
+        'js/weather.js',
+        'js/dailyGreetingCard.js',
+        'js/favicon.js',
+        'js/theme-manager.js',
+        'js/bgManager.js',
+        'js/pageManager.js',
+        'js/tiles.js',
+        'js/categoryUI.js',
+        'js/ui.js',
+        'js/search.js',
+        'js/notes.js',
+        'js/export.js',
+        'js/workbench.js',
+        'js/events.js',
+        'js/main.js'
+    ];
+
+    // 使用 esbuild 的 stdin + virtual module 将多个文件拼接为一个 bundle
+    // 策略：创建一个虚拟入口文件，按顺序注入每个文件的 IIFE 代码
+    let combinedSource = '';
+    businessFiles.forEach(function (file) {
+        const fullPath = join(__dirname, file);
+        if (existsSync(fullPath)) {
+            const code = readFileSync(fullPath, 'utf8');
+            // 直接拼接所有 IIFE 模块的源码
+            combinedSource += '\n/* === ' + file + ' === */\n' + code + '\n';
+        } else {
+            console.warn('[build] 跳过不存在的文件: ' + file);
+        }
+    });
+
+    // 通过 esbuild 压缩（仅压缩，不做 tree-shaking，因为 IIFE 无法静态分析依赖）
+    const bundleResult = await esbuild.build({
+        stdin: {
+            contents: combinedSource,
+            resolveDir: join(__dirname, 'js'),
+            loader: 'js'
+        },
+        outfile: join(__dirname, 'js', 'bundle.js'),
+        bundle: false,
+        format: 'iife',
+        target: 'es2017',
+        minify,
+        sourcemap,
+        write: false,
+        banner: { js: '/* DevHome Workbench - 业务代码打包 (' + modeLabel + ') */\n' }
+    });
+
+    const bundleSize = bundleResult.outputFiles.reduce((s, f) => s + f.bytes, 0);
+    writeFileSync(join(__dirname, 'js', 'bundle.js'), bundleResult.outputFiles[0].contents);
+    console.log('[build] ✓ 业务代码打包 → js/bundle.js (' + formatSize(bundleSize) + ')');
+    console.log('[build] 包含 ' + businessFiles.length + ' 个业务文件');
+
+    // ===== 4. [--bundle] CSS 合并 =====
+    console.log('[build] 合并 CSS 文件...');
+    // CSS 合并顺序：tokens → themes/default → base → 组件CSS（与 index.html 加载顺序一致）
+    const cssFiles = [
+        'css/tokens.css',
+        'css/themes/default.css',
+        'css/base.css',
+        'css/fonts.css',
+        'css/time-search.css',
+        'css/tiles.css',
+        'css/overlays.css',
+        'css/workbench.css',
+        'css/ai-chat.css',
+        'css/daily-greeting-card.css',
+        'css/sidepanel.css',
+        'css/tailwind-base.css'
+    ];
+
+    let combinedCss = '/* DevHome Workbench - CSS 合并 (' + modeLabel + ') */\n';
+    cssFiles.forEach(function (file) {
+        const fullPath = join(__dirname, file);
+        if (existsSync(fullPath)) {
+            let css = readFileSync(fullPath, 'utf8');
+            // 生产模式：去除注释和多余空白
+            if (isProd) {
+                css = css
+                    .replace(/\/\*[\s\S]*?\*\//g, '')  // 去除块注释
+                    .replace(/\/\/.*$/gm, '')            // 去除行注释
+                    .replace(/\n\s*\n/g, '\n')           // 合并空行
+                    .replace(/[ \t]+/g, ' ')             // 合并空格
+                    .replace(/;\s*/g, ';\n')             // 每条规则换行
+                    .trim();
+            }
+            combinedCss += '\n/* === ' + file + ' === */\n' + css + '\n';
+        } else {
+            console.warn('[build] 跳过不存在的CSS: ' + file);
+        }
+    });
+
+    writeFileSync(join(__dirname, 'css', 'bundle.css'), combinedCss, 'utf8');
+    const cssSize = statSync(join(__dirname, 'css', 'bundle.css')).size;
+    console.log('[build] ✓ CSS 合并 → css/bundle.css (' + formatSize(cssSize) + ')');
+    console.log('[build] 包含 ' + cssFiles.length + ' 个 CSS 文件');
+}
+
 // ===== 构建总结 =====
-const totalJs = entries.reduce((_, f) => {
+let totalJs = 0;
+entries.forEach(function (f) {
     const p = join(outDir, f.replace('.jsx', '.js'));
-    return existsSync(p) ? 0 : 0; // already counted
-}, 0);
+    if (existsSync(p)) {
+        totalJs += statSync(p).size;
+    }
+});
 console.log('\n[build] ' + modeLabel + ' 构建完成');
+console.log('[build] 组件总计: ' + formatSize(totalJs));
 if (isProd) {
     console.log('[build] 已启用: JS 压缩 + console 剔除 + SourceMap 关闭');
     console.log('[build] 生产构建适合发布，开发构建保留 sourcemap 用于调试');
+}
+if (doBundle) {
+    console.log('[build] 已启用: 业务代码打包 + CSS 合并');
 }
 
 function formatSize(bytes) {

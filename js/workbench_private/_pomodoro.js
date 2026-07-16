@@ -1,0 +1,290 @@
+/**
+ * DevHome Workbench - 番茄钟控制
+ * 从 workbench.js 拆分，职责：番茄钟开始/暂停/重置、模式切换、显示更新、后台状态同步
+ */
+window.DevHome = window.DevHome || {};
+(function (ns) {
+    'use strict';
+
+    var state = ns.state;
+
+    /* ===== 辅助函数 ===== */
+
+    /** 更新番茄钟时间显示 */
+    function _pomoUpdateTimeEls(textFn) {
+        var timeEl = document.getElementById('wbPomodoroSideTime');
+        var text = textFn();
+        if (timeEl) timeEl.textContent = text;
+    }
+
+    /** 设置进度环偏移 */
+    function _pomoUpdateProgress(offset, total) {
+        var el = document.getElementById('wbPomodoroSideProgress');
+        var circumference = 402.12; // r=64 → 2*PI*64
+        if (el) el.setAttribute('stroke-dashoffset', String(offset * circumference / total));
+    }
+
+    /** 格式化秒数为 MM:SS */
+    function _formatTime(seconds) {
+        var m = Math.floor(seconds / 60);
+        var s = Math.floor(seconds % 60);
+        return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    }
+
+    /** 停止正计时本地定时器 */
+    function _stopCountUpTimer() {
+        if (state._pomodoroCountUpTimer) {
+            clearInterval(state._pomodoroCountUpTimer);
+            state._pomodoroCountUpTimer = null;
+        }
+    }
+
+    /* ===== 模式与时长切换 ===== */
+
+    /** 切换倒计时/正计时模式 */
+    ns.togglePomodoroMode = function (mode) {
+        state.pomodoroCountUp = (mode === 'countup');
+        document.querySelectorAll('.wb-pomodoro-mode-btn').forEach(function (btn) {
+            btn.classList.toggle('active', btn.dataset.mode === mode);
+        });
+        // 正计时模式下隐藏快捷按钮，倒计时模式显示
+        var quickRow = document.querySelector('.wb-pomodoro-sidebar-quick');
+        if (quickRow) quickRow.style.display = mode === 'countup' ? 'none' : '';
+        ns.updatePomodoroDisplay();
+        console.log('[模式] 番茄钟切换到' + (mode === 'countup' ? '正计时' : '倒计时'));
+    };
+
+    /** 切换自动循环开关 */
+    ns.togglePomodoroAutoCycle = function () {
+        state.pomodoroAutoCycle = !state.pomodoroAutoCycle;
+        var btn = document.getElementById('wbPomodoroAutoCycleBtn');
+        if (btn) {
+            btn.classList.toggle('active', state.pomodoroAutoCycle);
+            btn.textContent = state.pomodoroAutoCycle ? '循环中' : '单次';
+        }
+        console.log('[模式] 自动循环 ' + (state.pomodoroAutoCycle ? '开启' : '关闭'));
+    };
+
+    /** 修改休息时长 */
+    ns.setPomodoroRestDuration = function (minutes) {
+        var m = parseInt(minutes) || 5;
+        m = Math.max(1, Math.min(30, m));
+        state.pomodoroRestDuration = m;
+        var input = document.getElementById('wbPomodoroRestInput');
+        if (input) input.value = m;
+        console.log('[编辑] 休息时长设为 ' + m + ' 分钟');
+    };
+
+    /** 设置番茄钟时长 */
+    ns.setPomodoroDuration = function (duration) {
+        state.pomodoroDuration = duration;
+        // 更新快捷圆形按钮 active 状态
+        document.querySelectorAll('.wb-pomodoro-quick-btn').forEach(function (btn) {
+            btn.classList.toggle('active', parseInt(btn.dataset.duration) === duration);
+        });
+        ns.updatePomodoroDisplay();
+    };
+
+    /* ===== 显示更新 ===== */
+
+    ns.updatePomodoroDisplay = function () {
+        if (state.pomodoroCountUp) {
+            _pomoUpdateTimeEls(function () { return '00:00'; });
+        } else {
+            var text = String(state.pomodoroDuration).padStart(2, '0') + ':00';
+            _pomoUpdateTimeEls(function () { return text; });
+        }
+        var labelEl = document.getElementById('wbPomodoroLabel');
+        if (labelEl) labelEl.textContent = '准备开始';
+        _pomoUpdateProgress(0, 100);
+    };
+
+    /** 渲染番茄钟任务选择器下拉 */
+    ns.renderPomodoroTaskSelector = function () {
+        var sel = document.getElementById('wbPomodoroTaskSelect');
+        if (!sel) return;
+        var config = ns.getWorkbenchState();
+        var options = '<option value="">无关联</option>';
+        var qLabels = { q1: '重急', q2: '重缓', q3: '轻急', q4: '轻缓' };
+        ns.forEachQuadrant(function (q) {
+            var tasks = (config.quadrants[q] && config.quadrants[q].tasks) || [];
+            tasks.forEach(function (t) {
+                if (t.status === 'active') {
+                    options += '<option value="' + t.id + '">[' + qLabels[q] + '] ' + ns.escapeHtml(t.title.slice(0, 20)) + '</option>';
+                }
+            });
+        });
+        var currentVal = sel.value;
+        sel.innerHTML = options;
+        if (currentVal) {
+            // 保持之前的选择（如果该任务仍存在）
+            var exists = sel.querySelector('option[value="' + currentVal + '"]');
+            if (exists) sel.value = currentVal;
+        }
+        sel.addEventListener('change', function () {
+            state._pomodoroTaskId = sel.value || null;
+            console.log('[编辑] 番茄钟关联任务 ' + (state._pomodoroTaskId || '无'));
+        });
+    };
+
+    /* ===== 番茄钟控制 ===== */
+
+    /** 启动番茄钟，支持直接传入时长参数 */
+    ns.startPomodoro = function (duration) {
+        // 如果传入时长，先设置
+        if (typeof duration === 'number' && duration > 0) {
+            state.pomodoroDuration = duration;
+            document.querySelectorAll('.wb-pomodoro-quick-btn').forEach(function (btn) {
+                btn.classList.toggle('active', parseInt(btn.dataset.duration) === duration);
+            });
+        }
+
+        // 停止旧的正计时定时器
+        _stopCountUpTimer();
+
+        // 正计时模式：启动本地 count-up 定时器
+        if (state.pomodoroCountUp) {
+            state._pomodoroCountUpSeconds = 0;
+            _pomoUpdateTimeEls(function () { return '00:00'; });
+            _pomoUpdateProgress(100, 100); // 空环
+            state._pomodoroCountUpTimer = setInterval(function () {
+                state._pomodoroCountUpSeconds = (state._pomodoroCountUpSeconds || 0) + 1;
+                var s = state._pomodoroCountUpSeconds;
+                _pomoUpdateTimeEls(function () { return _formatTime(s); });
+                // 进度环：以2小时为上限从空到满
+                var progress = Math.min(s / 7200, 1);
+                _pomoUpdateProgress((1 - progress) * 100, 100);
+            }, 1000);
+        }
+
+        // 通知后台 service worker（倒计时需要，正计时发送大时长用于通知节点）
+        if (typeof chrome !== 'undefined' && chrome.runtime) {
+            var taskId = state._pomodoroTaskId || null;
+            var taskTitle = '';
+            if (taskId) {
+                var config = ns.getWorkbenchState();
+                ns.forEachQuadrant(function (q) {
+                    var tasks = (config.quadrants[q] && config.quadrants[q].tasks) || [];
+                    tasks.forEach(function (t) {
+                        if (t.id === taskId) taskTitle = t.title;
+                    });
+                });
+            }
+            chrome.runtime.sendMessage({
+                type: 'POMODORO_START',
+                data: {
+                    duration: state.pomodoroCountUp ? 999 : state.pomodoroDuration,
+                    restDuration: state.pomodoroRestDuration,
+                    type: state.pomodoroMode,
+                    countUp: state.pomodoroCountUp,
+                    autoCycle: state.pomodoroAutoCycle,
+                    taskId: taskId,
+                    taskTitle: taskTitle
+                }
+            });
+        }
+        var modeLabel = state.pomodoroCountUp ? '正计时' : (state.pomodoroDuration + '分');
+        console.log('[交互] 番茄钟 开始 ' + modeLabel);
+        var sideStart = document.getElementById('wbPomodoroSideStart');
+        var sideReset = document.getElementById('wbPomodoroSideReset');
+        if (sideStart) { sideStart.textContent = '暂停'; sideStart.classList.add('is-running'); }
+        if (sideReset) sideReset.style.display = '';
+        var labelEl = document.getElementById('wbPomodoroLabel');
+        if (labelEl) labelEl.textContent = '专注中...';
+    };
+
+    ns.pausePomodoro = function () {
+        console.log('[交互] 番茄钟 暂停');
+        _stopCountUpTimer();
+        if (typeof chrome !== 'undefined' && chrome.runtime) {
+            chrome.runtime.sendMessage({ type: 'POMODORO_PAUSE' });
+        }
+        var sideStart = document.getElementById('wbPomodoroSideStart');
+        if (sideStart) { sideStart.textContent = '继续'; sideStart.classList.remove('is-running'); }
+        var labelEl = document.getElementById('wbPomodoroLabel');
+        if (labelEl) labelEl.textContent = '已暂停';
+    };
+
+    ns.resetPomodoro = function () {
+        console.log('[交互] 番茄钟 重置');
+        _stopCountUpTimer();
+        state._pomodoroCountUpSeconds = 0;
+        if (typeof chrome !== 'undefined' && chrome.runtime) {
+            chrome.runtime.sendMessage({ type: 'POMODORO_STOP' });
+        }
+        var sideStart = document.getElementById('wbPomodoroSideStart');
+        if (sideStart) { sideStart.textContent = '开始'; sideStart.classList.remove('is-running'); }
+        ns.updatePomodoroDisplay();
+    };
+
+    /* ===== 后台番茄钟状态监听（倒计时模式显示更新） =====
+       页面端本地自走秒：后台 SW 可能因休眠而停止广播，故此处依据
+       phaseStartAt + phaseTotalSeconds 在本地推算剩余时间，保证显示不卡住。 */
+    function _pomoApplyState(data) {
+        if (state.pomodoroCountUp) return; // 正计时由本地 setInterval 控制
+        state._pomodoroLastState = data;
+
+        // 本地推算剩余秒数（SW 休眠时仍可正确倒计时）
+        var remaining = data.remaining;
+        if (data.active && data.phaseStartAt) {
+            remaining = Math.max(0, data.phaseTotalSeconds - Math.floor((Date.now() - data.phaseStartAt) / 1000));
+        }
+
+        // 更新休息/工作状态
+        state._pomodoroIsResting = data.isResting || false;
+        state._pomodoroSessionCount = data.sessionCount || 0;
+
+        var modeEl = document.getElementById('wbPomodoroModeLabel');
+
+        // 番茄钟停止（非自动循环模式主动停止）
+        if (!data.active && remaining <= 0) {
+            var sideStart = document.getElementById('wbPomodoroSideStart');
+            if (sideStart) { sideStart.textContent = '开始'; sideStart.classList.remove('is-running'); }
+            if (modeEl) { modeEl.textContent = ''; modeEl.className = 'wb-pomodoro-mode-label'; }
+            _stopPomodoroDisplayTimer();
+            ns.updatePomodoroDisplay();
+            return;
+        }
+
+        // 更新模式标签
+        if (modeEl && data.active) {
+            var sessionInfo = data.sessionCount > 0 ? ' #' + data.sessionCount : '';
+            modeEl.textContent = data.isResting ? '休息中' + sessionInfo : '工作中' + sessionInfo;
+            modeEl.className = 'wb-pomodoro-mode-label ' + (data.isResting ? 'resting' : 'working');
+        }
+
+        // 更新时间和进度环
+        _pomoUpdateTimeEls(function () { return _formatTime(remaining); });
+        var phaseDuration = data.isResting ? data.restDuration : data.duration;
+        var total = phaseDuration * 60;
+        if (total > 0) {
+            _pomoUpdateProgress(remaining / total * 100, 100);
+        }
+    }
+
+    function _stopPomodoroDisplayTimer() {
+        if (state._pomodoroDisplayTimer) {
+            clearInterval(state._pomodoroDisplayTimer);
+            state._pomodoroDisplayTimer = null;
+        }
+    }
+
+    if (typeof chrome !== 'undefined' && chrome.runtime) {
+        chrome.runtime.onMessage.addListener(function (message) {
+            if (message.type !== 'POMODORO_STATE' || !message.data) return;
+            var data = message.data;
+
+            // 启动/停止本地自走秒定时器（仅运行期间）
+            if (data.active && !state._pomodoroDisplayTimer) {
+                state._pomodoroDisplayTimer = setInterval(function () {
+                    if (state._pomodoroLastState) _pomoApplyState(state._pomodoroLastState);
+                }, 1000);
+            } else if (!data.active && state._pomodoroDisplayTimer) {
+                _stopPomodoroDisplayTimer();
+            }
+
+            _pomoApplyState(data);
+        });
+    }
+
+})(window.DevHome);

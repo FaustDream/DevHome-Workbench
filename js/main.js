@@ -48,6 +48,41 @@ window.DevHome = window.DevHome || {};
         ns.$$('.shortcut-columns-btn').forEach(function (btn) { btn.classList.toggle('active', btn.dataset.shortcutColumns === key); });
     };
 
+    /* ===== F5 布局系统启动时应用 ===== */
+    ns.applyLayoutConfig = function () {
+        var config;
+        try {
+            var raw = localStorage.getItem('tabpage_layout_config');
+            if (raw) {
+                config = JSON.parse(raw);
+                config = Object.assign({}, ns.DEFAULT_LAYOUT_CONFIG, config, {
+                    custom: Object.assign({}, ns.DEFAULT_LAYOUT_CONFIG.custom, config.custom || {})
+                });
+            } else {
+                config = Object.assign({}, ns.DEFAULT_LAYOUT_CONFIG, {
+                    custom: Object.assign({}, ns.DEFAULT_LAYOUT_CONFIG.custom)
+                });
+            }
+        } catch (e) {
+            config = Object.assign({}, ns.DEFAULT_LAYOUT_CONFIG, {
+                custom: Object.assign({}, ns.DEFAULT_LAYOUT_CONFIG.custom)
+            });
+        }
+
+        var root = document.documentElement;
+        if (config.mode === 'preset') {
+            var preset = ns.LAYOUT_PRESETS[config.preset] || ns.LAYOUT_PRESETS['2x6'];
+            root.style.setProperty('--shortcut-columns', preset.columns);
+        } else {
+            var c = config.custom;
+            root.style.setProperty('--shortcut-columns', c.columns);
+            root.style.setProperty('--shortcut-gap', c.colGap + 'px');
+            root.style.setProperty('--shortcut-row-gap', c.rowGap + 'px');
+            root.style.setProperty('--shortcut-icon', c.iconSize + 'px');
+        }
+        console.log('[布局] 启动应用 模式=' + config.mode + ' 预设=' + config.preset);
+    };
+
     /* ===== 时间更新 =====
        使用 setInterval 每秒刷新（而非 requestAnimationFrame）：
        rAF 在标签页隐藏时会暂停，导致时钟停走；且 60fps 轮询分钟级变化属于浪费。 */
@@ -130,6 +165,8 @@ window.DevHome = window.DevHome || {};
         ns.initEngine();
         ns.applyShortcutSize(storage.get('shortcut_size', ns.DEFAULT_SHORTCUT_SIZE), false);
         ns.applyShortcutColumns(storage.get('shortcut_columns', ns.DEFAULT_SHORTCUT_COLUMNS), false);
+        // F5 布局系统：启动时应用保存的布局配置
+        ns.applyLayoutConfig();
         ns.openFaviconDB();
         await ns.tileManager.load();
         ns.loadSearchHistory();
@@ -137,6 +174,10 @@ window.DevHome = window.DevHome || {};
         if (ns.initWeather) ns.initWeather();
         // 左上角每日问候卡片
         if (ns.initDailyGreetingCard) ns.initDailyGreetingCard();
+        // 右上角日程倒计时卡片
+        if (ns.initCountdown) ns.initCountdown();
+        // 壁纸功能初始化（加载已保存的壁纸和设置）
+        if (ns.initWallpaper) ns.initWallpaper();
 
         var autoFocusOn = storage.get('auto_focus', false);
         if (dom.autoFocusText) dom.autoFocusText.textContent = autoFocusOn ? '自动聚焦：开' : '自动聚焦：关';
@@ -155,6 +196,8 @@ window.DevHome = window.DevHome || {};
 
         ns.applyCategoryButtonMode(true, false);
         ns.syncSettingsControls();
+        // 同步任务通知设置面板状态
+        if (ns.syncTaskNotifySettings) ns.syncTaskNotifySettings();
         ns.bindEvents();
         updateTime();
 

@@ -639,6 +639,21 @@ window.DevHome = window.DevHome || {};
         ns.renderNotesList(state._notesFilter, state._notesSearch);
     };
 
+    /** 清理 HTML 中的空白标签，解决复制笔记产生大量空白行的问题 */
+    ns.cleanEmptyHTML = function (html) {
+        if (!html || typeof html !== 'string') return html || '';
+        // 移除空的 <p></p> 标签（Tiptap 复制时产生的空白段落）
+        var cleaned = html.replace(/<p>\s*<\/p>/gi, '');
+        // 移除连续 <br> 标签（保留最多1个）
+        cleaned = cleaned.replace(/(<br\s*\/?>\s*){2,}/gi, '<br>');
+        // 移除开头和结尾的空白段落
+        cleaned = cleaned.replace(/^(<p>\s*<\/p>)+/i, '');
+        cleaned = cleaned.replace(/(<p>\s*<\/p>)+$/i, '');
+        // 移除只有 <br> 的空 <p> 标签
+        cleaned = cleaned.replace(/<p>\s*(<br\s*\/?>\s*)*\s*<\/p>/gi, '');
+        return cleaned;
+    };
+
     /** 保存当前编辑的笔记/捕获（从 Tiptap 获取内容） */
     ns.saveCurrentNote = async function () {
         if (!state.currentNote) return;
@@ -646,6 +661,7 @@ window.DevHome = window.DevHome || {};
 
         if (isCapture) {
             var capContent = (_tiptapInstanceId && ns.tiptapEditor) ? ns.tiptapEditor.getHTML(_tiptapInstanceId) : '';
+            capContent = ns.cleanEmptyHTML(capContent);
             await ns.updateCapture(state.currentNote.id, capContent);
             ns.renderCaptures();
             ns.renderNotesList(state._notesFilter, state._notesSearch);
@@ -660,10 +676,12 @@ window.DevHome = window.DevHome || {};
         }
 
         var docHTML = (_tiptapInstanceId && ns.tiptapEditor) ? ns.tiptapEditor.getHTML(_tiptapInstanceId) : '';
+        // 清理空白标签，解决复制笔记产生大量空白行的问题
+        docHTML = ns.cleanEmptyHTML(docHTML);
         var wordCount = ns.countWords(docHTML);
 
         if (!docHTML && state.currentNote.content) {
-            docHTML = state.currentNote.content;
+            docHTML = ns.cleanEmptyHTML(state.currentNote.content);
             wordCount = ns.countWords(docHTML);
         }
 

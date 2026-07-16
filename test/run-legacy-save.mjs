@@ -1,15 +1,14 @@
 /**
  * DevHome Workbench - 测试运行器（自动生成输出汇总）
  *
- * 执行测试套件并将结果写入 tests/tests_output.txt，同时输出到控制台。
+ * 执行测试套件并将结果写入 test/tests_output.txt，同时输出到控制台。
  * 用于构建流程中自动化测试验证，输出文件即测试汇总报告。
  *
- * 用法: node tests/run-and-save.mjs
- * npm:  npm test
+ * 用法: node test/run-legacy-save.mjs
  *
  * 输出:
  *   - 控制台：实时测试进度和结果
- *   - tests/tests_output.txt：完整测试报告（ANSI 颜色码已保留）
+ *   - test/tests_output.txt：完整测试报告（ANSI 颜色码已保留）
  *   - 退出码：0=全部通过，1=存在失败
  */
 import { spawn } from 'node:child_process';
@@ -19,7 +18,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, '..');
-const testRunner = resolve(__dirname, 'run-tests.mjs');
+const testRunner = resolve(__dirname, '11-legacy-tests.mjs');
 const outputFile = resolve(__dirname, 'tests_output.txt');
 const outputDir = dirname(outputFile);
 
@@ -32,8 +31,8 @@ if (!existsSync(outputDir)) {
 const header = [
     '# DevHome Workbench — 测试输出汇总',
     '# 生成时间: ' + new Date().toISOString().replace('T', ' ').slice(0, 19),
-    '# 测试脚本: tests/run-tests.mjs',
-    '# 测试输出: tests/tests_output.txt',
+    '# 测试脚本: test/11-legacy-tests.mjs',
+    '# 测试输出: test/tests_output.txt',
     '# ============================================================\n'
 ].join('\n') + '\n';
 
@@ -74,7 +73,7 @@ child.on('close', function (code) {
     writeFileSync(outputFile, fullReport, 'utf8');
 
     const fileSize = statSync(outputFile).size;
-    console.log('\n[test] 测试报告已写入: tests/tests_output.txt (' + formatSize(fileSize) + ')');
+    console.log('\n[test] 测试报告已写入: test/tests_output.txt (' + formatSize(fileSize) + ')');
 
     // 传递退出码
     if (code !== 0) {
