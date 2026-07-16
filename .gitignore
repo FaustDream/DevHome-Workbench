@@ -19,3 +19,6 @@ js/secrets.js
 
 # Node.js 依赖（仅构建时使用，npm install 恢复）
 node_modules/
+
+# 测试文件
+test/
