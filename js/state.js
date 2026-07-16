@@ -185,7 +185,11 @@ window.DevHome = window.DevHome || {};
         _customTypeIcons: {},            // 自定义类型图标映射表（key→icon）
         notebooks: [],                    // 笔记本列表
         _notebookFilter: null,           // 当前筛选的笔记本 ID（null = 全部笔记）
-        _lastNotebookId: null            // 上次选中的笔记本 ID（跨会话记住）
+        _lastNotebookId: null,           // 上次选中的笔记本 ID（跨会话记住）
+        _notesFilter: 'all',             // 当前笔记类型筛选（'all' | 'note' | 'capture' | 自定义typeKey）
+        _notesSearch: '',                // 当前笔记搜索关键词
+        _savedNotebookFilter: null,      // 离开专注模式前暂存的笔记本筛选 ID
+        _savedCurrentNoteId: null        // 离开专注模式前暂存的当前笔记 ID
     };
 
 })(window.DevHome);

@@ -61,23 +61,17 @@
         opts = opts || {};
         console.log('[Shadcn弹窗] prompt:', (opts.title || '请输入'), message);
         return new Promise(function (resolve) {
-            // 直接用 ShadcnConfirmDialog 测试渲染通道
-            reactRoot().render(React.createElement(window.ShadcnConfirmDialog, {
+            // 使用 ShadcnPromptDialog（含输入框，支持 Enter/Esc）
+            reactRoot().render(React.createElement(window.ShadcnPromptDialog, {
                 open: true,
-                title: (opts.title || '请输入') + ' — 输入' + (opts.defaultValue ? ' [默认: ' + opts.defaultValue + ']' : ''),
+                title: opts.title || '请输入',
                 message: message || '请输入',
+                defaultValue: opts.defaultValue || '',
                 okLabel: opts.okLabel || '确定',
                 cancelLabel: opts.cancelLabel || '取消',
                 onResolve: function (result) {
-                    if (result) {
-                        // 用户点了确定 → 再用原生 prompt 取输入值
-                        var name = window.prompt(message || '请输入', opts.defaultValue || '');
-                        unmountAll();
-                        resolve(name && name.trim() ? name.trim() : null);
-                    } else {
-                        unmountAll();
-                        resolve(null);
-                    }
+                    unmountAll();
+                    resolve(result);
                 },
             }));
         });

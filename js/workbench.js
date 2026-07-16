@@ -451,6 +451,15 @@ window.DevHome = window.DevHome || {};
         // 保存当前分类页索引和加载快捷键配置，退出时恢复
         state._savedPageIndex = state.currentPage;
 
+        // 记忆当前笔记编辑器状态（退出时恢复）
+        state._savedNotebookFilter = state._notebookFilter;
+        state._savedCurrentNoteId = state.currentNote ? state.currentNote.id : null;
+
+        // 恢复上次选择的笔记本筛选
+        if (state._lastNotebookId) {
+            state._notebookFilter = state._lastNotebookId;
+        }
+
         // 加载快捷键（如果还没加载过）
         if (!state._focusShortcut) {
             storageV2.get(storageV2.KEYS.CONFIG, DEFAULT_V2_CONFIG).then(function (config) {
@@ -506,7 +515,7 @@ window.DevHome = window.DevHome || {};
         try { ns.renderCalendar(new Date()); } catch (e) {
             ns.logger && ns.logger.warn('focus-mode', 'renderCalendar 失败', e.message);
         }
-        try { ns.renderNotesList('all', ''); } catch (e) {
+        try { ns.renderNotesList(state._notesFilter || 'all', state._notesSearch || ''); } catch (e) {
             renderErrors.push('笔记: ' + e.message);
             ns.logger && ns.logger.error('focus-mode', 'renderNotesList 失败', e.message);
         }
@@ -549,6 +558,20 @@ window.DevHome = window.DevHome || {};
     ns.exitFocusMode = function () {
         if (state.currentDevhomeMode === 'daily') return;
         ns.logger && ns.logger.info('focus-mode', 'exitFocusMode 开始');
+
+        // 保存当前编辑器内容并记住笔记本筛选
+        ns.closeNoteEditor().catch(function (e) {
+            ns.logger && ns.logger.warn('focus-mode', 'closeNoteEditor 失败', e.message);
+        });
+
+        // 持久化最后选中的笔记本 ID
+        state._lastNotebookId = state._notebookFilter;
+        storageV2.get(storageV2.KEYS.CONFIG, DEFAULT_V2_CONFIG).then(function (config) {
+            config.lastNotebookId = state._lastNotebookId || null;
+            return storageV2.set(storageV2.KEYS.CONFIG, config);
+        }).catch(function (e) {
+            ns.logger && ns.logger.warn('focus-mode', '保存 lastNotebookId 失败', e.message);
+        });
 
         // 恢复日常模式专属元素
         try {
