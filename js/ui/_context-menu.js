@@ -188,13 +188,6 @@ window.DevHome = window.DevHome || {};
             case 'addTile': ns.openUploadModal(); break;
             case 'openWorkbench': ns.toggleFocusMode(); break;
             case 'addPage': ns.addNewPage(); break;
-            case 'renamePage':
-                const curName = state.pageNames[state.currentPage] || '';
-                ns.showPrompt('输入新的分类名称', { title: '重命名分类', defaultValue: curName }).then(function (newName) {
-                    if (newName && newName !== curName) { ns.tileManager.renameCurrentPage(newName); }
-                });
-                break;
-            case 'removePage': ns.removeCurrentPage(); break;
 
         }
         ns.hideBlankContextMenu();

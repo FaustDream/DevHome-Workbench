@@ -23,6 +23,21 @@ window.DevHome = window.DevHome || {};
                 const pageIdx = parseInt(btn.dataset.page, 10);
                 if (!isNaN(pageIdx) && pageIdx !== state.currentPage) ns.changePageWithAnimation(pageIdx);
             });
+
+            // 双击分类按钮进行重命名
+            dom.catRow.addEventListener('dblclick', function (e) {
+                const btn = e.target.closest('.cat-btn');
+                if (!btn || e.target.closest('.cat-delete-btn')) return;
+                e.preventDefault(); e.stopPropagation();
+                const pageIdx = parseInt(btn.dataset.page, 10);
+                if (isNaN(pageIdx)) return;
+                const curName = state.pageNames[pageIdx] || '';
+                ns.showPrompt('输入新的分类名称', { title: '重命名分类', defaultValue: curName }).then(function (newName) {
+                    if (newName && newName !== curName) { ns.tileManager.renamePageAt(pageIdx, newName); }
+                });
+                console.log('[交互] 双击分类 → 重命名 "' + curName + '"');
+            });
+
             dom.catRow.addEventListener('mousedown', function (e) {
                 const btn = e.target.closest('.cat-btn');
                 if (!btn || e.target.closest('.cat-delete-btn') || e.button !== 0) return;

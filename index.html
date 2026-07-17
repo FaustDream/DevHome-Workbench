@@ -34,23 +34,23 @@
         <div id="bgOverlay"></div>
     </div>
 
-    <div class="container">
-        <!-- 每日问候区域（无缝融合至页面背景，无卡片容器） -->
-        <div class="dh-greeting-area" id="dhGreetingArea" aria-label="每日问候">
-            <div class="dh-greeting-top-row">
-                <span class="dh-greeting-date" id="dhGreetingDate"></span>
-                <span class="dh-weather-badge" id="dhWeatherBadge" style="display:none;">
-                    <span class="dh-weather-icon"></span>
-                    <span class="dh-weather-temp" id="dhWeatherTempText"></span>
-                    <span class="dh-weather-desc" id="dhWeatherDescText"></span>
-                </span>
-            </div>
-            <div class="dh-greeting-main" id="dhGreetingMain"></div>
-            <div class="dh-encourage-row">
-                <span class="dh-encourage-text" id="dhEncourageText"></span>
-            </div>
+    <!-- 每日问候区域（左上角固定定位，无缝融合至页面背景） -->
+    <div class="dh-greeting-area" id="dhGreetingArea" aria-label="每日问候">
+        <div class="dh-greeting-top-row">
+            <span class="dh-greeting-date" id="dhGreetingDate"></span>
+            <span class="dh-weather-badge" id="dhWeatherBadge" style="display:none;">
+                <span class="dh-weather-icon"></span>
+                <span class="dh-weather-temp" id="dhWeatherTempText"></span>
+                <span class="dh-weather-desc" id="dhWeatherDescText"></span>
+            </span>
         </div>
+        <div class="dh-greeting-main" id="dhGreetingMain"></div>
+        <div class="dh-encourage-row">
+            <span class="dh-encourage-text" id="dhEncourageText"></span>
+        </div>
+    </div>
 
+    <div class="container">
         <!-- 文件配置警告条 -->
         <div class="config-warning-bar" id="configWarningBar" style="display:none;">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink:0;">
@@ -378,15 +378,8 @@
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" class="wb-icon"><rect x="1.5" y="2.5" width="11" height="8" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M5 13V10.5h4V13" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span id="ctxFocusModeLabel">进入专注模式</span>
             <kbd class="doc-kbd ctx-kbd" id="ctxFocusModeKey">Ctrl+K</kbd>
         </div>
-        <div class="context-menu-divider ctx-daily-only"></div>
         <div class="context-menu-item ctx-daily-only" data-action="addPage">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 2h6l3 3v7.5H3V2z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 2v3h3M7 7v3M5.5 8.5h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>新建分类</span>
-        </div>
-        <div class="context-menu-item ctx-daily-only" data-action="renamePage">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M10 2l2 2-6 6H4V8l6-6z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>重命名分类</span>
-        </div>
-        <div class="context-menu-item ctx-daily-only" data-action="removePage">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 2h6l3 3v7.5H3V2z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 2v3h3M5.5 8.5h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>删除当前分类</span>
         </div>
     </div>
 
@@ -410,15 +403,7 @@
     <button class="settings-gear-btn" id="settingsGearBtn" type="button" title="设置" aria-label="打开设置">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
             <circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.6"/>
-            <path d="M10 1.2v2.2M10 16.6v2.2M1.2 10h2.2M16.6 10h2.2M3.8 3.8l1.5 1.5M14.7 14.7l1.5 1.5M3.8 16.2l1.5-1.5M14.7 5.3l1.5-1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-            <circle cx="10" cy="2.3" r="0.7" fill="currentColor"/>
-            <circle cx="10" cy="17.7" r="0.7" fill="currentColor"/>
-            <circle cx="2.3" cy="10" r="0.7" fill="currentColor"/>
-            <circle cx="17.7" cy="10" r="0.7" fill="currentColor"/>
-            <circle cx="4.5" cy="4.5" r="0.7" fill="currentColor"/>
-            <circle cx="15.5" cy="15.5" r="0.7" fill="currentColor"/>
-            <circle cx="4.5" cy="15.5" r="0.7" fill="currentColor"/>
-            <circle cx="15.5" cy="4.5" r="0.7" fill="currentColor"/>
+            <path d="M17.4 6.6l-1.0-.4-.7-1.2.3-1.0-1.6-.9-.9.5-1.2-.3-.4-1.1H9.1l-.4 1.1-1.2.3-.9-.5-1.6.9.3 1.0-.7 1.2-1.0.4v1.8l1.0.4.7 1.2-.3 1.0 1.6.9.9-.5 1.2.3.4 1.1h1.8l.4-1.1 1.2-.3.9.5 1.6-.9-.3-1.0.7-1.2 1.0-.4V6.6z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
     </button>
 
