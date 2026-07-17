@@ -10,11 +10,9 @@
     height: 1em;
     flex: 0 0 auto;
     vertical-align: -0.125em;
-    color: currentColor;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
     overflow: visible;
+    /* 不再强制 fill/stroke，由 symbol 自身属性控制颜色 */
+    /* 线条图标用 fill="none" stroke="currentColor"，实心图标用 fill="currentColor" */
 }
 
 .dh-icon--sm { font-size: 12px; }
