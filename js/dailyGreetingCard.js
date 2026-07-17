@@ -1,7 +1,8 @@
 /**
- * 每日问候区域模块（重构版）
+ * 每日问候区域模块（重构版 v2）
  * 问候文本无缝融合至纯色页面背景，无卡片容器。
- * 日期 + 天气 + 时段问候 + 鼓励话语，支持手动刷新。
+ * 日期 + 天气 + 时段问候 + 鼓励话语。
+ * 交互：双击天气徽章刷新天气，双击鼓励话语刷新内容。
  */
 window.DevHome = window.DevHome || {};
 (function (ns) {
@@ -96,12 +97,16 @@ window.DevHome = window.DevHome || {};
         99: { text: '强冰雹', icon: '⛈' }
     };
 
-    /* ===== 渲染鼓励话语文本 ===== */
-    function renderEncourageText(text) {
+    /* ===== 渲染鼓励话语文本（带闪动反馈） ===== */
+    function renderEncourageText(text, animate) {
         let el = document.getElementById('dhEncourageText');
         if (!el) return;
         el.innerHTML = text.replace(/\n/g, '<br>');
-        console.log('[交互] 鼓励话语渲染');
+        if (animate) {
+            el.classList.add('reloading');
+            setTimeout(function () { el.classList.remove('reloading'); }, 400);
+        }
+        console.log('[交互] 鼓励话语渲染' + (animate ? '（双击刷新）' : ''));
     }
 
     /* ===== 渲染全部问候区域（日期 + 问候 + 鼓励） ===== */
@@ -123,7 +128,7 @@ window.DevHome = window.DevHome || {};
         if (mainEl) mainEl.textContent = greeting + '，' + nickname;
 
         // 鼓励话语
-        renderEncourageText(encourage);
+        renderEncourageText(encourage, false);
 
         // 天气：如果已有缓存数据则直接渲染，否则保持隐藏
         renderWeatherFromCache();
@@ -151,7 +156,7 @@ window.DevHome = window.DevHome || {};
         if (tempEl) tempEl.textContent = data.currentTemp + '°';
         if (descEl) descEl.textContent = w.text;
 
-        badge.title = w.text + ' ' + data.currentTemp + '°C · 点击刷新';
+        badge.title = w.text + ' ' + data.currentTemp + '°C · 双击刷新天气';
         badge.style.display = '';
 
         console.log('[每日问候] 天气徽章渲染 → ' + w.text + ' ' + data.currentTemp + '°C');
@@ -166,27 +171,26 @@ window.DevHome = window.DevHome || {};
         badge.style.display = '';
     }
 
-    /* ===== 天气刷新按钮点击处理 ===== */
-    async function onWeatherRefreshClick(e) {
+    /* ===== 天气徽章双击处理 ===== */
+    async function onWeatherDblClick(e) {
         e.preventDefault();
         e.stopPropagation();
-        let btn = document.getElementById('dhWeatherRefreshBtn');
-        if (!btn) return;
+        let badge = document.getElementById('dhWeatherBadge');
+        if (!badge) return;
 
-        console.log('[交互] 点击天气刷新按钮');
-        // 旋转动画
-        btn.classList.add('spinning');
-        setTimeout(function () { btn.classList.remove('spinning'); }, 600);
+        console.log('[交互] 双击天气徽章 → 刷新天气');
+        // 闪动反馈
+        badge.classList.add('reloading');
+        setTimeout(function () { badge.classList.remove('reloading'); }, 400);
 
         showWeatherLoading();
 
         try {
-            // 调用天气模块的手动刷新接口
             if (typeof ns.refreshWeather === 'function') {
                 await ns.refreshWeather();
             }
         } catch (err) {
-            console.warn('[警告] 天气手动刷新失败:', err.message);
+            console.warn('[警告] 天气刷新失败:', err.message);
             let descEl = document.getElementById('dhWeatherDescText');
             if (descEl && descEl.textContent === '刷新中…') {
                 descEl.textContent = '失败';
@@ -194,34 +198,33 @@ window.DevHome = window.DevHome || {};
         }
     }
 
-    /* ===== 鼓励话语刷新按钮点击处理 ===== */
-    function onEncourageRefreshClick(e) {
+    /* ===== 鼓励话语双击处理 ===== */
+    function onEncourageDblClick(e) {
         e.preventDefault();
         e.stopPropagation();
-        let btn = document.getElementById('dhEncourageRefreshBtn');
-        if (!btn) return;
+        let el = document.getElementById('dhEncourageText');
+        if (!el) return;
 
-        console.log('[交互] 点击鼓励话语刷新按钮');
-        btn.classList.add('spinning');
-        setTimeout(function () { btn.classList.remove('spinning'); }, 600);
-
+        console.log('[交互] 双击鼓励话语 → 刷新内容');
         let newText = refreshEncourage();
-        renderEncourageText(newText);
+        renderEncourageText(newText, true);
     }
 
     /* ===== 绑定事件 ===== */
     function bindEvents() {
-        let weatherBtn = document.getElementById('dhWeatherRefreshBtn');
-        if (weatherBtn) {
-            weatherBtn.addEventListener('click', onWeatherRefreshClick);
+        // 天气徽章：双击刷新（不与单击冲突，单击无操作）
+        let weatherBadge = document.getElementById('dhWeatherBadge');
+        if (weatherBadge) {
+            weatherBadge.addEventListener('dblclick', onWeatherDblClick);
         }
 
-        let encBtn = document.getElementById('dhEncourageRefreshBtn');
-        if (encBtn) {
-            encBtn.addEventListener('click', onEncourageRefreshClick);
+        // 鼓励话语：双击刷新
+        let encText = document.getElementById('dhEncourageText');
+        if (encText) {
+            encText.addEventListener('dblclick', onEncourageDblClick);
         }
 
-        console.log('[每日问候] 事件绑定完成');
+        console.log('[每日问候] 事件绑定完成（双击交互）');
     }
 
     /* ===== 更新日期（每分钟检查跨日） ===== */

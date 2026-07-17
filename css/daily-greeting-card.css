@@ -16,6 +16,12 @@
     from { opacity: 0; transform: translateY(-8px); }
     to { opacity: 1; transform: translateY(0); }
 }
+/* 双击刷新的脉冲闪动反馈 */
+@keyframes dhPulse {
+    0%   { opacity: 1; transform: scale(1); }
+    50%  { opacity: 0.5; transform: scale(0.96); }
+    100% { opacity: 1; transform: scale(1); }
+}
 
 /* 顶部行：日期 + 天气徽章（左右分布） */
 .dh-greeting-top-row {
@@ -44,11 +50,17 @@
     font-size: 13px;
     color: var(--color-text-secondary);
     white-space: nowrap;
-    transition: background var(--transition-fast);
-    cursor: default;
+    transition: background var(--transition-fast), transform var(--transition-fast);
+    cursor: pointer;
+    user-select: none;
 }
 .dh-weather-badge:hover {
     background: var(--color-surface-muted);
+    transform: scale(1.04);
+}
+/* 双击刷新中闪动反馈 */
+.dh-weather-badge.reloading {
+    animation: dhPulse 0.4s ease;
 }
 .dh-weather-badge .dh-weather-icon {
     font-size: 18px;
@@ -62,40 +74,6 @@
 .dh-weather-desc {
     font-weight: 400;
     color: var(--color-text-tertiary);
-}
-
-/* 通用刷新按钮（天气、鼓励话语共用） */
-.dh-refresh-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    padding: 0;
-    margin-left: 2px;
-    border: none;
-    border-radius: 50%;
-    background: transparent;
-    color: var(--color-text-tertiary);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    flex-shrink: 0;
-}
-.dh-refresh-btn:hover {
-    background: var(--color-surface-hover);
-    color: var(--color-accent);
-}
-.dh-refresh-btn:active {
-    transform: scale(0.9);
-    background: var(--color-accent-bg-10);
-}
-/* 刷新中旋转动画 */
-.dh-refresh-btn.spinning svg {
-    animation: dhRefreshSpin 0.6s linear;
-}
-@keyframes dhRefreshSpin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
 }
 
 /* 时段问候语（核心文字） */
@@ -129,6 +107,18 @@
     padding-left: 14px;
     border-left: 2px solid var(--color-accent-disabled);
     word-break: break-word;
+    /* 双击刷新交互提示 */
+    cursor: pointer;
+    user-select: none;
+    transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+.dh-encourage-text:hover {
+    color: var(--color-text);
+    border-color: var(--color-accent);
+}
+/* 双击刷新中闪动反馈 */
+.dh-encourage-text.reloading {
+    animation: dhPulse 0.4s ease;
 }
 
 /* 隐藏状态：专注模式下隐藏 */
