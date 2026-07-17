@@ -26,11 +26,12 @@
     100% { opacity: 1; transform: scale(1); }
 }
 
-/* 顶部行：日期 + 天气徽章（左右分布） */
+/* 顶部行：日期 + 天气徽章（左对齐，间距不超过20px） */
 .dh-greeting-top-row {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
+    gap: 16px;
     width: 100%;
     min-height: 28px;
 }
@@ -56,6 +57,9 @@
     transition: background var(--transition-fast), transform var(--transition-fast);
     cursor: pointer;
     user-select: none;
+    pointer-events: auto;
+    position: relative;
+    z-index: 2;
 }
 .dh-weather-badge:hover {
     background: var(--color-surface-muted);
@@ -110,6 +114,9 @@
     word-break: break-word;
     cursor: pointer;
     user-select: none;
+    pointer-events: auto;
+    position: relative;
+    z-index: 2;
     transition: color var(--transition-fast), border-color var(--transition-fast);
 }
 .dh-encourage-text:hover {

@@ -30,6 +30,95 @@ window.DevHome = window.DevHome || {};
     /** 编辑器实例注册表 */
     var _instances = {};
 
+    /**
+     * 判断剪贴板选区里是否包含任务列表节点。
+     * 只在任务列表复制时接管文本序列化，普通笔记段落继续使用 Tiptap 默认规则。
+     */
+    function hasTaskNode(fragment) {
+        var found = false;
+        fragment.forEach(function (node) {
+            if (found) return;
+            if (node.type && (node.type.name === 'taskList' || node.type.name === 'taskItem')) {
+                found = true;
+                return;
+            }
+            if (node.content && node.content.size) found = hasTaskNode(node.content);
+        });
+        return found;
+    }
+
+    /** 将段落、标题等块级内容压缩为单行任务标题文本 */
+    function normalizeInlineText(node) {
+        return (node.textContent || '').trim().replace(/\s+/g, ' ');
+    }
+
+    /**
+     * 序列化单个任务项。
+     * 任务项首行保留完成状态；嵌套任务列表另起一行并增加两个空格缩进。
+     */
+    function serializeTaskItemText(node, level) {
+        var checkbox = node.attrs && node.attrs.checked ? '[x]' : '[ ]';
+        var textParts = [];
+        var nestedParts = [];
+        var indent = new Array(level + 1).join('  ');
+
+        node.forEach(function (child) {
+            var typeName = child.type && child.type.name;
+            if (typeName === 'taskList') {
+                nestedParts.push(serializeTaskListText(child, level + 1));
+                return;
+            }
+            if (child.isBlock) {
+                var text = normalizeInlineText(child);
+                if (text) textParts.push(text);
+            }
+        });
+
+        var line = indent + '- ' + checkbox;
+        var title = textParts.join(' ').trim();
+        if (title) line += ' ' + title;
+        return [line].concat(nestedParts.filter(Boolean)).join('\n');
+    }
+
+    /** 将一个任务列表序列化为每个任务一行，避免 taskList/taskItem/paragraph 多层 block 叠加空行 */
+    function serializeTaskListText(node, level) {
+        var lines = [];
+        node.forEach(function (child) {
+            if (child.type && child.type.name === 'taskItem') {
+                lines.push(serializeTaskItemText(child, level || 0));
+            }
+        });
+        return lines.join('\n');
+    }
+
+    /** 将包含任务列表的剪贴板选区序列化为紧凑纯文本 */
+    function serializeTaskClipboardText(slice) {
+        if (!slice || !slice.content || !hasTaskNode(slice.content)) {
+            return slice && slice.content ? slice.content.textBetween(0, slice.content.size, '\n\n') : '';
+        }
+
+        var blocks = [];
+        slice.content.forEach(function appendNode(node) {
+            var typeName = node.type && node.type.name;
+            if (typeName === 'taskList') {
+                blocks.push(serializeTaskListText(node, 0));
+                return;
+            }
+            if (typeName === 'taskItem') {
+                blocks.push(serializeTaskItemText(node, 0));
+                return;
+            }
+            if (node.isBlock) {
+                var text = normalizeInlineText(node);
+                if (text) blocks.push(text);
+                return;
+            }
+            if (node.content && node.content.size) node.forEach(appendNode);
+        });
+
+        return blocks.filter(Boolean).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+    }
+
     /** 默认扩展集（可覆盖） */
     var DEFAULT_EXTENSIONS = [
         StarterKit.configure({
@@ -43,7 +132,14 @@ window.DevHome = window.DevHome || {};
             placeholder: '在此编写内容...'
         }),
         TaskList.configure({
-            HTMLAttributes: { class: 'tiptap-task-list' }
+            HTMLAttributes: { class: 'tiptap-task-list' },
+            /**
+             * 任务列表整块复制时按任务行输出。
+             * 避免默认遍历继续进入 taskItem/paragraph，造成每个任务项前叠加多个空行。
+             */
+            renderText: function (_a) {
+                return serializeTaskListText(_a.node, 0);
+            }
         }),
         TaskItem.configure({
             HTMLAttributes: { class: 'tiptap-task-item' },
@@ -54,10 +150,7 @@ window.DevHome = window.DevHome || {};
              * 默认行为会将 <li> 内的 <p> 渲染为多行，导致任务项之间出现双倍换行。
              */
             renderText: function (_a) {
-                var node = _a.node;
-                var checkbox = node.attrs.checked ? '[x]' : '[ ]';
-                var text = (node.textContent || '').trim().replace(/\n+/g, ' ');
-                return '- ' + checkbox + ' ' + text;
+                return serializeTaskItemText(_a.node, 0);
             }
         })
     ];
@@ -309,6 +402,9 @@ window.DevHome = window.DevHome || {};
                 content: content || '',
                 editable: opts.editable !== false,
                 extensions: extensions,
+                editorProps: Object.assign({
+                    clipboardTextSerializer: serializeTaskClipboardText
+                }, opts.editorProps || {}),
                 onUpdate: function () {
                     if (opts.onUpdate) opts.onUpdate();
                 }
@@ -368,7 +464,10 @@ window.DevHome = window.DevHome || {};
         getEditor: function (id) {
             var inst = _instances[id];
             return inst ? inst.editor : null;
-        }
+        },
+
+        /** 测试辅助：验证任务列表剪贴板文本不会产生多余空行 */
+        _serializeTaskClipboardText: serializeTaskClipboardText
     };
 
 })(window.DevHome);
