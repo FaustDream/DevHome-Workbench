@@ -109,7 +109,8 @@ html {
 
 body {
     font-family: var(--font-sans);
-    background: var(--gradient-page, var(--color-bg));
+    /* 纯色背景设计，移除渐变，文字无缝融合至页面背景 */
+    background: var(--color-bg);
     color: var(--color-text);
     min-height: 100vh;
     min-height: 100dvh;

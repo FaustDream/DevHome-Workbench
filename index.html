@@ -37,10 +37,29 @@
         <div id="bgOverlay"></div>
     </div>
 
-    <!-- 每日问候卡片（左上角固定） -->
-    <section class="daily-greeting-card" id="dailyGreetingCard" aria-label="每日问候"></section>
-
     <div class="container">
+        <!-- 每日问候区域（无缝融合至页面背景，无卡片容器） -->
+        <div class="dh-greeting-area" id="dhGreetingArea" aria-label="每日问候">
+            <div class="dh-greeting-top-row">
+                <span class="dh-greeting-date" id="dhGreetingDate"></span>
+                <span class="dh-weather-badge" id="dhWeatherBadge" style="display:none;">
+                    <span class="dh-weather-icon"></span>
+                    <span class="dh-weather-temp" id="dhWeatherTempText"></span>
+                    <span class="dh-weather-desc" id="dhWeatherDescText"></span>
+                    <button class="dh-refresh-btn" id="dhWeatherRefreshBtn" title="刷新天气" aria-label="刷新天气">
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7a5 5 0 019-3M12 7a5 5 0 01-9 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12 1v3H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                </span>
+            </div>
+            <div class="dh-greeting-main" id="dhGreetingMain"></div>
+            <div class="dh-encourage-row">
+                <span class="dh-encourage-text" id="dhEncourageText"></span>
+                <button class="dh-refresh-btn" id="dhEncourageRefreshBtn" title="换一句鼓励" aria-label="刷新鼓励话语">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7a5 5 0 019-3M12 7a5 5 0 01-9 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12 1v3H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+            </div>
+        </div>
+
         <!-- 文件配置警告条 -->
         <div class="config-warning-bar" id="configWarningBar" style="display:none;">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink:0;">
@@ -840,6 +859,20 @@
     <!-- 更新说明内容（供 Shadcn Dialog 动态读取渲染） -->
     <div id="changelogBodyTemplate" style="display:none">
         <div class="changelog-body" id="changelogBody">
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.22.6</span>
+                        <span class="changelog-date">2026-07-17</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>重构</strong> 每日问候卡片移除容器样式，问候文本无缝融合至纯色页面背景中</li>
+                        <li><strong>设计</strong> 页面背景改为纯色（原深色模式多径向渐变 → 统一纯色 #071b26）</li>
+                        <li><strong>优化</strong> 天气数据取消页面加载时自动请求，改为手动点击刷新按钮触发</li>
+                        <li><strong>新增</strong> 天气缓存策略：30 分钟 TTL，超时后自动刷新；支持点击↻手动刷新</li>
+                        <li><strong>新增</strong> 鼓励话语↻刷新按钮，支持点击手动随机换一句</li>
+                        <li><strong>优化</strong> 天气初始化仅加载缓存数据到内存，不发起网络请求</li>
+                    </ul>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">
                         <span class="changelog-version-tag">v2.19.3</span>

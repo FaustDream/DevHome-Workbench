@@ -207,9 +207,11 @@ let lastPage = storage.get('last_page', 0);
 
         // === Phase 5: 延迟加载非首屏模块（不阻塞启动） ===
         requestAnimationFrame(function () {
-            // 延迟加载天气、问候卡片、倒计时、壁纸、番茄钟状态
-            if (ns.initWeather) ns.initWeather();
+            // 问候区域（日期+问候+鼓励话语，不再使用卡片容器）
             if (ns.initDailyGreetingCard) ns.initDailyGreetingCard();
+            // 天气模块（仅加载缓存数据，不发起网络请求，等用户手动刷新）
+            if (ns.initWeather) ns.initWeather();
+            // 倒计时、壁纸、番茄钟状态
             if (ns.initCountdown) ns.initCountdown();
             if (ns.initWallpaper) ns.initWallpaper();
             if (ns.syncTaskNotifySettings) ns.syncTaskNotifySettings();
