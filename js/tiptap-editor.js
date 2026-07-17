@@ -52,13 +52,35 @@ window.DevHome = window.DevHome || {};
         return (node.textContent || '').trim().replace(/\s+/g, ' ');
     }
 
+    /** 剪贴板 HTML 转义，避免任务标题中的特殊字符破坏粘贴结构 */
+    function escapeClipboardHtml(text) {
+        return String(text || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    /** 提取任务项自身标题，排除嵌套任务列表内容 */
+    function getTaskItemTitle(node) {
+        var textParts = [];
+        node.forEach(function (child) {
+            if (child.type && child.type.name === 'taskList') return;
+            if (child.isBlock) {
+                var text = normalizeInlineText(child);
+                if (text) textParts.push(text);
+            }
+        });
+        return textParts.join(' ').trim();
+    }
+
     /**
      * 序列化单个任务项。
      * 任务项首行保留完成状态；嵌套任务列表另起一行并增加两个空格缩进。
      */
     function serializeTaskItemText(node, level) {
         var checkbox = node.attrs && node.attrs.checked ? '[x]' : '[ ]';
-        var textParts = [];
         var nestedParts = [];
         var indent = new Array(level + 1).join('  ');
 
@@ -68,14 +90,10 @@ window.DevHome = window.DevHome || {};
                 nestedParts.push(serializeTaskListText(child, level + 1));
                 return;
             }
-            if (child.isBlock) {
-                var text = normalizeInlineText(child);
-                if (text) textParts.push(text);
-            }
         });
 
         var line = indent + '- ' + checkbox;
-        var title = textParts.join(' ').trim();
+        var title = getTaskItemTitle(node);
         if (title) line += ' ' + title;
         return [line].concat(nestedParts.filter(Boolean)).join('\n');
     }
@@ -89,6 +107,57 @@ window.DevHome = window.DevHome || {};
             }
         });
         return lines.join('\n');
+    }
+
+    /** 将任务项写成紧凑 HTML，防止富文本目标把 li/div/p 默认 margin 粘贴成大量空白 */
+    function serializeTaskItemHtml(node) {
+        var checked = !!(node.attrs && node.attrs.checked);
+        var checkedAttr = checked ? ' checked="checked"' : '';
+        var nestedHtml = [];
+        node.forEach(function (child) {
+            if (child.type && child.type.name === 'taskList') nestedHtml.push(serializeTaskListHtml(child));
+        });
+        return '<li data-type="taskItem" data-checked="' + checked + '" class="tiptap-task-item" style="margin:0;padding:0;">' +
+            '<label contenteditable="false" style="margin:0 6px 0 0;padding:0;vertical-align:middle;">' +
+            '<input type="checkbox" disabled="disabled"' + checkedAttr + '><span></span></label>' +
+            '<div style="display:inline;margin:0;padding:0;"><p style="display:inline;margin:0;padding:0;">' +
+            escapeClipboardHtml(getTaskItemTitle(node)) + '</p></div>' +
+            nestedHtml.join('') +
+            '</li>';
+    }
+
+    /** 将任务列表写成紧凑 HTML，保留 data-type/data-checked 供回粘到 Tiptap 时识别 */
+    function serializeTaskListHtml(node) {
+        var items = [];
+        node.forEach(function (child) {
+            if (child.type && child.type.name === 'taskItem') items.push(serializeTaskItemHtml(child));
+        });
+        return '<ul data-type="taskList" class="tiptap-task-list" style="margin:0;padding-left:1.4em;">' + items.join('') + '</ul>';
+    }
+
+    /** 将包含任务列表的选区写成紧凑 HTML，其它块级内容只保留纯文本段落 */
+    function serializeTaskClipboardHtml(slice) {
+        if (!slice || !slice.content || !hasTaskNode(slice.content)) return '';
+
+        var blocks = [];
+        slice.content.forEach(function appendNode(node) {
+            var typeName = node.type && node.type.name;
+            if (typeName === 'taskList') {
+                blocks.push(serializeTaskListHtml(node));
+                return;
+            }
+            if (typeName === 'taskItem') {
+                blocks.push('<ul data-type="taskList" class="tiptap-task-list" style="margin:0;padding-left:1.4em;">' + serializeTaskItemHtml(node) + '</ul>');
+                return;
+            }
+            if (node.isBlock) {
+                var text = normalizeInlineText(node);
+                if (text) blocks.push('<p style="margin:0;">' + escapeClipboardHtml(text) + '</p>');
+                return;
+            }
+            if (node.content && node.content.size) node.forEach(appendNode);
+        });
+        return blocks.join('');
     }
 
     /** 将包含任务列表的剪贴板选区序列化为紧凑纯文本 */
@@ -118,6 +187,40 @@ window.DevHome = window.DevHome || {};
 
         return blocks.filter(Boolean).join('\n').replace(/\n{3,}/g, '\n\n').trim();
     }
+
+    /**
+     * 复制任务列表时主动写入剪贴板。
+     * text/plain 解决纯文本粘贴空行；text/html 解决富文本目标继承默认 p/div margin 的空白。
+     */
+    function handleTaskClipboardCopy(view, event) {
+        if (!view || !view.state || !view.state.selection || !event || !event.clipboardData) return false;
+        var slice = view.state.selection.content();
+        if (!slice || !slice.content || !hasTaskNode(slice.content)) return false;
+
+        event.clipboardData.setData('text/plain', serializeTaskClipboardText(slice));
+        event.clipboardData.setData('text/html', serializeTaskClipboardHtml(slice));
+        event.preventDefault();
+        console.log('[编辑] 复制任务列表 已压缩剪贴板空白行');
+        return true;
+    }
+
+    /** 合并外部 editorProps，并在任务列表复制时添加空白压缩兜底 */
+    function buildEditorProps(opts) {
+        var userProps = (opts && opts.editorProps) || {};
+        var userEvents = userProps.handleDOMEvents || {};
+        var userCopy = userEvents.copy;
+        var editorProps = Object.assign({}, userProps);
+
+        editorProps.clipboardTextSerializer = editorProps.clipboardTextSerializer || serializeTaskClipboardText;
+        editorProps.handleDOMEvents = Object.assign({}, userEvents, {
+            copy: function (view, event) {
+                if (typeof userCopy === 'function' && userCopy(view, event)) return true;
+                return handleTaskClipboardCopy(view, event);
+            }
+        });
+        return editorProps;
+    }
+
 
     /** 默认扩展集（可覆盖） */
     var DEFAULT_EXTENSIONS = [
@@ -402,9 +505,7 @@ window.DevHome = window.DevHome || {};
                 content: content || '',
                 editable: opts.editable !== false,
                 extensions: extensions,
-                editorProps: Object.assign({
-                    clipboardTextSerializer: serializeTaskClipboardText
-                }, opts.editorProps || {}),
+                editorProps: buildEditorProps(opts),
                 onUpdate: function () {
                     if (opts.onUpdate) opts.onUpdate();
                 }
@@ -467,7 +568,10 @@ window.DevHome = window.DevHome || {};
         },
 
         /** 测试辅助：验证任务列表剪贴板文本不会产生多余空行 */
-        _serializeTaskClipboardText: serializeTaskClipboardText
+        _serializeTaskClipboardText: serializeTaskClipboardText,
+
+        /** 测试辅助：验证任务列表剪贴板 HTML 不继承默认空白 */
+        _serializeTaskClipboardHtml: serializeTaskClipboardHtml
     };
 
 })(window.DevHome);
