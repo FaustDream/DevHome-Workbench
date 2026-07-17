@@ -1,6 +1,6 @@
 {
   "name": "devhome-workbench",
-  "version": "2.22.6",
+  "version": "2.23.0",
   "private": true,
   "description": "DevHome Workbench - Chrome Extension",
   "scripts": {

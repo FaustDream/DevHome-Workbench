@@ -1,6 +1,6 @@
 /**
- * ui 子模块 — 设置面板
- * 职责：设置面板的打开/关闭、Tab 切换、控件状态同步、设置动作处理、保存辅助
+ * ui 子模块 — 设置面板（侧边栏模式）
+ * 职责：设置侧边栏的打开/关闭、Tab 切换、控件状态同步、设置动作处理、保存辅助
  */
 window.DevHome = window.DevHome || {};
 (function (ns) {
@@ -27,12 +27,12 @@ window.DevHome = window.DevHome || {};
         ns.syncSettingsControls();
         dom.settingsOverlay.classList.add('visible');
         ns.hideBlankContextMenu();
-        console.log('[面板] 打开设置面板');
+        console.log('[面板] 打开设置侧边栏');
     };
 
     ns.closeSettingsPanel = function () {
         dom.settingsOverlay.classList.remove('visible');
-        console.log('[面板] 关闭设置面板');
+        console.log('[面板] 关闭设置侧边栏');
     };
 
     /* ===== 更新说明弹窗 ===== */
@@ -84,6 +84,35 @@ window.DevHome = window.DevHome || {};
             mrToggle.checked = isOn;
             if (mrParams) mrParams.style.display = isOn ? '' : 'none';
         }
+
+        // 壁纸模糊度/遮罩度滑块同步（迁移自原 wallpaper.js）
+        const blurSlider = document.getElementById('sBgBlurSlider');
+        const blurValue = document.getElementById('sBgBlurValue');
+        const blurRow = document.getElementById('sBgBlurRow');
+        const overlaySlider = document.getElementById('sBgOverlaySlider');
+        const overlayValue = document.getElementById('sBgOverlayValue');
+        const overlayRow = document.getElementById('sBgOverlayRow');
+
+        const hasBgImage = (function () {
+            const bgImg = document.getElementById('bgImage');
+            return bgImg && bgImg.src && bgImg.style.display !== 'none';
+        })();
+
+        // 有背景图片时才显示滑块
+        if (blurRow) blurRow.style.display = hasBgImage ? '' : 'none';
+        if (overlayRow) overlayRow.style.display = hasBgImage ? '' : 'none';
+
+        // 读取已保存的壁纸设置
+        let wpSettings = { blur: 0, overlay: 30 };
+        try {
+            const raw = localStorage.getItem('wallpaperSettings');
+            if (raw) wpSettings = JSON.parse(raw);
+        } catch (_) {}
+
+        if (blurSlider) { blurSlider.value = wpSettings.blur; }
+        if (blurValue) { blurValue.textContent = wpSettings.blur + 'px'; }
+        if (overlaySlider) { overlaySlider.value = wpSettings.overlay; }
+        if (overlayValue) { overlayValue.textContent = wpSettings.overlay + '%'; }
 
         const shortcutKeys = document.getElementById('sShortcutKeys');
         if (shortcutKeys) {

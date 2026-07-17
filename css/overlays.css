@@ -150,40 +150,42 @@
 }
 .settings-gear-btn:hover { color: var(--color-accent); border-color: var(--color-accent-border-56); transform: translateY(-1px); }
 
-/* ===== 设置遮罩层 ===== */
+/* ===== 设置侧边栏遮罩层 ===== */
 .settings-overlay {
     position: fixed; inset: 0; z-index: var(--z-modal);
-    background: var(--color-overlay); backdrop-filter: blur(4px);
-    display: flex; align-items: center; justify-content: center;
+    background: var(--color-overlay);
     opacity: 0; visibility: hidden; pointer-events: none;
     transition: opacity var(--transition-normal), visibility var(--transition-normal);
 }
 .settings-overlay.visible { opacity: 1; visibility: visible; pointer-events: auto; }
 
-/* ===== 设置面板 — 大尺寸居中弹窗 ===== */
+/* ===== 设置侧边栏 — 右侧滑入 ===== */
 .settings-panel {
-    width: min(760px, 92vw);
-    max-height: 85vh;
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 400px;
+    max-width: 92vw;
     display: flex; flex-direction: column;
-    border: 1px solid var(--color-border-active);
-    border-radius: 24px;
+    border-left: 1px solid var(--color-border-active);
     background: var(--color-bg-elevated);
     box-shadow: var(--shadow-lg);
     backdrop-filter: blur(24px) saturate(120%);
     -webkit-backdrop-filter: blur(24px) saturate(120%);
-    transform: translateY(16px) scale(0.97);
+    transform: translateX(100%);
     transition: transform var(--transition-normal);
     overflow: hidden;
+    z-index: calc(var(--z-modal) + 1);
 }
-.settings-overlay.visible .settings-panel { transform: translateY(0) scale(1); }
+.settings-overlay.visible .settings-panel { transform: translateX(0); }
 
 .settings-panel-header {
     display: flex; align-items: flex-start; justify-content: space-between;
-    gap: 12px; padding: 20px 24px 14px;
+    gap: 12px; padding: 18px 22px 12px;
     border-bottom: 1px solid var(--color-border); flex-shrink: 0;
 }
-.settings-eyebrow { display: block; color: var(--color-accent); font-size: var(--font-size-xs); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
-.settings-panel-header h2 { margin-top: 2px; color: var(--color-text); font-size: 20px; font-weight: 700; }
+.settings-panel-header h2 { color: var(--color-text); font-size: 18px; font-weight: 700; }
 .settings-close-btn {
     width: 32px; height: 32px;
     border: 1px solid var(--color-border); border-radius: 50%;
@@ -195,30 +197,31 @@
 }
 .settings-close-btn:hover { color: var(--color-text); border-color: var(--color-border-active); background: var(--color-surface-subtle); }
 
-/* ===== 左右分栏布局 ===== */
-.settings-body { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+/* ===== 顶部水平导航 Tab ===== */
 .s-nav {
-    width: 170px; min-width: 170px;
-    display: flex; flex-direction: column; gap: 2px;
-    padding: 14px 8px;
-    border-right: 1px solid var(--color-border);
-    overflow-y: auto; scrollbar-width: none;
+    display: flex; flex-direction: row; gap: 2px;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--color-border);
+    overflow-x: auto; scrollbar-width: none;
+    flex-shrink: 0;
 }
 .s-nav::-webkit-scrollbar { display: none; }
 .s-nav-item {
-    display: flex; align-items: center;
-    padding: 10px 14px;
-    border: none; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 8px 14px;
+    border: none; border-radius: 8px;
     background: transparent;
     color: var(--color-text-tertiary);
     font-family: var(--font-sans); font-size: 13px; font-weight: 500;
-    cursor: pointer; text-align: left;
+    cursor: pointer; text-align: center; white-space: nowrap;
     transition: all 0.15s ease; letter-spacing: -0.01em;
 }
 .s-nav-item:hover { color: var(--color-text); background: var(--color-surface-subtle); }
 .s-nav-item.active { color: var(--color-accent); background: var(--color-accent-bg-08); font-weight: 600; }
 
-.s-tabs { flex: 1; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--color-border) transparent; padding: 14px 20px; }
+/* ===== 内容区域（无左侧导航，全宽） ===== */
+.settings-body { flex: 1; min-height: 0; overflow: hidden; }
+.s-tabs { height: 100%; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--color-border) transparent; padding: 14px 20px; }
 .s-tabs::-webkit-scrollbar { width: 5px; }
 .s-tabs::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 999px; }
 

@@ -211,9 +211,7 @@ let lastPage = storage.get('last_page', 0);
             if (ns.initDailyGreetingCard) ns.initDailyGreetingCard();
             // 天气模块（仅加载缓存数据，不发起网络请求，等用户手动刷新）
             if (ns.initWeather) ns.initWeather();
-            // 倒计时、壁纸、番茄钟状态
-            if (ns.initCountdown) ns.initCountdown();
-            if (ns.initWallpaper) ns.initWallpaper();
+            // 番茄钟通知设置
             if (ns.syncTaskNotifySettings) ns.syncTaskNotifySettings();
             // React 通知系统
             if (typeof ns.initReactToast === 'function') ns.initReactToast();

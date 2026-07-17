@@ -85,6 +85,7 @@ window.DevHome = window.DevHome || {};
 
         // F4/F5/F6/F8/F9 设置
         _bindMatrixParams();
+        _bindWallpaperSliders();
         _bindSearchSettings();
         _bindLayoutSettings();
         _bindViewScale();
@@ -261,6 +262,66 @@ window.DevHome = window.DevHome || {};
             charDensitySlider.addEventListener('input', function () {
                 localStorage.setItem('tabpage_char_density', this.value);
                 if (charDensityValue) charDensityValue.textContent = Math.round(this.value / 5 * 100) + '%';
+            });
+        }
+    }
+
+    /* ===== 壁纸模糊度/遮罩度滑块（从原 wallpaper.js 迁移至设置面板） ===== */
+    function _bindWallpaperSliders() {
+        const blurSlider = document.getElementById('sBgBlurSlider');
+        const blurValue = document.getElementById('sBgBlurValue');
+        const overlaySlider = document.getElementById('sBgOverlaySlider');
+        const overlayValue = document.getElementById('sBgOverlayValue');
+
+        function getWpSettings() {
+            try {
+                const raw = localStorage.getItem('wallpaperSettings');
+                return raw ? JSON.parse(raw) : { blur: 0, overlay: 30 };
+            } catch (_) { return { blur: 0, overlay: 30 }; }
+        }
+
+        function saveWpSettings(settings) {
+            try { localStorage.setItem('wallpaperSettings', JSON.stringify(settings)); } catch (_) {}
+        }
+
+        function applyBlur(value) {
+            document.documentElement.style.setProperty('--bg-blur', value + 'px');
+            const bgImage = document.getElementById('bgImage');
+            if (bgImage) bgImage.style.filter = 'blur(var(--bg-blur))';
+        }
+
+        function applyOverlay(value) {
+            const bgOverlay = document.getElementById('bgOverlay');
+            if (bgOverlay) bgOverlay.style.opacity = value / 100;
+        }
+
+        if (blurSlider) {
+            const wp = getWpSettings();
+            blurSlider.value = wp.blur;
+            if (blurValue) blurValue.textContent = wp.blur + 'px';
+            blurSlider.addEventListener('input', function () {
+                const val = parseInt(this.value) || 0;
+                if (blurValue) blurValue.textContent = val + 'px';
+                applyBlur(val);
+                const s = getWpSettings();
+                s.blur = val;
+                saveWpSettings(s);
+                console.log('[设置] 壁纸模糊度 → ' + val + 'px');
+            });
+        }
+
+        if (overlaySlider) {
+            const wp = getWpSettings();
+            overlaySlider.value = wp.overlay;
+            if (overlayValue) overlayValue.textContent = wp.overlay + '%';
+            overlaySlider.addEventListener('input', function () {
+                const val = parseInt(this.value) || 30;
+                if (overlayValue) overlayValue.textContent = val + '%';
+                applyOverlay(val);
+                const s = getWpSettings();
+                s.overlay = val;
+                saveWpSettings(s);
+                console.log('[设置] 壁纸遮罩度 → ' + val + '%');
             });
         }
     }

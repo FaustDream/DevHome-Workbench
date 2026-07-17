@@ -116,7 +116,6 @@ if (doBundle) {
         'js/quotes.js',
         'js/weather.js',
         'js/dailyGreetingCard.js',
-        'js/countdown.js',
         'js/favicon.js',
         'js/theme-manager.js',
         'js/bgManager.js',
@@ -160,8 +159,6 @@ if (doBundle) {
         'js/workbench_private/_pomodoro.js',
         'js/workbench_private/_calendar.js',
         'js/workbench_private/_dashboard.js',
-        // 壁纸模块
-        'js/wallpaper.js',
         'js/main.js'
     ];
 

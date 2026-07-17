@@ -17,8 +17,6 @@
     <link rel="stylesheet" href="css/workbench-editor.css">
     <link rel="stylesheet" href="css/ai-chat.css">
     <link rel="stylesheet" href="css/daily-greeting-card.css">
-    <link rel="stylesheet" href="css/countdown.css">
-    <link rel="stylesheet" href="css/wallpaper.css">
     <link rel="stylesheet" href="css/animations.css">
     <!-- 主题样式：默认主题（蔚蓝），支持浅色/深色双模式 -->
     <link id="theme-default" rel="stylesheet" href="css/themes/default.css">
@@ -444,16 +442,15 @@
                 </div>
                 <button class="settings-close-btn" id="settingsCloseBtn" type="button" aria-label="关闭设置">&times;</button>
             </header>
+            <!-- 顶部水平导航 Tab -->
+            <nav class="s-nav" id="sNav">
+                <button class="s-nav-item active" data-s-tab="general">通用</button>
+                <button class="s-nav-item" data-s-tab="appearance">外观</button>
+                <button class="s-nav-item" data-s-tab="ai">AI</button>
+                <button class="s-nav-item" data-s-tab="data">数据</button>
+                <button class="s-nav-item" data-s-tab="advanced">高级</button>
+            </nav>
             <div class="settings-body">
-                <!-- 左侧导航 -->
-                <nav class="s-nav" id="sNav">
-                    <button class="s-nav-item active" data-s-tab="general">通用与偏好</button>
-                    <button class="s-nav-item" data-s-tab="appearance">外观与主题</button>
-                    <button class="s-nav-item" data-s-tab="ai">AI 助手</button>
-                    <button class="s-nav-item" data-s-tab="data">数据与备份</button>
-                    <button class="s-nav-item" data-s-tab="advanced">高级与开发者</button>
-                </nav>
-                <!-- 右侧内容区 -->
                 <div class="s-tabs">
                     <!-- Tab 0: 通用与偏好 -->
                     <section class="s-tab active" data-s-tab="general">
@@ -515,6 +512,14 @@
                         <button type="button" class="s-action-btn" data-setting-action="uploadBg">
                             <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2" width="13" height="11" rx="1.5" stroke="currentColor" stroke-width="1.2"/><circle cx="5.5" cy="6.5" r="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M1.5 12l3.5-3.5L8 11.5l3-3L14.5 12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>上传背景图片</span>
                         </button>
+                        <label class="s-slider-row" id="sBgBlurRow" style="display:none;">
+                            <span>模糊度 <span class="slider-value" id="sBgBlurValue">0px</span></span>
+                            <input type="range" id="sBgBlurSlider" min="0" max="20" value="0" class="context-slider">
+                        </label>
+                        <label class="s-slider-row" id="sBgOverlayRow" style="display:none;">
+                            <span>遮罩度 <span class="slider-value" id="sBgOverlayValue">30%</span></span>
+                            <input type="range" id="sBgOverlaySlider" min="0" max="100" value="30" class="context-slider">
+                        </label>
                         <button type="button" class="s-action-btn" data-setting-action="resetBg">
                             <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 8a6 6 0 0110-4M14 8a6 6 0 01-10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 3v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>重置背景</span>
                         </button>
@@ -859,6 +864,21 @@
     <!-- 更新说明内容（供 Shadcn Dialog 动态读取渲染） -->
     <div id="changelogBodyTemplate" style="display:none">
         <div class="changelog-body" id="changelogBody">
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.23.0</span>
+                        <span class="changelog-date">2026-07-17</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>重构</strong> 设置面板从居中弹窗改为右侧侧边栏（400px 宽，滑入动画），顶部水平 Tab 导航</li>
+                        <li><strong>移除</strong> 左下角壁纸按钮和面板，图片上传功能迁移至设置→外观→上传背景图片</li>
+                        <li><strong>新增</strong> 设置面板中壁纸模糊度/遮罩度滑块（从原壁纸面板迁移），实时反映到主界面</li>
+                        <li><strong>移除</strong> 倒计时卡片功能（右上角 countdownRoot）及相关 CSS/JS 代码</li>
+                        <li><strong>增强</strong> 背景图片上传自动压缩至 1920px 宽，挂载时恢复模糊度设置</li>
+                        <li><strong>修复</strong> 复制包含多个任务列表的笔记时，每个任务项之间产生大量空白行的格式错误</li>
+                        <li><strong>技术</strong> TaskItem 扩展新增 renderText 剪贴板序列化，单行输出任务项</li>
+                    </ul>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">
                         <span class="changelog-version-tag">v2.22.6</span>
@@ -1381,7 +1401,6 @@
     <script src="js/quotes.js" defer></script>
     <script src="js/weather.js" defer></script>
     <script src="js/dailyGreetingCard.js" defer></script>
-    <script src="js/countdown.js" defer></script>
     <script src="js/favicon.js" defer></script>
     <script src="js/theme-manager.js" defer></script>
     <script src="js/bgManager.js" defer></script>
@@ -1431,23 +1450,6 @@
     <script src="js/wallpaper.js" defer></script>
     <script src="js/main.js" defer></script>
     <script src="js/matrix-bg.js"></script>
-
-    <!-- 壁纸功能 -->
-    <button id="wallpaperBtn" class="wallpaper-btn" title="壁纸设置" aria-label="壁纸设置">&#x1F5BC;</button>
-    <div id="wallpaperPanel" class="wallpaper-panel">
-        <button id="wallpaperUpload" class="s-action-btn">上传壁纸</button>
-        <label class="s-slider-row"><span>模糊度</span>
-            <input type="range" id="wallpaperBlur" min="0" max="20" value="0" class="context-slider">
-        </label>
-        <label class="s-slider-row"><span>遮罩度</span>
-            <input type="range" id="wallpaperOverlay" min="0" max="100" value="30" class="context-slider">
-        </label>
-        <button id="wallpaperReset" class="s-action-btn">重置</button>
-    </div>
-    <input type="file" id="wallpaperFileInput" accept="image/*" hidden>
-
-    <!-- 倒计时卡片容器（日常模式右上角） -->
-    <div id="countdownRoot"></div>
 
     <!-- React 应用挂载点 -->
     <div id="reactToastRoot"></div>

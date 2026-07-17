@@ -47,7 +47,18 @@ window.DevHome = window.DevHome || {};
         }),
         TaskItem.configure({
             HTMLAttributes: { class: 'tiptap-task-item' },
-            nested: true
+            nested: true,
+            /**
+             * 自定义任务列表项的剪贴板文本序列化
+             * 修复复制任务列表时每个任务项之间产生大量空白行的格式错误。
+             * 默认行为会将 <li> 内的 <p> 渲染为多行，导致任务项之间出现双倍换行。
+             */
+            renderText: function (_a) {
+                var node = _a.node;
+                var checkbox = node.attrs.checked ? '[x]' : '[ ]';
+                var text = (node.textContent || '').trim().replace(/\n+/g, ' ');
+                return '- ' + checkbox + ' ' + text;
+            }
         })
     ];
 
