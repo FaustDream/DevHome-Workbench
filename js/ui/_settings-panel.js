@@ -261,7 +261,12 @@ window.DevHome = window.DevHome || {};
             const ok = await ns.showConfirm(confirmMsg, { title: '导入完整备份' });
             if (!ok) return null;
             console.log('[数据] 开始导入完整备份 v3.0...');
+            // 写入 chrome.storage.local (v2/tasks, v2/notes 等)
             await ns.dataService.importAll(snapshot);
+            // 同步四象限任务到 localStorage (devhome_workbench)，确保 getWorkbenchState() 可读取
+            if (snapshot.tasks && snapshot.tasks.length > 0) {
+                _syncTasksToWorkbench(snapshot.tasks);
+            }
             console.log('[数据] 导入完成 笔记' + noteCount + ' 任务' + taskCount + ' 捕获' + captureCount);
             return 'full';
         }
@@ -276,6 +281,30 @@ window.DevHome = window.DevHome || {};
         }
         return null;
     };
+
+    /**
+     * 将 v2 扁平任务数组同步到 localStorage devhome_workbench（四象限格式）
+     * v2 格式：[{id, title, quadrant, status, ...}]
+     * workbench 格式：{quadrants: {q1: {tasks: [...]}, q2: {...}, ...}}
+     * @param {Array} v2Tasks - v2 扁平任务数组
+     */
+    function _syncTasksToWorkbench(v2Tasks) {
+        if (!ns.defaultWorkbenchState) return;
+        // 克隆默认工作台状态作为基础结构
+        const workbench = JSON.parse(JSON.stringify(ns.defaultWorkbenchState));
+        // 按象限分组任务，剥离 quadrant 字段
+        v2Tasks.forEach(function (t) {
+            const q = t.quadrant || 'q1';
+            if (workbench.quadrants[q]) {
+                const taskCopy = Object.assign({}, t);
+                delete taskCopy.quadrant; // 四象限格式不需要 quadrant 字段（由外层 key 决定）
+                workbench.quadrants[q].tasks.push(taskCopy);
+            }
+        });
+        // 写入 localStorage devhome_workbench
+        ns.devhomeStorage.set('workbench', workbench);
+        console.log('[数据] 已同步四象限任务到 localStorage devhome_workbench');
+    }
 
     /* ===== 设置保存辅助 ===== */
     ns._saveStrictMode = function (on) {
