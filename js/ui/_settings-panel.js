@@ -66,6 +66,18 @@ window.DevHome = window.DevHome || {};
         setToggle('sToggleStrict', storage.get('strict_mode', false));
         setToggle('sToggleFileSync', storage.get('file_sync', false));
 
+        // 链接打开方式：默认全部新标签页打开
+        let newTabTiles = true;
+        let newTabSearch = true;
+        try {
+            var rawTiles = localStorage.getItem('linkNewTab_tiles');
+            if (rawTiles !== null) newTabTiles = rawTiles === 'true';
+            var rawSearch = localStorage.getItem('linkNewTab_search');
+            if (rawSearch !== null) newTabSearch = rawSearch === 'true';
+        } catch (_) {}
+        setToggle('sToggleNewTabTiles', newTabTiles);
+        setToggle('sToggleNewTabSearch', newTabSearch);
+
         const sizeKey = ns.normalizeShortcutSize(storage.get('shortcut_size', ns.DEFAULT_SHORTCUT_SIZE));
         document.querySelectorAll('[data-shortcut-size]').forEach(function (b) { b.classList.toggle('active', b.dataset.shortcutSize === sizeKey); });
         const colsKey = ns.normalizeShortcutColumns(storage.get('shortcut_columns', ns.DEFAULT_SHORTCUT_COLUMNS));

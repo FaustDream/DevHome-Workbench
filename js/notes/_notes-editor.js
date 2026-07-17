@@ -15,11 +15,18 @@ window.DevHome = window.DevHome || {};
     /** 清理 HTML 中的空白标签，解决复制笔记产生大量空白行的问题 */
     ns.cleanEmptyHTML = function (html) {
         if (!html || typeof html !== 'string') return html || '';
-        let cleaned = html.replace(/<p>\s*<\/p>/gi, '');
+        let cleaned = html;
+        // 移除所有空 <p></p>
+        cleaned = cleaned.replace(/<p>\s*<\/p>/gi, '');
+        // 合并连续 <br> 为单个
         cleaned = cleaned.replace(/(<br\s*\/?>\s*){2,}/gi, '<br>');
+        // 移除首尾连续空段落
         cleaned = cleaned.replace(/^(<p>\s*<\/p>)+/i, '');
         cleaned = cleaned.replace(/(<p>\s*<\/p>)+$/i, '');
+        // 移除仅含 <br> 的空段落
         cleaned = cleaned.replace(/<p>\s*(<br\s*\/?>\s*)*\s*<\/p>/gi, '');
+        // 修复任务列表项内的空段落：<div><p></p></div> → <div></div>
+        cleaned = cleaned.replace(/(<div[^>]*>)\s*<p>\s*<\/p>\s*(<\/div>)/gi, '$1$2');
         return cleaned;
     };
 

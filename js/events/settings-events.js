@@ -53,6 +53,17 @@ window.DevHome = window.DevHome || {};
                 }
                 if (cb.closest('#sToggleAutoFocus')) { ns.handleSettingsAction('toggleAutoFocus'); return; }
                 if (cb.closest('#sToggleCategoryMemory')) { ns.handleSettingsAction('toggleCategoryMemory'); return; }
+                // 链接打开方式
+                if (cb.closest('#sToggleNewTabTiles')) {
+                    localStorage.setItem('linkNewTab_tiles', String(cb.checked));
+                    console.log('[设置] 网站新标签打开: ' + cb.checked);
+                    return;
+                }
+                if (cb.closest('#sToggleNewTabSearch')) {
+                    localStorage.setItem('linkNewTab_search', String(cb.checked));
+                    console.log('[设置] 搜索结果新标签打开: ' + cb.checked);
+                    return;
+                }
                 const toggleStrict = cb.closest('#sToggleStrict');
                 if (toggleStrict) { ns._saveStrictMode(cb.checked); return; }
                 const toggleFileSync = cb.closest('#sToggleFileSync');

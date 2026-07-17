@@ -17,6 +17,16 @@ let storage = ns.storage;
         dom.tilesContainer.addEventListener('click', ns.handleTileDeleteClick);
         dom.tilesContainer.addEventListener('keydown', ns.handleTileDeleteKeydown);
 
+        // 磁贴链接统一通过 openUrl 打开（受"新标签打开网站"设置控制）
+        dom.tilesContainer.addEventListener('click', function (e) {
+            var tileLink = e.target.closest('.tile');
+            if (!tileLink) return;
+            // 编辑模式下不拦截
+            if (ns.isTileDeleteModeActive && ns.isTileDeleteModeActive()) return;
+            e.preventDefault();
+            ns.openUrl(tileLink.href, { type: 'tiles' });
+        });
+
         // 空白区域右键菜单
         dom.blankContextMenu.addEventListener('click', function (e) { const item = e.target.closest('.context-menu-item'); if (item && item.dataset.action) ns.handleBlankMenuAction(item.dataset.action); });
 

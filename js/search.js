@@ -144,7 +144,7 @@ window.DevHome = window.DevHome || {};
     };
 
     ns.applySuggestion = function (sug) {
-        if (sug.type === 'tile') { ns.openUrl(sug.url); dom.searchInput.value = ''; ns.hideSuggestions(); dom.searchInput.blur(); }
+        if (sug.type === 'tile') { ns.openUrl(sug.url, { type: 'tiles' }); dom.searchInput.value = ''; ns.hideSuggestions(); dom.searchInput.blur(); }
         else { dom.searchInput.value = sug.text; ns.hideSuggestions(); ns.doSearch(); }
     };
 
@@ -155,7 +155,7 @@ window.DevHome = window.DevHome || {};
         ns.addSearchHistory(query); ns.hideSuggestions();
         // 保留内容开关：关闭时搜索后清空输入框
         if (!ns.getSearchConfig || !ns.getSearchConfig().retainContent) { dom.searchInput.value = ''; }
-        ns.openUrl(state.engineUrl + encodeURIComponent(query));
+        ns.openUrl(state.engineUrl + encodeURIComponent(query), { type: 'search' });
     };
 
     /* ===== 搜索引擎 ===== */
