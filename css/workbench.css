@@ -56,7 +56,7 @@
 .wb-quadrant-panel {
     display: flex;
     flex-direction: column;
-    background: var(--color-sidebar-bg);
+    background: #F5F5F7; /* Apple 经典侧栏灰，完全不透明以保证清晰锐利 */
     border-right: var(--card-border);
     overflow: hidden;
     transition: width 0.3s ease;
@@ -1841,7 +1841,7 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    background: var(--color-sidebar-bg);
+    background: #F5F5F7; /* Apple 经典侧栏灰，完全不透明 */
     border-left: var(--card-border);
     overflow-y: auto;
     overflow-x: hidden;

@@ -144,8 +144,7 @@
     display: grid; place-items: center;
     cursor: pointer;
     box-shadow: var(--shadow-md);
-    backdrop-filter: blur(18px) saturate(120%);
-    -webkit-backdrop-filter: blur(18px) saturate(120%);
+    /* 移除 backdrop-filter 模糊，保持 Apple 风格的清晰锐利 */
     transition: color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast), background var(--transition-fast);
 }
 .settings-gear-btn:hover { color: var(--color-accent); border-color: var(--color-accent-border-56); transform: translateY(-1px); }
@@ -171,8 +170,7 @@
     border-left: 1px solid var(--color-border-active);
     background: var(--color-bg-elevated);
     box-shadow: var(--shadow-lg);
-    backdrop-filter: blur(24px) saturate(120%);
-    -webkit-backdrop-filter: blur(24px) saturate(120%);
+    /* 移除 backdrop-filter 模糊，保持 Apple 极简清晰 */
     transform: translateX(100%);
     transition: transform var(--transition-normal);
     overflow: hidden;

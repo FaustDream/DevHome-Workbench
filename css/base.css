@@ -123,18 +123,9 @@ body {
     transition: background-color 200ms ease, color 200ms ease;
 }
 
-/* 网格线背景（部分主题使用） */
+/* 网格线背景已禁用（Apple 浅色系需要极致干净通透的画布） */
 body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -3;
-    pointer-events: none;
-    background-image:
-        linear-gradient(var(--color-border, transparent) 1px, transparent 1px),
-        linear-gradient(90deg, var(--color-border, transparent) 1px, transparent 1px);
-    background-size: 42px 42px;
-    mask-image: radial-gradient(circle at 50% 30%, black, transparent 78%);
+    content: none;
 }
 
 /* 背景容器（自定义背景图/视频） */
@@ -157,8 +148,7 @@ body::before {
     position: absolute;
     inset: 0;
     background: var(--gradient-overlay);
-    backdrop-filter: blur(2px);
-    -webkit-backdrop-filter: blur(2px);
+    /* 移除 backdrop-filter 模糊，避免灰蒙雾霾感 */
 }
 #bgInput, #imageInput {
     display: none;
