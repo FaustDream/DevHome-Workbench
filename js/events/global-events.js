@@ -7,9 +7,9 @@ window.DevHome = window.DevHome || {};
     'use strict';
 
     ns._bindGlobalEvents = function () {
-        var state = ns.state;
-        var dom = ns.dom;
-        var engines = ns.engines;
+        const state = ns.state;
+        const dom = ns.dom;
+        const engines = ns.engines;
 
         document.addEventListener('click', function (e) {
             if (!e.target.closest('.search-engine-selector') && !e.target.closest('.engine-dropdown')) ns.hideEngineDropdown();
@@ -26,8 +26,8 @@ window.DevHome = window.DevHome || {};
         function clearCatLongPressTimer() { if (state.categoryLongPressTimer) { clearTimeout(state.categoryLongPressTimer); state.categoryLongPressTimer = null; } }
 
         document.addEventListener('keydown', function (e) {
-            var activeEl = document.activeElement;
-            var isEditing = activeEl === dom.wbNoteTitle
+            const activeEl = document.activeElement;
+            const isEditing = activeEl === dom.wbNoteTitle
                 || activeEl === dom.wbNoteContent
                 || activeEl === dom.wbNotesSearch
                 || activeEl === dom.wbCaptureInput
@@ -48,11 +48,11 @@ window.DevHome = window.DevHome || {};
 
             // Esc 键处理
             if (e.key === 'Escape') {
-                var isFocusMode = state.currentDevhomeMode !== 'daily';
-                var hasEngineDropdown = dom.engineDropdown && dom.engineDropdown.classList.contains('visible');
-                var hasSuggestions = state.suggestionsVisible;
-                var isSearchFocused = document.activeElement === dom.searchInput;
-                var hasSettingsOpen = dom.settingsOverlay && dom.settingsOverlay.classList.contains('visible');
+                const isFocusMode = state.currentDevhomeMode !== 'daily';
+                const hasEngineDropdown = dom.engineDropdown && dom.engineDropdown.classList.contains('visible');
+                const hasSuggestions = state.suggestionsVisible;
+                const isSearchFocused = document.activeElement === dom.searchInput;
+                const hasSettingsOpen = dom.settingsOverlay && dom.settingsOverlay.classList.contains('visible');
                 if (isFocusMode || hasEngineDropdown || hasSuggestions || isSearchFocused || hasSettingsOpen) e.preventDefault();
                 if (isFocusMode) ns.exitFocusMode();
                 ns.hideEngineDropdown(); ns.hideSuggestions(); ns.closeSettingsPanel();
@@ -69,13 +69,13 @@ window.DevHome = window.DevHome || {};
 
             // 数字键切换搜索引擎
             if (!isEditing && activeEl !== dom.searchInput) {
-                var num = parseInt(e.key), engineKeys = Object.keys(engines);
+                const num = parseInt(e.key), engineKeys = Object.keys(engines);
                 if (num >= 1 && num <= engineKeys.length) { e.preventDefault(); ns.setEngine(engineKeys[num - 1]); dom.searchInput.focus(); }
             }
 
             // Alt+数字切换搜索引擎
             if (e.altKey && e.key >= '1' && e.key <= '5') {
-                e.preventDefault(); var num2 = parseInt(e.key), ek2 = Object.keys(engines);
+                e.preventDefault(); const num2 = parseInt(e.key), ek2 = Object.keys(engines);
                 if (num2 >= 1 && num2 <= ek2.length) { ns.setEngine(ek2[num2 - 1]); dom.searchInput.focus(); }
             }
 
@@ -83,8 +83,8 @@ window.DevHome = window.DevHome || {};
             if ((e.ctrlKey || e.metaKey) && (e.key === '+' || e.key === '=' || e.key === '-')) {
                 if (!isEditing && activeEl !== dom.searchInput) {
                     e.preventDefault();
-                    var currentScale = parseFloat(localStorage.getItem('tabpage_view_scale') || '1.0');
-                    var newScale = e.key === '-' ? currentScale - 0.05 : currentScale + 0.05;
+                    const currentScale = parseFloat(localStorage.getItem('tabpage_view_scale') || '1.0');
+                    let newScale = e.key === '-' ? currentScale - 0.05 : currentScale + 0.05;
                     newScale = Math.max(0.6, Math.min(1.5, Math.round(newScale * 100) / 100));
                     document.documentElement.style.setProperty('--view-scale', newScale);
                     localStorage.setItem('tabpage_view_scale', newScale);
@@ -96,12 +96,12 @@ window.DevHome = window.DevHome || {};
         // 右键菜单 (磁贴)
         dom.contextMenu.addEventListener('click', function (e) {
             if (e.target.closest('.ctx-has-submenu')) return;
-            var item = e.target.closest('.context-menu-item');
+            const item = e.target.closest('.context-menu-item');
             if (item && item.dataset.action) ns.handleContextMenuAction(item.dataset.action);
         });
 
         // 分类子菜单事件
-        var ctxSubMenu = document.getElementById('ctxCategorySubMenu');
+        const ctxSubMenu = document.getElementById('ctxCategorySubMenu');
         if (ctxSubMenu) {
             ctxSubMenu.addEventListener('mouseenter', function () {
                 if (ns.cancelSubMenuTimer) ns.cancelSubMenuTimer();
@@ -111,9 +111,9 @@ window.DevHome = window.DevHome || {};
                 ctxSubMenu._hideTimer = setTimeout(function () { ctxSubMenu.classList.remove('visible'); }, 200);
             });
             ctxSubMenu.addEventListener('click', function (e) {
-                var item = e.target.closest('.context-menu-item');
+                const item = e.target.closest('.context-menu-item');
                 if (!item) return;
-                var pageIdx = parseInt(item.dataset.page, 10);
+                const pageIdx = parseInt(item.dataset.page, 10);
                 if (!isNaN(pageIdx)) ns.handleSubMenuClick(pageIdx);
             });
         }
@@ -122,7 +122,7 @@ window.DevHome = window.DevHome || {};
         document.addEventListener('contextmenu', function (e) {
             if (e.target.closest('.tile')) { e.preventDefault(); }
             else if (dom.wbNoteContent && dom.wbNoteContent.contains(e.target) && state.currentDevhomeMode === 'workbench') {
-                var sel = window.getSelection();
+                const sel = window.getSelection();
                 if (sel.rangeCount && dom.wbNoteContent.contains(sel.anchorNode)) {
                     state._savedSelection = sel.getRangeAt(0).cloneRange();
                 }

@@ -11,22 +11,27 @@ window.DevHome = window.DevHome || {};
 (function (ns) {
     'use strict';
 
-    var dom = ns.dom;
-    var state = ns.state;
-    var storageV2 = ns.storageV2;
-    var DEFAULT_V2_CONFIG = ns.DEFAULT_V2_CONFIG;
+    const dom = ns.dom;
+    const state = ns.state;
+    const storageV2 = ns.storageV2;
+    const DEFAULT_V2_CONFIG = ns.DEFAULT_V2_CONFIG;
 
-    /** 对话历史（会话内，不持久化） */
-    var chatMessages = [];
+    const CHAT_STORAGE_KEY = 'ai_chat_history';  // 对话历史存储键（chrome.storage.local）
+
+    /** 对话历史（持久化到 chrome.storage.local，刷新不丢失） */
+    let chatMessages = [];
+
+    /** 下拉菜单外部点击关闭监听器引用，防止多次注册累积泄漏 */
+    let documentClickHandler = null;
 
     /** 面板 DOM 引用（懒初始化） */
-    var panelEl = null;
-    var messagesEl = null;
-    var inputEl = null;
-    var sendBtn = null;
-    var headerBadge = null;
-    var modelSelect = null;
-    var modelDropdown = null;
+    let panelEl = null;
+    let messagesEl = null;
+    let inputEl = null;
+    let sendBtn = null;
+    let headerBadge = null;
+    let modelSelect = null;
+    let modelDropdown = null;
 
     /* ================================================================
        DOM 构建
@@ -87,7 +92,7 @@ window.DevHome = window.DevHome || {};
 
     function bindPanelEvents() {
         // 头部点击 → 展开/折叠
-        var header = panelEl.querySelector('#aiChatHeader');
+        let header = panelEl.querySelector('#aiChatHeader');
         if (header) {
             header.addEventListener('click', function (e) {
                 if (e.target.closest('button')) return; // 不拦截按钮点击
@@ -96,10 +101,10 @@ window.DevHome = window.DevHome || {};
         }
 
         // 最小化按钮
-        var minBtn = panelEl.querySelector('#aiChatMinBtn');
+        const minBtn = panelEl.querySelector('#aiChatMinBtn');
         if (minBtn) minBtn.addEventListener('click', function (e) { e.stopPropagation(); closeChat(); });
         // 关闭按钮（完全隐藏）
-        var closeBtn = panelEl.querySelector('#aiChatCloseBtn');
+        const closeBtn = panelEl.querySelector('#aiChatCloseBtn');
         if (closeBtn) closeBtn.addEventListener('click', function (e) { e.stopPropagation(); hideChat(); });
 
         // 模型选择器
@@ -110,25 +115,29 @@ window.DevHome = window.DevHome || {};
             // 下拉菜单点击事件委托
             modelDropdown.addEventListener('click', function (e) {
                 e.stopPropagation();
-                var item = e.target.closest('.ai-chat-model-item');
+                const item = e.target.closest('.ai-chat-model-item');
                 if (item && item.dataset.providerId) {
                     switchChatProvider(item.dataset.providerId);
                 }
             });
-            // 点击外部关闭
-            document.addEventListener('click', function (e) {
+            // 点击外部关闭下拉菜单（使用模块级引用避免监听器累积泄漏）
+            if (documentClickHandler) {
+                document.removeEventListener('click', documentClickHandler);
+            }
+            documentClickHandler = function (e) {
                 if (modelDropdown && !modelDropdown.contains(e.target) && e.target !== modelSelect && !modelSelect.contains(e.target)) {
                     modelDropdown.style.display = 'none';
                 }
-            });
+            };
+            document.addEventListener('click', documentClickHandler);
         }
 
         // 清空按钮
-        var clearBtn = panelEl.querySelector('#aiChatClearBtn');
+        const clearBtn = panelEl.querySelector('#aiChatClearBtn');
         if (clearBtn) clearBtn.addEventListener('click', function (e) { e.stopPropagation(); clearChat(); });
 
         // 保存按钮
-        var saveBtn = panelEl.querySelector('#aiChatSaveBtn');
+        const saveBtn = panelEl.querySelector('#aiChatSaveBtn');
         if (saveBtn) saveBtn.addEventListener('click', function (e) { e.stopPropagation(); saveChatAsNote(); });
 
         // 发送按钮
@@ -166,12 +175,17 @@ window.DevHome = window.DevHome || {};
 
     function openChat() {
         ensurePanel();
-        // 关闭设置面板
         if (typeof ns.closeSettingsPanel === 'function') ns.closeSettingsPanel();
         panelEl.classList.remove('minimized');
         panelEl.classList.remove('hidden');
         panelEl.classList.add('expanded');
         updateBadge();
+        // 加载持久化的对话历史（仅首次打开时加载，避免覆盖当前对话）
+        if (chatMessages.length === 0) {
+            loadChatHistory().then(function (loaded) {
+                if (loaded) renderMessages();
+            });
+        }
         setTimeout(function () { if (inputEl) inputEl.focus(); }, 300);
         console.log('[面板] 打开 AI 对话面板');
     }
@@ -180,6 +194,11 @@ window.DevHome = window.DevHome || {};
         if (!panelEl) return;
         panelEl.classList.remove('expanded');
         panelEl.classList.add('minimized');
+        // 清理下拉菜单外部点击监听器，避免面板隐藏后残留
+        if (documentClickHandler) {
+            document.removeEventListener('click', documentClickHandler);
+            documentClickHandler = null;
+        }
         console.log('[面板] 折叠 AI 对话面板（点击标题栏可重新展开）');
     }
 
@@ -189,27 +208,60 @@ window.DevHome = window.DevHome || {};
         panelEl.classList.remove('expanded');
         panelEl.classList.remove('minimized');
         panelEl.classList.add('hidden');
+        // 清理下拉菜单外部点击监听器，面板已完全隐藏无需监听
+        if (documentClickHandler) {
+            document.removeEventListener('click', documentClickHandler);
+            documentClickHandler = null;
+        }
         console.log('[面板] 隐藏 AI 对话面板');
     }
 
     function clearChat() {
         chatMessages = [];
+        saveChatHistory();  // 同步清空持久化存储
         renderMessages();
         panelEl.classList.remove('has-messages');
         console.log('[面板] 清空对话');
     }
 
+    /** 持久化对话历史到 chrome.storage.local */
+    async function saveChatHistory() {
+        try {
+            // 只保留最近 50 条，避免存储膨胀
+            const toSave = chatMessages.slice(-50);
+            await chrome.storage.local.set({ [CHAT_STORAGE_KEY]: toSave });
+        } catch (e) {
+            console.warn('[AI] 对话历史保存失败:', e.message);
+        }
+    }
+
+    /** 从 chrome.storage.local 加载对话历史 */
+    async function loadChatHistory() {
+        try {
+            const result = await chrome.storage.local.get(CHAT_STORAGE_KEY);
+            const saved = result[CHAT_STORAGE_KEY];
+            if (Array.isArray(saved) && saved.length > 0) {
+                chatMessages = saved;
+                console.log('[AI] 已恢复 ' + saved.length + ' 条对话历史');
+                return true;
+            }
+        } catch (e) {
+            console.warn('[AI] 对话历史加载失败:', e.message);
+        }
+        return false;
+    }
+
     /** 渲染模型下拉菜单 */
     async function renderModelDropdown() {
         if (!modelDropdown) return;
-        var config = await storageV2.get(storageV2.KEYS.CONFIG, DEFAULT_V2_CONFIG);
-        var activeId = config.aiApi.activeProvider || 'hunyuan';
-        var savedProviders = config.aiApi.providers || {};
+        const config = await storageV2.get(storageV2.KEYS.CONFIG, DEFAULT_V2_CONFIG);
+        const activeId = config.aiApi.activeProvider || 'hunyuan';
+        const savedProviders = config.aiApi.providers || {};
 
         // 收集所有可用供应商
-        var items = [];
+        let items = [];
         ns.AI_PROVIDERS.forEach(function (p) {
-            var saved = savedProviders[p.id] || {};
+            const saved = savedProviders[p.id] || {};
             items.push({
                 id: p.id, name: p.name, badge: p.badge,
                 model: saved.model || p.model,
@@ -219,11 +271,11 @@ window.DevHome = window.DevHome || {};
         // 自定义供应商
         Object.keys(savedProviders).forEach(function (pid) {
             if (ns.AI_PROVIDERS.some(function (p) { return p.id === pid; })) return;
-            var sp = savedProviders[pid];
+            const sp = savedProviders[pid];
             items.push({ id: pid, name: sp.name || pid, badge: sp.name || pid, model: sp.model || '', active: pid === activeId });
         });
 
-        var html = '';
+        let html = '';
         items.forEach(function (item) {
             html += '<div class="ai-chat-model-item' + (item.active ? ' active' : '') + '" data-provider-id="' + ns.escapeHtml(item.id) + '">' +
                 '<span class="ai-chat-model-name">' + ns.escapeHtml(item.name) + '</span>' +
@@ -247,12 +299,12 @@ window.DevHome = window.DevHome || {};
 
     /** 切换聊天供应商 */
     async function switchChatProvider(providerId) {
-        var config = await storageV2.get(storageV2.KEYS.CONFIG, DEFAULT_V2_CONFIG);
+        const config = await storageV2.get(storageV2.KEYS.CONFIG, DEFAULT_V2_CONFIG);
         config.aiApi.activeProvider = providerId;
         await storageV2.set(storageV2.KEYS.CONFIG, config);
 
         // 更新徽章
-        var provider = ns.getProviderById(providerId);
+        let provider = ns.getProviderById(providerId);
         if (headerBadge && provider) headerBadge.textContent = provider.badge || provider.name;
 
         // 更新下拉菜单
@@ -270,9 +322,9 @@ window.DevHome = window.DevHome || {};
     async function updateBadge() {
         if (!headerBadge) return;
         try {
-            var config = await storageV2.get(storageV2.KEYS.CONFIG, DEFAULT_V2_CONFIG);
-            var providerId = config.aiApi.activeProvider || 'hunyuan';
-            var provider = ns.getProviderById(providerId);
+            const config = await storageV2.get(storageV2.KEYS.CONFIG, DEFAULT_V2_CONFIG);
+            const providerId = config.aiApi.activeProvider || 'hunyuan';
+            let provider = ns.getProviderById(providerId);
             if (provider) headerBadge.textContent = provider.badge || provider.name;
         } catch (_) { headerBadge.textContent = 'AI'; }
     }
@@ -289,11 +341,11 @@ window.DevHome = window.DevHome || {};
             return;
         }
 
-        var html = '';
+        let html = '';
         chatMessages.forEach(function (msg) {
-            var role = msg.role === 'user' ? 'user' : 'assistant';
-            var avatar = role === 'user' ? '我' : 'AI';
-            var content = role === 'assistant' && typeof marked !== 'undefined' && marked.parse
+            const role = msg.role === 'user' ? 'user' : 'assistant';
+            const avatar = role === 'user' ? '我' : 'AI';
+            let content = role === 'assistant' && typeof marked !== 'undefined' && marked.parse
                 ? ns.sanitizeHtml(marked.parse(msg.content || ''))
                 : ns.escapeHtml(msg.content || '');
             html += '<div class="ai-chat-msg ' + role + '">' +
@@ -309,7 +361,7 @@ window.DevHome = window.DevHome || {};
 
     function showLoading() {
         if (!messagesEl) return;
-        var loadingEl = document.createElement('div');
+        const loadingEl = document.createElement('div');
         loadingEl.className = 'ai-chat-loading';
         loadingEl.id = 'aiChatLoading';
         loadingEl.innerHTML = '<div class="ai-chat-loading-dots"><span></span><span></span><span></span></div>';
@@ -318,7 +370,7 @@ window.DevHome = window.DevHome || {};
     }
 
     function hideLoading() {
-        var el = document.getElementById('aiChatLoading');
+        let el = document.getElementById('aiChatLoading');
         if (el && el.parentNode) el.parentNode.removeChild(el);
     }
 
@@ -328,7 +380,7 @@ window.DevHome = window.DevHome || {};
 
     async function sendMessage() {
         if (!inputEl) return;
-        var text = inputEl.value.trim();
+        const text = inputEl.value.trim();
         if (!text) return;
 
         // 确保面板展开
@@ -349,36 +401,37 @@ window.DevHome = window.DevHome || {};
 
         try {
             // 读取配置
-            var config = await storageV2.get(storageV2.KEYS.CONFIG, DEFAULT_V2_CONFIG);
-            var providerId = config.aiApi.activeProvider || 'hunyuan';
-            var providerConfig = config.aiApi.providers && config.aiApi.providers[providerId]
+            const config = await storageV2.get(storageV2.KEYS.CONFIG, DEFAULT_V2_CONFIG);
+            const providerId = config.aiApi.activeProvider || 'hunyuan';
+            const providerConfig = config.aiApi.providers && config.aiApi.providers[providerId]
                 ? config.aiApi.providers[providerId]
                 : {};
-            var provider = ns.getProviderById(providerId);
+            let provider = ns.getProviderById(providerId);
             // 自定义（OpenAI 兼容）供应商需使用通用适配器，否则无法发起请求
             if (!provider) {
                 provider = ns.createOpenAIProvider(providerId, providerConfig);
             }
 
-            var apiKey = providerConfig.apiKey || provider.apiKey;
-            var endpoint = providerConfig.endpoint || provider.endpoint;
-            var model = providerConfig.model || provider.model;
+            const apiKey = providerConfig.apiKey || provider.apiKey;
+            const endpoint = providerConfig.endpoint || provider.endpoint;
+            const model = providerConfig.model || provider.model;
 
             if (!apiKey) {
                 hideLoading();
                 chatMessages.push({ role: 'assistant', content: '请先在设置中配置 API Key' });
+                saveChatHistory();
                 renderMessages();
                 return;
             }
 
             // 构建对话消息（取最近 20 条作为上下文，包含刚发送的用户问题）
-            var historyMessages = chatMessages.slice(-20);
-            var apiMessages = [
+            const historyMessages = chatMessages.slice(-20);
+            const apiMessages = [
                 { role: 'system', content: '你是一个智能助手，请用简洁清晰的中文回答用户的问题。如果问题涉及代码，请使用 Markdown 代码块格式输出。' }
             ];
             historyMessages.forEach(function (m) { apiMessages.push({ role: m.role, content: m.content }); });
 
-            var response = await fetch(endpoint, {
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -388,12 +441,12 @@ window.DevHome = window.DevHome || {};
             });
 
             if (!response.ok) {
-                var errText = await response.text().catch(function () { return ''; });
+                const errText = await response.text().catch(function () { return ''; });
                 throw new Error('请求失败: ' + response.status + ' ' + errText.slice(0, 200));
             }
 
-            var data = await response.json();
-            var reply = provider.extractContent(data);
+            const data = await response.json();
+            let reply = provider.extractContent(data);
             if (!reply) {
                 reply = data.choices && data.choices[0] ? data.choices[0].message.content : JSON.stringify(data);
             }
@@ -406,10 +459,11 @@ window.DevHome = window.DevHome || {};
                 role: 'assistant',
                 content: '**抱歉，发生了错误**\n\n' + ns.escapeHtml(e.message) + '\n\n请检查 API 配置'
             });
-            console.error('[AI Chat] 错误:', e);
+            console.error('[AI] 对话请求失败:', e);
         }
 
         renderMessages();
+        saveChatHistory();  // 每次消息变更后持久化
         if (sendBtn) sendBtn.disabled = false;
     }
 
@@ -420,12 +474,12 @@ window.DevHome = window.DevHome || {};
     function saveChatAsNote() {
         if (chatMessages.length === 0) { ns.showToast('暂无对话内容', 'info'); return; }
 
-        var content = chatMessages.map(function (m) {
-            var prefix = m.role === 'user' ? '**我：**' : '**AI：**';
+        let content = chatMessages.map(function (m) {
+            const prefix = m.role === 'user' ? '**我：**' : '**AI：**';
             return prefix + '\n' + m.content;
         }).join('\n\n---\n\n');
 
-        var title = 'AI 对话 - ' + new Date().toLocaleDateString('zh-CN') + ' ' +
+        let title = 'AI 对话 - ' + new Date().toLocaleDateString('zh-CN') + ' ' +
             new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
 
         ns.createNote({ title: title, content: content, type: 'note', tags: ['AI对话'] }).then(function () {

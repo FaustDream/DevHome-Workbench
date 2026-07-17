@@ -256,8 +256,8 @@ body::before {
     gap: 10px;
     padding: 10px 16px;
     background: var(--color-surface);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     border: 1px solid var(--color-warning);
     border-radius: var(--radius-sm);
     color: var(--color-text);
@@ -381,3 +381,42 @@ body::before {
 }
 @keyframes wbToastIn  { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
 @keyframes wbToastOut { from { opacity: 1; transform: translateX(-50%) translateY(0); } to { opacity: 0; transform: translateX(-50%) translateY(-8px); } }
+
+/* ============================================
+   响应式断点系统（mobile-first 渐进增强）
+   
+   断点策略：
+   - 默认（< 640px）：移动端 / 侧边栏窄屏
+   - md（≥ 640px）：平板竖屏 / 小屏笔记本
+   - lg（≥ 1024px）：标准笔记本 / 桌面（当前默认基准）
+   - xl（≥ 1440px）：宽屏 / 2K+ 显示器优化
+   
+   使用方式：各模块 CSS 可通过这些断点覆写布局属性。
+   注意：当前项目主要面向 1024px+ 桌面端设计，响应式适配需渐进补充。
+   ============================================ */
+
+/* 移动端 / 窄屏：堆叠布局，隐藏次要信息 */
+@media (max-width: 639px) {
+    /* 主容器内边距缩减 */
+    .container { padding: 16px 12px; }
+    /* 分类按钮行允许换行 */
+    .cat-row { flex-wrap: wrap; gap: 4px; }
+    /* 搜索栏缩减宽度 */
+    .search-container { max-width: 100%; }
+    /* 磁贴网格缩减列数（由 JS 控制，此处作为 fallback） */
+    .tiles-grid { gap: 10px; }
+}
+
+/* 平板 / 小屏笔记本：适度缩减间距 */
+@media (min-width: 640px) and (max-width: 1023px) {
+    .container { padding: 24px 20px; }
+    .tiles-grid { gap: 14px; }
+}
+
+/* 标准桌面（1024px - 1439px）：当前默认基准，无需覆写 */
+
+/* 宽屏 / 2K+ 显示器：增加内容密度与可视范围 */
+@media (min-width: 1440px) {
+    .container { max-width: 1280px; margin-left: auto; margin-right: auto; }
+    .tiles-grid { gap: 20px; }
+}

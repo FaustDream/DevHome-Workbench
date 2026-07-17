@@ -96,4 +96,18 @@ window.DevHome = window.DevHome || {};
     };
 
     console.log('[AI] 供应商注册完成，内置 ' + ns.AI_PROVIDERS.length + ' 个供应商');
+
+    /**
+     * 启动时检查所有内置供应商的 Key 状态，输出警告日志
+     * 由 main.js 在 AI 模块加载后调用
+     */
+    ns.checkProviderKeyStatus = function () {
+        ns.AI_PROVIDERS.forEach(function (p) {
+            if (!p.apiKey) {
+                console.warn('[AI] ' + p.name + ' 未配置 API Key，请在设置中填写后使用');
+            } else {
+                console.log('[AI] ' + p.name + ' API Key 已配置');
+            }
+        });
+    };
 })(window.DevHome);

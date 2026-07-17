@@ -18,10 +18,10 @@ window.DevHome = window.DevHome || {};
     'use strict';
 
     /* ===== 内部常量 ===== */
-    var STORAGE_PREFIX = 'v2/';
-    var TABPAGE_PREFIX = 'tabpage_';
-    var DEVHOME_PREFIX = 'devhome_';
-    var CACHE_TTL = 24 * 60 * 60 * 1000; // 24小时
+    const STORAGE_PREFIX = 'v2/';
+    const TABPAGE_PREFIX = 'tabpage_';
+    const DEVHOME_PREFIX = 'devhome_';
+    const CACHE_TTL = 24 * 60 * 60 * 1000; // 24小时
 
     /* ===== 可用性检查 ===== */
     function hasChromeStorage() {
@@ -31,9 +31,9 @@ window.DevHome = window.DevHome || {};
     /* ===== localStorage 缓存辅助 ===== */
     function cacheGet(key, fallback) {
         try {
-            var raw = localStorage.getItem(key);
+            const raw = localStorage.getItem(key);
             if (raw !== null) {
-                var parsed = JSON.parse(raw);
+                const parsed = JSON.parse(raw);
                 // 检查过期
                 if (parsed._ts && Date.now() - parsed._ts > CACHE_TTL) return fallback;
                 return parsed._v !== undefined ? parsed._v : parsed;
@@ -58,7 +58,7 @@ window.DevHome = window.DevHome || {};
         async getPages() {
             if (hasChromeStorage()) {
                 try {
-                    var result = await chrome.storage.local.get('v2/pages');
+                    const result = await chrome.storage.local.get('v2/pages');
                     if (result['v2/pages'] !== undefined) return result['v2/pages'];
                 } catch (_) {}
             }
@@ -82,7 +82,7 @@ window.DevHome = window.DevHome || {};
         async getPageNames() {
             if (hasChromeStorage()) {
                 try {
-                    var result = await chrome.storage.local.get('v2/pageNames');
+                    const result = await chrome.storage.local.get('v2/pageNames');
                     if (result['v2/pageNames'] !== undefined) return result['v2/pageNames'];
                 } catch (_) {}
             }
@@ -112,8 +112,8 @@ window.DevHome = window.DevHome || {};
          * @param {Object} note
          */
         async saveNote(note) {
-            var notes = await this.getNotes();
-            var idx = notes.findIndex(function (n) { return n.id === note.id; });
+            const notes = await this.getNotes();
+            const idx = notes.findIndex(function (n) { return n.id === note.id; });
             if (idx >= 0) {
                 notes[idx] = Object.assign({}, notes[idx], note, { updatedAt: Date.now() });
             } else {
@@ -130,8 +130,8 @@ window.DevHome = window.DevHome || {};
          * @param {string} id
          */
         async deleteNote(id) {
-            var notes = await this.getNotes();
-            var filtered = notes.filter(function (n) { return n.id !== id; });
+            const notes = await this.getNotes();
+            const filtered = notes.filter(function (n) { return n.id !== id; });
             await ns.storageV2.set(ns.storageV2.KEYS.NOTES, filtered);
             ns.state.notes = filtered;
         },
@@ -142,7 +142,7 @@ window.DevHome = window.DevHome || {};
         },
 
         async saveCapture(capture) {
-            var captures = await this.getCaptures();
+            let captures = await this.getCaptures();
             capture.createdAt = capture.createdAt || Date.now();
             captures.unshift(capture);
             // 最多保留 200 条
@@ -152,7 +152,7 @@ window.DevHome = window.DevHome || {};
         },
 
         async deleteCapture(id) {
-            var captures = await this.getCaptures();
+            let captures = await this.getCaptures();
             captures = captures.filter(function (c) { return c.id !== id; });
             await ns.storageV2.set(ns.storageV2.KEYS.CAPTURES, captures);
             ns.state.captures = captures;
@@ -164,8 +164,8 @@ window.DevHome = window.DevHome || {};
         },
 
         async saveTask(task) {
-            var tasks = await this.getTasks();
-            var idx = tasks.findIndex(function (t) { return t.id === task.id; });
+            let tasks = await this.getTasks();
+            const idx = tasks.findIndex(function (t) { return t.id === task.id; });
             if (idx >= 0) {
                 tasks[idx] = Object.assign({}, tasks[idx], task);
             } else {
@@ -176,7 +176,7 @@ window.DevHome = window.DevHome || {};
         },
 
         async deleteTask(id) {
-            var tasks = await this.getTasks();
+            let tasks = await this.getTasks();
             tasks = tasks.filter(function (t) { return t.id !== id; });
             await ns.storageV2.set(ns.storageV2.KEYS.TASKS, tasks);
         },
@@ -220,13 +220,13 @@ window.DevHome = window.DevHome || {};
 
         /* ---------- 数据导出（完整快照） ---------- */
         async exportAll() {
-            var pages = await this.getPages();
-            var pageNames = await this.getPageNames();
-            var notes = await this.getNotes();
-            var captures = await this.getCaptures();
-            var tasks = await this.getTasks();
-            var notebooks = await this.getNotebooks();
-            var config = await this.getConfig();
+            const pages = await this.getPages();
+            const pageNames = await this.getPageNames();
+            const notes = await this.getNotes();
+            let captures = await this.getCaptures();
+            let tasks = await this.getTasks();
+            const notebooks = await this.getNotebooks();
+            const config = await this.getConfig();
 
             return {
                 version: '3.0',

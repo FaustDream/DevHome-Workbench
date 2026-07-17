@@ -88,7 +88,8 @@
     align-items: stretch;
     cursor: default;
 }
-.context-menu-size:hover { background: transparent !important; color: var(--color-text-secondary); }
+/* 尺寸分隔控件：非交互区，hover 保持透明（使用高特异度替代 !important） */
+.context-menu .context-menu-size:hover { background: transparent; color: var(--color-text-secondary); }
 .shortcut-size-title {
     display: flex;
     align-items: center;
@@ -125,7 +126,7 @@
 }
 
 .context-menu-slider { cursor: default; }
-.context-menu-slider:hover { background: transparent !important; }
+.context-menu .context-menu-slider:hover { background: transparent; }
 .context-slider {
     width: 100%; margin-top: 4px;
     accent-color: var(--color-accent); height: 4px;

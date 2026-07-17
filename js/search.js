@@ -6,14 +6,14 @@ window.DevHome = window.DevHome || {};
 (function (ns) {
     'use strict';
 
-    var state = ns.state;
-    var dom = ns.dom;
-    var storage = ns.storage;
-    var $$ = ns.$$;
-    var escapeHtml = ns.escapeHtml;
-    var tileManager = ns.tileManager;
-    var engines = ns.engines;
-    var renderEngineIcon = ns.renderEngineIcon;
+    const state = ns.state;
+    const dom = ns.dom;
+    const storage = ns.storage;
+    const $$ = ns.$$;
+    const escapeHtml = ns.escapeHtml;
+    const tileManager = ns.tileManager;
+    const engines = ns.engines;
+    const renderEngineIcon = ns.renderEngineIcon;
 
     /* ===== 搜索历史 ===== */
     ns.loadSearchHistory = function () { state.searchHistory = storage.get('search_history', []); };
@@ -29,7 +29,7 @@ window.DevHome = window.DevHome || {};
 
     /* ===== 建议构建 ===== */
     function getTileSuggestions(query) {
-        var q = query.toLowerCase(), results = [];
+        const q = query.toLowerCase(), results = [];
         tileManager.currentTiles.forEach(function (tile) {
             if (tile.label.toLowerCase().includes(q)) {
                 results.push({ type: 'tile', text: tile.url, label: tile.label, url: tile.url, icon: tile.icon, iconType: tile.type, imageData: tile.imageData });
@@ -39,7 +39,7 @@ window.DevHome = window.DevHome || {};
     }
 
     ns.buildSuggestions = function (query) {
-        var suggestions = [], q = query.trim().toLowerCase();
+        const suggestions = [], q = query.trim().toLowerCase();
         if (q) {
             state.searchHistory.filter(function (t) { return t.toLowerCase().includes(q); }).forEach(function (t) { suggestions.push({ type: 'history', text: t, label: t }); });
             suggestions.push.apply(suggestions, getTileSuggestions(q));
@@ -50,11 +50,11 @@ window.DevHome = window.DevHome || {};
     };
 
     /* ===== 网络联想词 ===== */
-    var suggestionDebounce = null;
+    let suggestionDebounce = null;
     function fetchOnlineSuggestions(query, callback) {
         // 搜索建议开关：当用户关闭时跳过网络请求，仅保留本地历史+磁贴匹配
         if (!ns.getSearchConfig || !ns.getSearchConfig().showSuggestions) { callback([]); return; }
-        var url = 'https://api.bing.com/osjson.aspx?query=' + encodeURIComponent(query);
+        const url = 'https://api.bing.com/osjson.aspx?query=' + encodeURIComponent(query);
         fetch(url).then(function (r) { return r.json(); }).then(function (data) {
             if (Array.isArray(data) && Array.isArray(data[1])) callback(data[1]); else callback([]);
         }).catch(function (err) { console.error("网络联想词获取失败:", err); callback([]); });
@@ -63,14 +63,14 @@ window.DevHome = window.DevHome || {};
     ns.renderSuggestions = function () {
         // 搜索建议开关：关闭时不渲染
         if (ns.getSearchConfig && !ns.getSearchConfig().showSuggestions) { ns.hideSuggestions(); return; }
-        var query = dom.searchInput.value, suggestions = ns.buildSuggestions(query);
+        const query = dom.searchInput.value, suggestions = ns.buildSuggestions(query);
         updateSuggestionDOM(suggestions, query);
-        var q = query.trim().toLowerCase();
+        const q = query.trim().toLowerCase();
         if (q) {
             clearTimeout(suggestionDebounce);
             suggestionDebounce = setTimeout(function () {
                 fetchOnlineSuggestions(q, function (onlineWords) {
-                    var merged = suggestions.slice(), existingTexts = new Set(merged.map(function (s) { return s.text.toLowerCase(); }));
+                    const merged = suggestions.slice(), existingTexts = new Set(merged.map(function (s) { return s.text.toLowerCase(); }));
                     onlineWords.forEach(function (word) { if (!existingTexts.has(word.toLowerCase())) { merged.push({ type: 'online', text: word, label: word }); existingTexts.add(word.toLowerCase()); } });
                     updateSuggestionDOM(merged, query);
                 });
@@ -79,10 +79,10 @@ window.DevHome = window.DevHome || {};
     };
 
     function updateSuggestionDOM(suggestions, query) {
-        var panel = document.querySelector('.search-suggestions') || document.getElementById('searchSuggestions');
-        var list = document.querySelector('.suggestions-list') || document.getElementById('suggestionsList');
-        var header = document.querySelector('.suggestions-header') || document.getElementById('suggestionsHeader');
-        var footer = document.querySelector('.suggestions-footer') || document.getElementById('suggestionsFooter');
+        let panel = document.querySelector('.search-suggestions') || document.getElementById('searchSuggestions');
+        let list = document.querySelector('.suggestions-list') || document.getElementById('suggestionsList');
+        let header = document.querySelector('.suggestions-header') || document.getElementById('suggestionsHeader');
+        let footer = document.querySelector('.suggestions-footer') || document.getElementById('suggestionsFooter');
         if (!panel) {
             panel = document.createElement('div'); panel.className = 'search-suggestions';
             header = document.createElement('div'); header.className = 'suggestions-header';
@@ -92,13 +92,13 @@ window.DevHome = window.DevHome || {};
             if (dom.searchContainer) dom.searchContainer.appendChild(panel); else return;
         }
         list.innerHTML = ''; state.selectedSuggestionIndex = -1;
-        var q = query.trim().toLowerCase();
+        const q = query.trim().toLowerCase();
         header.innerHTML = '';
-        var headerTitle = document.createElement('span');
+        const headerTitle = document.createElement('span');
         headerTitle.textContent = q ? '搜索建议' : '最近搜索';
         header.appendChild(headerTitle);
         if (!q && state.searchHistory.length > 0) {
-            var clearBtn = document.createElement('button');
+            const clearBtn = document.createElement('button');
             clearBtn.type = 'button'; clearBtn.className = 'suggestions-clear-btn'; clearBtn.textContent = '清除历史';
             clearBtn.setAttribute('aria-label', '清除全部历史搜索记录');
             clearBtn.addEventListener('mousedown', function (e) { e.preventDefault(); e.stopPropagation(); ns.clearSearchHistory(); ns.renderSuggestions(); dom.searchInput.focus(); });
@@ -107,18 +107,18 @@ window.DevHome = window.DevHome || {};
         footer.textContent = '';
         if (suggestions.length === 0) {
             if (q) { panel.classList.remove('visible'); state.suggestionsVisible = false; return; }
-            var empty = document.createElement('div'); empty.className = 'suggestion-empty';
+            const empty = document.createElement('div'); empty.className = 'suggestion-empty';
             empty.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.2"/><path d="M7 4v3l2 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>暂无搜索历史</span>';
             list.appendChild(empty);
             panel.classList.add('visible'); state.suggestionsVisible = true; return;
         }
-        var frag = document.createDocumentFragment();
+        const frag = document.createDocumentFragment();
         suggestions.forEach(function (sug, index) {
-            var div = document.createElement('div'); div.className = 'suggestion-item'; div.dataset.index = index;
+            const div = document.createElement('div'); div.className = 'suggestion-item'; div.dataset.index = index;
             if (sug.type === 'history') div.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.2"/><path d="M7 4v3l2 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>' + escapeHtml(sug.label) + '</span>';
             else if (sug.type === 'online') div.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.2"/><path d="M10 10l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>' + escapeHtml(sug.label) + '</span>';
             else {
-                var iconHtml = '';
+                let iconHtml = '';
                 if (sug.iconType === 'fa') iconHtml = '<i class="' + escapeHtml(sug.icon) + '"></i>';
                 else if (sug.iconType === 'emoji') iconHtml = '<span style="font-size:14px">' + escapeHtml(sug.icon) + '</span>';
                 else if (sug.iconType === 'image' && sug.imageData) iconHtml = '<img src="' + escapeHtml(sug.imageData) + '" style="width:16px;height:16px;border-radius:2px">';
@@ -132,13 +132,13 @@ window.DevHome = window.DevHome || {};
     }
 
     ns.hideSuggestions = function () {
-        var panel = document.querySelector('.search-suggestions') || document.getElementById('searchSuggestions');
+        let panel = document.querySelector('.search-suggestions') || document.getElementById('searchSuggestions');
         if (panel) panel.classList.remove('visible');
         state.suggestionsVisible = false; state.selectedSuggestionIndex = -1;
     };
 
     ns.updateActiveSuggestion = function () {
-        var items = $$('.suggestion-item');
+        let items = $$('.suggestion-item');
         items.forEach(function (item, i) { item.classList.toggle('active', i === state.selectedSuggestionIndex); });
         if (state.selectedSuggestionIndex >= 0 && items[state.selectedSuggestionIndex]) items[state.selectedSuggestionIndex].scrollIntoView({ block: 'nearest' });
     };
@@ -150,7 +150,7 @@ window.DevHome = window.DevHome || {};
 
     /* ===== 搜索执行 ===== */
     ns.doSearch = function () {
-        var query = dom.searchInput.value.trim();
+        const query = dom.searchInput.value.trim();
         if (!query) { dom.searchInput.focus(); return; }
         ns.addSearchHistory(query); ns.hideSuggestions();
         // 保留内容开关：关闭时搜索后清空输入框
@@ -159,10 +159,10 @@ window.DevHome = window.DevHome || {};
     };
 
     /* ===== 搜索引擎 ===== */
-    var chevronDownSvg = '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    const chevronDownSvg = '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     ns.initEngine = function () { ns.setEngine(storage.get('engine', 'google'), false); };
     ns.setEngine = function (key, save) {
-        var eng = engines[key]; if (!eng) return;
+        const eng = engines[key]; if (!eng) return;
         state.currentEngine = key; state.engineUrl = eng.url;
         dom.currentEngine.innerHTML = renderEngineIcon(eng) + '<span>' + eng.name + '</span>' + chevronDownSvg;
         if (save !== false) storage.set('engine', key);
@@ -170,10 +170,10 @@ window.DevHome = window.DevHome || {};
     };
 
     ns.toggleEngineDropdown = function () {
-        if (dom.engineDropdown.classList.contains('visible')) { hideEngineDropdown(); } else { showEngineDropdown(); }
+        if (dom.engineDropdown.classList.contains('visible')) { ns.hideEngineDropdown(); } else { showEngineDropdown(); }
     };
     function showEngineDropdown() {
-        var rect = dom.engineSelector.getBoundingClientRect();
+        const rect = dom.engineSelector.getBoundingClientRect();
         dom.engineDropdown.style.left = rect.left + 'px';
         dom.engineDropdown.style.top = rect.bottom + 6 + 'px';
         dom.engineDropdown.classList.add('visible');
@@ -185,12 +185,12 @@ window.DevHome = window.DevHome || {};
     ns.handleSearchKeydown = function (e) {
         if (e.key === 'Enter') { ns.doSearch(); return; }
         if (!state.suggestionsVisible) return;
-        var items = $$('.suggestion-item');
+        let items = $$('.suggestion-item');
         if (items.length === 0) return;
         if (e.key === 'ArrowDown') { e.preventDefault(); state.selectedSuggestionIndex = (state.selectedSuggestionIndex + 1) % items.length; ns.updateActiveSuggestion(); }
         else if (e.key === 'ArrowUp') { e.preventDefault(); state.selectedSuggestionIndex = (state.selectedSuggestionIndex - 1 + items.length) % items.length; ns.updateActiveSuggestion(); }
         else if (e.key === 'Escape') { e.preventDefault(); ns.hideSuggestions(); dom.searchInput.blur(); }
-        else if (e.key === 'Tab') { e.preventDefault(); if (state.selectedSuggestionIndex >= 0 && items[state.selectedSuggestionIndex]) { var s = ns.buildSuggestions(dom.searchInput.value)[state.selectedSuggestionIndex]; if (s) ns.applySuggestion(s); } }
+        else if (e.key === 'Tab') { e.preventDefault(); if (state.selectedSuggestionIndex >= 0 && items[state.selectedSuggestionIndex]) { const s = ns.buildSuggestions(dom.searchInput.value)[state.selectedSuggestionIndex]; if (s) ns.applySuggestion(s); } }
     };
     ns.handleSearchInput = function () { ns.renderSuggestions(); };
     ns.handleSearchFocus = function () { ns.renderSuggestions(); };
@@ -199,16 +199,16 @@ window.DevHome = window.DevHome || {};
     /* ===== 搜索框设置管理 ===== */
     ns.getSearchConfig = function () {
         if (!ns.storage) return ns.DEFAULT_SEARCH_CONFIG;
-        var saved = ns.storage.get('searchConfig') || {};
+        const saved = ns.storage.get('searchConfig') || {};
         return Object.assign({}, ns.DEFAULT_SEARCH_CONFIG, saved);
     };
     ns.applySearchConfig = function (config) {
-        var dom = ns.dom;
+        const dom = ns.dom;
         if (!dom.searchButton) return;
         // 隐藏搜索按钮
         dom.searchButton.style.display = config.hideSearchButton ? 'none' : '';
         // 搜索框尺寸
-        var wrapper = dom.searchContainer || document.querySelector('.search-wrapper');
+        const wrapper = dom.searchContainer || document.querySelector('.search-wrapper');
         if (wrapper) {
             wrapper.style.maxWidth = config.searchWidth + 'px';
             wrapper.style.borderRadius = config.searchRadius + 'px';

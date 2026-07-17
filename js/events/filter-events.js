@@ -7,20 +7,20 @@ window.DevHome = window.DevHome || {};
     'use strict';
 
     ns._bindFilterEvents = function () {
-        var state = ns.state;
-        var dom = ns.dom;
+        const state = ns.state;
+        const dom = ns.dom;
 
-        var filterLongPressTimer = null;
-        var filterDeleteMode = false;
-        var filterLongPressTarget = null;
-        var filterSuppressNextClick = false;
+        let filterLongPressTimer = null;
+        let filterDeleteMode = false;
+        let filterLongPressTarget = null;
+        let filterSuppressNextClick = false;
 
         function exitFilterDeleteMode() {
             filterDeleteMode = false;
             filterSuppressNextClick = false;
             if (dom.wbNotesFilters) dom.wbNotesFilters.classList.remove('delete-mode');
             if (dom.wbNotesFilters) {
-                var dels = dom.wbNotesFilters.querySelectorAll('.filter-del');
+                const dels = dom.wbNotesFilters.querySelectorAll('.filter-del');
                 dels.forEach(function (d) { d.remove(); });
             }
         }
@@ -30,10 +30,10 @@ window.DevHome = window.DevHome || {};
             filterSuppressNextClick = true;
             if (dom.wbNotesFilters) dom.wbNotesFilters.classList.add('delete-mode');
             if (dom.wbNotesFilters) {
-                var chips = dom.wbNotesFilters.querySelectorAll('.wb-filter-chip:not(.always)');
+                const chips = dom.wbNotesFilters.querySelectorAll('.wb-filter-chip:not(.always)');
                 chips.forEach(function (c) {
                     if (!c.querySelector('.filter-del')) {
-                        var span = document.createElement('span');
+                        const span = document.createElement('span');
                         span.className = 'filter-del';
                         span.textContent = '\u00D7';
                         c.appendChild(span);
@@ -49,7 +49,7 @@ window.DevHome = window.DevHome || {};
 
         if (dom.wbNotesFilters) {
             dom.wbNotesFilters.addEventListener('pointerdown', function (e) {
-                var chip = e.target.closest('.wb-filter-chip:not(.always)');
+                const chip = e.target.closest('.wb-filter-chip:not(.always)');
                 if (!chip) return;
                 filterLongPressTarget = chip;
                 chip.style.opacity = '0.7';
@@ -72,8 +72,8 @@ window.DevHome = window.DevHome || {};
 
             dom.wbNotesFilters.addEventListener('pointermove', function (e) {
                 if (!filterLongPressTimer || !filterLongPressTarget) return;
-                var dx = e.clientX - (filterLongPressTarget.getBoundingClientRect().left + filterLongPressTarget.offsetWidth / 2);
-                var dy = e.clientY - (filterLongPressTarget.getBoundingClientRect().top + filterLongPressTarget.offsetHeight / 2);
+                const dx = e.clientX - (filterLongPressTarget.getBoundingClientRect().left + filterLongPressTarget.offsetWidth / 2);
+                const dy = e.clientY - (filterLongPressTarget.getBoundingClientRect().top + filterLongPressTarget.offsetHeight / 2);
                 if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
                     filterLongPressTarget.style.opacity = '';
                     cancelFilterLongPress();
@@ -82,27 +82,27 @@ window.DevHome = window.DevHome || {};
 
             dom.wbNotesFilters.addEventListener('click', function (e) {
                 if (filterSuppressNextClick) { filterSuppressNextClick = false; return; }
-                var delBtn = e.target.closest('.filter-del');
+                const delBtn = e.target.closest('.filter-del');
                 if (delBtn && filterDeleteMode) {
                     e.preventDefault(); e.stopPropagation();
-                    var chip = delBtn.closest('.wb-filter-chip');
+                    const chip = delBtn.closest('.wb-filter-chip');
                     if (!chip || chip.classList.contains('always')) return;
-                    var filter = chip.dataset.filter;
-                    var name = chip.textContent.replace('\u00D7', '').trim();
+                    const filter = chip.dataset.filter;
+                    const name = chip.textContent.replace('\u00D7', '').trim();
                     ns.showConfirm('将"' + name + '"类型的全部笔记变为未分类，标签本身也会移除。确定继续？', { title: '删除标签' }).then(function (ok) {
                         if (ok) { ns.removeFilter(filter); exitFilterDeleteMode(); }
                     });
                     return;
                 }
                 if (filterDeleteMode) {
-                    var chipClicked = e.target.closest('.wb-filter-chip');
+                    const chipClicked = e.target.closest('.wb-filter-chip');
                     if (chipClicked && chipClicked.classList.contains('custom')) {
-                        var filterKey = chipClicked.dataset.filter;
-                        var oldText = chipClicked.textContent.replace('\u00D7', '').trim();
+                        const filterKey = chipClicked.dataset.filter;
+                        const oldText = chipClicked.textContent.replace('\u00D7', '').trim();
                         ns.showPrompt('重命名标签（可用 "emoji 名称" 格式）：', { title: '重命名标签', defaultValue: oldText }).then(function (newVal) {
                             if (newVal && newVal.trim()) {
-                                var parsed = (function (input) {
-                                    var m = input.match(/^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F?)\s*/u);
+                                const parsed = (function (input) {
+                                    let m = input.match(/^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F?)\s*/u);
                                     if (m) return { icon: m[1], name: input.slice(m[0].length).trim() || input };
                                     return { icon: '', name: input.trim() };
                                 })(newVal.trim());
@@ -113,9 +113,9 @@ window.DevHome = window.DevHome || {};
                     exitFilterDeleteMode();
                     return;
                 }
-                var chip = e.target.closest('.wb-filter-chip');
+                const chip = e.target.closest('.wb-filter-chip');
                 if (!chip) return;
-                var filter = chip.dataset.filter;
+                const filter = chip.dataset.filter;
                 state._notesFilter = filter;
                 dom.wbNotesFilters.querySelectorAll('.wb-filter-chip').forEach(function (c) {
                     c.classList.toggle('active', c.dataset.filter === filter);

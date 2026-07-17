@@ -6,24 +6,24 @@ window.DevHome = window.DevHome || {};
 (function (ns) {
     'use strict';
 
-    var state = ns.state;
-    var storage = ns.storage;
-    var backupPagesSnapshot = ns.backupPagesSnapshot;
-    var normalizePageState = ns.normalizePageState;
-    var repairDefaultCategoryContent = ns.repairDefaultCategoryContent;
-    var getDefaultPagesData = ns.getDefaultPagesData;
-    var getDefaultPageNames = ns.getDefaultPageNames;
+    const state = ns.state;
+    const storage = ns.storage;
+    const backupPagesSnapshot = ns.backupPagesSnapshot;
+    const normalizePageState = ns.normalizePageState;
+    const repairDefaultCategoryContent = ns.repairDefaultCategoryContent;
+    const getDefaultPagesData = ns.getDefaultPagesData;
+    const getDefaultPageNames = ns.getDefaultPageNames;
 
     ns.pageManager = {
         load: async function () {
-            var pagesData = storage.get('pages', null) || await getDefaultPagesData();
-            var storedPageNames = storage.get('page_names', getDefaultPageNames());
-            var normalized = normalizePageState(pagesData, storedPageNames);
-            var defaultPagesData = await getDefaultPagesData();
-            var repaired = repairDefaultCategoryContent(normalized.pagesData, normalized.pageNames, defaultPagesData);
+            let pagesData = storage.get('pages', null) || await getDefaultPagesData();
+            const storedPageNames = storage.get('page_names', getDefaultPageNames());
+            const normalized = normalizePageState(pagesData, storedPageNames);
+            const defaultPagesData = await getDefaultPagesData();
+            const repaired = repairDefaultCategoryContent(normalized.pagesData, normalized.pageNames, defaultPagesData);
             pagesData = repaired.pagesData;
             state.totalPages = pagesData.length;
-            state.pageNames = normalizePageState(pagesData, normalized.pageNames).pageNames;
+            state.pageNames = normalized.pageNames;
             if (repaired.changed) backupPagesSnapshot('repair_default_category_content', normalized.pagesData, normalized.pageNames);
             if (normalized.changed || repaired.changed) {
                 storage.set('pages', pagesData);
@@ -32,16 +32,19 @@ window.DevHome = window.DevHome || {};
             return pagesData;
         },
         save: function (pagesData) {
-            var normalized = normalizePageState(pagesData, state.pageNames);
+            if (!Array.isArray(pagesData)) return;
+            const normalized = normalizePageState(pagesData, state.pageNames);
             state.pageNames = normalized.pageNames;
             state.totalPages = normalized.pagesData.length;
             storage.set('pages', normalized.pagesData);
             storage.set('page_names', state.pageNames);
         },
         getCurrentPageData: function (pagesData) {
+            if (!Array.isArray(pagesData)) return null;
             return pagesData[state.currentPage] || pagesData[0];
         },
         updateCurrentPage: function (pagesData, tiles) {
+            if (!Array.isArray(pagesData)) return pagesData;
             if (pagesData[state.currentPage]) {
                 pagesData[state.currentPage].tiles = tiles;
             } else {
@@ -50,14 +53,16 @@ window.DevHome = window.DevHome || {};
             return pagesData;
         },
         addPage: function (pagesData) {
-            var newPageId = 'page_' + state.totalPages;
-            var newPageName = '第' + (state.totalPages + 1) + '页';
+            if (!Array.isArray(pagesData)) return pagesData;
+            const newPageId = 'page_' + state.totalPages;
+            const newPageName = '第' + (state.totalPages + 1) + '页';
             pagesData.push({ id: newPageId, name: newPageName, tiles: [] });
             state.pageNames.push(newPageName);
             state.totalPages++;
             return pagesData;
         },
         removePage: function (pagesData, pageIndex) {
+            if (!Array.isArray(pagesData)) return pagesData;
             if (state.totalPages <= 1) return pagesData;
             pagesData.splice(pageIndex, 1);
             state.pageNames.splice(pageIndex, 1);
@@ -66,11 +71,12 @@ window.DevHome = window.DevHome || {};
             return pagesData;
         },
         reorderPage: function (pagesData, fromIndex, toIndex) {
+            if (!Array.isArray(pagesData)) return pagesData;
             if (fromIndex === toIndex) return pagesData;
             if (fromIndex < 0 || toIndex < 0 || fromIndex >= pagesData.length || toIndex >= pagesData.length) return pagesData;
-            var page = pagesData.splice(fromIndex, 1)[0];
+            const page = pagesData.splice(fromIndex, 1)[0];
             pagesData.splice(toIndex, 0, page);
-            var name = state.pageNames.splice(fromIndex, 1)[0];
+            const name = state.pageNames.splice(fromIndex, 1)[0];
             state.pageNames.splice(toIndex, 0, name);
             if (state.currentPage === fromIndex) state.currentPage = toIndex;
             else if (fromIndex < state.currentPage && toIndex >= state.currentPage) state.currentPage--;
@@ -78,17 +84,18 @@ window.DevHome = window.DevHome || {};
             return pagesData;
         },
         removePageWithStrategy: function (pagesData, pageIndex, strategy) {
+            if (!Array.isArray(pagesData)) return pagesData;
             strategy = strategy || 'moveToCommon';
             if (state.totalPages <= 1) return pagesData;
             if (pageIndex < 0 || pageIndex >= pagesData.length) return pagesData;
-            var removedPage = pagesData.splice(pageIndex, 1)[0];
+            const removedPage = pagesData.splice(pageIndex, 1)[0];
             state.pageNames.splice(pageIndex, 1);
             state.totalPages--;
             if (strategy === 'moveToCommon' && removedPage && Array.isArray(removedPage.tiles) && removedPage.tiles.length) {
-                var commonIndex = pageIndex === 0 ? 0 : Math.max(0, state.pageNames.indexOf('常用'));
-                var targetPage = pagesData[commonIndex] || pagesData[0];
+                const commonIndex = pageIndex === 0 ? 0 : Math.max(0, state.pageNames.indexOf('常用'));
+                const targetPage = pagesData[commonIndex] || pagesData[0];
                 if (targetPage) {
-                    var baseLength = Array.isArray(targetPage.tiles) ? targetPage.tiles.length : 0;
+                    const baseLength = Array.isArray(targetPage.tiles) ? targetPage.tiles.length : 0;
                     targetPage.tiles = (targetPage.tiles || []).concat(removedPage.tiles.map(function (tile, idx) {
                         return Object.assign({}, tile, { position: baseLength + idx });
                     }));

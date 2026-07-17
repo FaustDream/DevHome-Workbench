@@ -7,10 +7,10 @@ window.DevHome = window.DevHome || {};
     'use strict';
 
     ns._bindSearchEvents = function () {
-        var dom = ns.dom;
+        const dom = ns.dom;
 
         dom.engineSelector.addEventListener('click', function (e) { e.stopPropagation(); ns.toggleEngineDropdown(); });
-        dom.engineDropdown.addEventListener('click', function (e) { var opt = e.target.closest('.engine-option'); if (opt) { ns.setEngine(opt.dataset.engine); ns.hideEngineDropdown(); } });
+        dom.engineDropdown.addEventListener('click', function (e) { const opt = e.target.closest('.engine-option'); if (opt) { ns.setEngine(opt.dataset.engine); ns.hideEngineDropdown(); } });
 
         dom.searchButton.addEventListener('click', ns.doSearch);
         dom.searchInput.addEventListener('keydown', ns.handleSearchKeydown);

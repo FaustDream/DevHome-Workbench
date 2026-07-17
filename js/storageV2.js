@@ -15,11 +15,11 @@ window.DevHome = window.DevHome || {};
 (function (ns) {
     'use strict';
 
-    var STORAGE_PREFIX = 'v2/';
-    var CACHE_PREFIX = 'devhome_v2_cache_';
-    var CACHE_META_PREFIX = 'devhome_v2_meta_';   // 缓存元数据（版本号 + 时间戳）
-    var CACHE_TTL_MS = 24 * 60 * 60 * 1000;       // 缓存过期时间：24 小时
-    var MAX_RETRY = 3;                             // 乐观锁最大重试次数
+    const STORAGE_PREFIX = 'v2/';
+    const CACHE_PREFIX = 'devhome_v2_cache_';
+    const CACHE_META_PREFIX = 'devhome_v2_meta_';
+    const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+    const MAX_RETRY = 3;
 
     /* ===== 检查 chrome.storage.local 是否可用 ===== */
     function isAvailable() {
@@ -44,7 +44,7 @@ window.DevHome = window.DevHome || {};
         // 如果是 { data: ..., _version: ... } 包装格式（数组或基本类型）
         if (typeof value === 'object' && !Array.isArray(value) && value.data !== undefined && value._version !== undefined) {
             // 如果只有 data 和 _version 两个字段，直接返回 data
-            var keys = Object.keys(value);
+            const keys = Object.keys(value);
             if (keys.length === 2 && keys.indexOf('data') >= 0 && keys.indexOf('_version') >= 0) {
                 return value.data;
             }
@@ -55,12 +55,12 @@ window.DevHome = window.DevHome || {};
     async function get(key, fallback) {
         if (!isAvailable()) {
             // 降级：从 localStorage 缓存读取（检查过期）
-            var cached = getFromCache(key, fallback);
+            const cached = getFromCache(key, fallback);
             return unwrapValue(cached);
         }
         try {
-            var result = await chrome.storage.local.get(STORAGE_PREFIX + key);
-            var value = result[STORAGE_PREFIX + key];
+            const result = await chrome.storage.local.get(STORAGE_PREFIX + key);
+            const value = result[STORAGE_PREFIX + key];
             if (value !== undefined) {
                 // 同步到 localStorage 缓存（含时间戳）
                 setToCache(key, value);
@@ -69,7 +69,7 @@ window.DevHome = window.DevHome || {};
             return fallback;
         } catch (e) {
             console.warn('[StorageV2] 读取失败，降级到缓存:', e);
-            var cached = getFromCache(key, fallback);
+            const cached = getFromCache(key, fallback);
             return unwrapValue(cached);
         }
     }
@@ -96,17 +96,17 @@ window.DevHome = window.DevHome || {};
 
         if (!isAvailable()) return;
 
-        var retries = 0;
+        let retries = 0;
         while (retries < MAX_RETRY) {
             try {
                 // 1. 读取当前 version
-                var current = await chrome.storage.local.get(STORAGE_PREFIX + key);
-                var currentData = current[STORAGE_PREFIX + key];
-                var currentVersion = (currentData && currentData._version) ? currentData._version : 0;
+                const current = await chrome.storage.local.get(STORAGE_PREFIX + key);
+                const currentData = current[STORAGE_PREFIX + key];
+                const currentVersion = (currentData && currentData._version) ? currentData._version : 0;
 
                 // 2. 将 _version 嵌入到 value 中
-                var newVersion = currentVersion + 1;
-                var wrappedValue;
+                const newVersion = currentVersion + 1;
+                let wrappedValue;
                 if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
                     // 如果是对象，直接在对象上设置 _version（浅拷贝避免修改原始对象）
                     wrappedValue = Object.assign({}, value, { _version: newVersion });
@@ -116,13 +116,13 @@ window.DevHome = window.DevHome || {};
                 }
 
                 // 3. 写入
-                var obj = {};
+                const obj = {};
                 obj[STORAGE_PREFIX + key] = wrappedValue;
                 await chrome.storage.local.set(obj);
 
                 // 4. 验证写入是否成功（检查 _version 是否被覆盖）
-                var verify = await chrome.storage.local.get(STORAGE_PREFIX + key);
-                var verifiedData = verify[STORAGE_PREFIX + key];
+                const verify = await chrome.storage.local.get(STORAGE_PREFIX + key);
+                const verifiedData = verify[STORAGE_PREFIX + key];
                 if (verifiedData && verifiedData._version === newVersion) {
                     // 写入成功
                     break;
@@ -132,6 +132,13 @@ window.DevHome = window.DevHome || {};
                 retries++;
                 if (retries >= MAX_RETRY) {
                     console.warn('[StorageV2] 乐观锁重试 ' + MAX_RETRY + ' 次后仍失败，最后写入的 version 可能被覆盖');
+                    // 通过 logger 记录错误并通知用户（若 UI 已就绪）
+                    if (ns.logger && typeof ns.logger.error === 'function') {
+                        ns.logger.error('StorageV2', '乐观锁写入失败: ' + key, { retries: MAX_RETRY });
+                    }
+                    if (ns.showToast && typeof ns.showToast === 'function') {
+                        ns.showToast('数据保存失败，请刷新页面后重试', 'error');
+                    }
                 }
             } catch (e) {
                 console.warn('[StorageV2] 写入失败:', e);
@@ -140,9 +147,9 @@ window.DevHome = window.DevHome || {};
         }
 
         // 所有持久化数据变更时标记对应文件脏，触发 1 秒防抖写盘
-        var keyToCategory = { notes: 'notes', captures: 'captures', tasks: 'tasks', notebooks: 'notebooks',
+        const keyToCategory = { notes: 'notes', captures: 'captures', tasks: 'tasks', notebooks: 'notebooks',
             pomodoro_sessions: 'pomodoro', behavior: 'behavior', config: 'config' };
-        var category = keyToCategory[key];
+        const category = keyToCategory[key];
         if (category && ns.fileConfig && typeof ns.fileConfig.markDirty === 'function') {
             ns.fileConfig.markDirty(category);
         }
@@ -171,12 +178,12 @@ window.DevHome = window.DevHome || {};
      */
     function getFromCache(key, fallback) {
         try {
-            var raw = localStorage.getItem(CACHE_PREFIX + key);
+            const raw = localStorage.getItem(CACHE_PREFIX + key);
             if (raw === null) return fallback;
-            var parsed = JSON.parse(raw);
+            const parsed = JSON.parse(raw);
             // 兼容旧缓存格式（无 _cacheTime 字段）
             if (parsed && typeof parsed === 'object' && parsed._cacheTime) {
-                var age = Date.now() - parsed._cacheTime;
+                const age = Date.now() - parsed._cacheTime;
                 if (age > CACHE_TTL_MS) {
                     console.log('[StorageV2] 缓存过期: ' + key + ' (' + Math.round(age / 3600000) + 'h)，需从 chrome.storage 重新加载');
                     // 不清除缓存，下次成功读取后会更新
@@ -196,7 +203,7 @@ window.DevHome = window.DevHome || {};
      */
     function setToCache(key, value) {
         try {
-            var cacheEntry = {
+            const cacheEntry = {
                 value: value,
                 _cacheTime: Date.now()
             };
@@ -219,9 +226,9 @@ window.DevHome = window.DevHome || {};
      */
     function isCacheExpired(key) {
         try {
-            var raw = localStorage.getItem(CACHE_PREFIX + key);
+            const raw = localStorage.getItem(CACHE_PREFIX + key);
             if (!raw) return true;
-            var parsed = JSON.parse(raw);
+            const parsed = JSON.parse(raw);
             if (parsed && parsed._cacheTime) {
                 return (Date.now() - parsed._cacheTime) > CACHE_TTL_MS;
             }
@@ -238,11 +245,11 @@ window.DevHome = window.DevHome || {};
      */
     function getCacheRemainingTTL(key) {
         try {
-            var raw = localStorage.getItem(CACHE_PREFIX + key);
+            const raw = localStorage.getItem(CACHE_PREFIX + key);
             if (!raw) return 0;
-            var parsed = JSON.parse(raw);
+            const parsed = JSON.parse(raw);
             if (parsed && parsed._cacheTime) {
-                var remaining = CACHE_TTL_MS - (Date.now() - parsed._cacheTime);
+                const remaining = CACHE_TTL_MS - (Date.now() - parsed._cacheTime);
                 return remaining > 0 ? remaining : 0;
             }
             return 0;
@@ -268,23 +275,23 @@ window.DevHome = window.DevHome || {};
 
         try {
             // 检查是否已迁移
-            var existing = await get('tasks', null);
+            const existing = await get('tasks', null);
             if (existing !== null) {
                 console.log('[StorageV2] 数据已迁移，跳过');
                 return { migrated: false, reason: 'already_migrated' };
             }
 
             // 读取旧数据
-            var legacyTasks = ns.devhomeStorage.get('workbench', null);
+            const legacyTasks = ns.devhomeStorage.get('workbench', null);
             if (!legacyTasks || !legacyTasks.quadrants) {
                 console.log('[StorageV2] 无旧数据需要迁移');
                 return { migrated: false, reason: 'no_legacy_data' };
             }
 
             // 转换为新格式
-            var tasks = [];
+            const tasks = [];
             ns.forEachQuadrant(function (q) {
-                var quadrantTasks = legacyTasks.quadrants[q] && legacyTasks.quadrants[q].tasks;
+                const quadrantTasks = legacyTasks.quadrants[q] && legacyTasks.quadrants[q].tasks;
                 if (!quadrantTasks) return;
                 quadrantTasks.forEach(function (t) {
                     tasks.push({
@@ -319,8 +326,8 @@ window.DevHome = window.DevHome || {};
             if (areaName !== 'local') return;
             Object.keys(changes).forEach(function (fullKey) {
                 if (!fullKey.startsWith(STORAGE_PREFIX)) return;
-                var shortKey = fullKey.replace(STORAGE_PREFIX, '');
-                var newValue = changes[fullKey].newValue;
+                const shortKey = fullKey.replace(STORAGE_PREFIX, '');
+                const newValue = changes[fullKey].newValue;
                 if (newValue !== undefined) {
                     setToCache(shortKey, newValue);
                 } else {
@@ -339,11 +346,11 @@ window.DevHome = window.DevHome || {};
      * @returns {Promise<Object>}
      */
     async function getAll() {
-        var knownKeys = ['config', 'notes', 'captures', 'tasks', 'notebooks', 'pomodoro_sessions', 'behavior', 'encouragement_pool'];
+        const knownKeys = ['config', 'notes', 'captures', 'tasks', 'notebooks', 'pomodoro_sessions', 'behavior', 'encouragement_pool'];
 
         if (!isAvailable()) {
             // 从缓存收集
-            var result = {};
+            const result = {};
             knownKeys.forEach(function (k) {
                 result[k] = getFromCache(k, null);
             });
@@ -351,11 +358,11 @@ window.DevHome = window.DevHome || {};
         }
         try {
             // 传入具体 key 数组而非 get(null)，避免读取整个 storage 区域
-            var prefixedKeys = knownKeys.map(function (k) { return STORAGE_PREFIX + k; });
-            var all = await chrome.storage.local.get(prefixedKeys);
-            var result = {};
+            const prefixedKeys = knownKeys.map(function (k) { return STORAGE_PREFIX + k; });
+            const all = await chrome.storage.local.get(prefixedKeys);
+            const result = {};
             knownKeys.forEach(function (k) {
-                var value = all[STORAGE_PREFIX + k];
+                const value = all[STORAGE_PREFIX + k];
                 if (value !== undefined) {
                     result[k] = value;
                 }
@@ -370,11 +377,9 @@ window.DevHome = window.DevHome || {};
     /* ===== 存储配额监控（O21） ===== */
 
     /** 配额警告阈值：使用量超过 90% 时发出警告 */
-    var QUOTA_WARN_THRESHOLD = 0.9;
-    /** 上次配额检查时间戳，避免频繁检查 */
-    var _lastQuotaCheck = 0;
-    /** 配额检查间隔（毫秒）：30 秒 */
-    var QUOTA_CHECK_INTERVAL = 30000;
+    const QUOTA_WARN_THRESHOLD = 0.9;
+    let _lastQuotaCheck = 0;
+    const QUOTA_CHECK_INTERVAL = 30000;
 
     /**
      * 获取当前 storage.local 配额使用情况
@@ -386,8 +391,8 @@ window.DevHome = window.DevHome || {};
         }
 
         try {
-            var bytesUsed = await chrome.storage.local.getBytesInUse(null);
-            var quotaBytes = chrome.storage.local.QUOTA_BYTES;
+            const bytesUsed = await chrome.storage.local.getBytesInUse(null);
+            const quotaBytes = chrome.storage.local.QUOTA_BYTES;
             return {
                 bytesUsed: bytesUsed,
                 quotaBytes: quotaBytes,
@@ -407,13 +412,13 @@ window.DevHome = window.DevHome || {};
      * @returns {Promise<{warn: boolean, info: object}>}
      */
     async function checkQuota() {
-        var now = Date.now();
+        const now = Date.now();
         if (now - _lastQuotaCheck < QUOTA_CHECK_INTERVAL) {
             return { warn: false, throttled: true };
         }
         _lastQuotaCheck = now;
 
-        var info = await getQuotaInfo();
+        const info = await getQuotaInfo();
         if (!info.available) return { warn: false, info: info };
 
         if (info.percentUsed >= QUOTA_WARN_THRESHOLD * 100) {

@@ -1,21 +1,34 @@
 {
   "name": "devhome-workbench",
-  "version": "2.22.4",
+  "version": "2.22.5",
   "private": true,
   "description": "DevHome Workbench - Chrome Extension",
   "scripts": {
     "build:components": "node build.mjs",
-    "build:prod": "node build.mjs --prod",
+    "build:prod": "node build.mjs --prod --bundle",
     "install:react": "node scripts/install-react.mjs",
     "convert:notes": "node scripts/convert-notes.mjs",
     "test": "node test/run-legacy-save.mjs",
     "test:run": "node test/11-legacy-tests.mjs",
     "test:all": "node test/run-all-tests.mjs",
     "build": "npm run build:components",
-    "build:all": "npm run build:prod && npm test"
+    "build:all": "npm run build:prod && npm test",
+    "lint": "eslint js/ --ext .js",
+    "lint:fix": "eslint js/ --ext .js --fix",
+    "format": "prettier --write \"js/**/*.js\" \"css/**/*.css\" \"*.html\" \"*.json\"",
+    "prepare": "husky || true"
   },
   "devDependencies": {
-    "esbuild": "^0.25.0"
+    "esbuild": "^0.25.0",
+    "eslint": "^9.0.0",
+    "husky": "^9.0.0",
+    "lint-staged": "^15.0.0",
+    "prettier": "^3.0.0"
+  },
+  "lint-staged": {
+    "*.js": ["eslint --fix", "prettier --write"],
+    "*.css": ["prettier --write"],
+    "*.html": ["prettier --write"]
   },
   "dependencies": {
     "@tiptap/core": "^3.27.2",
@@ -24,6 +37,8 @@
     "@tiptap/extension-task-list": "^3.27.2",
     "@tiptap/pm": "^3.27.2",
     "@tiptap/starter-kit": "^3.27.2",
+    "dayjs": "^1.11.0",
+    "marked": "^15.0.12",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   }

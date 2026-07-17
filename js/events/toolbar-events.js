@@ -7,31 +7,31 @@ window.DevHome = window.DevHome || {};
     'use strict';
 
     ns._bindToolbarEvents = function () {
-        var state = ns.state;
-        var dom = ns.dom;
+        const state = ns.state;
+        const dom = ns.dom;
 
         if (dom.devhomeBackHome) dom.devhomeBackHome.addEventListener('click', ns.showDailyMode);
 
         // 清空历史按钮
-        var taskClearBtn = document.getElementById('wbTaskClearBtn');
+        const taskClearBtn = document.getElementById('wbTaskClearBtn');
         if (taskClearBtn) taskClearBtn.addEventListener('click', function () { ns.clearCompletedTasks(); });
 
         // 活跃/全部切换
-        var taskFilterBtn = document.getElementById('wbTaskFilterBtn');
+        const taskFilterBtn = document.getElementById('wbTaskFilterBtn');
         if (taskFilterBtn) taskFilterBtn.addEventListener('click', function () {
             ns.toggleQuadrantFilter();
             console.log('[交互] 过滤切换 ' + (state._quadrantFilter || 'active'));
         });
 
         // 侧边栏折叠/展开按钮
-        var quadToggleBtn = document.getElementById('wbQuadrantToggle');
+        const quadToggleBtn = document.getElementById('wbQuadrantToggle');
         if (quadToggleBtn) quadToggleBtn.addEventListener('click', function () { ns.toggleQuadrantSidebar(); });
 
-        var rightbarToggleBtn = document.getElementById('wbRightbarToggle');
+        const rightbarToggleBtn = document.getElementById('wbRightbarToggle');
         if (rightbarToggleBtn) rightbarToggleBtn.addEventListener('click', function () { ns.toggleRightSidebar(); });
 
         // 新建笔记
-        var wbNotesAddBtn = document.getElementById('wbNotesAddBtn');
+        const wbNotesAddBtn = document.getElementById('wbNotesAddBtn');
         if (wbNotesAddBtn) {
             wbNotesAddBtn.addEventListener('click', function () {
                 ns.createNote({ title: '新笔记', content: '', type: 'note', tags: [] }).then(function (note) {
@@ -43,7 +43,7 @@ window.DevHome = window.DevHome || {};
         }
 
         // 新建笔记本
-        var wbNotebookAddBtn = document.getElementById('wbNotebookAddBtn');
+        const wbNotebookAddBtn = document.getElementById('wbNotebookAddBtn');
         if (wbNotebookAddBtn) {
             if (wbNotebookAddBtn._nbEventBound) { console.log('[诊断] 新建笔记本按钮已绑定，跳过'); }
             wbNotebookAddBtn._nbEventBound = true;
@@ -59,7 +59,7 @@ window.DevHome = window.DevHome || {};
         }
 
         // 新建标签
-        var wbTagAddBtn = document.getElementById('wbTagAddBtn');
+        const wbTagAddBtn = document.getElementById('wbTagAddBtn');
         if (wbTagAddBtn) {
             wbTagAddBtn.addEventListener('click', function () {
                 if (typeof ns.startInlineCustomFilter === 'function') {

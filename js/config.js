@@ -39,12 +39,7 @@ window.DevHome = window.DevHome || {};
             q2: { title: '重要不紧急', subtitle: '计划去做', tasks: [] },
             q3: { title: '紧急不重要', subtitle: '授权他人', tasks: [] },
             q4: { title: '不紧急不重要', subtitle: '尽量不做', tasks: [] }
-        },
-        // 保留旧数据字段以兼容，但不再主动使用
-        lastProject: '',
-        inbox: [],
-        projects: [],
-        resources: []
+        }
     };
 
     /* ===== v2 默认配置 ===== */

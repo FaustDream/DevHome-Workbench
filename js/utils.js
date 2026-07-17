@@ -6,11 +6,11 @@ window.DevHome = window.DevHome || {};
 (function (ns) {
     'use strict';
 
-    var storage = ns.storage;
+let storage = ns.storage;
 
     /* ===== HTML 转义 ===== */
     ns.escapeHtml = function (str) {
-        var div = document.createElement('div');
+let div = document.createElement('div');
         div.textContent = str;
         return div.innerHTML;
     };
@@ -27,7 +27,7 @@ window.DevHome = window.DevHome || {};
      */
     ns.sanitizeHtml = function (html) {
         if (!html) return '';
-        var div = document.createElement('div');
+let div = document.createElement('div');
         div.innerHTML = html;
         // 移除可执行 / 嵌入类标签
         div.querySelectorAll('script, style, iframe, object, embed, link, meta, base').forEach(function (el) {
@@ -36,8 +36,8 @@ window.DevHome = window.DevHome || {};
         // 清理危险属性与危险协议
         div.querySelectorAll('*').forEach(function (el) {
             Array.prototype.forEach.call(el.attributes, function (attr) {
-                var name = attr.name.toLowerCase();
-                var val = String(attr.value || '').trim().toLowerCase();
+let name = attr.name.toLowerCase();
+let val = String(attr.value || '').trim().toLowerCase();
                 if (name.indexOf('on') === 0) {
                     // 移除事件处理器属性（如 onclick、onerror）
                     el.removeAttribute(attr.name);
@@ -61,11 +61,11 @@ window.DevHome = window.DevHome || {};
 
     /* ===== 分类状态修复 ===== */
     ns.normalizePageState = function (pagesData, storedPageNames) {
-        var changed = false;
-        var normalizedNames = pagesData.map(function (page, idx) {
-            var pageName = page && typeof page.name === 'string' ? page.name.trim() : '';
-            var storedName = typeof storedPageNames[idx] === 'string' ? storedPageNames[idx].trim() : '';
-            var finalName = pageName || storedName || '第' + (idx + 1) + '页';
+let changed = false;
+let normalizedNames = pagesData.map(function (page, idx) {
+let pageName = page && typeof page.name === 'string' ? page.name.trim() : '';
+let storedName = typeof storedPageNames[idx] === 'string' ? storedPageNames[idx].trim() : '';
+let finalName = pageName || storedName || '第' + (idx + 1) + '页';
             if (!page || page.name !== finalName) {
                 if (page) page.name = finalName;
                 changed = true;
@@ -83,7 +83,7 @@ window.DevHome = window.DevHome || {};
     };
 
     ns.getPageTileSignature = function (page) {
-        var tiles = page && Array.isArray(page.tiles) ? page.tiles : [];
+let tiles = page && Array.isArray(page.tiles) ? page.tiles : [];
         return tiles.map(ns.getTileIdentity).sort().join('||');
     };
 
@@ -92,19 +92,19 @@ window.DevHome = window.DevHome || {};
         if (!Array.isArray(pagesData) || !Array.isArray(defaultPagesData) || pagesData.length !== defaultPagesData.length) {
             return { changed: false, pagesData: pagesData };
         }
-        var defaultByName = new Map(defaultPagesData.map(function (p) { return [p.name, p]; }));
-        var defaultSignatureByName = new Map(defaultPagesData.map(function (p) { return [p.name, ns.getPageTileSignature(p)]; }));
-        var defaultNameBySignature = new Map(defaultPagesData.map(function (p) { return [ns.getPageTileSignature(p), p.name]; }));
+let defaultByName = new Map(defaultPagesData.map(function (p) { return [p.name, p]; }));
+let defaultSignatureByName = new Map(defaultPagesData.map(function (p) { return [p.name, ns.getPageTileSignature(p)]; }));
+let defaultNameBySignature = new Map(defaultPagesData.map(function (p) { return [ns.getPageTileSignature(p), p.name]; }));
         if (!pageNames.every(function (name) { return defaultByName.has(name); })) {
             return { changed: false, pagesData: pagesData };
         }
-        var needRepair = false;
-        for (var idx = 0; idx < pagesData.length; idx += 1) {
-            var expectedName = pageNames[idx];
-            var currentSignature = ns.getPageTileSignature(pagesData[idx]);
-            var expectedSignature = defaultSignatureByName.get(expectedName);
+let needRepair = false;
+        for (let idx = 0; idx < pagesData.length; idx += 1) {
+let expectedName = pageNames[idx];
+let currentSignature = ns.getPageTileSignature(pagesData[idx]);
+let expectedSignature = defaultSignatureByName.get(expectedName);
             if (currentSignature === expectedSignature) continue;
-            var matchedDefaultName = defaultNameBySignature.get(currentSignature);
+let matchedDefaultName = defaultNameBySignature.get(currentSignature);
             if (!matchedDefaultName || matchedDefaultName === expectedName) {
                 return { changed: false, pagesData: pagesData };
             }
@@ -114,8 +114,8 @@ window.DevHome = window.DevHome || {};
         return {
             changed: true,
             pagesData: pagesData.map(function (page, idx) {
-                var expectedName2 = pageNames[idx];
-                var defaultPage = defaultByName.get(expectedName2);
+let expectedName2 = pageNames[idx];
+let defaultPage = defaultByName.get(expectedName2);
                 return Object.assign({}, page, {
                     name: expectedName2,
                     tiles: (defaultPage.tiles || []).map(function (tile, tileIdx) {
@@ -141,28 +141,28 @@ window.DevHome = window.DevHome || {};
     };
 
     /* ===== 获取默认页面数据 ===== */
-    var _defaultsCacheKey = 'tabpage_defaults_cached';
-    var _defaultsCacheVersionKey = 'tabpage_defaults_version';
-    var DEFAULTS_VERSION = ns.DEFAULTS_VERSION;
+    const _defaultsCacheKey = 'tabpage_defaults_cached';
+    const _defaultsCacheVersionKey = 'tabpage_defaults_version';
+    const DEFAULTS_VERSION = ns.DEFAULTS_VERSION;
 
     ns.getDefaultPagesData = async function () {
         try {
-            var cached = localStorage.getItem(_defaultsCacheKey);
-            var cachedVersion = localStorage.getItem(_defaultsCacheVersionKey);
+let cached = localStorage.getItem(_defaultsCacheKey);
+let cachedVersion = localStorage.getItem(_defaultsCacheVersionKey);
             if (cached && cachedVersion === DEFAULTS_VERSION) return JSON.parse(cached);
         } catch (_) { }
 
-        var now = Date.now();
-        var categoryNames, pages;
+let now = Date.now();
+let categoryNames, pages;
         try {
-            var url;
+let url;
             if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
                 url = chrome.runtime.getURL('defaults.json');
             } else {
                 url = 'defaults.json';
             }
-            var resp = await fetch(url);
-            var data = await resp.json();
+let resp = await fetch(url);
+let data = await resp.json();
             categoryNames = data.categoryNames;
             pages = data.pages;
         } catch (_) {
@@ -181,9 +181,9 @@ window.DevHome = window.DevHome || {};
                 "资讯": [{ "name": "Hacker News", "url": "https://news.ycombinator.com" }, { "name": "Product Hunt", "url": "https://www.producthunt.com" }, { "name": "36氪", "url": "https://36kr.com" }, { "name": "虎嗅", "url": "https://www.huxiu.com" }, { "name": "今日头条", "url": "https://www.toutiao.com" }, { "name": "少数派", "url": "https://sspai.com" }]
             };
         }
-        var globalIdx = 0;
-        var result = categoryNames.map(function (catName, pageIdx) {
-            var catTiles = pages[catName] || [];
+let globalIdx = 0;
+let result = categoryNames.map(function (catName, pageIdx) {
+let catTiles = pages[catName] || [];
             return {
                 id: 'page_' + pageIdx,
                 name: catName,
@@ -205,7 +205,7 @@ window.DevHome = window.DevHome || {};
     };
 
     ns.normalizeShortcutColumns = function (columns) {
-        var key = String(columns);
+let key = String(columns);
         return ns.SHORTCUT_COLUMN_OPTIONS[key] ? key : String(ns.DEFAULT_SHORTCUT_COLUMNS);
     };
 
@@ -245,7 +245,7 @@ window.DevHome = window.DevHome || {};
     ns.showToast = function (message, type, duration) {
         type = type || 'info';
         duration = duration || 2500;
-        var toast = document.createElement('div');
+let toast = document.createElement('div');
         toast.className = 'wb-toast ' + type;
         toast.textContent = message;
         document.body.appendChild(toast);
@@ -267,23 +267,23 @@ window.DevHome = window.DevHome || {};
     ns.showActionToast = function (message, actionLabel, actionCallback, duration, type) {
         type = type || 'info';
         duration = duration || 4000;
-        var toast = document.createElement('div');
+let toast = document.createElement('div');
         toast.className = 'wb-toast wb-toast-action ' + type;
         toast.style.pointerEvents = 'auto';
         toast.style.cursor = 'default';
 
-        var messageSpan = document.createElement('span');
+let messageSpan = document.createElement('span');
         messageSpan.className = 'wb-toast-message';
         messageSpan.textContent = message;
 
-        var actionBtn = document.createElement('button');
+let actionBtn = document.createElement('button');
         actionBtn.className = 'wb-toast-action-btn';
         actionBtn.textContent = actionLabel;
 
-        var didAction = false;
-        var timer = null;
+let didAction = false;
+let timer = null;
 
-        var cleanup = function () {
+let cleanup = function () {
             if (timer) { clearTimeout(timer); timer = null; }
             if (toast.parentNode) toast.parentNode.removeChild(toast);
         };

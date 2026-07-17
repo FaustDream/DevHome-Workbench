@@ -10,15 +10,15 @@ window.DevHome = window.DevHome || {};
 (function (ns) {
     'use strict';
 
-    var state = ns.state;
-    var dom = ns.dom;
+    const state = ns.state;
+    const dom = ns.dom;
 
     /* ===== 渲染导出列表 ===== */
     ns.renderExportList = function (filter) {
         if (!dom.wbMeExportList) return;
-        var exportFilter = filter || state.exportFilter || 'all';
+        const exportFilter = filter || state.exportFilter || 'all';
 
-        var items = [];
+        let items = [];
 
         // 收集笔记
         if (exportFilter === 'all' || exportFilter === 'note') {
@@ -52,10 +52,10 @@ window.DevHome = window.DevHome || {};
         // 收集任务
         if (exportFilter === 'all' || exportFilter === 'task') {
             // 从 state.workbench 获取四象限任务
-            var wb = state.workbench;
+            const wb = state.workbench;
             if (wb && wb.quadrants) {
                 ['q1', 'q2', 'q3', 'q4'].forEach(function (q) {
-                    var tasks = wb.quadrants[q] && wb.quadrants[q].tasks;
+                    let tasks = wb.quadrants[q] && wb.quadrants[q].tasks;
                     if (!tasks) return;
                     tasks.forEach(function (t) {
                         items.push({
@@ -80,7 +80,7 @@ window.DevHome = window.DevHome || {};
         }
 
         dom.wbMeExportList.innerHTML = items.map(function (item) {
-            var dateStr = item.date ? new Date(item.date).toLocaleDateString('zh-CN') : '';
+            const dateStr = item.date ? new Date(item.date).toLocaleDateString('zh-CN') : '';
             return '<label class="wb-me-export-item">' +
                 '<input type="checkbox" data-export-id="' + ns.escapeHtml(item.id) + '" data-export-type="' + item.type + '">' +
                 '<span class="wb-me-export-item-type">' + item.icon + '</span>' +
@@ -96,26 +96,26 @@ window.DevHome = window.DevHome || {};
     /* ===== 全选/取消全选 ===== */
     ns.toggleSelectAllExport = function () {
         if (!dom.wbMeExportList) return;
-        var checkboxes = dom.wbMeExportList.querySelectorAll('input[type="checkbox"]');
-        var allChecked = Array.from(checkboxes).every(function (cb) { return cb.checked; });
+        const checkboxes = dom.wbMeExportList.querySelectorAll('input[type="checkbox"]');
+        const allChecked = Array.from(checkboxes).every(function (cb) { return cb.checked; });
         checkboxes.forEach(function (cb) { cb.checked = !allChecked; });
     };
 
     /* ===== 导出选中 ===== */
     ns.exportSelected = function () {
         if (!dom.wbMeExportList) return;
-        var checkboxes = dom.wbMeExportList.querySelectorAll('input[type="checkbox"]:checked');
+        const checkboxes = dom.wbMeExportList.querySelectorAll('input[type="checkbox"]:checked');
         if (checkboxes.length === 0) {
             ns.showToast('请至少选择一项内容', 'info');
             return;
         }
 
-        var items = state._exportItems || [];
-        var selectedIds = Array.from(checkboxes).map(function (cb) { return cb.dataset.exportId; });
-        var selected = items.filter(function (item) { return selectedIds.indexOf(item.id) !== -1; });
+        let items = state._exportItems || [];
+        const selectedIds = Array.from(checkboxes).map(function (cb) { return cb.dataset.exportId; });
+        const selected = items.filter(function (item) { return selectedIds.indexOf(item.id) !== -1; });
 
         // 拼接 Markdown
-        var md = '';
+        let md = '';
         md += '# DevHome Workbench 导出\n\n';
         md += '> 导出时间：' + new Date().toLocaleString('zh-CN') + '\n';
         md += '> 导出数量：' + selected.length + ' 条\n\n';
@@ -123,7 +123,7 @@ window.DevHome = window.DevHome || {};
 
         selected.forEach(function (item) {
             if (item.type === 'note') {
-                var n = item.data;
+                const n = item.data;
                 md += '---\n';
                 md += 'id: "' + n.id + '"\n';
                 md += 'type: "' + n.type + '"\n';
@@ -134,15 +134,15 @@ window.DevHome = window.DevHome || {};
                 md += '# ' + (n.title || '无标题') + '\n\n';
 
                 // HTML 内容提取为纯文本导出
-                var content = n.content || '';
+                let content = n.content || '';
                 if (/<\/?[a-zA-Z][a-zA-Z0-9]*(\s[^>]*)?>/i.test(content) || /&[a-z]+;/i.test(content)) {
-                    var tmp = document.createElement('div');
+                    const tmp = document.createElement('div');
                     tmp.innerHTML = content;
                     content = tmp.textContent || tmp.innerText || '';
                 }
                 md += content + '\n\n';
             } else if (item.type === 'capture') {
-                var c = item.data;
+                const c = item.data;
                 md += '---\n';
                 md += 'id: "' + c.id + '"\n';
                 md += 'type: "capture"\n';
@@ -152,9 +152,9 @@ window.DevHome = window.DevHome || {};
                 // 捕获内容按纯文本导出，剥离可能携带的 HTML 标签，避免污染导出文件
                 md += String(c.content || '').replace(/<[^>]*>/g, '') + '\n\n';
             } else if (item.type === 'task') {
-                var t = item.data;
-                var quadrantLabels = { q1: '重要且紧急', q2: '重要不紧急', q3: '紧急不重要', q4: '不紧急不重要' };
-                var statusLabels = { active: '进行中', completed: '已完成', cancelled: '已取消' };
+                const t = item.data;
+                const quadrantLabels = { q1: '重要且紧急', q2: '重要不紧急', q3: '紧急不重要', q4: '不紧急不重要' };
+                const statusLabels = { active: '进行中', completed: '已完成', cancelled: '已取消' };
                 md += '---\n';
                 md += 'id: "' + t.id + '"\n';
                 md += 'type: "task"\n';
@@ -172,9 +172,9 @@ window.DevHome = window.DevHome || {};
         });
 
         // 生成 Blob 并下载
-        var blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
-        var url = URL.createObjectURL(blob);
-        var filename = 'devhome-export-' + new Date().toISOString().slice(0, 10) + '.md';
+        const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const filename = 'devhome-export-' + new Date().toISOString().slice(0, 10) + '.md';
 
         if (typeof chrome !== 'undefined' && chrome.downloads) {
             chrome.downloads.download({
@@ -187,7 +187,7 @@ window.DevHome = window.DevHome || {};
             });
         } else {
             // 降级：使用 a 标签下载
-            var a = document.createElement('a');
+            const a = document.createElement('a');
             a.href = url;
             a.download = filename;
             a.click();

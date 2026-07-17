@@ -37,16 +37,16 @@ window.DevHome = window.DevHome || {};
     'use strict';
 
     /* ===== 常量 ===== */
-    var INDEXEDDB_NAME = 'DevHomeFileConfig';
-    var INDEXEDDB_STORE = 'handles';
-    var HANDLE_KEY = 'directoryHandle';
-    var WRITE_DEBOUNCE_MS = 1000;  // 1 秒防抖
+    const INDEXEDDB_NAME = 'DevHomeFileConfig';
+    const INDEXEDDB_STORE = 'handles';
+    const HANDLE_KEY = 'directoryHandle';
+    const WRITE_DEBOUNCE_MS = 1000;  // 1 秒防抖
 
     /**
      * 数据类别 → 子目录 + 文件名 映射
      * 笔记为独立文件（每个笔记一个 JSON），其他类别为单文件
      */
-    var DATA_LAYOUT = {
+    const DATA_LAYOUT = {
         notes:      { dir: 'notes',    desc: '笔记',     individual: true },
         captures:   { dir: 'captures', desc: '快速捕获',  file: 'captures.json' },
         tasks:      { dir: 'tasks',    desc: '四象限任务', file: 'tasks.json' },
@@ -58,18 +58,18 @@ window.DevHome = window.DevHome || {};
     };
 
     /** localStorage 缓存键前缀（用于收集数据） */
-    var CACHE_PREFIX = 'devhome_v2_cache_';
+    const CACHE_PREFIX = 'devhome_v2_cache_';
 
     /* ===== 内部状态 ===== */
-    var dirHandle = null;        // FileSystemDirectoryHandle
-    var isReady = false;         // 配置目录是否已就绪
-    var dirtyCategories = {};    // { category: true } — 按类别追踪脏数据，避免全量写入
-    var writeTimer = null;       // 防抖计时器
-    var syncInProgress = false;  // 是否正在写入
-    var lastSyncTime = 0;        // 上次同步时间戳
-    var lastSyncError = null;    // 上次同步错误信息
-    var dirHandleDB = null;      // IndexedDB 连接
-    var writePermissionPending = false; // write 权限是否待授权
+let dirHandle = null;        // FileSystemDirectoryHandle
+let isReady = false;         // 配置目录是否已就绪
+let dirtyCategories = {};    // { category: true } — 按类别追踪脏数据，避免全量写入
+let writeTimer = null;       // 防抖计时器
+let syncInProgress = false;  // 是否正在写入
+let lastSyncTime = 0;        // 上次同步时间戳
+let lastSyncError = null;    // 上次同步错误信息
+let dirHandleDB = null;      // IndexedDB 连接
+let writePermissionPending = false; // write 权限是否待授权
 
     /* ===== 浏览器兼容性检测 ===== */
     function isFileSystemAPISupported() {
@@ -81,11 +81,11 @@ window.DevHome = window.DevHome || {};
     function openHandlesDB() {
         if (dirHandleDB) return Promise.resolve(dirHandleDB);
         return new Promise(function (resolve, reject) {
-            var request = indexedDB.open(INDEXEDDB_NAME, 1);
+let request = indexedDB.open(INDEXEDDB_NAME, 1);
             request.onerror = function () { reject(request.error); };
             request.onsuccess = function () { dirHandleDB = request.result; resolve(dirHandleDB); };
             request.onupgradeneeded = function () {
-                var db = request.result;
+let db = request.result;
                 if (!db.objectStoreNames.contains(INDEXEDDB_STORE)) {
                     db.createObjectStore(INDEXEDDB_STORE);
                 }
@@ -97,8 +97,8 @@ window.DevHome = window.DevHome || {};
         console.log('[FileConfig] IndexedDB 保存 handle:', handle.name);
         return openHandlesDB().then(function (db) {
             return new Promise(function (resolve, reject) {
-                var tx = db.transaction(INDEXEDDB_STORE, 'readwrite');
-                var store = tx.objectStore(INDEXEDDB_STORE);
+let tx = db.transaction(INDEXEDDB_STORE, 'readwrite');
+let store = tx.objectStore(INDEXEDDB_STORE);
                 store.put(handle, HANDLE_KEY);
                 tx.oncomplete = function () {
                     console.log('[FileConfig] IndexedDB 保存成功:', handle.name);
@@ -115,11 +115,11 @@ window.DevHome = window.DevHome || {};
     function loadHandleFromDB() {
         return openHandlesDB().then(function (db) {
             return new Promise(function (resolve, reject) {
-                var tx = db.transaction(INDEXEDDB_STORE, 'readonly');
-                var store = tx.objectStore(INDEXEDDB_STORE);
-                var request = store.get(HANDLE_KEY);
+let tx = db.transaction(INDEXEDDB_STORE, 'readonly');
+let store = tx.objectStore(INDEXEDDB_STORE);
+let request = store.get(HANDLE_KEY);
                 request.onsuccess = function () {
-                    var result = request.result || null;
+let result = request.result || null;
                     console.log('[FileConfig] IndexedDB 读取 handle:', result ? (result.name || '存在') : 'null');
                     resolve(result);
                 };
@@ -134,8 +134,8 @@ window.DevHome = window.DevHome || {};
     function clearHandleFromDB() {
         return openHandlesDB().then(function (db) {
             return new Promise(function (resolve, reject) {
-                var tx = db.transaction(INDEXEDDB_STORE, 'readwrite');
-                var store = tx.objectStore(INDEXEDDB_STORE);
+let tx = db.transaction(INDEXEDDB_STORE, 'readwrite');
+let store = tx.objectStore(INDEXEDDB_STORE);
                 store.delete(HANDLE_KEY);
                 tx.oncomplete = function () { resolve(); };
                 tx.onerror = function () { reject(tx.error); };
@@ -147,7 +147,7 @@ window.DevHome = window.DevHome || {};
 
     /** 静默查询权限（仅 query，不弹窗） */
     async function verifyPermissionQuiet(handle, withWrite) {
-        var opts = { mode: withWrite ? 'readwrite' : 'read' };
+let opts = { mode: withWrite ? 'readwrite' : 'read' };
         try {
             return (await handle.queryPermission(opts)) === 'granted';
         } catch (_) {
@@ -157,7 +157,7 @@ window.DevHome = window.DevHome || {};
 
     /** 带弹窗的权限检测（需要用户手势） */
     async function verifyPermission(handle, withWrite) {
-        var opts = { mode: withWrite ? 'readwrite' : 'read' };
+let opts = { mode: withWrite ? 'readwrite' : 'read' };
         try {
             if (await handle.queryPermission(opts) === 'granted') return true;
             if (await handle.requestPermission(opts) === 'granted') return true;
@@ -172,15 +172,15 @@ window.DevHome = window.DevHome || {};
     /** 从子目录读取一个类别的数据（支持独立文件和单文件两种模式） */
     async function readCategoryFile(category) {
         if (!dirHandle) return null;
-        var layout = DATA_LAYOUT[category];
+let layout = DATA_LAYOUT[category];
         if (!layout) return null;
         // 笔记：独立文件模式
         if (layout.individual) return readIndividualNotes();
         // 其他：单文件模式
         try {
-            var subDir = await dirHandle.getDirectoryHandle(layout.dir, { create: false });
-            var fileHandle = await subDir.getFileHandle(layout.file, { create: false });
-            var file = await fileHandle.getFile();
+let subDir = await dirHandle.getDirectoryHandle(layout.dir, { create: false });
+let fileHandle = await subDir.getFileHandle(layout.file, { create: false });
+let file = await fileHandle.getFile();
             return JSON.parse(await file.text());
         } catch (e) {
             if (e.name === 'NotFoundError') return null;
@@ -191,14 +191,14 @@ window.DevHome = window.DevHome || {};
     /** 将数据写入子目录（支持独立文件和单文件两种模式） */
     async function writeCategoryFile(category, data) {
         if (!dirHandle) throw new Error('目录未授权');
-        var layout = DATA_LAYOUT[category];
+let layout = DATA_LAYOUT[category];
         if (!layout) throw new Error('未知数据类别: ' + category);
         // 笔记：独立文件模式
         if (layout.individual) return writeIndividualNotes(data);
         // 其他：单文件模式
-        var subDir = await dirHandle.getDirectoryHandle(layout.dir, { create: true });
-        var fileHandle = await subDir.getFileHandle(layout.file, { create: true });
-        var writable = await fileHandle.createWritable();
+let subDir = await dirHandle.getDirectoryHandle(layout.dir, { create: true });
+let fileHandle = await subDir.getFileHandle(layout.file, { create: true });
+let writable = await fileHandle.createWritable();
         await writable.write(JSON.stringify(data, null, 2));
         await writable.close();
     }
@@ -209,13 +209,13 @@ window.DevHome = window.DevHome || {};
     async function readIndividualNotes() {
         if (!dirHandle) return null;
         try {
-            var notesDir = await dirHandle.getDirectoryHandle('notes', { create: false });
-            var notes = [];
-            for await (var entry of notesDir.values()) {
+let notesDir = await dirHandle.getDirectoryHandle('notes', { create: false });
+let notes = [];
+            for await (const entry of notesDir.values()) {
                 if (entry.kind === 'file' && entry.name.endsWith('.json')) {
                     try {
-                        var file = await entry.getFile();
-                        var data = JSON.parse(await file.text());
+let file = await entry.getFile();
+let data = JSON.parse(await file.text());
                         // 兼容：如果内容是数组则是旧 data.json 格式，展开所有笔记
                         if (Array.isArray(data)) {
                             data.forEach(function (n) { if (n && n.id) notes.push(n); });
@@ -236,22 +236,22 @@ window.DevHome = window.DevHome || {};
     /** 将笔记数组写入独立 JSON 文件（并清理旧 data.json） */
     async function writeIndividualNotes(notes) {
         if (!dirHandle || !Array.isArray(notes)) return;
-        var notesDir = await dirHandle.getDirectoryHandle('notes', { create: true });
+let notesDir = await dirHandle.getDirectoryHandle('notes', { create: true });
         // 收集已存在的文件名
-        var existingNames = new Set();
-        for await (var e of notesDir.values()) {
+let existingNames = new Set();
+        for await (const e of notesDir.values()) {
             if (e.kind === 'file' && e.name.endsWith('.json')) {
                 existingNames.add(e.name);
             }
         }
         // 写入每个笔记
-        var writtenNames = new Set();
-        for (var i = 0; i < notes.length; i++) {
-            var note = notes[i];
-            var fileName = (note.id || ('note_' + i)) + '.json';
+let writtenNames = new Set();
+        for (let i = 0; i < notes.length; i++) {
+let note = notes[i];
+let fileName = (note.id || ('note_' + i)) + '.json';
             writtenNames.add(fileName);
-            var fileHandle = await notesDir.getFileHandle(fileName, { create: true });
-            var writable = await fileHandle.createWritable();
+let fileHandle = await notesDir.getFileHandle(fileName, { create: true });
+let writable = await fileHandle.createWritable();
             await writable.write(JSON.stringify(note, null, 2));
             await writable.close();
         }
@@ -269,40 +269,40 @@ window.DevHome = window.DevHome || {};
      * 收集所有需要持久化的数据，按类别组织
      * @returns {object} { notes, captures, tasks, tiles, pomodoro, behavior, config }
      */
-    var collectAllData = ns.fileConfig_collectAllData = function () {
-        var result = {};
+let collectAllData = ns.fileConfig_collectAllData = function () {
+let result = {};
 
         // 笔记数据
         try {
-            var notesRaw = localStorage.getItem(CACHE_PREFIX + 'notes');
+let notesRaw = localStorage.getItem(CACHE_PREFIX + 'notes');
             result.notes = notesRaw ? JSON.parse(notesRaw) : [];
         } catch (_) { result.notes = []; }
 
         // 快速捕获数据
         try {
-            var capturesRaw = localStorage.getItem(CACHE_PREFIX + 'captures');
+let capturesRaw = localStorage.getItem(CACHE_PREFIX + 'captures');
             result.captures = capturesRaw ? JSON.parse(capturesRaw) : [];
         } catch (_) { result.captures = []; }
 
         // 笔记本数据
         try {
-            var notebooksRaw = localStorage.getItem(CACHE_PREFIX + 'notebooks');
+let notebooksRaw = localStorage.getItem(CACHE_PREFIX + 'notebooks');
             result.notebooks = notebooksRaw ? JSON.parse(notebooksRaw) : [];
         } catch (_) { result.notebooks = []; }
 
         // 四象限任务（优先 v2/tasks，回退 devhome_workbench）
         try {
-            var tasksRaw = localStorage.getItem(CACHE_PREFIX + 'tasks');
+let tasksRaw = localStorage.getItem(CACHE_PREFIX + 'tasks');
             if (tasksRaw) {
                 result.tasks = JSON.parse(tasksRaw);
             } else {
-                var wbRaw = localStorage.getItem('devhome_workbench');
-                var wbData = wbRaw ? JSON.parse(wbRaw) : null;
+let wbRaw = localStorage.getItem('devhome_workbench');
+let wbData = wbRaw ? JSON.parse(wbRaw) : null;
                 // 从旧格式提取任务
-                var tasks = [];
+let tasks = [];
                 if (wbData && wbData.quadrants) {
                     ['q1', 'q2', 'q3', 'q4'].forEach(function (q) {
-                        var qt = wbData.quadrants[q];
+let qt = wbData.quadrants[q];
                         if (qt && qt.tasks) {
                             qt.tasks.forEach(function (t) {
                                 tasks.push({
@@ -328,11 +328,11 @@ window.DevHome = window.DevHome || {};
         // 磁贴与分类 + 设置（合并为 tiles 类别）
         result.tiles = {};
         try {
-            var pagesRaw = localStorage.getItem('tabpage_pages');
+let pagesRaw = localStorage.getItem('tabpage_pages');
             result.tiles.pages = pagesRaw ? JSON.parse(pagesRaw) : [];
         } catch (_) { result.tiles.pages = []; }
         try {
-            var pageNamesRaw = localStorage.getItem('tabpage_page_names');
+let pageNamesRaw = localStorage.getItem('tabpage_page_names');
             result.tiles.pageNames = pageNamesRaw ? JSON.parse(pageNamesRaw) : [];
         } catch (_) { result.tiles.pageNames = []; }
         result.tiles.settings = {};
@@ -342,30 +342,30 @@ window.DevHome = window.DevHome || {};
             'char_density'
         ].forEach(function (key) {
             try {
-                var val = localStorage.getItem('tabpage_' + key);
+let val = localStorage.getItem('tabpage_' + key);
                 if (val !== null) result.tiles.settings[key] = JSON.parse(val);
             } catch (_) { /* 跳过 */ }
         });
         try {
-            var popupRaw = localStorage.getItem('devhome_ext_settings');
+let popupRaw = localStorage.getItem('devhome_ext_settings');
             result.tiles.popupSettings = popupRaw ? JSON.parse(popupRaw) : null;
         } catch (_) { result.tiles.popupSettings = null; }
 
         // 番茄钟记录
         try {
-            var pomoRaw = localStorage.getItem(CACHE_PREFIX + 'pomodoro_sessions');
+let pomoRaw = localStorage.getItem(CACHE_PREFIX + 'pomodoro_sessions');
             result.pomodoro = pomoRaw ? JSON.parse(pomoRaw) : [];
         } catch (_) { result.pomodoro = []; }
 
         // 行为追踪数据
         try {
-            var behaviorRaw = localStorage.getItem(CACHE_PREFIX + 'behavior');
+let behaviorRaw = localStorage.getItem(CACHE_PREFIX + 'behavior');
             result.behavior = behaviorRaw ? JSON.parse(behaviorRaw) : null;
         } catch (_) { result.behavior = null; }
 
         // 应用配置（AI、快捷键、自定义标签等）
         try {
-            var configRaw = localStorage.getItem(CACHE_PREFIX + 'config');
+let configRaw = localStorage.getItem(CACHE_PREFIX + 'config');
             result.config = configRaw ? JSON.parse(configRaw) : null;
         } catch (_) { result.config = null; }
 
@@ -376,12 +376,12 @@ window.DevHome = window.DevHome || {};
      * 将分类数据恢复到 localStorage 和 chrome.storage.local
      * @param {object} configData - collectAllData 的返回值
      */
-    var restoreAllData = ns.fileConfig_restoreAllData = async function (configData) {
+let restoreAllData = ns.fileConfig_restoreAllData = async function (configData) {
         if (!configData) return;
 
         // 磁贴与设置
         if (configData.tiles) {
-            var t = configData.tiles;
+let t = configData.tiles;
             if (Array.isArray(t.pages)) localStorage.setItem('tabpage_pages', JSON.stringify(t.pages));
             if (Array.isArray(t.pageNames)) localStorage.setItem('tabpage_page_names', JSON.stringify(t.pageNames));
             if (t.settings) {
@@ -460,7 +460,7 @@ window.DevHome = window.DevHome || {};
         if (configData.config) {
             try {
                 await ns.storageV2.set(ns.storageV2.KEYS.CONFIG, configData.config);
-                var customTypes = configData.config.customNoteTypes;
+let customTypes = configData.config.customNoteTypes;
                 if (Array.isArray(customTypes) && customTypes.length > 0) {
                     console.log('[FileConfig] 恢复了应用配置（含 ' + customTypes.length + ' 个自定义标签）');
                 } else {
@@ -484,7 +484,7 @@ window.DevHome = window.DevHome || {};
     function hasAnyCategoryData(data) {
         if (!data) return false;
         return Object.keys(data).some(function (k) {
-            var v = data[k];
+let v = data[k];
             if (Array.isArray(v)) return v.length > 0;
             if (v && typeof v === 'object' && k === 'tiles') return (v.pages || []).length > 0;
             return v !== null && v !== undefined;
@@ -495,11 +495,11 @@ window.DevHome = window.DevHome || {};
 
     /** 将所有类别数据写入对应子目录文件 */
     async function writeAllCategoryFiles() {
-        var data = collectAllData();
-        var categories = Object.keys(DATA_LAYOUT);
+let data = collectAllData();
+let categories = Object.keys(DATA_LAYOUT);
 
-        for (var i = 0; i < categories.length; i++) {
-            var cat = categories[i];
+        for (let i = 0; i < categories.length; i++) {
+let cat = categories[i];
             if (data[cat] !== undefined) {
                 try {
                     await writeCategoryFile(cat, data[cat]);
@@ -515,14 +515,14 @@ window.DevHome = window.DevHome || {};
 
     /** 从子目录读取所有类别数据 */
     async function readAllCategoryFiles() {
-        var data = {};
-        var categories = Object.keys(DATA_LAYOUT);
-        var hasAny = false;
+let data = {};
+let categories = Object.keys(DATA_LAYOUT);
+let hasAny = false;
 
-        for (var i = 0; i < categories.length; i++) {
-            var cat = categories[i];
+        for (let i = 0; i < categories.length; i++) {
+let cat = categories[i];
             try {
-                var catData = await readCategoryFile(cat);
+let catData = await readCategoryFile(cat);
                 if (catData !== null) {
                     data[cat] = catData;
                     hasAny = true;
@@ -538,9 +538,9 @@ window.DevHome = window.DevHome || {};
     /* ===== 警告条 ===== */
 
     function showWarningBar(message, isError) {
-        var bar = document.getElementById('configWarningBar');
-        var text = document.getElementById('configWarningText');
-        var btn = document.getElementById('configSelectDirBtn');
+let bar = document.getElementById('configWarningBar');
+let text = document.getElementById('configWarningText');
+let btn = document.getElementById('configSelectDirBtn');
         if (!bar || !text) return;
         text.textContent = message || '请选择配置目录以持久化数据';
         bar.className = 'config-warning-bar' + (isError ? ' config-warning-bar--error' : '');
@@ -551,7 +551,7 @@ window.DevHome = window.DevHome || {};
     }
 
     function hideWarningBar() {
-        var bar = document.getElementById('configWarningBar');
+let bar = document.getElementById('configWarningBar');
         if (bar) {
             bar.style.opacity = '0';
             setTimeout(function () { bar.style.display = 'none'; }, 300);
@@ -590,7 +590,7 @@ window.DevHome = window.DevHome || {};
         if (!dirHandle) return false;
         try {
             // 必须用 readwrite 模式 — 原始 showDirectoryPicker 授予的就是 readwrite
-            var opts = { mode: 'readwrite' };
+let opts = { mode: 'readwrite' };
             if ((await dirHandle.queryPermission(opts)) === 'granted') {
                 writePermissionPending = false;
                 hideWarningBar();
@@ -611,7 +611,7 @@ window.DevHome = window.DevHome || {};
         if (!dirHandle) return false; // 无 handle → 无法恢复，需重新选择目录
         if (!writePermissionPending) return true;
         try {
-            var opts = { mode: 'readwrite' };
+let opts = { mode: 'readwrite' };
             if (await dirHandle.queryPermission(opts) === 'granted') {
                 writePermissionPending = false;
                 hideWarningBar();
@@ -636,7 +636,7 @@ window.DevHome = window.DevHome || {};
         if (!dirHandle) return;
 
         // 确定需要写入的类别
-        var categories;
+let categories;
         if (force) {
             // 强制全部写入
             categories = Object.keys(DATA_LAYOUT);
@@ -653,10 +653,10 @@ window.DevHome = window.DevHome || {};
 
         syncInProgress = true;
         try {
-            var data = collectAllData();
+let data = collectAllData();
             // 仅写入脏类别（或 force 时写全部）
-            for (var i = 0; i < categories.length; i++) {
-                var cat = categories[i];
+            for (let i = 0; i < categories.length; i++) {
+let cat = categories[i];
                 if (data[cat] !== undefined) {
                     try {
                         await writeCategoryFile(cat, data[cat]);
@@ -703,7 +703,7 @@ window.DevHome = window.DevHome || {};
             if (!dirHandle || !isReady) return;
 
             // 将 chrome.storage key 映射到 DATA_LAYOUT 类别
-            var KEY_TO_CATEGORY = {
+            const KEY_TO_CATEGORY = {
                 'v2/notes': 'notes',
                 'v2/captures': 'captures',
                 'v2/tasks': 'tasks',
@@ -714,7 +714,7 @@ window.DevHome = window.DevHome || {};
             };
 
             Object.keys(changes).forEach(function (key) {
-                var cat = KEY_TO_CATEGORY[key];
+let cat = KEY_TO_CATEGORY[key];
                 if (cat) {
                     dirtyCategories[cat] = true;
                 }
@@ -739,20 +739,20 @@ window.DevHome = window.DevHome || {};
         }
 
         try {
-            var handle = await loadHandleFromDB();
+let handle = await loadHandleFromDB();
             if (handle) {
                 console.log('[FileConfig] 从 IndexedDB 恢复 handle:', handle.name);
                 dirHandle = handle;
                 isReady = true;
 
                 // 静默尝试恢复权限，不阻塞启动
-                var readPermitted = await verifyPermissionQuiet(handle, false);
+let readPermitted = await verifyPermissionQuiet(handle, false);
                 console.log('[FileConfig] 权限静默查询:', readPermitted ? 'granted' : 'prompt');
 
                 if (readPermitted) {
                     writePermissionPending = !(await verifyPermissionQuiet(handle, true));
                     // 权限可用 → 后台静默从文件读数据覆盖
-                    var categoryData = await readAllCategoryFiles();
+let categoryData = await readAllCategoryFiles();
                     if (categoryData && hasAnyCategoryData(categoryData)) {
                         await restoreAllData(categoryData);
                         console.log('[FileConfig] 已从文件恢复数据');
@@ -796,12 +796,12 @@ window.DevHome = window.DevHome || {};
             return false;
         }
         try {
-            var handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+let handle = await window.showDirectoryPicker({ mode: 'readwrite' });
             dirHandle = handle;
             console.log('[FileConfig] 用户选择了目录:', handle.name);
 
             // 直接读取分类目录数据，不再依赖 manifest
-            var categoryData = await readAllCategoryFiles();
+let categoryData = await readAllCategoryFiles();
             if (categoryData) {
                 await restoreAllData(categoryData);
                 showToast('数据已从 ' + handle.name + ' 完整恢复', 'success');
@@ -837,8 +837,8 @@ window.DevHome = window.DevHome || {};
 
     /** 获取数据摘要（用于迁移提示） */
     function getCategorySummary() {
-        var data = collectAllData();
-        var parts = [];
+let data = collectAllData();
+let parts = [];
         if (data.tiles && data.tiles.pages && data.tiles.pages.length > 0) parts.push(data.tiles.pages.length + ' 个分类');
         if (data.notes && data.notes.length > 0) parts.push(data.notes.length + ' 条笔记');
         if (data.tasks && data.tasks.length > 0) parts.push(data.tasks.length + ' 个任务');
@@ -849,7 +849,7 @@ window.DevHome = window.DevHome || {};
     /** 获取磁贴分类数量 */
     function getPageCount() {
         try {
-            var raw = localStorage.getItem('tabpage_pages');
+let raw = localStorage.getItem('tabpage_pages');
             if (!raw) return 0;
             return JSON.parse(raw).length || 0;
         } catch (_) { return 0; }
@@ -858,7 +858,7 @@ window.DevHome = window.DevHome || {};
     /* ===== Toast 提示 ===== */
     function showToast(message, type) {
         try {
-            var toast = document.createElement('div');
+let toast = document.createElement('div');
             toast.className = 'file-config-toast' + (type === 'success' ? ' file-config-toast--success' : '');
             toast.textContent = message;
             toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--color-surface);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);color:var(--color-text);padding:10px 24px;border-radius:var(--radius-full);font-size:var(--font-size-sm);z-index:9999;border:1px solid var(--color-border);transition:opacity 0.3s ease;pointer-events:none;';
@@ -872,7 +872,7 @@ window.DevHome = window.DevHome || {};
     async function checkConfigForPopup() {
         try {
             if (!isFileSystemAPISupported()) return { configured: true };
-            var handle = await loadHandleFromDB();
+let handle = await loadHandleFromDB();
             return { configured: !!handle };
         } catch (_) {
             return { configured: false };

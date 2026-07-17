@@ -7,7 +7,7 @@ window.DevHome = window.DevHome || {};
     'use strict';
 
     /** 本地金句库（50 条）：名言/诗词/冷知识混合 */
-    var LOCAL_QUOTES = [
+    const LOCAL_QUOTES = [
         '代码如诗，简洁即美。',
         '不积跬步，无以至千里。 ——荀子',
         'Stay hungry, stay foolish. ——Steve Jobs',
@@ -60,23 +60,23 @@ window.DevHome = window.DevHome || {};
         '不飞则已，一飞冲天；不鸣则已，一鸣惊人。 ——司马迁'
     ];
 
-    var QUOTE_CACHE_KEY = 'tabpage_quote_cache';
+    const QUOTE_CACHE_KEY = 'quote_cache';
 
     /** 从本地库随机获取一条金句 */
     function getLocalQuote() {
-        var idx = Math.floor(Math.random() * LOCAL_QUOTES.length);
+        const idx = Math.floor(Math.random() * LOCAL_QUOTES.length);
         return LOCAL_QUOTES[idx];
     }
 
     /** 从 hitokoto API 获取一条金句 */
     async function fetchHitokoto() {
         try {
-            var controller = new AbortController();
-            var timeout = setTimeout(function () { controller.abort(); }, 5000);
-            var resp = await fetch('https://v1.hitokoto.cn/?c=a&c=b&c=d&c=e&c=k&encode=text', { signal: controller.signal });
+            const controller = new AbortController();
+            const timeout = setTimeout(function () { controller.abort(); }, 5000);
+            const resp = await fetch('https://v1.hitokoto.cn/?c=a&c=b&c=d&c=e&c=k&encode=text', { signal: controller.signal });
             clearTimeout(timeout);
             if (resp.ok) {
-                var text = await resp.text();
+                const text = await resp.text();
                 if (text && text.trim()) return text.trim();
             }
         } catch (e) { /* 静默降级到本地库 */ }
@@ -85,9 +85,8 @@ window.DevHome = window.DevHome || {};
 
     /** 加载今日金句（优先缓存 → 本地库 → API 兜底） */
     async function loadDailyQuote() {
-        var today = new Date().toLocaleDateString('zh-CN');
-        var cached;
-        try { cached = JSON.parse(localStorage.getItem(QUOTE_CACHE_KEY)); } catch (e) { }
+        const today = new Date().toLocaleDateString('zh-CN');
+        const cached = ns.storage.get(QUOTE_CACHE_KEY, null);
 
         // 同一天直接用缓存
         if (cached && cached.date === today && cached.text) {
@@ -95,20 +94,20 @@ window.DevHome = window.DevHome || {};
         }
 
         // 先取本地库
-        var text = getLocalQuote();
+        const text = getLocalQuote();
 
         // 异步尝试 API，成功则覆盖
         fetchHitokoto().then(function (apiText) {
             if (apiText && apiText.length > 2) {
-                var el = document.getElementById('quoteText');
+                const el = document.getElementById('quoteText');
                 if (el) { el.textContent = '「' + apiText + '」'; el.title = '每日金句（来自一言API）'; }
-                localStorage.setItem(QUOTE_CACHE_KEY, JSON.stringify({ date: today, text: apiText }));
+                ns.storage.set(QUOTE_CACHE_KEY, { date: today, text: apiText });
             }
         });
 
         // 先缓存本地库结果
         if (!cached || cached.date !== today) {
-            localStorage.setItem(QUOTE_CACHE_KEY, JSON.stringify({ date: today, text: text }));
+            ns.storage.set(QUOTE_CACHE_KEY, { date: today, text: text });
         }
         return text;
     }
@@ -125,20 +124,20 @@ window.DevHome = window.DevHome || {};
 
     /** 更新问候语 DOM */
     function updateGreeting() {
-        var el = document.getElementById('greetingText');
+        const el = document.getElementById('greetingText');
         if (!el) return;
         el.style.display = '';
-        var hour = new Date().getHours();
-        var g = getGreeting(hour);
+        const hour = new Date().getHours();
+        const g = getGreeting(hour);
         el.innerHTML = '<span class="greeting-main">' + g.text + '</span><span class="greeting-sub">' + g.sub + '</span>';
     }
 
     /** 渲染金句到 DOM */
     async function renderQuote() {
-        var el = document.getElementById('quoteText');
+        const el = document.getElementById('quoteText');
         if (!el) return;
         el.style.display = '';
-        var text = await loadDailyQuote();
+        const text = await loadDailyQuote();
         el.textContent = '「' + text + '」';
         el.title = '每日金句';
     }
@@ -149,7 +148,7 @@ window.DevHome = window.DevHome || {};
         updateGreeting();
         // 每分钟检查问候语是否需要更新
         setInterval(function () {
-            var now = new Date();
+            const now = new Date();
             // 仅在整点或切换时区时更新
             if (now.getMinutes() === 0) updateGreeting();
         }, 60000);
@@ -157,7 +156,7 @@ window.DevHome = window.DevHome || {};
         document.addEventListener('visibilitychange', function () {
             if (!document.hidden) updateGreeting();
         });
-        console.log('[每日金句] 渲染完成');
+        console.log('[面板] 每日金句渲染完成');
     };
 
 })(window.DevHome);

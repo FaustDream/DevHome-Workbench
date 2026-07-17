@@ -15,7 +15,7 @@ window.DevHome = window.DevHome || {};
      */
     ns.getCountdowns = function () {
         try {
-            var raw = localStorage.getItem('countdowns');
+            const raw = localStorage.getItem('countdowns');
             return raw ? JSON.parse(raw) : [];
         } catch (e) {
             console.error('[倒计时] 读取数据失败', e);
@@ -45,18 +45,18 @@ window.DevHome = window.DevHome || {};
      * @returns {{days: number, progress: number, isOverdue: boolean}}
      */
     ns.calcCountdown = function (targetDate, createdAt) {
-        var now = new Date();
-        var target = new Date(targetDate + 'T00:00:00');
-        var diff = target - now;
-        var days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+        const now = new Date();
+        const target = new Date(targetDate + 'T00:00:00');
+        const diff = target - now;
+        const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
 
         // 进度：从创建日到目标日，计算已过去比例
-        var progress = 100;
+        let progress = 100;
         if (createdAt) {
-            var start = new Date(createdAt);
-            var total = target - start;
+            const start = new Date(createdAt);
+            const total = target - start;
             if (total > 0) {
-                var elapsed = now - start;
+                const elapsed = now - start;
                 progress = Math.max(0, Math.min(100, Math.round((elapsed / total) * 100)));
             }
         }
@@ -74,7 +74,7 @@ window.DevHome = window.DevHome || {};
      * @returns {string} - "2026年1月29日"
      */
     function formatDate(dateStr) {
-        var parts = dateStr.split('-');
+        const parts = dateStr.split('-');
         if (parts.length !== 3) return dateStr;
         return parseInt(parts[0]) + '年' + parseInt(parts[1]) + '月' + parseInt(parts[2]) + '日';
     }
@@ -82,7 +82,7 @@ window.DevHome = window.DevHome || {};
     /* ===== DOM 渲染 ===== */
 
     /** 倒计时更新定时器 ID */
-    var _countdownTimer = null;
+    let _countdownTimer = null;
 
     /**
      * 渲染单个倒计时卡片
@@ -90,15 +90,15 @@ window.DevHome = window.DevHome || {};
      * @returns {HTMLElement}
      */
     function renderCountdownCard(cd) {
-        var result = ns.calcCountdown(cd.targetDate, cd.createdAt);
-        var targetDateFormatted = formatDate(cd.targetDate);
+        const result = ns.calcCountdown(cd.targetDate, cd.createdAt);
+        const targetDateFormatted = formatDate(cd.targetDate);
 
-        var card = document.createElement('div');
+        const card = document.createElement('div');
         card.className = 'countdown-card';
         card.dataset.countdownId = cd.id;
 
         // 删除按钮
-        var deleteBtn = document.createElement('button');
+        const deleteBtn = document.createElement('button');
         deleteBtn.className = 'countdown-delete-btn';
         deleteBtn.innerHTML = '&#x2715;';  // ×
         deleteBtn.title = '删除此倒计时';
@@ -109,44 +109,44 @@ window.DevHome = window.DevHome || {};
         card.appendChild(deleteBtn);
 
         // 标题行
-        var titleEl = document.createElement('div');
+        const titleEl = document.createElement('div');
         titleEl.className = 'countdown-title';
-        var icon = document.createElement('span');
+        const icon = document.createElement('span');
         icon.className = 'countdown-title-icon';
         icon.textContent = result.isOverdue ? '\u23F0' : '\u2728';  // 闹钟 / 星星
         titleEl.appendChild(icon);
-        var titleText = document.createElement('span');
+        const titleText = document.createElement('span');
         titleText.textContent = cd.title || '目标日';
         titleEl.appendChild(titleText);
         card.appendChild(titleEl);
 
         if (result.isOverdue) {
             // 已过期：显示红色过期标签
-            var daysEl = document.createElement('div');
+            const daysEl = document.createElement('div');
             daysEl.className = 'countdown-days overdue';
             daysEl.textContent = '已过期';
             card.appendChild(daysEl);
 
-            var overdueBadge = document.createElement('div');
+            const overdueBadge = document.createElement('div');
             overdueBadge.className = 'countdown-overdue-badge';
             overdueBadge.textContent = '\u26A0\uFE0F ' + targetDateFormatted;  // 警告 + 目标日期
             card.appendChild(overdueBadge);
         } else {
             // 未过期：显示剩余天数
-            var daysEl = document.createElement('div');
+            const daysEl = document.createElement('div');
             daysEl.className = 'countdown-days';
             daysEl.textContent = result.days;
             card.appendChild(daysEl);
 
-            var labelEl = document.createElement('div');
+            const labelEl = document.createElement('div');
             labelEl.className = 'countdown-label';
             labelEl.textContent = result.days === 0 ? '就在今天！' : '天后';
             card.appendChild(labelEl);
 
             // 进度条
-            var progressWrap = document.createElement('div');
+            const progressWrap = document.createElement('div');
             progressWrap.className = 'countdown-progress';
-            var progressBar = document.createElement('div');
+            const progressBar = document.createElement('div');
             progressBar.className = 'countdown-progress-bar';
             progressBar.style.width = result.progress + '%';
             progressWrap.appendChild(progressBar);
@@ -154,7 +154,7 @@ window.DevHome = window.DevHome || {};
         }
 
         // 目标日期
-        var dateEl = document.createElement('div');
+        const dateEl = document.createElement('div');
         dateEl.className = 'countdown-target-date';
         dateEl.textContent = '目标：' + targetDateFormatted;
         card.appendChild(dateEl);
@@ -166,20 +166,20 @@ window.DevHome = window.DevHome || {};
      * 刷新所有倒计时卡片（重新渲染）
      */
     function refreshCountdownUI() {
-        var root = document.getElementById('countdownRoot');
+        let root = document.getElementById('countdownRoot');
         if (!root) {
             console.warn('[倒计时] #countdownRoot 不存在');
             return;
         }
 
-        var list = ns.getCountdowns();
+        let list = ns.getCountdowns();
 
         // 清空旧内容
         root.innerHTML = '';
 
         if (list.length === 0) {
             // 空状态：仅显示添加按钮
-            var addBtn = document.createElement('button');
+            const addBtn = document.createElement('button');
             addBtn.className = 'countdown-add-btn';
             addBtn.textContent = '+';
             addBtn.title = '添加倒计时';
@@ -190,13 +190,13 @@ window.DevHome = window.DevHome || {};
         }
 
         // 渲染每个倒计时卡片
-        for (var i = 0; i < list.length; i++) {
-            var card = renderCountdownCard(list[i]);
+        for (let i = 0; i < list.length; i++) {
+            const card = renderCountdownCard(list[i]);
             root.appendChild(card);
         }
 
         // 最下方添加新的倒计时按钮（小号 + 号在卡片底部）
-        var addBtn = document.createElement('button');
+        const addBtn = document.createElement('button');
         addBtn.className = 'countdown-add-btn';
         addBtn.textContent = '+';
         addBtn.title = '添加倒计时';
@@ -217,27 +217,27 @@ window.DevHome = window.DevHome || {};
         console.log('[倒计时] 打开添加倒计时弹窗');
 
         // 构建表单弹窗
-        var overlay = document.createElement('div');
+        const overlay = document.createElement('div');
         overlay.className = 'wb-confirm-overlay';
         overlay.id = 'countdownFormOverlay';
 
-        var panel = document.createElement('div');
+        let panel = document.createElement('div');
         panel.className = 'wb-confirm-panel';
         panel.style.cssText = 'max-width:360px;';
 
-        var title = document.createElement('div');
+        let title = document.createElement('div');
         title.className = 'wb-confirm-title';
         title.textContent = '添加倒计时';
 
-        var form = document.createElement('div');
+        const form = document.createElement('div');
         form.className = 'wb-confirm-message';
         form.style.cssText = 'display:flex;flex-direction:column;gap:12px;';
 
         // 标题输入
-        var titleLabel = document.createElement('label');
+        const titleLabel = document.createElement('label');
         titleLabel.textContent = '标题';
         titleLabel.style.cssText = 'font-size:12px;color:var(--color-text-secondary);font-weight:500;';
-        var titleInput = document.createElement('input');
+        const titleInput = document.createElement('input');
         titleInput.type = 'text';
         titleInput.placeholder = '例如：春节、生日、项目截止...';
         titleInput.style.cssText = 'width:100%;padding:8px 12px;border:1px solid var(--color-input-border);border-radius:8px;background:var(--color-input-bg);color:var(--color-text);font-size:14px;outline:none;';
@@ -249,10 +249,10 @@ window.DevHome = window.DevHome || {};
         });
 
         // 日期输入
-        var dateLabel = document.createElement('label');
+        const dateLabel = document.createElement('label');
         dateLabel.textContent = '目标日期';
         dateLabel.style.cssText = 'font-size:12px;color:var(--color-text-secondary);font-weight:500;margin-top:4px;';
-        var dateInput = document.createElement('input');
+        let dateInput = document.createElement('input');
         dateInput.type = 'date';
         dateInput.style.cssText = 'width:100%;padding:8px 12px;border:1px solid var(--color-input-border);border-radius:8px;background:var(--color-input-bg);color:var(--color-text);font-size:14px;outline:none;';
         dateInput.addEventListener('focus', function () {
@@ -268,14 +268,14 @@ window.DevHome = window.DevHome || {};
         form.appendChild(dateInput);
 
         // 按钮行
-        var actions = document.createElement('div');
+        const actions = document.createElement('div');
         actions.style.cssText = 'display:flex;justify-content:flex-end;gap:8px;margin-top:8px;';
 
-        var cancelBtn = document.createElement('button');
+        const cancelBtn = document.createElement('button');
         cancelBtn.textContent = '取消';
         cancelBtn.className = 'wb-confirm-cancel';
 
-        var confirmBtn = document.createElement('button');
+        const confirmBtn = document.createElement('button');
         confirmBtn.textContent = '添加';
         confirmBtn.className = 'wb-confirm-confirm';
 
@@ -301,8 +301,8 @@ window.DevHome = window.DevHome || {};
 
         // 确认添加
         function confirmAdd() {
-            var title = titleInput.value.trim();
-            var date = dateInput.value;
+            let title = titleInput.value.trim();
+            const date = dateInput.value;
 
             if (!title) {
                 ns.showToast('请输入标题', 'error');
@@ -313,8 +313,8 @@ window.DevHome = window.DevHome || {};
                 return;
             }
 
-            var list = ns.getCountdowns();
-            var newItem = {
+            let list = ns.getCountdowns();
+            const newItem = {
                 id: 'cd_' + Date.now(),
                 title: title,
                 targetDate: date,
@@ -373,8 +373,8 @@ window.DevHome = window.DevHome || {};
     };
 
     function _doDelete(id) {
-        var list = ns.getCountdowns();
-        var filtered = list.filter(function (item) { return item.id !== id; });
+        let list = ns.getCountdowns();
+        const filtered = list.filter(function (item) { return item.id !== id; });
         ns.saveCountdowns(filtered);
         refreshCountdownUI();
         console.log('[倒计时] 已删除 ' + id);
@@ -390,7 +390,7 @@ window.DevHome = window.DevHome || {};
         console.log('[倒计时] 初始化开始');
 
         // 确保 DOM 容器存在
-        var root = document.getElementById('countdownRoot');
+        let root = document.getElementById('countdownRoot');
         if (!root) {
             // 动态创建容器
             root = document.createElement('div');

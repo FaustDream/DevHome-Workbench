@@ -20,6 +20,12 @@ js/secrets.js
 # Node.js 依赖（仅构建时使用，npm install 恢复）
 node_modules/
 
+# 构建产物（npm run build:prod 生成，不纳入版本控制）
+js/bundle.js
+js/tiptap-bundle.js
+css/bundle.css
+index.bundle.html
+.husky/
 # 测试文件
 test/
 scripts/

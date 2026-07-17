@@ -23,8 +23,6 @@
     cursor: pointer;
     transition: all 0.2s ease;
     white-space: nowrap;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
     user-select: none;
     position: relative;
 }
@@ -34,10 +32,12 @@
     color: var(--color-text-inverse);
     border-color: transparent;
 }
-.cat-btn.active {
-    background: linear-gradient(135deg, var(--color-accent), var(--color-info)) !important;
-    color: var(--color-text-inverse) !important;
-    border-color: transparent !important;
+/* 使用 .active:hover 组合选择器提升特异度，替代 !important */
+.cat-btn.active,
+.cat-btn.active:hover {
+    background: linear-gradient(135deg, var(--color-accent), var(--color-info));
+    color: var(--color-text-inverse);
+    border-color: transparent;
     font-weight: 700;
     box-shadow: var(--color-accent-shadow), var(--shadow-md);
     transform: scale(1.06);

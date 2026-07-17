@@ -7,21 +7,21 @@ window.DevHome = window.DevHome || {};
     'use strict';
 
     ns._bindNotebookEvents = function () {
-        var state = ns.state;
-        var dom = ns.dom;
+        const state = ns.state;
+        const dom = ns.dom;
 
         if (dom.wbNotebookDropdownBtn) {
             // 点击下拉按钮 → 展开/收起菜单
             dom.wbNotebookDropdownBtn.addEventListener('click', function (e) {
                 e.stopPropagation();
-                var menu = dom.wbNotebookDropdownMenu;
+                const menu = dom.wbNotebookDropdownMenu;
                 if (!menu) return;
-                var isOpen = menu.style.display === 'block';
+                const isOpen = menu.style.display === 'block';
                 if (isOpen) {
                     menu.style.display = 'none';
                 } else {
                     ns.renderNotebookDropdown();
-                    var btnRect = dom.wbNotebookDropdownBtn.getBoundingClientRect();
+                    const btnRect = dom.wbNotebookDropdownBtn.getBoundingClientRect();
                     menu.style.position = 'fixed';
                     menu.style.top = (btnRect.bottom + 4) + 'px';
                     menu.style.left = btnRect.left + 'px';
@@ -34,9 +34,9 @@ window.DevHome = window.DevHome || {};
             if (dom.wbNotebookDropdownMenu) {
                 dom.wbNotebookDropdownMenu.addEventListener('click', function (e) {
                     e.stopPropagation();
-                    var item = e.target.closest('.wb-notebook-dropdown-item');
+                    const item = e.target.closest('.wb-notebook-dropdown-item');
                     if (!item) return;
-                    var notebookId = item.dataset.notebookId || null;
+                    const notebookId = item.dataset.notebookId || null;
                     state._notebookFilter = notebookId;
                     if (notebookId) state._lastNotebookId = notebookId;
                     // 持久化
@@ -55,17 +55,17 @@ window.DevHome = window.DevHome || {};
                     console.log('[交互] 笔记本筛选 ' + (notebookId || '全部'));
                 });
                 // 长按 → 重命名/删除
-                var nbMenuLongPress = null;
+                let nbMenuLongPress = null;
                 dom.wbNotebookDropdownMenu.addEventListener('pointerdown', function (e) {
-                    var item = e.target.closest('.wb-notebook-dropdown-item:not([data-notebook-id=""])');
+                    const item = e.target.closest('.wb-notebook-dropdown-item:not([data-notebook-id=""])');
                     if (!item) return;
                     nbMenuLongPress = setTimeout(function () {
-                        var nbId = item.dataset.notebookId;
-                        var nb = state.notebooks.find(function (n) { return n.id === nbId; });
+                        const nbId = item.dataset.notebookId;
+                        const nb = state.notebooks.find(function (n) { return n.id === nbId; });
                         if (!nb) return;
                         dom.wbNotebookDropdownMenu.style.display = 'none';
                         // 弹出操作菜单
-                        var ctxMenu = document.getElementById('wbNotebookCtxMenu');
+                        let ctxMenu = document.getElementById('wbNotebookCtxMenu');
                         if (!ctxMenu) {
                             ctxMenu = document.createElement('div');
                             ctxMenu.id = 'wbNotebookCtxMenu';
@@ -90,12 +90,12 @@ window.DevHome = window.DevHome || {};
                             return '<div class="wb-menu-item" style="padding:8px 12px;cursor:pointer;border-radius:4px;font-size:13px;color:var(--color-text);">' + ns.escapeHtml(a.label) + '</div>';
                         }).join('');
                         // 定位菜单
-                        var ir = item.getBoundingClientRect();
+                        const ir = item.getBoundingClientRect();
                         ctxMenu.style.top = (ir.top) + 'px';
                         ctxMenu.style.left = (ir.right + 4) + 'px';
                         ctxMenu.style.display = 'block';
                         // 绑定菜单操作
-                        var items = ctxMenu.querySelectorAll('.wb-menu-item');
+                        let items = ctxMenu.querySelectorAll('.wb-menu-item');
                         items[0].addEventListener('click', function () { ctxMenu.style.display = 'none'; });
                         items[1].addEventListener('click', function () { ctxMenu.style.display = 'none'; });
                         console.log('[交互] 笔记本长按 ' + nb.name);
@@ -109,12 +109,12 @@ window.DevHome = window.DevHome || {};
 
         // 点击外部关闭下拉菜单
         document.addEventListener('click', function (e) {
-            var nbMenu = dom.wbNotebookDropdownMenu;
+            const nbMenu = dom.wbNotebookDropdownMenu;
             if (nbMenu && nbMenu.style.display === 'block' &&
                 !e.target.closest('#wbNotebookDropdown') && !e.target.closest('#wbNotebookCtxMenu')) {
                 nbMenu.style.display = 'none';
             }
-            var ctxMenu = document.getElementById('wbNotebookCtxMenu');
+            let ctxMenu = document.getElementById('wbNotebookCtxMenu');
             if (ctxMenu && ctxMenu.style.display === 'block' && !e.target.closest('#wbNotebookCtxMenu')) {
                 ctxMenu.style.display = 'none';
             }

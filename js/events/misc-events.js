@@ -8,9 +8,9 @@ window.DevHome = window.DevHome || {};
     'use strict';
 
     ns._bindMiscEvents = function () {
-        var state = ns.state;
-        var dom = ns.dom;
-        var storage = ns.storage;
+let state = ns.state;
+let dom = ns.dom;
+let storage = ns.storage;
 
         // 磁贴滚轮翻页
         dom.tilesContainer.addEventListener('wheel', ns.handleWheelScroll, { passive: false });
@@ -18,14 +18,14 @@ window.DevHome = window.DevHome || {};
         dom.tilesContainer.addEventListener('keydown', ns.handleTileDeleteKeydown);
 
         // 空白区域右键菜单
-        dom.blankContextMenu.addEventListener('click', function (e) { var item = e.target.closest('.context-menu-item'); if (item && item.dataset.action) ns.handleBlankMenuAction(item.dataset.action); });
+        dom.blankContextMenu.addEventListener('click', function (e) { const item = e.target.closest('.context-menu-item'); if (item && item.dataset.action) ns.handleBlankMenuAction(item.dataset.action); });
 
         // 编辑器右键菜单
         _bindEditorContextMenu();
 
         // 背景上传
         dom.bgInput.addEventListener('change', function (e) {
-            var file = e.target.files[0]; if (!file) return;
+let file = e.target.files[0]; if (!file) return;
             if (file.type.startsWith('image/') || file.type.startsWith('video/')) ns.bgManager.upload(file);
             else ns.showToast('请选择图片或视频文件', 'error');
             dom.bgInput.value = '';
@@ -42,7 +42,7 @@ window.DevHome = window.DevHome || {};
             dom.wbCaptureInput.addEventListener('keydown', function (e) {
                 if (e.key === 'Enter') {
                     e.preventDefault();
-                    var val = dom.wbCaptureInput.value.trim();
+let val = dom.wbCaptureInput.value.trim();
                     if (!val) return;
                     ns.addCapture(val).then(function () {
                         ns.renderCaptures();
@@ -81,16 +81,16 @@ window.DevHome = window.DevHome || {};
 
     /* ===== 编辑器右键菜单 ===== */
     function _bindEditorContextMenu() {
-        var editorMenu = document.getElementById('editorContextMenu');
+let editorMenu = document.getElementById('editorContextMenu');
         if (editorMenu) {
             editorMenu.addEventListener('mousedown', function (e) {
-                var item = e.target.closest('.context-menu-item');
+let item = e.target.closest('.context-menu-item');
                 if (!item || !item.dataset.editorAction) return;
                 e.preventDefault();
-                var action = item.dataset.editorAction;
+let action = item.dataset.editorAction;
                 if (action === 'copy') document.execCommand('copy');
                 else if (action === 'paste') document.execCommand('paste');
-                var em = document.getElementById('editorContextMenu');
+let em = document.getElementById('editorContextMenu');
                 if (em) em.classList.remove('visible');
             });
         }
@@ -98,16 +98,16 @@ window.DevHome = window.DevHome || {};
 
     /* ===== 数据导入 ===== */
     function _bindImportEvents() {
-        var dom = ns.dom, storage = ns.storage;
+let dom = ns.dom, storage = ns.storage;
         if (dom.importInput) {
             dom.importInput.addEventListener('change', function (e) {
-                var file = e.target.files[0]; if (!file) return;
-                var reader = new FileReader();
+let file = e.target.files[0]; if (!file) return;
+let reader = new FileReader();
                 reader.onload = async function (event) {
                     try {
-                        var data = JSON.parse(event.target.result);
+let data = JSON.parse(event.target.result);
                         if (data && data.pages && Array.isArray(data.pages)) {
-                            var importOk = await ns.showConfirm('导入备份将覆盖当前所有的磁贴和页面配置，确定继续吗？', { title: '导入备份' });
+let importOk = await ns.showConfirm('导入备份将覆盖当前所有的磁贴和页面配置，确定继续吗？', { title: '导入备份' });
                             if (importOk) {
                                 storage.set('pages', data.pages);
                                 storage.set('page_names', data.pageNames || ['第1页']);
@@ -127,13 +127,13 @@ window.DevHome = window.DevHome || {};
 
     /* ===== 文件配置目录选择 ===== */
     function _bindFileConfigEvents() {
-        var state = ns.state, dom = ns.dom, storage = ns.storage;
+let state = ns.state, dom = ns.dom, storage = ns.storage;
         if (dom.configSelectDirBtn) {
             dom.configSelectDirBtn.addEventListener('click', async function () {
                 if (!ns.fileConfig) return;
                 // 尝试恢复读取权限
                 if (ns.fileConfig._tryRecoverRead && typeof ns.fileConfig._tryRecoverRead === 'function') {
-                    var readOk = await ns.fileConfig._tryRecoverRead();
+let readOk = await ns.fileConfig._tryRecoverRead();
                     if (readOk) {
                         ns.fileConfig.hideWarningBar();
                         ns.fileConfig.updateBadge('', '#ffcc66');
@@ -144,7 +144,7 @@ window.DevHome = window.DevHome || {};
                 }
                 // 尝试恢复写入权限
                 if (ns.fileConfig._tryRecoverWrite && typeof ns.fileConfig._tryRecoverWrite === 'function') {
-                    var recovered = await ns.fileConfig._tryRecoverWrite();
+let recovered = await ns.fileConfig._tryRecoverWrite();
                     if (recovered) {
                         ns.fileConfig.hideWarningBar();
                         ns.fileConfig.updateBadge('', '#e74c3c');
@@ -154,7 +154,7 @@ window.DevHome = window.DevHome || {};
                     }
                 }
                 // 选择新目录
-                var success = await ns.fileConfig.pickDir();
+let success = await ns.fileConfig.pickDir();
                 if (success) {
                     state.configReady = true;
                     ns.fileConfig.hideWarningBar();
@@ -167,7 +167,7 @@ window.DevHome = window.DevHome || {};
     }
 
     async function _reloadAfterConfig() {
-        var storage = ns.storage;
+let storage = ns.storage;
         ns.applyShortcutSize(storage.get('shortcut_size', ns.DEFAULT_SHORTCUT_SIZE), false);
         ns.applyShortcutColumns(storage.get('shortcut_columns', ns.DEFAULT_SHORTCUT_COLUMNS), false);
         ns.openFaviconDB();
@@ -180,23 +180,23 @@ window.DevHome = window.DevHome || {};
 
     /* ===== 笔记列表事件 ===== */
     function _bindNotesListEvents() {
-        var state = ns.state, dom = ns.dom;
+let state = ns.state, dom = ns.dom;
         if (dom.wbNotesList) {
             dom.wbNotesList.addEventListener('click', function (e) {
-                var delBtn = e.target.closest('.wb-note-list-del');
+let delBtn = e.target.closest('.wb-note-list-del');
                 if (delBtn) {
                     e.stopPropagation();
-                    var delId = delBtn.dataset.delId, delKind = delBtn.dataset.delKind;
-                    var item = delKind === 'capture'
+let delId = delBtn.dataset.delId, delKind = delBtn.dataset.delKind;
+let item = delKind === 'capture'
                         ? (state.captures.find(function(c){return c.id===delId;}) || null)
                         : (state.notes.find(function(n){return n.id===delId;}) || null);
                     if (!item) return;
                     ns.deleteWithUndo(item, delKind);
                 }
-                var item = e.target.closest('.wb-note-list-item');
+let item = e.target.closest('.wb-note-list-item');
                 if (!item) return;
-                var noteId = item.dataset.noteId, kind = item.dataset.kind;
-                var target;
+let noteId = item.dataset.noteId, kind = item.dataset.kind;
+let target;
                 if (kind === 'capture') {
                     target = state.captures.find(function (c) { return c.id === noteId; });
                     if (target) target = Object.assign({ _kind: 'capture' }, target);
@@ -210,18 +210,18 @@ window.DevHome = window.DevHome || {};
 
     /* ===== 笔记转任务按钮 ===== */
     function _bindNoteToTaskEvents() {
-        var state = ns.state;
-        var noteToTaskBtn = document.getElementById('wbNoteToTaskBtn');
-        var quadrantPicker = document.getElementById('wbQuadrantPicker');
+let state = ns.state;
+let noteToTaskBtn = document.getElementById('wbNoteToTaskBtn');
+let quadrantPicker = document.getElementById('wbQuadrantPicker');
         if (!noteToTaskBtn || !quadrantPicker) return;
 
         noteToTaskBtn.addEventListener('click', function (e) {
             e.stopPropagation();
             if (!state.currentNote) return;
-            var isVisible = quadrantPicker.style.display === 'block';
+let isVisible = quadrantPicker.style.display === 'block';
             quadrantPicker.style.display = isVisible ? 'none' : 'block';
             if (!isVisible) {
-                var btnRect = noteToTaskBtn.getBoundingClientRect();
+let btnRect = noteToTaskBtn.getBoundingClientRect();
                 quadrantPicker.style.position = 'fixed';
                 quadrantPicker.style.top = (btnRect.bottom + 4) + 'px';
                 quadrantPicker.style.left = btnRect.left + 'px';
@@ -230,42 +230,42 @@ window.DevHome = window.DevHome || {};
         });
 
         quadrantPicker.addEventListener('click', function (e) {
-            var btn = e.target.closest('button');
+let btn = e.target.closest('button');
             if (!btn || !btn.dataset.quadrant) return;
             e.stopPropagation();
-            var quadrant = btn.dataset.quadrant;
+let quadrant = btn.dataset.quadrant;
             quadrantPicker.style.display = 'none';
-            var timePicker = document.getElementById('wbTaskTimePicker');
+let timePicker = document.getElementById('wbTaskTimePicker');
             if (timePicker) {
-                var btnRect = noteToTaskBtn.getBoundingClientRect();
+let btnRect = noteToTaskBtn.getBoundingClientRect();
                 timePicker.style.position = 'fixed';
                 timePicker.style.top = (btnRect.bottom + 4) + 'px';
                 timePicker.style.left = btnRect.left + 'px';
                 timePicker.style.zIndex = '3100';
                 timePicker.style.display = 'block';
                 timePicker._quadrant = quadrant;
-                var dateInput = document.getElementById('wbTaskTimeDate'), timeInput = document.getElementById('wbTaskTimeTime');
+let dateInput = document.getElementById('wbTaskTimeDate'), timeInput = document.getElementById('wbTaskTimeTime');
                 if (dateInput) dateInput.value = '';
                 if (timeInput) timeInput.value = '';
                 if (dateInput) setTimeout(function () { dateInput.focus(); }, 50);
             }
         });
 
-        var confirmBtn = document.getElementById('wbTimePickerConfirm');
+let confirmBtn = document.getElementById('wbTimePickerConfirm');
         if (confirmBtn) confirmBtn.addEventListener('click', function () {
-            var timePicker = document.getElementById('wbTaskTimePicker');
-            var quadrant = timePicker && timePicker._quadrant;
+let timePicker = document.getElementById('wbTaskTimePicker');
+let quadrant = timePicker && timePicker._quadrant;
             if (!quadrant || !state.currentNote) return;
-            var plannedAt = _readTimePickerValue('wbTaskTimeDate', 'wbTaskTimeTime');
+let plannedAt = _readTimePickerValue('wbTaskTimeDate', 'wbTaskTimeTime');
             ns.convertNoteToTask(state.currentNote.id, quadrant, plannedAt);
             if (timePicker) timePicker.style.display = 'none';
             ns.showToast('已转至' + ({ q1:'重要且紧急',q2:'重要不紧急',q3:'紧急不重要',q4:'不紧急不重要' })[quadrant] + '象限', 'success');
         });
 
-        var skipBtn = document.getElementById('wbTimePickerSkip');
+let skipBtn = document.getElementById('wbTimePickerSkip');
         if (skipBtn) skipBtn.addEventListener('click', function () {
-            var timePicker = document.getElementById('wbTaskTimePicker');
-            var quadrant = timePicker && timePicker._quadrant;
+let timePicker = document.getElementById('wbTaskTimePicker');
+let quadrant = timePicker && timePicker._quadrant;
             if (!quadrant || !state.currentNote) return;
             ns.convertNoteToTask(state.currentNote.id, quadrant, null);
             if (timePicker) timePicker.style.display = 'none';
@@ -273,9 +273,9 @@ window.DevHome = window.DevHome || {};
         });
 
         document.addEventListener('click', function hidePicker(e) {
-            var pickerVisible = quadrantPicker.style.display === 'block';
-            var timePicker = document.getElementById('wbTaskTimePicker');
-            var timePickerVisible = timePicker && timePicker.style.display === 'block';
+let pickerVisible = quadrantPicker.style.display === 'block';
+let timePicker = document.getElementById('wbTaskTimePicker');
+let timePickerVisible = timePicker && timePicker.style.display === 'block';
             if (!pickerVisible && !timePickerVisible) return;
             if (!e.target.closest('#wbNoteToTaskWrap')) {
                 quadrantPicker.style.display = 'none';
@@ -285,31 +285,31 @@ window.DevHome = window.DevHome || {};
     }
 
     function _readTimePickerValue(dateId, timeId) {
-        var dateEl = document.getElementById(dateId), timeEl = document.getElementById(timeId);
+let dateEl = document.getElementById(dateId), timeEl = document.getElementById(timeId);
         if (!dateEl || !dateEl.value) return null;
-        var dateStr = dateEl.value, timeStr = timeEl && timeEl.value ? timeEl.value : '23:59';
-        var dt = new Date(dateStr + 'T' + timeStr + ':00');
+let dateStr = dateEl.value, timeStr = timeEl && timeEl.value ? timeEl.value : '23:59';
+let dt = new Date(dateStr + 'T' + timeStr + ':00');
         if (isNaN(dt.getTime())) return null;
         return dt.getTime();
     }
 
     /* ===== 笔记本徽章事件 ===== */
     function _bindNotebookBadgeEvents() {
-        var state = ns.state;
-        var notebookBadge = document.getElementById('wbNotebookBadge');
+let state = ns.state;
+let notebookBadge = document.getElementById('wbNotebookBadge');
         if (!notebookBadge) return;
         notebookBadge.addEventListener('click', function (e) {
             e.preventDefault(); e.stopPropagation();
             if (!state.currentNote) return;
-            var options = [{ id: '', label: '未分类' }];
+let options = [{ id: '', label: '未分类' }];
             state.notebooks.forEach(function (nb) { options.push({ id: nb.id, label: nb.name }); });
-            var html = '<div style="max-height:300px;overflow-y:auto;">';
+let html = '<div style="max-height:300px;overflow-y:auto;">';
             options.forEach(function (opt) {
-                var isCurrent = (state.currentNote.notebookId || '') === opt.id;
+let isCurrent = (state.currentNote.notebookId || '') === opt.id;
                 html += '<div class="wb-notebook-pick-item' + (isCurrent ? ' active' : '') + '" data-nb-id="' + opt.id + '" style="padding:8px 12px;cursor:pointer;border-radius:6px;font-size:13px;' + (isCurrent ? 'background:var(--color-accent);color:var(--color-text-inverse);' : '') + '">' + (opt.id ? '\uD83D\uDCD3 ' : '\uD83D\uDCC2 ') + ns.escapeHtml(opt.label) + '</div>';
             });
             html += '</div>';
-            var pop = document.getElementById('wbNotebookPickPop');
+let pop = document.getElementById('wbNotebookPickPop');
             if (!pop) {
                 pop = document.createElement('div');
                 pop.id = 'wbNotebookPickPop';
@@ -317,14 +317,14 @@ window.DevHome = window.DevHome || {};
                 document.body.appendChild(pop);
             }
             pop.innerHTML = html;
-            var badgeRect = notebookBadge.getBoundingClientRect();
+let badgeRect = notebookBadge.getBoundingClientRect();
             pop.style.top = (badgeRect.bottom + 4) + 'px';
             pop.style.left = badgeRect.left + 'px';
             pop.style.display = 'block';
             pop.onclick = function (ev) {
-                var item = ev.target.closest('.wb-notebook-pick-item');
+let item = ev.target.closest('.wb-notebook-pick-item');
                 if (!item) return;
-                var nbId = item.dataset.nbId || null;
+let nbId = item.dataset.nbId || null;
                 state.currentNote.notebookId = nbId || null;
                 ns.renderNotebookBadge();
                 ns._triggerAutoSave();
@@ -343,25 +343,25 @@ window.DevHome = window.DevHome || {};
 
     /* ===== 类型徽章事件 ===== */
     function _bindTypeBadgeEvents() {
-        var dom = ns.dom;
+let dom = ns.dom;
         if (dom.wbNoteTypeBadge) {
             dom.wbNoteTypeBadge.addEventListener('click', function (e) {
-                var delChip = e.target.closest('.wb-type-chip-del');
-                if (delChip) { e.preventDefault(); e.stopPropagation(); var typeKey = delChip.dataset.type; if (typeKey) ns.removeNoteType(typeKey); return; }
+let delChip = e.target.closest('.wb-type-chip-del');
+                if (delChip) { e.preventDefault(); e.stopPropagation(); const typeKey = delChip.dataset.type; if (typeKey) ns.removeNoteType(typeKey); return; }
                 if (e.target.closest('.badge-add')) { e.preventDefault(); e.stopPropagation(); ns.toggleTypePicker(); return; }
                 e.preventDefault(); e.stopPropagation(); ns.toggleTypePicker();
             });
         }
-        var typePicker = document.getElementById('wbTypePickerList');
+let typePicker = document.getElementById('wbTypePickerList');
         if (typePicker) {
             typePicker.addEventListener('click', function (e) {
-                var item = e.target.closest('.wb-type-picker-item');
+let item = e.target.closest('.wb-type-picker-item');
                 if (!item) return; e.preventDefault(); e.stopPropagation();
-                var typeKey = item.dataset.type; if (typeKey) ns.toggleNoteType(typeKey);
+let typeKey = item.dataset.type; if (typeKey) ns.toggleNoteType(typeKey);
             });
         }
         document.addEventListener('click', function (e) {
-            var picker = document.getElementById('wbNoteTypePicker');
+let picker = document.getElementById('wbNoteTypePicker');
             if (!picker || picker.style.display === 'none') return;
             if (!e.target.closest('#wbNoteTypeBadge') && !e.target.closest('#wbNoteTypePicker')) ns.hideTypePicker();
         });
@@ -369,8 +369,8 @@ window.DevHome = window.DevHome || {};
 
     /* ===== 自动保存（防抖） ===== */
     function _bindAutoSave() {
-        var state = ns.state, dom = ns.dom;
-        var noteAutoSaveTimer = null;
+let state = ns.state, dom = ns.dom;
+let noteAutoSaveTimer = null;
         ns._triggerAutoSave = function () {
             if (noteAutoSaveTimer) clearTimeout(noteAutoSaveTimer);
             noteAutoSaveTimer = setTimeout(function () {

@@ -96,8 +96,8 @@
 }
 .wb-filter-add-btn:hover { border-color: var(--color-accent); color: var(--color-accent); }
 .wb-filter-chip-editing {
-    cursor: text !important; outline: none;
-    border-color: var(--color-accent) !important; min-width: 80px;
+    cursor: text; outline: none;
+    border-color: var(--color-accent); min-width: 80px;
 }
 .wb-filter-chip-editing::placeholder { color: var(--color-text-tertiary); }
 .wb-notes-filters.delete-mode .wb-filter-chip:not(.always) { position: relative; border-color: var(--color-danger-border-30); }

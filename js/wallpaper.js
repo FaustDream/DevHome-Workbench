@@ -12,12 +12,12 @@ window.DevHome = window.DevHome || {};
 (function (ns) {
     'use strict';
 
-    var SETTINGS_KEY = 'wallpaperSettings';
-    var IMAGE_KEY = 'wallpaperImage';
+    const SETTINGS_KEY = 'wallpaperSettings';
+    const IMAGE_KEY = 'wallpaperImage';
 
     /* ===== 初始化 DOM 引用 ===== */
-    var wallpaperBtn, wallpaperPanel, wallpaperUpload, wallpaperFileInput;
-    var wallpaperBlurSlider, wallpaperOverlaySlider, wallpaperReset;
+let wallpaperBtn, wallpaperPanel, wallpaperUpload, wallpaperFileInput;
+let wallpaperBlurSlider, wallpaperOverlaySlider, wallpaperReset;
 
     /**
      * 初始化壁纸功能：绑定事件 + 加载已保存设置
@@ -63,7 +63,7 @@ window.DevHome = window.DevHome || {};
     /* ===== 面板开关 ===== */
     function togglePanel(e) {
         e.stopPropagation();
-        var isOpen = wallpaperPanel.classList.toggle('visible');
+        const isOpen = wallpaperPanel.classList.toggle('visible');
         console.log('[面板] 壁纸面板 ' + (isOpen ? '打开' : '关闭'));
     }
 
@@ -71,9 +71,9 @@ window.DevHome = window.DevHome || {};
     function loadSavedSettings() {
         try {
             // 恢复壁纸图片
-            var savedImage = localStorage.getItem(IMAGE_KEY);
+            const savedImage = localStorage.getItem(IMAGE_KEY);
             if (savedImage) {
-                var bgImage = document.getElementById('bgImage');
+                const bgImage = document.getElementById('bgImage');
                 if (bgImage) {
                     bgImage.src = savedImage;
                     bgImage.style.display = 'block';
@@ -81,7 +81,7 @@ window.DevHome = window.DevHome || {};
             }
 
             // 恢复模糊度和遮罩度
-            var settings = getSettings();
+            let settings = getSettings();
             if (wallpaperBlurSlider) wallpaperBlurSlider.value = settings.blur;
             if (wallpaperOverlaySlider) wallpaperOverlaySlider.value = settings.overlay;
 
@@ -96,7 +96,7 @@ window.DevHome = window.DevHome || {};
     /* ===== 读取/保存设置 ===== */
     function getSettings() {
         try {
-            var raw = localStorage.getItem(SETTINGS_KEY);
+            const raw = localStorage.getItem(SETTINGS_KEY);
             if (raw) return JSON.parse(raw);
         } catch (_) {}
         return { blur: 0, overlay: 30 };
@@ -111,14 +111,14 @@ window.DevHome = window.DevHome || {};
     /* ===== 应用视觉效果 ===== */
     function applyBlur(blurValue) {
         document.documentElement.style.setProperty('--bg-blur', blurValue + 'px');
-        var bgImage = document.getElementById('bgImage');
+        const bgImage = document.getElementById('bgImage');
         if (bgImage) {
             bgImage.style.filter = 'blur(var(--bg-blur))';
         }
     }
 
     function applyOverlay(overlayValue) {
-        var bgOverlay = document.getElementById('bgOverlay');
+        const bgOverlay = document.getElementById('bgOverlay');
         if (bgOverlay) {
             bgOverlay.style.opacity = overlayValue / 100;
         }
@@ -128,7 +128,7 @@ window.DevHome = window.DevHome || {};
 
     /** 处理壁纸图片上传 */
     function handleFileUpload(e) {
-        var file = e.target.files[0];
+        const file = e.target.files[0];
         if (!file) return;
 
         if (!file.type.startsWith('image/')) {
@@ -137,7 +137,7 @@ window.DevHome = window.DevHome || {};
             return;
         }
 
-        var reader = new FileReader();
+        const reader = new FileReader();
         reader.onload = function (ev) {
             compressImage(ev.target.result, function (compressedBase64) {
                 try {
@@ -151,7 +151,7 @@ window.DevHome = window.DevHome || {};
                 }
 
                 // 应用到背景
-                var bgImage = document.getElementById('bgImage');
+                const bgImage = document.getElementById('bgImage');
                 if (bgImage) {
                     bgImage.src = compressedBase64;
                     bgImage.style.display = 'block';
@@ -166,11 +166,11 @@ window.DevHome = window.DevHome || {};
 
     /** Canvas 压缩图片到 1920px 宽 */
     function compressImage(dataUrl, callback) {
-        var img = new Image();
+        const img = new Image();
         img.onload = function () {
-            var maxWidth = 1920;
-            var width = img.naturalWidth;
-            var height = img.naturalHeight;
+            const maxWidth = 1920;
+            const width = img.naturalWidth;
+            const height = img.naturalHeight;
 
             if (width <= maxWidth) {
                 // 无需压缩
@@ -178,18 +178,18 @@ window.DevHome = window.DevHome || {};
                 return;
             }
 
-            var ratio = maxWidth / width;
-            var newWidth = maxWidth;
-            var newHeight = Math.round(height * ratio);
+            const ratio = maxWidth / width;
+            const newWidth = maxWidth;
+            const newHeight = Math.round(height * ratio);
 
-            var canvas = document.createElement('canvas');
+            const canvas = document.createElement('canvas');
             canvas.width = newWidth;
             canvas.height = newHeight;
-            var ctx = canvas.getContext('2d');
+            const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, newWidth, newHeight);
 
             // 使用 JPEG 格式进一步压缩（质量 0.85）
-            var compressed = canvas.toDataURL('image/jpeg', 0.85);
+let compressed = canvas.toDataURL('image/jpeg', 0.85);
             console.log('[壁纸] 图片已压缩: ' + width + 'x' + height + ' → ' + newWidth + 'x' + newHeight);
             callback(compressed);
         };
@@ -201,33 +201,33 @@ window.DevHome = window.DevHome || {};
 
     /** 模糊度滑块变化 */
     function handleBlurChange() {
-        var value = parseInt(wallpaperBlurSlider.value) || 0;
+        const value = parseInt(wallpaperBlurSlider.value) || 0;
         applyBlur(value);
 
-        var settings = getSettings();
+        let settings = getSettings();
         settings.blur = value;
         saveSettings(settings);
     }
 
     /** 遮罩度滑块变化 */
     function handleOverlayChange() {
-        var value = parseInt(wallpaperOverlaySlider.value) || 30;
+        const value = parseInt(wallpaperOverlaySlider.value) || 30;
         applyOverlay(value);
 
-        var settings = getSettings();
+        let settings = getSettings();
         settings.overlay = value;
         saveSettings(settings);
     }
 
     /** 重置壁纸：清除图片和设置 */
     function handleReset() {
-        var bgImage = document.getElementById('bgImage');
+        const bgImage = document.getElementById('bgImage');
         if (bgImage) {
             bgImage.src = '';
             bgImage.style.display = 'none';
             bgImage.style.filter = '';
         }
-        var bgOverlay = document.getElementById('bgOverlay');
+        const bgOverlay = document.getElementById('bgOverlay');
         if (bgOverlay) {
             bgOverlay.style.opacity = '';
         }

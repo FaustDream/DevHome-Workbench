@@ -11,8 +11,8 @@ window.DevHome = window.DevHome || {};
 (function (ns) {
     'use strict';
 
-    var storageV2 = ns.storageV2;
-    var dom = {};
+    const storageV2 = ns.storageV2;
+    const dom = {};
 
     /* ===== DOM 缓存 ===== */
     function cacheDom() {
@@ -27,10 +27,10 @@ window.DevHome = window.DevHome || {};
     /* ===== 加载数据 ===== */
     async function loadData() {
         try {
-            var captures = await storageV2.get(storageV2.KEYS.CAPTURES, []);
+            const captures = await storageV2.get(storageV2.KEYS.CAPTURES, []);
             renderCaptures(captures.slice(0, 5));
 
-            var notes = await storageV2.get(storageV2.KEYS.NOTES, []);
+            const notes = await storageV2.get(storageV2.KEYS.NOTES, []);
             renderNotes(notes.slice(0, 5));
         } catch (e) {
             console.warn('[SidePanel] 数据加载失败:', e);
@@ -45,8 +45,8 @@ window.DevHome = window.DevHome || {};
             return;
         }
         dom.captureList.innerHTML = captures.map(function (c) {
-            var time = new Date(c.createdAt);
-            var timeStr = String(time.getHours()).padStart(2, '0') + ':' + String(time.getMinutes()).padStart(2, '0');
+            const time = new Date(c.createdAt);
+            const timeStr = String(time.getHours()).padStart(2, '0') + ':' + String(time.getMinutes()).padStart(2, '0');
             return '<div class="sp-list-item">' +
                 '<span class="sp-list-item-time">' + timeStr + '</span> ' +
                 escapeHtml(c.content.slice(0, 60)) +
@@ -62,7 +62,7 @@ window.DevHome = window.DevHome || {};
             return;
         }
         dom.notesList.innerHTML = notes.map(function (n) {
-            var icon = n.type === 'webclip' ? '🔗' : '📝';
+            const icon = n.type === 'webclip' ? '🔗' : '📝';
             return '<div class="sp-list-item">' +
                 icon + ' ' + escapeHtml(n.title.slice(0, 40)) +
                 '</div>';
@@ -77,7 +77,7 @@ window.DevHome = window.DevHome || {};
     /* ===== 快速捕获 ===== */
     function handleCaptureInput(e) {
         if (e.key !== 'Enter') return;
-        var val = dom.captureInput.value.trim();
+        const val = dom.captureInput.value.trim();
         if (!val) return;
         dom.captureInput.value = '';
 
@@ -114,8 +114,8 @@ window.DevHome = window.DevHome || {};
     }
 
     /* ===== 监听后台消息 ===== */
-    var pomodoroDisplayTimer = null;   // 本地自走秒定时器（SW 休眠时仍保持显示）
-    var lastPomodoroState = null;      // 最近一次番茄钟状态快照
+    const pomodoroDisplayTimer = null;   // 本地自走秒定时器（SW 休眠时仍保持显示）
+    const lastPomodoroState = null;      // 最近一次番茄钟状态快照
 
     function listenMessages() {
         if (typeof chrome === 'undefined' || !chrome.runtime) return;
@@ -154,10 +154,10 @@ window.DevHome = window.DevHome || {};
             stopPomodoroDisplayTimer();
         }
 
-        var remaining = computePomodoroRemaining(data);
+        const remaining = computePomodoroRemaining(data);
         if (dom.pomodoroTime) {
-            var m = Math.floor(remaining / 60);
-            var s = remaining % 60;
+            const m = Math.floor(remaining / 60);
+            const s = remaining % 60;
             dom.pomodoroTime.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
         }
         if (dom.pomodoroLabel) {

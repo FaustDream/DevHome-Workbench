@@ -192,4 +192,50 @@ window.DevHome = window.DevHome || {};
         _savedCurrentNoteId: null        // 离开专注模式前暂存的当前笔记 ID
     };
 
+    /* ===== 轻量级状态订阅（发布/订阅模式） =====
+       用于需要跨模块响应的状态变更（如番茄钟完成→更新任务进度）。
+       不影响现有 ns.state 直接读写，仅作为可选的事件通知层。
+       使用方式：
+         ns.store.on('pomodoroComplete', function(data) { ... });
+         ns.store.emit('pomodoroComplete', { count: 3 }); */
+    ns.store = {
+        _listeners: {},
+        /**
+         * 订阅事件
+         * @param {string} event - 事件名
+         * @param {function} fn - 回调函数
+         */
+        on: function (event, fn) {
+            if (!this._listeners[event]) this._listeners[event] = [];
+            this._listeners[event].push(fn);
+        },
+        /**
+         * 取消订阅
+         * @param {string} event - 事件名
+         * @param {function} fn - 要移除的回调（不传则清空该事件的所有监听器）
+         */
+        off: function (event, fn) {
+            if (!this._listeners[event]) return;
+            if (fn) {
+                this._listeners[event] = this._listeners[event].filter(function (l) { return l !== fn; });
+            } else {
+                delete this._listeners[event];
+            }
+        },
+        /**
+         * 触发事件
+         * @param {string} event - 事件名
+         * @param {*} data - 传递给监听器的数据
+         */
+        emit: function (event, data) {
+            const listeners = this._listeners[event];
+            if (!listeners) return;
+            listeners.forEach(function (fn) {
+                try { fn(data); } catch (e) {
+                    console.warn('[Store] 事件 ' + event + ' 监听器异常:', e.message);
+                }
+            });
+        }
+    };
+
 })(window.DevHome);

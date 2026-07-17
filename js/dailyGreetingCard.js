@@ -8,7 +8,7 @@ window.DevHome = window.DevHome || {};
     'use strict';
 
     /* ===== 鼓励话语语料库（20 条） ===== */
-    var ENCOURAGE_QUOTES = [
+    const ENCOURAGE_QUOTES = [
         '新的一天，新的起点。\n保持好心情，一切都会顺利的。',
         '每一个清晨都是重新开始的机会。',
         '今天也是元气满满的一天，加油！',
@@ -31,12 +31,12 @@ window.DevHome = window.DevHome || {};
         '愿你眼中有光，活成自己喜欢的模样。'
     ];
 
-    var CACHE_KEY = 'daily_greeting_card_quote';
+    const CACHE_KEY = 'daily_greeting_card_quote';
 
     /* ===== 昵称获取 ===== */
     function getNickname() {
         try {
-            var raw = localStorage.getItem('config_nickname');
+let raw = localStorage.getItem('config_nickname');
             if (raw) return raw.trim();
         } catch (e) { }
         return '主人';
@@ -54,26 +54,26 @@ window.DevHome = window.DevHome || {};
 
     /* ===== 日期格式化 ===== */
     function formatDate() {
-        var now = new Date();
-        var weekMap = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+let now = new Date();
+let weekMap = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
         return now.getFullYear() + '年' + (now.getMonth() + 1) + '月' + now.getDate() + '日 ' + weekMap[now.getDay()];
     }
 
     /* ===== 鼓励话语选取（每日随机，缓存当天） ===== */
     function pickEncourage() {
-        var today = new Date().toLocaleDateString('zh-CN');
-        var cached;
+let today = new Date().toLocaleDateString('zh-CN');
+let cached;
         try { cached = JSON.parse(localStorage.getItem(CACHE_KEY)); } catch (e) { }
         if (cached && cached.date === today && cached.text) return cached.text;
 
-        var idx = Math.floor(Math.random() * ENCOURAGE_QUOTES.length);
-        var text = ENCOURAGE_QUOTES[idx];
+let idx = Math.floor(Math.random() * ENCOURAGE_QUOTES.length);
+let text = ENCOURAGE_QUOTES[idx];
         localStorage.setItem(CACHE_KEY, JSON.stringify({ date: today, text: text }));
         return text;
     }
 
     /* ===== WMO 天气码映射（复用于 weather.js 格式，备用） ===== */
-    var WEATHER_ICON_MAP = {
+    const WEATHER_ICON_MAP = {
         0: { text: '晴', icon: '☀️' },
         1: { text: '大部晴', icon: '🌤' },
         2: { text: '多云', icon: '⛅' },
@@ -99,13 +99,13 @@ window.DevHome = window.DevHome || {};
 
     /* ===== 渲染静态内容（日期 + 问候 + 鼓励话语） ===== */
     function render() {
-        var el = document.getElementById('dailyGreetingCard');
+let el = document.getElementById('dailyGreetingCard');
         if (!el) return;
 
-        var hour = new Date().getHours();
-        var greeting = getGreetingByHour(hour);
-        var nickname = getNickname();
-        var encourage = pickEncourage();
+let hour = new Date().getHours();
+let greeting = getGreetingByHour(hour);
+let nickname = getNickname();
+let encourage = pickEncourage();
 
         el.innerHTML =
             '<div class="dgc-top-row">'
@@ -121,9 +121,9 @@ window.DevHome = window.DevHome || {};
 
     /* ===== 更新日期（每分钟检查跨日） ===== */
     function updateDateIfNeeded() {
-        var el = document.getElementById('dgcDate');
+let el = document.getElementById('dgcDate');
         if (!el) return;
-        var formatted = formatDate();
+let formatted = formatDate();
         if (el.textContent !== formatted) {
             el.textContent = formatted;
             console.log('[每日问候卡片] 日期更新 → ' + formatted);
@@ -132,9 +132,9 @@ window.DevHome = window.DevHome || {};
 
     /* ===== 更新天气 ===== */
     function renderWeather(data) {
-        var el = document.getElementById('dgcWeather');
+let el = document.getElementById('dgcWeather');
         if (!el) return;
-        var w = WEATHER_ICON_MAP[data.currentCode] || { text: '未知', icon: '🌡' };
+let w = WEATHER_ICON_MAP[data.currentCode] || { text: '未知', icon: '🌡' };
         el.innerHTML = '<span class="dgc-weather-icon">' + w.icon + '</span>'
             + '<span class="dgc-weather-temp">' + data.daily[0].max + '°</span>'
             + ' <span class="dgc-weather-desc">' + w.text + '</span>';

@@ -13,7 +13,8 @@ window.DevHome = window.DevHome || {};
             try {
                 const raw = localStorage.getItem('tabpage_' + key);
                 return raw !== null ? JSON.parse(raw) : fallback;
-            } catch {
+            } catch (e) {
+                console.warn('[存储] 读取 tabpage_' + key + ' 失败:', e.message);
                 return fallback;
             }
         },
@@ -24,12 +25,12 @@ window.DevHome = window.DevHome || {};
                 if (ns.fileConfig && typeof ns.fileConfig.markDirty === 'function') {
                     ns.fileConfig.markDirty();
                 }
-            } catch { /* 静默失败 */ }
+            } catch (e) { console.warn('[存储] 写入 tabpage_' + key + ' 失败:', e.message); }
         },
         clear(key) {
             try {
                 localStorage.removeItem('tabpage_' + key);
-            } catch { }
+            } catch (e) { console.warn('[存储] 清除 tabpage_' + key + ' 失败:', e.message); }
         }
     };
 
@@ -39,7 +40,8 @@ window.DevHome = window.DevHome || {};
             try {
                 const raw = localStorage.getItem('devhome_' + key);
                 return raw !== null ? JSON.parse(raw) : fallback;
-            } catch {
+            } catch (e) {
+                console.warn('[存储] 读取 devhome_' + key + ' 失败:', e.message);
                 return fallback;
             }
         },
@@ -50,7 +52,7 @@ window.DevHome = window.DevHome || {};
                 if (ns.fileConfig && typeof ns.fileConfig.markDirty === 'function') {
                     ns.fileConfig.markDirty();
                 }
-            } catch { /* 静默失败，避免工作台配置影响首页可用性 */ }
+            } catch (e) { console.warn('[存储] 写入 devhome_' + key + ' 失败:', e.message); }
         }
     };
 

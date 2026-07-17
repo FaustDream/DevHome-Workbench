@@ -7,10 +7,10 @@ window.DevHome = window.DevHome || {};
     'use strict';
 
     ns._bindPomodoroEvents = function () {
-        var state = ns.state;
+        const state = ns.state;
 
-        var pomoSideStart = document.getElementById('wbPomodoroSideStart');
-        var pomoSideReset = document.getElementById('wbPomodoroSideReset');
+        const pomoSideStart = document.getElementById('wbPomodoroSideStart');
+        const pomoSideReset = document.getElementById('wbPomodoroSideReset');
         if (pomoSideStart) {
             pomoSideStart.addEventListener('click', function () {
                 if (pomoSideStart.classList.contains('is-running')) {
@@ -26,52 +26,52 @@ window.DevHome = window.DevHome || {};
             btn.addEventListener('click', function () { ns.togglePomodoroMode(btn.dataset.mode); });
         });
 
-        var restInput = document.getElementById('wbPomodoroRestInput');
+        const restInput = document.getElementById('wbPomodoroRestInput');
         if (restInput) restInput.addEventListener('change', function () { ns.setPomodoroRestDuration(this.value); });
 
-        var autoCycleBtn = document.getElementById('wbPomodoroAutoCycleBtn');
+        const autoCycleBtn = document.getElementById('wbPomodoroAutoCycleBtn');
         if (autoCycleBtn) autoCycleBtn.addEventListener('click', function () { ns.togglePomodoroAutoCycle(); });
 
         document.querySelectorAll('.wb-pomodoro-quick-btn').forEach(function (btn) {
             btn.addEventListener('click', function () {
-                var duration = parseInt(btn.dataset.duration);
+                const duration = parseInt(btn.dataset.duration);
                 ns.setPomodoroDuration(duration);
             });
         });
 
         // 旧版番茄钟按钮（兼容）
-        var pomoStart = document.getElementById('wbPomodoroStart');
-        var pomoPause = document.getElementById('wbPomodoroPause');
-        var pomoReset = document.getElementById('wbPomodoroReset');
+        const pomoStart = document.getElementById('wbPomodoroStart');
+        const pomoPause = document.getElementById('wbPomodoroPause');
+        const pomoReset = document.getElementById('wbPomodoroReset');
         if (pomoStart) pomoStart.addEventListener('click', ns.startPomodoro);
         if (pomoPause) pomoPause.addEventListener('click', ns.pausePomodoro);
         if (pomoReset) pomoReset.addEventListener('click', ns.resetPomodoro);
 
-        var pomoPresets = document.querySelectorAll('.wb-pomodoro-preset');
+        const pomoPresets = document.querySelectorAll('.wb-pomodoro-preset');
         pomoPresets.forEach(function (btn) {
             btn.addEventListener('click', function () {
-                var duration = parseInt(btn.dataset.duration, 10);
+                const duration = parseInt(btn.dataset.duration, 10);
                 if (!isNaN(duration)) ns.setPomodoroDuration(duration);
             });
         });
 
-        var pomoCustom = document.getElementById('wbPomodoroCustom');
+        const pomoCustom = document.getElementById('wbPomodoroCustom');
         if (pomoCustom) {
             pomoCustom.addEventListener('change', function () {
-                var val = parseInt(pomoCustom.value, 10);
+                const val = parseInt(pomoCustom.value, 10);
                 if (val > 0 && val <= 180) ns.setPomodoroDuration(val);
             });
         }
 
-        var modeDefault = document.getElementById('wbPomodoroModeDefault');
-        var modeFocus = document.getElementById('wbPomodoroModeFocus');
+        const modeDefault = document.getElementById('wbPomodoroModeDefault');
+        const modeFocus = document.getElementById('wbPomodoroModeFocus');
         if (modeDefault) modeDefault.addEventListener('click', function () { ns.setPomodoroMode('default'); });
         if (modeFocus) modeFocus.addEventListener('click', function () { ns.setPomodoroMode('focus'); });
 
-        var restBtns = document.querySelectorAll('.wb-pomodoro-rest-btn');
+        const restBtns = document.querySelectorAll('.wb-pomodoro-rest-btn');
         restBtns.forEach(function (btn) {
             btn.addEventListener('click', function () {
-                var rest = parseInt(btn.dataset.rest, 10);
+                const rest = parseInt(btn.dataset.rest, 10);
                 if (!isNaN(rest)) {
                     state.pomodoroRestDuration = rest;
                     restBtns.forEach(function (b) { b.classList.toggle('active', b === btn); });

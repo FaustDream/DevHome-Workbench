@@ -6,16 +6,16 @@ window.DevHome = window.DevHome || {};
 (function (ns) {
     'use strict';
 
-    var FAVICON_LRU_MAX = 200;
-    var faviconDB = null;
+    const FAVICON_LRU_MAX = 200;
+    let faviconDB = null;
 
     ns.openFaviconDB = function () {
         return new Promise(function (resolve, reject) {
-            var req = indexedDB.open('TabPageFaviconDB', 1);
+            const req = indexedDB.open('TabPageFaviconDB', 1);
             req.onupgradeneeded = function (e) {
-                var db = e.target.result;
+                const db = e.target.result;
                 if (!db.objectStoreNames.contains('favicons')) {
-                    var store = db.createObjectStore('favicons', { keyPath: 'domain' });
+                    const store = db.createObjectStore('favicons', { keyPath: 'domain' });
                     store.createIndex('lastAccess', 'lastAccess', { unique: false });
                 }
             };
@@ -28,9 +28,9 @@ window.DevHome = window.DevHome || {};
         return new Promise(function (resolve) {
             if (!faviconDB) return resolve(null);
             try {
-                var tx = faviconDB.transaction('favicons', 'readwrite');
-                var store = tx.objectStore('favicons');
-                var getReq = store.get(domain);
+                const tx = faviconDB.transaction('favicons', 'readwrite');
+                const store = tx.objectStore('favicons');
+                const getReq = store.get(domain);
                 getReq.onsuccess = function () {
                     if (getReq.result) {
                         store.put({ domain: domain, dataUrl: getReq.result.dataUrl, lastAccess: Date.now() });
@@ -47,20 +47,20 @@ window.DevHome = window.DevHome || {};
     ns.setFaviconInDB = function (domain, dataUrl) {
         if (!faviconDB) return;
         try {
-            var tx = faviconDB.transaction('favicons', 'readwrite');
-            var store = tx.objectStore('favicons');
+            const tx = faviconDB.transaction('favicons', 'readwrite');
+            const store = tx.objectStore('favicons');
             store.put({ domain: domain, dataUrl: dataUrl, lastAccess: Date.now() });
             tx.oncomplete = function () {
-                var countReq = faviconDB.transaction('favicons', 'readonly').objectStore('favicons').count();
+                const countReq = faviconDB.transaction('favicons', 'readonly').objectStore('favicons').count();
                 countReq.onsuccess = function () {
                     if (countReq.result > FAVICON_LRU_MAX) {
-                        var delTx = faviconDB.transaction('favicons', 'readwrite');
-                        var delStore = delTx.objectStore('favicons');
-                        var idx = delStore.index('lastAccess');
-                        var cursorReq = idx.openCursor();
-                        var toDelete = countReq.result - FAVICON_LRU_MAX;
+                        const delTx = faviconDB.transaction('favicons', 'readwrite');
+                        const delStore = delTx.objectStore('favicons');
+                        const idx = delStore.index('lastAccess');
+                        const cursorReq = idx.openCursor();
+                        let toDelete = countReq.result - FAVICON_LRU_MAX;
                         cursorReq.onsuccess = function (e) {
-                            var cursor = e.target.result;
+                            const cursor = e.target.result;
                             if (cursor && toDelete > 0) { cursor.delete(); toDelete--; cursor.continue(); }
                         };
                     }
@@ -71,7 +71,7 @@ window.DevHome = window.DevHome || {};
 
     /** 随机纯色生成器（favicon 获取失败时使用） */
     function randomFaviconColor() {
-        var palette = [
+        const palette = [
             '#c0692a', '#d94a3a', '#e67e22', '#f39c12', '#27ae60',
             '#2ecc71', '#1abc9c', '#2980b9', '#3498db', '#8e44ad',
             '#9b59b6', '#16a085', '#e74c3c', '#7f8c8d', '#2c3e50'
@@ -84,7 +84,7 @@ window.DevHome = window.DevHome || {};
      * 显示域名首字母在彩色圆角方块上
      */
     function createColorFallback(domain, iconWrap) {
-        var div = document.createElement('div');
+        const div = document.createElement('div');
         div.style.width = 'var(--shortcut-icon, 32px)';
         div.style.height = 'var(--shortcut-icon, 32px)';
         div.style.borderRadius = '8px';
@@ -103,9 +103,9 @@ window.DevHome = window.DevHome || {};
 
     ns.loadFavicon = function (url, imgElement, iconWrap) {
         try {
-            var urlObj = new URL(url);
-            var domain = urlObj.hostname;
-            var apiUrl = 'https://api.xinac.net/icon/?url=' + domain;
+            const urlObj = new URL(url);
+            let domain = urlObj.hostname;
+            const apiUrl = 'https://api.xinac.net/icon/?url=' + domain;
             ns.getFaviconFromDB(domain).then(function (cached) {
                 if (cached && typeof cached === 'string' && cached.startsWith('data:image')) { imgElement.src = cached; return; }
                 imgElement.src = apiUrl;
@@ -116,12 +116,12 @@ window.DevHome = window.DevHome || {};
             };
             fetch(apiUrl).then(function (r) { return r.blob(); }).then(function (blob) {
                 if (!blob.type.startsWith('image/')) return;
-                var reader = new FileReader();
+                const reader = new FileReader();
                 reader.onloadend = function () { ns.setFaviconInDB(domain, reader.result); };
                 reader.readAsDataURL(blob);
             }).catch(function () { /* 忽略失败 */ });
         } catch (e) {
-            var domain = '';
+            let domain = '';
             try { domain = new URL(url).hostname; } catch (_) {}
             createColorFallback(domain || '?', iconWrap);
         }

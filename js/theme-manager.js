@@ -16,17 +16,17 @@
 (function (ns) {
     'use strict';
 
-    var STORAGE_KEY = '_devhome_theme';
-    var SCHEME_ATTR = 'data-color-scheme';
+    const STORAGE_KEY = '_devhome_theme';
+    const SCHEME_ATTR = 'data-color-scheme';
 
     /** 当前状态 */
-    var state = {
+let state = {
         colorScheme: 'light',  // 'light' | 'dark'
         autoFollowSystem: false // 是否自动跟随系统偏好（O16）
     };
 
     /** prefers-color-scheme 媒体查询监听器引用 */
-    var _systemSchemeQuery = null;
+    let _systemSchemeQuery = null;
 
     /**
      * 应用色彩方案到 DOM
@@ -53,7 +53,7 @@
      * 发布主题变更事件
      */
     function emitThemeChanged() {
-        var detail = {
+let detail = {
             themeId: 'default',
             themeName: '蔚蓝',
             colorScheme: state.colorScheme,
@@ -74,7 +74,7 @@
      */
     function init() {
         console.log('[色彩] ThemeManager 初始化');
-        var saved;
+let saved;
         try {
             saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
         } catch (e) { /* ignore */ }
@@ -91,7 +91,7 @@
 
         // 若启用自动跟随，则以系统当前偏好覆盖
         if (state.autoFollowSystem) {
-            var systemScheme = _detectSystemScheme();
+let systemScheme = _detectSystemScheme();
             console.log('[色彩] 系统偏好检测结果 scheme=' + systemScheme);
             state.colorScheme = systemScheme;
         }
@@ -137,7 +137,7 @@
     function _onSystemSchemeChange(e) {
         if (!state.autoFollowSystem) return;
 
-        var newScheme = e.matches ? 'dark' : 'light';
+let newScheme = e.matches ? 'dark' : 'light';
         if (state.colorScheme === newScheme) return;
 
         console.log('[色彩] 系统偏好变更: ' + state.colorScheme + ' → ' + newScheme);
@@ -184,7 +184,7 @@
         }
         console.log('[色彩] 启用系统偏好自动跟随');
         state.autoFollowSystem = true;
-        var systemScheme = _detectSystemScheme();
+let systemScheme = _detectSystemScheme();
         if (state.colorScheme !== systemScheme) {
             console.log('[色彩] 自动跟随：' + state.colorScheme + ' → ' + systemScheme);
             state.colorScheme = systemScheme;

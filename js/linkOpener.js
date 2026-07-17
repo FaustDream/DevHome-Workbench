@@ -23,7 +23,7 @@ window.DevHome = window.DevHome || {};
      */
     ns.openUrl = function (url, opts) {
         opts = opts || {};
-        var newTab = opts.newTab !== false; // 默认新标签页
+        const newTab = opts.newTab !== false; // 默认新标签页
 
         if (!url) return;
 

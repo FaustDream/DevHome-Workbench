@@ -6,17 +6,17 @@ window.DevHome = window.DevHome || {};
 (function (ns) {
     'use strict';
 
-    var state = ns.state;
-    var escapeHtml = ns.escapeHtml;
+    const state = ns.state;
+    const escapeHtml = ns.escapeHtml;
 
     /* ===== 任务-笔记关联 ===== */
 
     /** 将笔记关联到任务 */
     ns.linkNoteToTask = function (taskId, noteId) {
-        var config = ns.getWorkbenchState();
-        var found = false;
+        const config = ns.getWorkbenchState();
+        let found = false;
         ns.forEachQuadrant(function (q) {
-            var tasks = ns.getQuadrantTasks(q);
+            let tasks = ns.getQuadrantTasks(q);
             tasks.forEach(function (t) {
                 if (t.id === taskId) {
                     if (!t.noteIds) t.noteIds = [];
@@ -37,9 +37,9 @@ window.DevHome = window.DevHome || {};
 
     /** 从任务取消关联笔记 */
     ns.unlinkNoteFromTask = function (taskId, noteId) {
-        var config = ns.getWorkbenchState();
+        const config = ns.getWorkbenchState();
         ns.forEachQuadrant(function (q) {
-            var tasks = ns.getQuadrantTasks(q);
+            let tasks = ns.getQuadrantTasks(q);
             tasks.forEach(function (t) {
                 if (t.id === taskId && t.noteIds) {
                     t.noteIds = t.noteIds.filter(function (id) { return id !== noteId; });
@@ -54,9 +54,9 @@ window.DevHome = window.DevHome || {};
 
     /** 静默解绑（不触发 renderQuadrantBoard） */
     ns.unlinkNoteFromTaskSilent = function (taskId, noteId) {
-        var config = ns.getWorkbenchState();
+        const config = ns.getWorkbenchState();
         ns.forEachQuadrant(function (q) {
-            var tasks = ns.getQuadrantTasks(q);
+            let tasks = ns.getQuadrantTasks(q);
             tasks.forEach(function (t) {
                 if (t.id === taskId && t.noteIds) {
                     t.noteIds = t.noteIds.filter(function (id) { return id !== noteId; });
@@ -70,12 +70,12 @@ window.DevHome = window.DevHome || {};
     /** 将笔记直接转为四象限任务（支持指定象限和截止时间） */
     ns.convertNoteToTask = function (noteId, quadrant, plannedAt) {
         quadrant = quadrant || 'q2';
-        var note = (state.notes || []).find(function (n) { return n.id === noteId; });
+        const note = (state.notes || []).find(function (n) { return n.id === noteId; });
         if (!note) return;
-        var title = note.title || '未命名笔记';
+        let title = note.title || '未命名笔记';
         // 提取笔记纯文本内容作为任务描述（前500字）
-        var plainContent = (note.content || '').replace(/<[^>]*>/g, '').trim().slice(0, 500);
-        var config = ns.getWorkbenchState();
+        const plainContent = (note.content || '').replace(/<[^>]*>/g, '').trim().slice(0, 500);
+        const config = ns.getWorkbenchState();
         if (!config.quadrants[quadrant]) config.quadrants[quadrant] = { tasks: [] };
         config.quadrants[quadrant].tasks.push({
             id: 'task_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
@@ -94,16 +94,16 @@ window.DevHome = window.DevHome || {};
 
     /** 获取任务的关联笔记列表（去重） */
     ns.getTaskLinkedNotes = function (taskId) {
-        var config = ns.getWorkbenchState();
-        var noteIds = [];
+        const config = ns.getWorkbenchState();
+        let noteIds = [];
         ns.forEachQuadrant(function (q) {
-            var tasks = ns.getQuadrantTasks(q);
-            var task = tasks.find(function (t) { return t.id === taskId; });
+            let tasks = ns.getQuadrantTasks(q);
+            let task = tasks.find(function (t) { return t.id === taskId; });
             if (task && task.noteIds) noteIds = task.noteIds;
         });
         // 去重
-        var uniqueIds = [];
-        var seen = {};
+        const uniqueIds = [];
+        const seen = {};
         noteIds.forEach(function (id) {
             if (!seen[id]) { seen[id] = true; uniqueIds.push(id); }
         });
@@ -112,15 +112,15 @@ window.DevHome = window.DevHome || {};
 
     /** 显示"关联笔记"选择弹窗 */
     ns.showTaskLinkNotesPopup = function (taskId) {
-        var allNotes = state.notes || [];
-        var linkedNotes = ns.getTaskLinkedNotes(taskId);
-        var linkedIds = linkedNotes.map(function (n) { return n.id; });
+        const allNotes = state.notes || [];
+        const linkedNotes = ns.getTaskLinkedNotes(taskId);
+        const linkedIds = linkedNotes.map(function (n) { return n.id; });
 
-        var hasNotes = allNotes.length > 0;
-        var bodyHtml = hasNotes
+        const hasNotes = allNotes.length > 0;
+        let bodyHtml = hasNotes
             ? allNotes.map(function (note) {
-                var isLinked = linkedIds.indexOf(note.id) !== -1;
-                var title = note.title || '无标题';
+                const isLinked = linkedIds.indexOf(note.id) !== -1;
+                let title = note.title || '无标题';
                 if (title.length > 25) title = title.slice(0, 25) + '...';
                 return '<label class="wb-link-note-item">' +
                     '<input type="checkbox" value="' + escapeHtml(note.id) + '" ' + (isLinked ? 'checked' : '') + '>' +
@@ -129,7 +129,7 @@ window.DevHome = window.DevHome || {};
             : '<p style="text-align:center;color:var(--color-text-tertiary);padding:16px 0;">暂无笔记，请先在主工作区创建笔记</p>';
 
         // 创建自定义弹窗
-        var overlay = document.createElement('div');
+        const overlay = document.createElement('div');
         overlay.className = 'wb-link-popup-overlay';
         overlay.innerHTML = '<div class="wb-link-popup">' +
             '<h3>关联笔记到任务</h3>' +
@@ -149,8 +149,8 @@ window.DevHome = window.DevHome || {};
         overlay.querySelector('.wb-link-popup-cancel').addEventListener('click', function () { overlay.remove(); });
         // 保存按钮
         overlay.querySelector('.wb-link-popup-save').addEventListener('click', function () {
-            var checked = overlay.querySelectorAll('.wb-link-note-item input:checked');
-            var selectedIds = Array.from(checked).map(function (cb) { return cb.value; });
+            const checked = overlay.querySelectorAll('.wb-link-note-item input:checked');
+            const selectedIds = Array.from(checked).map(function (cb) { return cb.value; });
             // 先取消所有旧关联
             linkedIds.forEach(function (nid) { ns.unlinkNoteFromTaskSilent(taskId, nid); });
             // 建立新关联
@@ -162,17 +162,17 @@ window.DevHome = window.DevHome || {};
 
     /** 查看已关联笔记，支持逐条解绑 */
     ns.showTaskLinkedNotesView = function (taskId) {
-        var linkedNotes = ns.getTaskLinkedNotes(taskId);
-        var bodyHtml = '';
+        const linkedNotes = ns.getTaskLinkedNotes(taskId);
+        let bodyHtml = '';
 
         if (linkedNotes.length === 0) {
             bodyHtml = '<p class="wb-link-view-empty">暂无关联笔记</p>';
         } else {
             bodyHtml = linkedNotes.map(function (note) {
-                var title = note.title || '无标题';
-                var preview = (note.content || '').replace(/<[^>]*>/g, '').trim().slice(0, 80);
+                let title = note.title || '无标题';
+                let preview = (note.content || '').replace(/<[^>]*>/g, '').trim().slice(0, 80);
                 if (preview.length >= 80) preview += '...';
-                var time = note.updatedAt
+                const time = note.updatedAt
                     ? new Date(note.updatedAt).toLocaleDateString('zh-CN')
                     : (note.createdAt ? new Date(note.createdAt).toLocaleDateString('zh-CN') : '');
 
@@ -187,7 +187,7 @@ window.DevHome = window.DevHome || {};
             }).join('');
         }
 
-        var overlay = document.createElement('div');
+        const overlay = document.createElement('div');
         overlay.className = 'wb-link-popup-overlay';
         overlay.innerHTML = '<div class="wb-link-popup wb-link-view-popup">' +
             '<h3>已关联笔记（' + linkedNotes.length + ' 篇）</h3>' +
@@ -199,7 +199,7 @@ window.DevHome = window.DevHome || {};
         document.body.appendChild(overlay);
 
         // 关闭时刷新四象限面板（更新 📎 徽章）
-        var closeFn = function () {
+        const closeFn = function () {
             overlay.remove();
             ns.renderQuadrantBoard();
         };
@@ -210,12 +210,12 @@ window.DevHome = window.DevHome || {};
         overlay.querySelectorAll('.wb-link-view-unlink').forEach(function (btn) {
             btn.addEventListener('click', function (e) {
                 e.stopPropagation();
-                var noteId = btn.dataset.noteId;
-                var noteItem = btn.closest('.wb-link-view-item');
-                var noteTitle = noteItem ? (noteItem.querySelector('.wb-link-view-title') || {}).textContent || '此笔记' : '此笔记';
+                const noteId = btn.dataset.noteId;
+                const noteItem = btn.closest('.wb-link-view-item');
+                const noteTitle = noteItem ? (noteItem.querySelector('.wb-link-view-title') || {}).textContent || '此笔记' : '此笔记';
 
                 // 二次确认
-                var confirmOverlay = document.createElement('div');
+                const confirmOverlay = document.createElement('div');
                 confirmOverlay.className = 'wb-link-popup-overlay';
                 confirmOverlay.style.zIndex = '3200';
                 confirmOverlay.innerHTML = '<div class="wb-link-popup" style="max-width:280px;">' +
@@ -237,8 +237,8 @@ window.DevHome = window.DevHome || {};
                     // 安全移除条目（先检查父节点，防止 DOM 已被移走）
                     if (noteItem && noteItem.parentNode) noteItem.remove();
                     // 更新标题计数
-                    var remaining = overlay.querySelectorAll('.wb-link-view-item').length;
-                    var titleEl = overlay.querySelector('h3');
+                    let remaining = overlay.querySelectorAll('.wb-link-view-item').length;
+                    const titleEl = overlay.querySelector('h3');
                     if (titleEl) titleEl.textContent = '已关联笔记（' + remaining + ' 篇）';
                     if (remaining === 0) {
                         overlay.querySelector('.wb-link-popup-body').innerHTML = '<p class="wb-link-view-empty">暂无关联笔记</p>';

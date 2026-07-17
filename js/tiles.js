@@ -8,14 +8,14 @@ window.DevHome = window.DevHome || {};
 (function (ns) {
     'use strict';
 
-    var state = ns.state;
-    var dom = ns.dom;
-    var storage = ns.storage;
-    var $$ = ns.$$;
-    var escapeHtml = ns.escapeHtml;
-    var pageManager = ns.pageManager;
-    var loadFavicon = ns.loadFavicon;
-    var TILE_LONG_PRESS_MS = ns.TILE_LONG_PRESS_MS;
+    const state = ns.state;
+    const dom = ns.dom;
+    const storage = ns.storage;
+    const $$ = ns.$$;
+    const escapeHtml = ns.escapeHtml;
+    const pageManager = ns.pageManager;
+    const loadFavicon = ns.loadFavicon;
+    const TILE_LONG_PRESS_MS = ns.TILE_LONG_PRESS_MS;
 
     /* ===== 磁贴数据管理 ===== */
     ns.tileManager = {
@@ -28,7 +28,7 @@ window.DevHome = window.DevHome || {};
         },
 
         updateCurrentTiles: function () {
-            var pageData = pageManager.getCurrentPageData(this.pagesData);
+            const pageData = pageManager.getCurrentPageData(this.pagesData);
             this.currentTiles = pageData.tiles || [];
             this.sortByPosition();
         },
@@ -41,7 +41,7 @@ window.DevHome = window.DevHome || {};
         },
 
         add: function (tile) {
-        var newTile = Object.assign({}, tile, {
+        const newTile = Object.assign({}, tile, {
             id: 'tile_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11),
                 position: this.currentTiles.length
             });
@@ -51,20 +51,20 @@ window.DevHome = window.DevHome || {};
         },
 
         remove: function (tileId) {
-            var index = this.currentTiles.findIndex(function (t) { return t.id === tileId; });
+            const index = this.currentTiles.findIndex(function (t) { return t.id === tileId; });
             if (index > -1) { this.currentTiles.splice(index, 1); this.save(); return true; }
             return false;
         },
 
         update: function (tileId, updates) {
-            var tile = this.currentTiles.find(function (t) { return t.id === tileId; });
+            const tile = this.currentTiles.find(function (t) { return t.id === tileId; });
             if (tile) { Object.assign(tile, updates); this.save(); return true; }
             return false;
         },
 
         reorder: function (fromIndex, toIndex) {
             if (fromIndex === toIndex) return;
-            var moved = this.currentTiles.splice(fromIndex, 1)[0];
+            const moved = this.currentTiles.splice(fromIndex, 1)[0];
             this.currentTiles.splice(toIndex, 0, moved);
             this.save();
         },
@@ -140,12 +140,12 @@ window.DevHome = window.DevHome || {};
         /* 将指定磁贴从当前分类移动到目标分类 */
         moveTileToPage: function (tileId, targetPageIndex) {
             if (targetPageIndex === state.currentPage) return false;
-            var tileIndex = this.currentTiles.findIndex(function (t) { return t.id === tileId; });
+            const tileIndex = this.currentTiles.findIndex(function (t) { return t.id === tileId; });
             if (tileIndex === -1) return false;
-            var targetPage = this.pagesData[targetPageIndex];
+            const targetPage = this.pagesData[targetPageIndex];
             if (!targetPage) return false;
             // 从当前分类移除磁贴
-            var tile = this.currentTiles.splice(tileIndex, 1)[0];
+            const tile = this.currentTiles.splice(tileIndex, 1)[0];
             this.save();
             // 追加到目标分类末尾
             if (!targetPage.tiles) targetPage.tiles = [];
@@ -159,12 +159,12 @@ window.DevHome = window.DevHome || {};
         /* 将指定磁贴复制到目标分类（不删除原分类中的磁贴） */
         copyTileToPage: function (tileId, targetPageIndex) {
             if (targetPageIndex === state.currentPage) return false;
-            var tile = this.currentTiles.find(function (t) { return t.id === tileId; });
+            const tile = this.currentTiles.find(function (t) { return t.id === tileId; });
             if (!tile) return false;
-            var targetPage = this.pagesData[targetPageIndex];
+            const targetPage = this.pagesData[targetPageIndex];
             if (!targetPage) return false;
             // 创建副本，生成新 ID
-            var copy = Object.assign({}, tile, {
+            const copy = Object.assign({}, tile, {
                 id: 'tile_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11),
                 position: (targetPage.tiles || []).length
             });
@@ -178,9 +178,9 @@ window.DevHome = window.DevHome || {};
     /* ===== 磁贴 DOM 渲染 ===== */
     ns.renderTiles = function () {
         dom.tilesContainer.innerHTML = '';
-        var frag = document.createDocumentFragment();
+        const frag = document.createDocumentFragment();
         ns.tileManager.currentTiles.forEach(function (tile, index) {
-            var a = document.createElement('a');
+            const a = document.createElement('a');
             a.className = 'tile';
             // 磁贴通过点击事件打开链接（新标签页），href 仅用于右键"在新标签页中打开链接"
             a.href = tile.url;
@@ -192,19 +192,19 @@ window.DevHome = window.DevHome || {};
             a.style.gridArea = 'auto';
             a.draggable = false;
 
-            var iconWrap = document.createElement('div');
+            const iconWrap = document.createElement('div');
             iconWrap.className = 'tile-icon-wrap';
 
             // 统一使用 favicon 加载，支持 imageData 兼容旧数据
             if (tile.type === 'image' && tile.imageData) {
-                var img = document.createElement('img'); img.className = 'tile-img'; img.src = tile.imageData; iconWrap.appendChild(img);
+                const img = document.createElement('img'); img.className = 'tile-img'; img.src = tile.imageData; iconWrap.appendChild(img);
             } else {
-                var img2 = document.createElement('img'); img2.className = 'tile-img'; iconWrap.appendChild(img2);
+                const img2 = document.createElement('img'); img2.className = 'tile-img'; iconWrap.appendChild(img2);
                 loadFavicon(tile.url, img2, iconWrap);
             }
 
-            var label = document.createElement('span'); label.className = 'tile-label'; label.textContent = tile.label;
-            var deleteBtn = document.createElement('span');
+            let label = document.createElement('span'); label.className = 'tile-label'; label.textContent = tile.label;
+            const deleteBtn = document.createElement('span');
             deleteBtn.className = 'tile-delete-btn'; deleteBtn.role = 'button'; deleteBtn.tabIndex = 0;
             deleteBtn.dataset.tileDelete = tile.id;
             deleteBtn.setAttribute('aria-label', '删除 ' + tile.label);
@@ -221,7 +221,7 @@ window.DevHome = window.DevHome || {};
 
     /* ===== 磁贴拖拽系统 ===== */
     ns.setupTileDragAndDrop = function () {
-        var tiles = $$('.tile');
+        const tiles = $$('.tile');
         tiles.forEach(function (tile) {
             tile.addEventListener('mousedown', startDrag);
             tile.addEventListener('touchstart', startDragTouch);
@@ -247,7 +247,7 @@ window.DevHome = window.DevHome || {};
         clearLongPressTimer();
         state.dragMoved = false; state.dragReady = false; state.dragging = tile;
         state.dragStartX = clientX; state.dragStartY = clientY;
-        var rect = tile.getBoundingClientRect();
+        const rect = tile.getBoundingClientRect();
         state.dragOffsetX = clientX - rect.left; state.dragOffsetY = clientY - rect.top;
         // 长按期间添加视觉反馈：磁贴微微缩放提示即将进入拖拽状态
         tile.classList.add('long-pressing');
@@ -263,8 +263,8 @@ window.DevHome = window.DevHome || {};
         if (!state.dragging || state.dragMoved) return;
         state.dragMoved = true; state.preventNextTileClick = true;
         if (dom.tilesContainer) dom.tilesContainer.classList.add('tile-drag-active');
-        var tile = state.dragging;
-        var rect = tile.getBoundingClientRect();
+        const tile = state.dragging;
+        const rect = tile.getBoundingClientRect();
         tile.style.width = rect.width + 'px'; tile.style.height = rect.height + 'px';
         tile.style.minHeight = rect.height + 'px';
         tile.style.left = rect.left + 'px'; tile.style.top = rect.top + 'px';
@@ -274,7 +274,7 @@ window.DevHome = window.DevHome || {};
     }
 
     function moveDraggingTile(clientX, clientY) {
-        var tile = state.dragging; if (!tile) return;
+        const tile = state.dragging; if (!tile) return;
         tile.style.left = (clientX - state.dragOffsetX) + 'px';
         tile.style.top = (clientY - state.dragOffsetY) + 'px';
     }
@@ -294,7 +294,7 @@ window.DevHome = window.DevHome || {};
 
     function deleteTileById(tileId, label) {
         if (!tileId) return;
-        var msg = label ? '确定要删除磁贴 "' + label + '" 吗？' : '确定要删除这个磁贴吗？';
+        const msg = label ? '确定要删除磁贴 "' + label + '" 吗？' : '确定要删除这个磁贴吗？';
         ns.showConfirm(msg, { title: '删除磁贴' }).then(function (ok) {
             if (ok) { ns.tileManager.remove(tileId); ns.renderTiles(); }
         });
@@ -304,7 +304,7 @@ window.DevHome = window.DevHome || {};
         state.dragMoved = false;
         if (e.target.closest('.tile-delete-btn')) return;
         if (e.button !== 0) return;
-        var tile = e.currentTarget;
+        const tile = e.currentTarget;
         prepareTilePointer(tile, e.clientX, e.clientY);
         document.addEventListener('mousemove', doDrag);
         document.addEventListener('mouseup', stopDrag);
@@ -313,7 +313,7 @@ window.DevHome = window.DevHome || {};
     function startDragTouch(e) {
         state.dragMoved = false;
         if (e.target.closest('.tile-delete-btn')) return;
-        var touch = e.touches[0], tile = e.currentTarget;
+        const touch = e.touches[0], tile = e.currentTarget;
         prepareTilePointer(tile, touch.clientX, touch.clientY);
         document.addEventListener('touchmove', doDragTouch, { passive: false });
         document.addEventListener('touchend', stopDragTouch);
@@ -322,7 +322,7 @@ window.DevHome = window.DevHome || {};
     function doDrag(e) {
         if (!state.dragging) return;
         if (!state.dragMoved) {
-            var mx = Math.abs(e.clientX - state.dragStartX), my = Math.abs(e.clientY - state.dragStartY);
+            const mx = Math.abs(e.clientX - state.dragStartX), my = Math.abs(e.clientY - state.dragStartY);
             if (mx < 5 && my < 5) return;
             // 长按未完成且非编辑模式时，允许最大 10px 的轻微移动不取消拖拽，避免手指微抖导致中断
             if (!state.dragReady && !state.tileEditMode) {
@@ -335,12 +335,12 @@ window.DevHome = window.DevHome || {};
         }
         moveDraggingTile(e.clientX, e.clientY);
         // 使用最近磁贴算法替代精确命中检测：即使光标在磁贴间隙也能高亮最近目标
-        var tiles = $$('.tile:not(.dragging)'), bestTile = null, bestDist = Infinity;
+        const tiles = $$('.tile:not(.dragging)'); let bestTile = null, bestDist = Infinity;
         tiles.forEach(function (ot) {
-            var r = ot.getBoundingClientRect();
-            var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-            var dx = e.clientX - cx, dy = e.clientY - cy;
-            var dist = dx * dx + dy * dy;
+            const r = ot.getBoundingClientRect();
+            const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+            const dx = e.clientX - cx, dy = e.clientY - cy;
+            const dist = dx * dx + dy * dy;
             if (dist < bestDist) { bestDist = dist; bestTile = ot; }
         });
         tiles.forEach(function (ot) { ot.classList.toggle('drag-over', ot === bestTile); });
@@ -349,9 +349,9 @@ window.DevHome = window.DevHome || {};
 
     function doDragTouch(e) {
         if (!state.dragging) return;
-        var touch = e.touches[0];
+        const touch = e.touches[0];
         if (!state.dragMoved) {
-            var mx = Math.abs(touch.clientX - state.dragStartX), my = Math.abs(touch.clientY - state.dragStartY);
+            const mx = Math.abs(touch.clientX - state.dragStartX), my = Math.abs(touch.clientY - state.dragStartY);
             if (mx < 5 && my < 5) return;
             // 长按未完成且非编辑模式时，允许最大 10px 的轻微移动不取消拖拽，避免手指微抖导致中断
             if (!state.dragReady && !state.tileEditMode) {
@@ -365,16 +365,16 @@ window.DevHome = window.DevHome || {};
         e.preventDefault();
         moveDraggingTile(touch.clientX, touch.clientY);
         // 使用最近磁贴算法替代精确命中检测
-        var el = document.elementFromPoint(touch.clientX, touch.clientY);
-        var dragOverTile = el ? el.closest('.tile:not(.dragging)') : null;
+        let el = document.elementFromPoint(touch.clientX, touch.clientY);
+        let dragOverTile = el ? el.closest('.tile:not(.dragging)') : null;
         // 如果 elementFromPoint 命中在磁贴间隙（返回 null），用最近距离算法兜底
         if (!dragOverTile) {
-            var tiles = $$('.tile:not(.dragging)'), bestTile = null, bestDist = Infinity;
+            const tiles = $$('.tile:not(.dragging)'); let bestTile = null, bestDist = Infinity;
             tiles.forEach(function (ot) {
-                var r = ot.getBoundingClientRect();
-                var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-                var dx = touch.clientX - cx, dy = touch.clientY - cy;
-                var dist = dx * dx + dy * dy;
+                const r = ot.getBoundingClientRect();
+                const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+                const dx = touch.clientX - cx, dy = touch.clientY - cy;
+                const dist = dx * dx + dy * dy;
                 if (dist < bestDist) { bestDist = dist; bestTile = ot; }
             });
             dragOverTile = bestTile;
@@ -385,7 +385,7 @@ window.DevHome = window.DevHome || {};
 
     function stopDrag() {
         if (!state.dragging) return;
-        var tile = state.dragging;
+        const tile = state.dragging;
         if (state.dragMoved) {
             resetDraggingTile(tile);
             $$('.tile').forEach(function (t) { t.classList.remove('drag-over'); });
@@ -401,11 +401,11 @@ window.DevHome = window.DevHome || {};
 
     function stopDragTouch(e) {
         if (!state.dragging) return;
-        var tile = state.dragging;
+        const tile = state.dragging;
         if (state.dragMoved) {
             resetDraggingTile(tile);
             $$('.tile').forEach(function (t) { t.classList.remove('drag-over'); });
-            var ct = e.changedTouches[0];
+            const ct = e.changedTouches[0];
             if (ct && state.dragOver) {
                 ns.tileManager.reorder(parseInt(tile.dataset.index), parseInt(state.dragOver.dataset.index));
                 ns.renderTiles();
@@ -417,21 +417,21 @@ window.DevHome = window.DevHome || {};
     }
 
     ns.handleTileDeleteClick = function (e) {
-        var btn = e.target.closest('.tile-delete-btn');
+        const btn = e.target.closest('.tile-delete-btn');
         if (!btn) return;
         e.preventDefault(); e.stopPropagation();
-        var tileId = btn.dataset.tileDelete;
-        var tile = ns.tileManager.currentTiles.find(function (t) { return t.id === tileId; });
+        const tileId = btn.dataset.tileDelete;
+        const tile = ns.tileManager.currentTiles.find(function (t) { return t.id === tileId; });
         deleteTileById(tileId, tile && tile.label);
     };
 
     ns.handleTileDeleteKeydown = function (e) {
         if (e.key !== 'Enter' && e.key !== ' ') return;
-        var btn = e.target.closest('.tile-delete-btn');
+        const btn = e.target.closest('.tile-delete-btn');
         if (!btn) return;
         e.preventDefault(); e.stopPropagation();
-        var tileId = btn.dataset.tileDelete;
-        var tile = ns.tileManager.currentTiles.find(function (t) { return t.id === tileId; });
+        const tileId = btn.dataset.tileDelete;
+        const tile = ns.tileManager.currentTiles.find(function (t) { return t.id === tileId; });
         deleteTileById(tileId, tile && tile.label);
     };
 

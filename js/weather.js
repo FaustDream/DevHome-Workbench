@@ -7,12 +7,12 @@ window.DevHome = window.DevHome || {};
 (function (ns) {
     'use strict';
 
-    var LAT = 39.9042;  // 默认：北京
-    var LON = 116.4074;
-    var CACHE_TTL = 30 * 60 * 1000; // 30 分钟缓存
+    const LAT = 39.9042;  // 默认：北京
+    const LON = 116.4074;
+    const CACHE_TTL = 30 * 60 * 1000; // 30 分钟缓存
 
     /** WMO 天气码 → 中文 + Emoji 映射 */
-    var WEATHER_MAP = {
+    const WEATHER_MAP = {
         0:  { text: '晴', icon: '☀️' },
         1:  { text: '大部晴', icon: '🌤' },
         2:  { text: '多云', icon: '⛅' },
@@ -56,26 +56,26 @@ window.DevHome = window.DevHome || {};
 
     /** 从缓存或 API 获取天气数据 */
     async function fetchWeather(lat, lon) {
-        var cacheKey = 'tabpage_weather_cache';
-        var cached;
+        const cacheKey = 'tabpage_weather_cache';
+        let cached;
         try { cached = JSON.parse(localStorage.getItem(cacheKey)); } catch (e) { }
         if (cached && cached.ts && (Date.now() - cached.ts < CACHE_TTL)) {
             // 坐标没大变就复用缓存
-            var dist = Math.abs((cached.lat || 0) - lat) + Math.abs((cached.lon || 0) - lon);
+            const dist = Math.abs((cached.lat || 0) - lat) + Math.abs((cached.lon || 0) - lon);
             if (dist < 1) return cached;
         }
         try {
             // Open-Meteo API：获取当前天气 + 3 天预报
-            var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon
+            const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon
                 + '&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto&forecast_days=3';
-            var controller = new AbortController();
-            var timeout = setTimeout(function () { controller.abort(); }, 8000);
-            var resp = await fetch(url, { signal: controller.signal });
+            const controller = new AbortController();
+            const timeout = setTimeout(function () { controller.abort(); }, 8000);
+            const resp = await fetch(url, { signal: controller.signal });
             clearTimeout(timeout);
             if (!resp.ok) throw new Error('HTTP ' + resp.status);
-            var data = await resp.json();
+            const data = await resp.json();
 
-            var result = {
+            const result = {
                 lat: lat, lon: lon,
                 ts: Date.now(),
                 currentTemp: Math.round(data.current.temperature_2m),
@@ -99,10 +99,10 @@ window.DevHome = window.DevHome || {};
 
     /** 渲染天气小组件（时钟旁） */
     function renderWidget(data) {
-        var el = document.getElementById('weatherWidget');
+        let el = document.getElementById('weatherWidget');
         if (!el) return;
         el.style.display = '';
-        var w = getWeather(data.currentCode);
+        const w = getWeather(data.currentCode);
         el.innerHTML = '<span class="weather-icon">' + w.icon + '</span>'
             + '<span class="weather-temp">' + data.currentTemp + '°</span>'
             + '<span class="weather-desc">' + w.text + '</span>';
@@ -113,14 +113,14 @@ window.DevHome = window.DevHome || {};
 
     /** 渲染 3 天趋势面板 */
     function renderPanel(data) {
-        var panel = document.getElementById('weatherPanel');
+        let panel = document.getElementById('weatherPanel');
         if (!panel) return;
-        var weekMap = ['日', '一', '二', '三', '四', '五', '六'];
-        var html = '<div class="weather-panel-inner"><div class="weather-panel-title">3 日天气趋势</div>';
+        const weekMap = ['日', '一', '二', '三', '四', '五', '六'];
+        let html = '<div class="weather-panel-inner"><div class="weather-panel-title">3 日天气趋势</div>';
         data.daily.forEach(function (d) {
-            var w = getWeather(d.code);
-            var day = new Date(d.date);
-            var label = day.getMonth() + 1 + '/' + day.getDate() + ' 周' + weekMap[day.getDay()];
+            const w = getWeather(d.code);
+            const day = new Date(d.date);
+            let label = day.getMonth() + 1 + '/' + day.getDate() + ' 周' + weekMap[day.getDay()];
             html += '<div class="weather-panel-day"><span class="wpd-label">' + label + '</span>'
                 + '<span class="wpd-icon">' + w.icon + '</span>'
                 + '<span class="wpd-desc">' + w.text + '</span>'
@@ -130,33 +130,47 @@ window.DevHome = window.DevHome || {};
         panel.innerHTML = html;
     }
 
+    // 模块级引用，管理外部点击关闭监听器的生命周期，避免多次展开面板时累积泄漏
+    let outSideHandler = null;
+
     /** 切换趋势面板显示/隐藏 */
     function togglePanel() {
-        var panel = document.getElementById('weatherPanel');
+        let panel = document.getElementById('weatherPanel');
         if (!panel) return;
-        var isVisible = panel.classList.contains('visible');
+        const isVisible = panel.classList.contains('visible');
         if (isVisible) {
             panel.classList.remove('visible');
+            // 关闭面板时清理残留的外部点击监听器
+            if (outSideHandler) {
+                document.removeEventListener('click', outSideHandler);
+                outSideHandler = null;
+            }
         } else {
             panel.classList.add('visible');
-            // 点击外部关闭
+            // 先清理旧监听器（防御：如果上一次是通过点击面板内部关闭而未触发 removeListener）
+            if (outSideHandler) {
+                document.removeEventListener('click', outSideHandler);
+                outSideHandler = null;
+            }
             setTimeout(function () {
-                document.addEventListener('click', function handler(e) {
-                    var widget = document.getElementById('weatherWidget');
-                    var p = document.getElementById('weatherPanel');
+                outSideHandler = function (e) {
+                    const widget = document.getElementById('weatherWidget');
+                    const p = document.getElementById('weatherPanel');
                     if (p && widget && !widget.contains(e.target) && !p.contains(e.target)) {
                         p.classList.remove('visible');
-                        document.removeEventListener('click', handler);
+                        document.removeEventListener('click', outSideHandler);
+                        outSideHandler = null;
                     }
-                });
+                };
+                document.addEventListener('click', outSideHandler);
             }, 50);
         }
     }
 
     /** 初始化天气模块 */
     ns.initWeather = async function () {
-        var loc = await getLocation();
-        var data = await fetchWeather(loc.lat, loc.lon);
+        const loc = await getLocation();
+        const data = await fetchWeather(loc.lat, loc.lon);
         if (data) {
             renderWidget(data);
             renderPanel(data);
@@ -172,7 +186,7 @@ window.DevHome = window.DevHome || {};
 
     /** 绑定点击事件（由外部在 DOM ready 后调用） */
     ns.bindWeatherEvents = function () {
-        var widget = document.getElementById('weatherWidget');
+        const widget = document.getElementById('weatherWidget');
         if (widget) {
             widget.addEventListener('click', togglePanel);
         }

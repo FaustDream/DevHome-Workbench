@@ -12,9 +12,9 @@ window.DevHome = window.DevHome || {};
 (function (ns) {
     'use strict';
 
-    var MAX_LOGS = 500;
-    var _logs = [];
-    var _tags = {}; // { tagName: true } — 活跃标签索引
+    const MAX_LOGS = 500;
+    let _logs = [];
+    let _tags = {}; // { tagName: true } — 活跃标签索引
 
     /* ===== 日志条目模型 ===== */
     function LogEntry(level, tag, message, data) {
@@ -37,53 +37,46 @@ window.DevHome = window.DevHome || {};
 
     /* ===== 格式化输出 ===== */
     function formatEntry(entry) {
-        var time = new Date(entry.timestamp).toLocaleTimeString('zh-CN');
-        var tag = entry.tag ? ' [' + entry.tag + ']' : '';
-        var prefix = time + ' ' + entry.level + tag;
+        const time = new Date(entry.timestamp).toLocaleTimeString('zh-CN');
+        const tag = entry.tag ? ' [' + entry.tag + ']' : '';
+        const prefix = time + ' ' + entry.level + tag;
         return { prefix: prefix, msg: entry.message, data: entry.data };
     }
 
-    /* ===== 公共 API ===== */
-
-    var logger = {
+    const logger = {
         LEVELS: { DEBUG: 'DEBUG', INFO: 'INFO', WARN: 'WARN', ERROR: 'ERROR' },
 
-        /** 记录调试日志 */
         debug: function (tag, message, data) {
-            var entry = new LogEntry('DEBUG', tag, message, data);
+            const entry = new LogEntry('DEBUG', tag, message, data);
             pushLog(entry);
             console.debug('%c' + formatEntry(entry).prefix, 'color:#888', formatEntry(entry).msg, data || '');
         },
 
-        /** 记录信息日志 */
         info: function (tag, message, data) {
-            var entry = new LogEntry('INFO', tag, message, data);
+            const entry = new LogEntry('INFO', tag, message, data);
             pushLog(entry);
             console.log('%c' + formatEntry(entry).prefix, 'color:#4a9eff;font-weight:bold',
                 formatEntry(entry).msg, data || '');
         },
 
-        /** 记录警告日志 */
         warn: function (tag, message, data) {
-            var entry = new LogEntry('WARN', tag, message, data);
+            const entry = new LogEntry('WARN', tag, message, data);
             pushLog(entry);
             console.warn(formatEntry(entry).prefix, formatEntry(entry).msg, data || '');
         },
 
-        /** 记录错误日志 */
         error: function (tag, message, data) {
-            var entry = new LogEntry('ERROR', tag, message, data);
+            const entry = new LogEntry('ERROR', tag, message, data);
             pushLog(entry);
             console.error(formatEntry(entry).prefix, formatEntry(entry).msg, data || '');
         },
 
-        /** 查询日志（按标签/级别/时间过滤） */
         query: function (opts) {
             opts = opts || {};
-            var tag = opts.tag;
-            var level = opts.level;
-            var limit = opts.limit || 100;
-            var result = _logs;
+            const tag = opts.tag;
+            const level = opts.level;
+            const limit = opts.limit || 100;
+            let result = _logs;
             if (tag) result = result.filter(function (e) { return e.tag === tag; });
             if (level) result = result.filter(function (e) { return e.level === level; });
             result = result.slice(-limit);

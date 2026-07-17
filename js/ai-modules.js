@@ -8,7 +8,7 @@ window.DevHome = window.DevHome || {};
 (function (ns) {
     'use strict';
 
-    var state = ns.state;
+    const state = ns.state;
 
     /**
      * AI 功能模块清单
@@ -23,15 +23,15 @@ window.DevHome = window.DevHome || {};
             systemPrompt: '你是一个专业的工作总结助手。请将以下工作记录整理为结构化的每日总结，包括：\n1) 今日完成的任务\n2) 遇到的问题\n3) 关键收获\n4) 明日计划\n\n用 Markdown 格式输出，语言简洁专业。',
             /** 构建模块所需的上下文内容 */
             buildContext: function () {
-                var todayStr = new Date().toISOString().slice(0, 10);
-                var todayNotes = (state.notes || []).filter(function (n) {
+                const todayStr = new Date().toISOString().slice(0, 10);
+                const todayNotes = (state.notes || []).filter(function (n) {
                     return new Date(n.createdAt).toISOString().slice(0, 10) === todayStr;
                 });
-                var todayCaptures = (state.captures || []).filter(function (c) {
+                const todayCaptures = (state.captures || []).filter(function (c) {
                     return new Date(c.createdAt).toISOString().slice(0, 10) === todayStr;
                 });
 
-                var text = '';
+                let text = '';
                 todayNotes.forEach(function (n) {
                     text += '## ' + n.title + '\n' + n.content + '\n\n';
                 });

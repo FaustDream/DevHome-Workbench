@@ -6,20 +6,20 @@ window.DevHome = window.DevHome || {};
 (function (ns) {
     'use strict';
 
-    var state = ns.state;
-    var dom = ns.dom;
-    var storage = ns.storage;
-    var $$ = ns.$$;
-    var escapeHtml = ns.escapeHtml;
-    var tileManager = ns.tileManager;
+    const state = ns.state;
+    const dom = ns.dom;
+    const storage = ns.storage;
+    const $$ = ns.$$;
+    const escapeHtml = ns.escapeHtml;
+    const tileManager = ns.tileManager;
 
     /* ===== 分类按钮行 ===== */
-    var timesSvg = '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M8 2l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
-    var plusSvg = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+    const timesSvg = '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M8 2l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+    const plusSvg = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
     function renderCatRow() {
         if (!dom.catRow) return;
-        var buttons = state.pageNames.map(function (name, idx) {
-            var cls = idx === state.currentPage ? 'cat-btn active' : 'cat-btn';
+        const buttons = state.pageNames.map(function (name, idx) {
+            const cls = idx === state.currentPage ? 'cat-btn active' : 'cat-btn';
             return '<button class="' + cls + '" data-page="' + idx + '" type="button">' +
                 '<span class="cat-btn-label">' + escapeHtml(name) + '</span>' +
                 '<span class="cat-delete-btn" role="button" tabindex="0" data-cat-delete="' + idx + '" aria-label="删除分类 ' + escapeHtml(name) + '">' +
@@ -39,7 +39,7 @@ window.DevHome = window.DevHome || {};
 
     function updateCatRowActive() {
         if (!dom.catRow || !dom.catRow.classList.contains('visible')) return;
-        var btns = dom.catRow.querySelectorAll('.cat-btn');
+        const btns = dom.catRow.querySelectorAll('.cat-btn');
         btns.forEach(function (btn, idx) { btn.classList.toggle('active', idx === state.currentPage); });
     }
 
@@ -67,19 +67,19 @@ window.DevHome = window.DevHome || {};
     };
 
     /* ===== 滚轮翻页 ===== */
-    var wheelAccumulator = 0;
-    var WHEEL_THRESHOLD = 25;
-    var WHEEL_COOLDOWN = 350;
-    var lastWheelPageTime = 0;
+    let wheelAccumulator = 0;
+    const WHEEL_THRESHOLD = 25;
+    const WHEEL_COOLDOWN = 350;
+    let lastWheelPageTime = 0;
 
     ns.handleWheelScroll = function (e) {
         if (state.pageTransition) return;
         e.preventDefault();
-        var delta = e.deltaY || e.deltaX || 0;
+        const delta = e.deltaY || e.deltaX || 0;
         if (delta === 0) return;
         if ((delta > 0 && wheelAccumulator < 0) || (delta < 0 && wheelAccumulator > 0)) wheelAccumulator = 0;
         wheelAccumulator += delta;
-        var now = Date.now();
+        const now = Date.now();
         if (now - lastWheelPageTime < WHEEL_COOLDOWN) return;
         if (wheelAccumulator > WHEEL_THRESHOLD) {
             wheelAccumulator = 0;
@@ -97,7 +97,7 @@ window.DevHome = window.DevHome || {};
     };
 
     /* ===== 分类拖拽 ===== */
-    var CATEGORY_LONG_PRESS_MS = 200;
+    const CATEGORY_LONG_PRESS_MS = 200;
 
     function setCategoryEditMode(enabled) {
         state.categoryEditMode = enabled;
@@ -125,7 +125,7 @@ window.DevHome = window.DevHome || {};
         clearCategoryLongPressTimer();
         state.categoryDragMoved = false; state.categoryDragReady = false; state.categoryDragging = btn;
         state.dragStartX = clientX; state.dragStartY = clientY;
-        var rect = btn.getBoundingClientRect();
+        const rect = btn.getBoundingClientRect();
         state.dragOffsetX = clientX - rect.left; state.dragOffsetY = clientY - rect.top;
         state.categoryLongPressTimer = setTimeout(function () {
             if (state.categoryDragging === btn && !state.categoryDragMoved) {
@@ -138,7 +138,7 @@ window.DevHome = window.DevHome || {};
         if (!state.categoryDragging || state.categoryDragMoved) return;
         state.categoryDragMoved = true; state.preventNextCategoryClick = true; setCategoryEditMode(true);
         if (dom.catRow) dom.catRow.classList.add('category-drag-active');
-        var btn = state.categoryDragging, rect = btn.getBoundingClientRect();
+        const btn = state.categoryDragging, rect = btn.getBoundingClientRect();
         btn.style.width = rect.width + 'px'; btn.style.height = rect.height + 'px';
         btn.style.left = rect.left + 'px'; btn.style.top = rect.top + 'px';
         btn.style.position = 'fixed'; btn.style.zIndex = '1000'; btn.style.pointerEvents = 'none';
@@ -147,18 +147,18 @@ window.DevHome = window.DevHome || {};
     }
 
     function moveCategoryDrag(clientX, clientY) {
-        var btn = state.categoryDragging; if (!btn) return;
+        const btn = state.categoryDragging; if (!btn) return;
         btn.style.left = (clientX - state.dragOffsetX) + 'px';
         btn.style.top = (clientY - state.dragOffsetY) + 'px';
     }
 
     function updateCategoryDragOver(clientX, clientY) {
-        var buttons = $$('.cat-btn:not(.dragging)'), bestBtn = null, bestDist = Infinity;
+        const buttons = $$('.cat-btn:not(.dragging)'); let bestBtn = null, bestDist = Infinity;
         buttons.forEach(function (btn) {
-            var rect = btn.getBoundingClientRect();
-            var cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
-            var dx = clientX - cx, dy = clientY - cy;
-            var dist = dx * dx + dy * dy;
+            const rect = btn.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+            const dx = clientX - cx, dy = clientY - cy;
+            const dist = dx * dx + dy * dy;
             if (dist < bestDist) { bestDist = dist; bestBtn = btn; }
         });
         buttons.forEach(function (btn) { btn.classList.toggle('drag-over', btn === bestBtn); });
@@ -167,7 +167,7 @@ window.DevHome = window.DevHome || {};
 
     ns.doCategoryDrag = function (e) {
         if (!state.categoryDragging) return;
-        var mx = Math.abs(e.clientX - state.dragStartX), my = Math.abs(e.clientY - state.dragStartY);
+        const mx = Math.abs(e.clientX - state.dragStartX), my = Math.abs(e.clientY - state.dragStartY);
         if (!state.categoryDragMoved) {
             if (mx < 5 && my < 5) return;
             if (!state.categoryDragReady && !state.categoryEditMode) { ns.resetCategoryDragState(); return; }
@@ -179,9 +179,9 @@ window.DevHome = window.DevHome || {};
 
     ns.stopCategoryDrag = function () {
         if (!state.categoryDragging) return;
-        var fi = parseInt(state.categoryDragging.dataset.page, 10);
-        var ti = state.categoryDragOver ? parseInt(state.categoryDragOver.dataset.page, 10) : fi;
-        var moved = state.categoryDragMoved;
+        const fi = parseInt(state.categoryDragging.dataset.page, 10);
+        const ti = state.categoryDragOver ? parseInt(state.categoryDragOver.dataset.page, 10) : fi;
+        const moved = state.categoryDragMoved;
         ns.resetCategoryDragState();
         if (moved && !isNaN(fi) && !isNaN(ti) && fi !== ti) tileManager.reorderPage(fi, ti);
     };
@@ -189,9 +189,9 @@ window.DevHome = window.DevHome || {};
     ns.deleteCategoryByIndex = function (pageIndex) {
         if (state.totalPages <= 1) { ns.showToast('至少需要保留一个分类！', 'error'); return; }
         if (pageIndex < 0 || pageIndex >= state.totalPages) return;
-        var name = state.pageNames[pageIndex] || '第' + (pageIndex + 1) + '页';
-        var page = tileManager.pagesData[pageIndex] || {};
-        var count = Array.isArray(page.tiles) ? page.tiles.length : 0;
+        const name = state.pageNames[pageIndex] || '第' + (pageIndex + 1) + '页';
+        const page = tileManager.pagesData[pageIndex] || {};
+        let count = Array.isArray(page.tiles) ? page.tiles.length : 0;
         ns.showConfirm('删除分类"' + name + '"时，默认会把 ' + count + ' 个快捷方式移动到"常用"。\n\n确定：移动到常用并删除分类\n取消：直接删除这些快捷方式', { title: '删除分类', okLabel: '移动到常用', cancelLabel: '直接删除' }).then(function (moveToCommon) {
             if (moveToCommon) { tileManager.removePageAt(pageIndex, 'moveToCommon'); return; }
             ns.showConfirm('直接删除分类"' + name + '"及其中 ' + count + ' 个快捷方式吗？此操作不可恢复。', { title: '确认删除' }).then(function (confirmed) {

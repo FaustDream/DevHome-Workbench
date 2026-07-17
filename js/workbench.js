@@ -18,17 +18,10 @@ window.DevHome = window.DevHome || {};
 (function (ns) {
     'use strict';
 
-    var state = ns.state;
-    var dom = ns.dom;
-    var storageV2 = ns.storageV2;
-    var DEFAULT_V2_CONFIG = ns.DEFAULT_V2_CONFIG;
-
-    /* ===== Tab 切换（已废弃） ===== */
-    ns.switchWbTab = function (tabName) {
-        // 已废弃：三栏布局中不再需要 Tab 切换
-        // 保留函数签名以防旧代码调用
-        console.log('[模式] switchWbTab 已废弃，使用 switchSidebar 代替');
-    };
+    const state = ns.state;
+    const dom = ns.dom;
+    const storageV2 = ns.storageV2;
+    const DEFAULT_V2_CONFIG = ns.DEFAULT_V2_CONFIG;
 
     /* ===== 侧边栏面板切换 ===== */
     ns.switchSidebar = function (panelName) {
@@ -56,16 +49,16 @@ window.DevHome = window.DevHome || {};
 
     /* ===== 侧边栏折叠/展开 ===== */
     ns.toggleQuadrantSidebar = function () {
-        var panel = document.getElementById('wbQuadrantPanel');
+        const panel = document.getElementById('wbQuadrantPanel');
         if (!panel) return;
-        var isCollapsed = panel.classList.toggle('collapsed');
+        const isCollapsed = panel.classList.toggle('collapsed');
         console.log('[面板] 四象限侧边栏 ' + (isCollapsed ? '折叠' : '展开'));
     };
 
     ns.toggleRightSidebar = function () {
-        var panel = document.getElementById('wbSidebarRight');
+        const panel = document.getElementById('wbSidebarRight');
         if (!panel) return;
-        var isCollapsed = panel.classList.toggle('collapsed');
+        const isCollapsed = panel.classList.toggle('collapsed');
         console.log('[面板] 右侧栏（日历+番茄钟） ' + (isCollapsed ? '折叠' : '展开'));
     };
 
@@ -119,9 +112,9 @@ window.DevHome = window.DevHome || {};
 
         // 隐藏日常模式专属元素
         try {
-            var matrixCanvas = document.getElementById('matrixCanvas');
+            const matrixCanvas = document.getElementById('matrixCanvas');
             if (matrixCanvas) matrixCanvas.style.display = 'none';
-            var bgContainer = document.getElementById('bgContainer');
+            const bgContainer = document.getElementById('bgContainer');
             if (bgContainer) bgContainer.style.display = 'none';
         } catch (e) {
             ns.logger && ns.logger.warn('focus-mode', '隐藏日常元素失败', e.message);
@@ -152,7 +145,7 @@ window.DevHome = window.DevHome || {};
         if (typeof ns.startDeadlineChecker === 'function') ns.startDeadlineChecker();
 
         // 渲染各模块（逐个 try-catch 防止一个模块失败阻断其他模块）
-        var renderErrors = [];
+        const renderErrors = [];
         try { ns.renderQuadrantBoard(); } catch (e) {
             renderErrors.push('四象限: ' + e.message);
             ns.logger && ns.logger.error('focus-mode', 'renderQuadrantBoard 失败', e.message);
@@ -188,7 +181,7 @@ window.DevHome = window.DevHome || {};
         // 异步加载 v2 任务数据
         storageV2.get(storageV2.KEYS.TASKS, null).then(function (v2Tasks) {
             if (v2Tasks && v2Tasks.length > 0) {
-                var quadrants = { q1: { tasks: [] }, q2: { tasks: [] }, q3: { tasks: [] }, q4: { tasks: [] } };
+                const quadrants = { q1: { tasks: [] }, q2: { tasks: [] }, q3: { tasks: [] }, q4: { tasks: [] } };
                 v2Tasks.forEach(function (t) {
                     if (quadrants[t.quadrant]) quadrants[t.quadrant].tasks.push(normalizeV2Task(t));
                 });
@@ -211,7 +204,7 @@ window.DevHome = window.DevHome || {};
         delete task.completed;
         delete task.deadline;
         if (Array.isArray(task.noteIds) && task.noteIds.length > 1) {
-            var seen = {};
+            const seen = {};
             task.noteIds = task.noteIds.filter(function (id) {
                 if (seen[id]) return false;
                 seen[id] = true;
@@ -242,11 +235,11 @@ window.DevHome = window.DevHome || {};
 
         // 恢复日常模式专属元素
         try {
-            var matrixCanvas = document.getElementById('matrixCanvas');
+            const matrixCanvas = document.getElementById('matrixCanvas');
             if (matrixCanvas && ns.matrixRain && ns.matrixRain.isRunning()) {
                 matrixCanvas.style.display = 'block';
             }
-            var bgContainer = document.getElementById('bgContainer');
+            const bgContainer = document.getElementById('bgContainer');
             if (bgContainer) bgContainer.style.display = '';
         } catch (e) {
             ns.logger && ns.logger.warn('focus-mode', '恢复日常元素失败', e.message);
@@ -280,12 +273,12 @@ window.DevHome = window.DevHome || {};
     /** 更新右键菜单中的专注模式标签和快捷键显示 */
     ns.updateContextMenuLabel = function () {
         if (!dom.ctxFocusModeLabel) return;
-        var isFocus = state.currentDevhomeMode === 'workbench';
+        const isFocus = state.currentDevhomeMode === 'workbench';
         dom.ctxFocusModeLabel.textContent = isFocus ? '退出专注模式' : '进入专注模式';
 
         if (dom.ctxFocusModeKey) {
-            var sc = state._focusShortcut || { ctrl: true, key: 'k' };
-            var parts = [];
+            const sc = state._focusShortcut || { ctrl: true, key: 'k' };
+            const parts = [];
             if (sc.ctrl) parts.push('Ctrl');
             if (sc.shift) parts.push('Shift');
             if (sc.alt) parts.push('Alt');
@@ -296,21 +289,21 @@ window.DevHome = window.DevHome || {};
 
     /** 检测按键是否匹配专注模式快捷键 */
     ns.isFocusModeShortcut = function (e) {
-        var sc = state._focusShortcut || { ctrl: true, key: 'k' };
+        const sc = state._focusShortcut || { ctrl: true, key: 'k' };
         if (!sc.key) return false;
-        var ctrlOk = sc.ctrl ? (e.ctrlKey || e.metaKey) : !(e.ctrlKey || e.metaKey);
-        var shiftOk = sc.shift ? e.shiftKey : !e.shiftKey;
-        var altOk = sc.alt ? e.altKey : !e.altKey;
-        var keyOk = e.key && e.key.toLowerCase() === sc.key.toLowerCase();
+        const ctrlOk = sc.ctrl ? (e.ctrlKey || e.metaKey) : !(e.ctrlKey || e.metaKey);
+        const shiftOk = sc.shift ? e.shiftKey : !e.shiftKey;
+        const altOk = sc.alt ? e.altKey : !e.altKey;
+        const keyOk = e.key && e.key.toLowerCase() === sc.key.toLowerCase();
         return ctrlOk && shiftOk && altOk && keyOk;
     };
 
     /** 挂载 React 通知系统容器（首次调用时创建，幂等） */
     ns.initReactToast = function () {
-        var root = document.getElementById('reactToastRoot');
+        const root = document.getElementById('reactToastRoot');
         if (!root || !window.ReactDOM || !window.ToastApp) return;
         if (root._reactInited) return;
-        var toastRoot = ReactDOM.createRoot(root);
+        const toastRoot = ReactDOM.createRoot(root);
         toastRoot.render(React.createElement(window.ToastApp.ToastContainer));
         root._reactInited = true;
         root._reactRoot = toastRoot;

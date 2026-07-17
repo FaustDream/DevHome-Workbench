@@ -7,22 +7,22 @@ window.DevHome = window.DevHome || {};
     'use strict';
 
     ns._bindQuadrantEvents = function () {
-        var quadrantNav = document.getElementById('wbQuadrantNav');
+        const quadrantNav = document.getElementById('wbQuadrantNav');
         if (quadrantNav) {
             quadrantNav.addEventListener('click', function (e) {
-                var check = e.target.closest('.wb-task-check');
+                const check = e.target.closest('.wb-task-check');
                 if (check) {
                     e.stopPropagation();
                     ns.completeQuadrantTask(check.dataset.quadrant, check.dataset.taskId);
                     return;
                 }
-                var moreBtn = e.target.closest('.wb-task-more-btn');
+                const moreBtn = e.target.closest('.wb-task-more-btn');
                 if (moreBtn) {
                     e.stopPropagation();
                     ns.showTaskContextMenu(moreBtn.dataset.taskId, moreBtn.dataset.quadrant, e);
                     return;
                 }
-                var addBtn = e.target.closest('.wb-quadrant-group-add');
+                const addBtn = e.target.closest('.wb-quadrant-group-add');
                 if (addBtn) {
                     e.stopPropagation();
                     ns.showQuadrantInput(addBtn.dataset.quadrant, addBtn);
@@ -34,12 +34,12 @@ window.DevHome = window.DevHome || {};
 
         // 浮动菜单操作（在 document 上委托）
         document.addEventListener('click', function (e) {
-            var menuItem = e.target.closest('.wb-task-context-menu button');
+            const menuItem = e.target.closest('.wb-task-context-menu button');
             if (!menuItem) return;
             e.stopPropagation();
-            var action = menuItem.dataset.action;
-            var taskId = menuItem.dataset.taskId;
-            var quadrant = menuItem.dataset.quadrant;
+            const action = menuItem.dataset.action;
+            const taskId = menuItem.dataset.taskId;
+            const quadrant = menuItem.dataset.quadrant;
 
             if (action === 'move') {
                 ns.changeTaskQuadrant(taskId, menuItem.dataset.from, menuItem.dataset.to);

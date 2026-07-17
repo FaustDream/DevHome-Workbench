@@ -19,7 +19,7 @@ window.DevHome = window.DevHome || {};
 (function (ns) {
     'use strict';
 
-    var state = ns.state;
+    const state = ns.state;
 
     /* ===== 主入口 ===== */
     ns.bindEvents = function () {

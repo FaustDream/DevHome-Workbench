@@ -6,9 +6,9 @@
 window.DevHome = window.DevHome || {};
 (function (ns) {
     'use strict';
-    var c = document.getElementById('matrixCanvas');
+    const c = document.getElementById('matrixCanvas');
     if (!c) return;
-    var ctx = c.getContext('2d');
+    const ctx = c.getContext('2d');
 
     c.style.position = 'fixed';
     c.style.top = '0';
@@ -19,38 +19,38 @@ window.DevHome = window.DevHome || {};
     c.style.margin = '0';
     c.style.padding = '0';
 
-    var w, h;
-    var chars = '0123456789abcdefghijklmnopqrstuvwxyzαβγδεζηθικλμνξπρστυφχψω∑∏∫√∞≈≠≤≥±×÷∂∇∆∈∉⊂⊃∪∩∧∨⊕⊗⊥∥∠';
-    var combatChars = '攻防守突破穿刺击粉碎撕裂碾压横扫冲击波';
-    var dangerChars = 'ＷＡＲＮＩＮＧ渗透入侵警报锁定瞄准拦截';
+let w, h;
+    const chars = '0123456789abcdefghijklmnopqrstuvwxyzαβγδεζηθικλμνξπρστυφχψω∑∏∫√∞≈≠≤≥±×÷∂∇∆∈∉⊂⊃∪∩∧∨⊕⊗⊥∥∠';
+    const combatChars = '攻防守突破穿刺击粉碎撕裂碾压横扫冲击波';
+    const dangerChars = 'ＷＡＲＮＩＮＧ渗透入侵警报锁定瞄准拦截';
 
-    var _running = false;
-    var _animationFrameId = null;
+    let _running = false;
+    let _animationFrameId = null;
 
     function getFontSize() {
-        var saved = localStorage.getItem('tabpage_char_size');
+        const saved = localStorage.getItem('tabpage_char_size');
         return saved ? parseInt(saved) : 8;
     }
-    var fontSize = getFontSize();
+    let fontSize = getFontSize();
 
     function getSpeedMultiplier() {
-        var saved = localStorage.getItem('tabpage_flow_speed');
+        const saved = localStorage.getItem('tabpage_flow_speed');
         return saved ? parseInt(saved) : 2;
     }
 
     function getDensity() {
-        var saved = localStorage.getItem('tabpage_char_density');
-        var v = saved ? parseInt(saved) : 3;
+        const saved = localStorage.getItem('tabpage_char_density');
+        const v = saved ? parseInt(saved) : 3;
         return v / 5;
     }
 
-    var columns, maxRow;
-    var rows = [], speeds = [], dirs = [], charsPerCol = [];
-    var frameCount = 0;
+let columns, maxRow;
+let rows = [], speeds = [], dirs = [], charsPerCol = [];
+    let frameCount = 0;
 
-    var ripple = { active: false, x: 0, y: 0, radius: 0, maxR: 180, frames: 0, opacity: 0 };
-    var mouseRipples = [];
-    var lastMouseFrame = 0;
+let ripple = { active: false, x: 0, y: 0, radius: 0, maxR: 180, frames: 0, opacity: 0 };
+    const mouseRipples = [];
+    let lastMouseFrame = 0;
 
     function resize() {
         fontSize = getFontSize();
@@ -64,8 +64,8 @@ window.DevHome = window.DevHome || {};
         speeds = new Array(columns);
         dirs = new Array(columns);
         charsPerCol = new Array(columns);
-        var spdMul = getSpeedMultiplier();
-        for (var i = 0; i < columns; i++) {
+        const spdMul = getSpeedMultiplier();
+        for (let i = 0; i < columns; i++) {
             speeds[i] = (0.05 + Math.random() * 0.45) * spdMul;
             charsPerCol[i] = 0;
             dirs[i] = Math.random() < 0.55 ? 1 : -1;
@@ -85,14 +85,14 @@ window.DevHome = window.DevHome || {};
     });
 
     function calcRippleEffect(px, py) {
-        var dx = 0, dy = 0, glow = 0;
-        for (var ri = 0; ri < mouseRipples.length; ri++) {
-            var mr = mouseRipples[ri];
+let dx = 0, dy = 0, glow = 0;
+        for (let ri = 0; ri < mouseRipples.length; ri++) {
+            const mr = mouseRipples[ri];
             if (mr.opacity < 0.005) continue;
-            var dist = Math.sqrt((px - mr.x) ** 2 + (py - mr.y) ** 2);
-            var effectRange = mr.radius + 80;
+            const dist = Math.sqrt((px - mr.x) ** 2 + (py - mr.y) ** 2);
+            const effectRange = mr.radius + 80;
             if (dist < effectRange && dist > 0.1) {
-                var strength = (1 - dist / effectRange) * mr.opacity * 50;
+                const strength = (1 - dist / effectRange) * mr.opacity * 50;
                 dx += (px - mr.x) / dist * strength * 5;
                 dy += (py - mr.y) / dist * strength * 2;
                 glow = Math.max(glow, (1 - dist / effectRange) * mr.opacity * 15);
@@ -111,7 +111,7 @@ window.DevHome = window.DevHome || {};
         ctx.textBaseline = 'top';
 
         if (frameCount % 5 === 0) {
-            for (var ci = 0; ci < columns; ci++) {
+            for (let ci = 0; ci < columns; ci++) {
                 if (Math.random() < 0.35) charsPerCol[ci] = Math.floor(Math.random() * chars.length);
             }
         }
@@ -128,25 +128,25 @@ window.DevHome = window.DevHome || {};
             if (ripple.radius > ripple.maxR) { ripple.active = false; ripple.opacity = 0; }
         }
 
-        for (var ri = mouseRipples.length - 1; ri >= 0; ri--) {
-            var mr = mouseRipples[ri];
+        for (const ri = mouseRipples.length - 1; ri >= 0; ri--) {
+            const mr = mouseRipples[ri];
             mr.radius += 0.25; mr.opacity *= 0.9988;
             if (mr.radius > mr.maxR || mr.opacity < 0.003) mouseRipples.splice(ri, 1);
         }
 
-        var density = getDensity();
-        for (var i = 0; i < columns; i++) {
+        const density = getDensity();
+        for (let i = 0; i < columns; i++) {
             if (density < 1 && Math.random() > density) continue;
-            var baseX = i * fontSize;
-            var baseY = rows[i] * fontSize;
-            var dir = dirs[i];
-            var brt = 0.35 + 0.65 * Math.random();
-            var breathe = 1 + 0.25 * Math.sin((frameCount + i * 7) * 0.03);
-            var effect = calcRippleEffect(baseX, baseY);
-            var drawX = baseX + effect.dx;
-            var drawY = baseY + effect.dy;
-            var glowBoost = effect.glow;
-            var isDanger = dir === -1 || Math.random() < 0.04;
+            const baseX = i * fontSize;
+            const baseY = rows[i] * fontSize;
+            const dir = dirs[i];
+            const brt = 0.35 + 0.65 * Math.random();
+            const breathe = 1 + 0.25 * Math.sin((frameCount + i * 7) * 0.03);
+let effect = calcRippleEffect(baseX, baseY);
+            const drawX = baseX + effect.dx;
+            const drawY = baseY + effect.dy;
+            const glowBoost = effect.glow;
+            const isDanger = dir === -1 || Math.random() < 0.04;
 
             if (Math.random() < 0.03) {
                 ctx.fillStyle = isDanger
@@ -210,7 +210,7 @@ window.DevHome = window.DevHome || {};
     };
 
     // 检查是否有保存的开启状态（默认关闭）
-    var savedEnabled = localStorage.getItem('tabpage_matrix_rain_enabled');
+    const savedEnabled = localStorage.getItem('tabpage_matrix_rain_enabled');
     if (savedEnabled === '1') {
         // 延迟启动，让 DOM 和 CSS 先完成加载
         setTimeout(function () { start(); }, 200);

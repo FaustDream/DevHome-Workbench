@@ -124,8 +124,20 @@ if (doBundle) {
         'js/linkOpener.js',
         'js/tiles.js',
         'js/categoryUI.js',
+        // UI 子模块（右键菜单 → 设置面板 → 磁贴编辑器）
+        'js/ui/_context-menu.js',
+        'js/ui/_settings-panel.js',
+        'js/ui/_tile-editor.js',
         'js/ui.js',
         'js/search.js',
+        // 笔记子模块（按依赖顺序：CRUD → 笔记本 → 捕获 → 视图 → 编辑器 → 筛选器）
+        'js/notes/_notes-crud.js',
+        'js/notes/_notes-notebook.js',
+        'js/notes/_notes-capture.js',
+        'js/notes/_notes-view.js',
+        'js/notes/_notes-editor.js',
+        'js/notes/_notes-filter.js',
+        // 笔记编排入口（聚合 notesManager API）
         'js/notes.js',
         'js/export.js',
         'js/workbench.js',
@@ -251,6 +263,42 @@ if (isProd) {
 }
 if (doBundle) {
     console.log('[build] 已启用: 业务代码打包 + CSS 合并');
+
+    // ===== 5. [--bundle] 生成生产版 index.bundle.html =====
+    console.log('[build] 生成生产版 HTML...');
+    const indexPath = join(__dirname, 'index.html');
+    if (existsSync(indexPath)) {
+        let html = readFileSync(indexPath, 'utf8');
+
+        // 移除所有独立的 CSS <link>（保留主题文件）
+        html = html.replace(/^\s*<link rel="stylesheet" href="(?!css\/themes\/)[^"]+\.css">\s*$/gm, '');
+        // 在第一个 <link> 后插入 bundle.css
+        html = html.replace(
+            /(<link[^>]+themes\/[^>]+>)/,
+            '$1\n    <link rel="stylesheet" href="css/bundle.css">'
+        );
+
+        // 移除所有独立的业务 JS <script defer>（保留 tiptap-bundle 和 lib/）
+        html = html.replace(
+            /^\s*<script src="js\/(?!(tiptap-bundle|lib\/))[^"]+\.js" defer><\/script>\s*$/gm,
+            ''
+        );
+        // 清理多余的空行
+        html = html.replace(/\n{3,}/g, '\n\n');
+
+        // 在 tiptap-bundle 之后插入 bundle.js
+        html = html.replace(
+            /(<script src="js\/tiptap-bundle\.js" defer><\/script>)/,
+            '$1\n    <script src="js/bundle.js" defer></script>'
+        );
+
+        const outPath = join(__dirname, 'index.bundle.html');
+        writeFileSync(outPath, html, 'utf8');
+        console.log('[build] ✓ 生产版 HTML → index.bundle.html (' + formatSize(statSync(outPath).size) + ')');
+        console.log('[build] 使用方式: 将 index.bundle.html 设为 Chrome 扩展的默认页面');
+    } else {
+        console.warn('[build] index.html 不存在，跳过 HTML 生成');
+    }
 }
 
 function formatSize(bytes) {

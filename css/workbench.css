@@ -1064,9 +1064,9 @@
 
 /* 行内编辑标签输入框 */
 .wb-filter-chip-editing {
-    cursor: text !important;
+    cursor: text;
     outline: none;
-    border-color: var(--color-accent) !important;
+    border-color: var(--color-accent);
     min-width: 80px;
 }
 .wb-filter-chip-editing::placeholder {
