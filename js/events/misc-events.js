@@ -108,7 +108,7 @@ let em = document.getElementById('editorContextMenu');
 
     /* ===== 数据导入 ===== */
     function _bindImportEvents() {
-let dom = ns.dom, storage = ns.storage;
+let dom = ns.dom;
         if (dom.importInput) {
             dom.importInput.addEventListener('change', function (e) {
 let file = e.target.files[0]; if (!file) return;
@@ -116,17 +116,35 @@ let reader = new FileReader();
                 reader.onload = async function (event) {
                     try {
 let data = JSON.parse(event.target.result);
-                        if (data && data.pages && Array.isArray(data.pages)) {
-let importOk = await ns.showConfirm('导入备份将覆盖当前所有的磁贴和页面配置，确定继续吗？', { title: '导入备份' });
-                            if (importOk) {
-                                storage.set('pages', data.pages);
-                                storage.set('page_names', data.pageNames || ['第1页']);
-                                if (data.devhome) ns.devhomeStorage.set('workbench', data.devhome);
+                        // 尝试通过统一导入入口处理（支持 v3.0 完整快照 + 旧版磁贴备份）
+                        if (typeof ns._importBackupData === 'function') {
+                            const result = await ns._importBackupData(data);
+                            if (result === 'full') {
+                                // 完整快照导入成功 → 刷新页面以加载所有数据
+                                ns.showToast('备份导入成功！即将刷新页面...', 'success');
+                                setTimeout(function () { location.reload(); }, 1500);
+                            } else if (result === 'tiles_only') {
+                                // 旧版磁贴备份导入成功
                                 await ns.tileManager.load();
                                 ns.renderTiles(); ns.refreshCatRowIfVisible();
                                 ns.showToast('备份导入成功！', 'success');
+                            } else {
+                                ns.showToast('无效的备份文件格式！', 'error');
                             }
-                        } else ns.showToast('无效的备份文件格式！', 'error');
+                        } else {
+                            // 降级：旧版导入逻辑
+                            if (data && data.pages && Array.isArray(data.pages)) {
+                                const importOk = await ns.showConfirm('导入备份将覆盖当前所有的磁贴和页面配置，确定继续吗？', { title: '导入备份' });
+                                if (importOk) {
+                                    ns.storage.set('pages', data.pages);
+                                    ns.storage.set('page_names', data.pageNames || ['第1页']);
+                                    if (data.devhome) ns.devhomeStorage.set('workbench', data.devhome);
+                                    await ns.tileManager.load();
+                                    ns.renderTiles(); ns.refreshCatRowIfVisible();
+                                    ns.showToast('备份导入成功！', 'success');
+                                }
+                            } else ns.showToast('无效的备份文件格式！', 'error');
+                        }
                     } catch (err) { ns.showToast('读取文件失败，请确保选择的是有效的 JSON 配置文件！', 'error'); }
                     dom.importInput.value = '';
                 };

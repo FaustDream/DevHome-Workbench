@@ -208,6 +208,75 @@ window.DevHome = window.DevHome || {};
         ns.syncSettingsControls();
     };
 
+    /* ===== 数据导出（完整快照备份） ===== */
+    /**
+     * 导出专注模式下所有数据为 JSON 文件
+     * 包含：笔记、快速捕获、四象限任务、笔记本、磁贴页面、应用配置
+     */
+    ns.exportBackupData = async function () {
+        try {
+            if (!ns.dataService || !ns.dataService.exportAll) {
+                ns.showToast('导出功能暂不可用，请刷新页面后重试', 'error');
+                return;
+            }
+            console.log('[数据] 开始导出完整备份...');
+            // 从统一数据服务获取完整快照
+            const snapshot = await ns.dataService.exportAll();
+            // 生成 JSON Blob 并触发下载
+            const json = JSON.stringify(snapshot, null, 2);
+            const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const filename = 'devhome-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            // 延迟释放 Blob URL
+            setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+            const noteCount = (snapshot.notes || []).length;
+            const taskCount = (snapshot.tasks || []).length;
+            const captureCount = (snapshot.captures || []).length;
+            console.log('[数据] 导出完成 笔记' + noteCount + ' 任务' + taskCount + ' 捕获' + captureCount);
+            ns.showToast('数据导出成功！笔记' + noteCount + '篇, 任务' + taskCount + '个, 捕获' + captureCount + '条', 'success');
+        } catch (err) {
+            console.error('[数据] 导出失败', err);
+            ns.showToast('导出失败：' + (err.message || '未知错误'), 'error');
+        }
+    };
+
+    /* ===== 数据导入（完整快照恢复） ===== */
+    /**
+     * 从 JSON 文件导入专注模式下所有数据
+     * 支持 v3.0 完整快照格式和旧版磁贴备份格式
+     * @param {Object} snapshot - 解析后的 JSON 数据
+     * @returns {string} 'full' | 'tiles_only' | null
+     */
+    ns._importBackupData = async function (snapshot) {
+        // 新版 v3.0 完整快照（包含所有数据）
+        if (snapshot && snapshot.version === '3.0') {
+            const noteCount = (snapshot.notes || []).length;
+            const taskCount = (snapshot.tasks || []).length;
+            const captureCount = (snapshot.captures || []).length;
+            const confirmMsg = '导入将覆盖当前所有专注模式数据（笔记' + noteCount + '篇、任务' + taskCount + '个、捕获' + captureCount + '条、磁贴和配置），确定继续吗？';
+            const ok = await ns.showConfirm(confirmMsg, { title: '导入完整备份' });
+            if (!ok) return null;
+            console.log('[数据] 开始导入完整备份 v3.0...');
+            await ns.dataService.importAll(snapshot);
+            console.log('[数据] 导入完成 笔记' + noteCount + ' 任务' + taskCount + ' 捕获' + captureCount);
+            return 'full';
+        }
+        // 旧版备份格式（仅磁贴和页面配置）
+        if (snapshot && snapshot.pages && Array.isArray(snapshot.pages)) {
+            const ok = await ns.showConfirm('导入备份将覆盖当前所有的磁贴和页面配置，确定继续吗？', { title: '导入备份' });
+            if (!ok) return null;
+            ns.storage.set('pages', snapshot.pages);
+            ns.storage.set('page_names', snapshot.pageNames || ['第1页']);
+            if (snapshot.devhome) ns.devhomeStorage.set('workbench', snapshot.devhome);
+            return 'tiles_only';
+        }
+        return null;
+    };
+
     /* ===== 设置保存辅助 ===== */
     ns._saveStrictMode = function (on) {
         ns.storage.set('strict_mode', on);
