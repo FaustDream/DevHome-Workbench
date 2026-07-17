@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
   "name": "DevHome Workbench",
-  "version": "2.23.1",
+  "version": "2.23.2",
   "author": "凌致",
-  "description": "综合性开发工作台——融合任务、笔记、日历、番茄钟、网页剪藏、AI总结与行为追踪的个人工作操作系统",
+  "description": "综合性开发工作台——融合任务、笔记、日历、番茄钟、网页剪藏与行为追踪的个人工作操作系统",
     "permissions": [
         "storage",
         "unlimitedStorage",
@@ -31,8 +31,6 @@
     "host_permissions": [
         "*://api.bing.com/*",
         "*://api.xinac.net/*",
-        "*://hunyuan.tencentcloudapi.com/*",
-        "*://new-api.rugao.me/*",
         "*://api.open-meteo.com/*",
         "*://v1.hitokoto.cn/*"
     ],
@@ -68,6 +66,6 @@
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https:; connect-src 'self' https://api.bing.com/ https://api.xinac.net/ https://hunyuan.tencentcloudapi.com/ https://new-api.rugao.me/ https://api.open-meteo.com/ https://v1.hitokoto.cn/ https://api.github.com/ https://gh-trending-api.herokuapp.com/; object-src 'self'"
+    "extension_pages": "script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https:; connect-src 'self' https://api.bing.com/ https://api.xinac.net/ https://api.open-meteo.com/ https://v1.hitokoto.cn/ https://api.github.com/ https://gh-trending-api.herokuapp.com/; object-src 'self'"
   }
 }

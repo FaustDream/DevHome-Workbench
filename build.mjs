@@ -110,9 +110,6 @@ if (doBundle) {
         'js/fileConfig.js',
         'js/state.js',
         'js/utils.js',
-        'js/ai-providers.js',
-        'js/ai-modules.js',
-        'js/ai-chat.js',
         'js/quotes.js',
         'js/weather.js',
         'js/dailyGreetingCard.js',
@@ -211,7 +208,6 @@ if (doBundle) {
         'css/tiles.css',
         'css/overlays.css',
         'css/workbench.css',
-        'css/ai-chat.css',
         'css/daily-greeting-card.css',
         'css/sidepanel.css',
         'css/tailwind-base.css'

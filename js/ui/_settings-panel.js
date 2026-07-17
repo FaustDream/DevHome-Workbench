@@ -17,7 +17,6 @@ window.DevHome = window.DevHome || {};
         document.querySelectorAll('#settingsPanel [data-mode="workbench"]').forEach(function (el) {
             el.style.display = isWB ? '' : 'none';
         });
-        if (typeof ns.loadMeConfig === 'function') ns.loadMeConfig();
         if (isWB) {
             if (typeof ns.renderBehaviorDashboard === 'function') ns.renderBehaviorDashboard();
             if (typeof ns.renderExportList === 'function') ns.renderExportList(state.exportFilter || 'all');

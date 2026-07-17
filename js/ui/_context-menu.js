@@ -195,7 +195,7 @@ window.DevHome = window.DevHome || {};
                 });
                 break;
             case 'removePage': ns.removeCurrentPage(); break;
-            case 'aiChat': if (ns.aiChat) ns.aiChat.open(); break;
+
         }
         ns.hideBlankContextMenu();
     };

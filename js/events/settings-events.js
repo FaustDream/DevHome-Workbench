@@ -1,6 +1,6 @@
 /**
  * 设置面板事件模块
- * 负责设置面板打开/关闭/Tab切换、AI配置、快捷键录制、任务通知、Matrix参数、
+ * 负责设置面板打开/关闭/Tab切换、快捷键录制、任务通知、Matrix参数、
  * F4视图缩放、F5布局、F6图标、F8字体、F9动画
  */
 window.DevHome = window.DevHome || {};
@@ -39,15 +39,6 @@ window.DevHome = window.DevHome || {};
                 if (settingBtn) { e.preventDefault(); ns.handleSettingsAction(settingBtn.dataset.settingAction); return; }
                 const exportFilter = e.target.closest('[data-export-filter]');
                 if (exportFilter && typeof ns.setExportFilter === 'function') { ns.setExportFilter(exportFilter.dataset.exportFilter); return; }
-                const aiKeyIcon = e.target.closest('#sToggleAiKey');
-                if (aiKeyIcon) {
-                    const input = document.getElementById('wbMeAiApiKey');
-                    if (input) {
-                        const isPass = input.type === 'password';
-                        input.type = isPass ? 'text' : 'password';
-                        aiKeyIcon.textContent = isPass ? '\uD83D\uDE48' : '\uD83D\uDC41';
-                    }
-                }
             });
 
             dom.settingsPanel.addEventListener('change', function (e) {
@@ -73,9 +64,6 @@ window.DevHome = window.DevHome || {};
         // 快捷键录制
         _bindShortcutRecorder();
         _bindShortcutSave();
-
-        // AI 配置
-        _bindAiSettings();
 
         // 导出
         _bindExportSettings();
@@ -150,42 +138,6 @@ window.DevHome = window.DevHome || {};
                 await ns.storageV2.set(ns.storageV2.KEYS.CONFIG, config);
                 ns.updateContextMenuLabel();
                 ns.fileConfig && ns.fileConfig.showToast && ns.fileConfig.showToast('快捷键已保存', 'success');
-            });
-        }
-    }
-
-    /* ===== AI 配置事件 ===== */
-    function _bindAiSettings() {
-        const dom = ns.dom;
-        if (dom.wbAiProviderList) {
-            dom.wbAiProviderList.addEventListener('click', function (e) {
-                const item = e.target.closest('.ai-provider-item');
-                if (!item) return;
-                const delBtn = e.target.closest('.ai-provider-del-btn');
-                if (delBtn) { e.stopPropagation(); ns.deleteAiProvider(item.dataset.providerId); return; }
-                ns.selectAiProvider(item.dataset.providerId);
-            });
-        }
-        if (dom.wbAiAddProvider) dom.wbAiAddProvider.addEventListener('click', function () { ns.addAiProvider(); });
-
-        const aiSaveKey = document.getElementById('wbMeAiSaveKey');
-        if (aiSaveKey) aiSaveKey.addEventListener('click', function () { ns.saveAiProviderConfig(); });
-
-        const aiGenerate = document.getElementById('wbMeAiGenerate');
-        if (aiGenerate) aiGenerate.addEventListener('click', function () { ns.generateAISummary(); });
-
-        const aiQuickChat = document.getElementById('wbMeAiQuickChat');
-        if (aiQuickChat) aiQuickChat.addEventListener('click', function () { if (ns.aiChat) ns.aiChat.open(); });
-
-        const aiSaveNote = document.getElementById('wbMeAiSaveNote');
-        if (aiSaveNote) {
-            aiSaveNote.addEventListener('click', function () {
-                if (!dom.wbMeAiContent) return;
-                let content = dom.wbMeAiContent.textContent || dom.wbMeAiContent.innerText || '';
-                let title = 'AI 每日总结 - ' + new Date().toLocaleDateString('zh-CN');
-                ns.createNote({ title: title, content: content, type: 'note', tags: ['AI总结'] }).then(function () {
-                    ns.showToast('AI 总结已保存为笔记', 'success');
-                });
             });
         }
     }

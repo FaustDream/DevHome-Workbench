@@ -15,7 +15,6 @@
     <link rel="stylesheet" href="css/workbench-components.css">
     <link rel="stylesheet" href="css/workbench-notes.css">
     <link rel="stylesheet" href="css/workbench-editor.css">
-    <link rel="stylesheet" href="css/ai-chat.css">
     <link rel="stylesheet" href="css/daily-greeting-card.css">
     <link rel="stylesheet" href="css/animations.css">
     <!-- 主题样式：默认主题（蔚蓝），支持浅色/深色双模式 -->
@@ -380,11 +379,6 @@
             <kbd class="doc-kbd ctx-kbd" id="ctxFocusModeKey">Ctrl+K</kbd>
         </div>
         <div class="context-menu-divider ctx-daily-only"></div>
-        <div class="context-menu-item ctx-daily-only" data-action="aiChat">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2a5 5 0 015 5v1a5 5 0 01-5 5H5a5 5 0 01-5-5V4a2 2 0 012-2h3a2 2 0 012 2v1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="4.5" cy="8.5" r="0.7" fill="currentColor"/><circle cx="7" cy="8.5" r="0.7" fill="currentColor"/><circle cx="9.5" cy="8.5" r="0.7" fill="currentColor"/></svg><span>AI 对话</span>
-            <kbd class="doc-kbd ctx-kbd">Ctrl+I</kbd>
-        </div>
-        <div class="context-menu-divider ctx-daily-only"></div>
         <div class="context-menu-item ctx-daily-only" data-action="addPage">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 2h6l3 3v7.5H3V2z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 2v3h3M7 7v3M5.5 8.5h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>新建分类</span>
         </div>
@@ -440,7 +434,6 @@
             <nav class="s-nav" id="sNav">
                 <button class="s-nav-item active" data-s-tab="general">通用</button>
                 <button class="s-nav-item" data-s-tab="appearance">外观</button>
-                <button class="s-nav-item" data-s-tab="ai">AI</button>
                 <button class="s-nav-item" data-s-tab="data">数据</button>
                 <button class="s-nav-item" data-s-tab="advanced">高级</button>
             </nav>
@@ -693,58 +686,6 @@
                         <div class="s-row">
                             <div class="s-row-left"><span class="s-row-label">减少动画</span><span class="s-row-desc">禁用所有过渡和动画效果</span></div>
                             <label class="s-toggle"><input type="checkbox" id="animReduceToggle"><span class="s-toggle-thumb"></span></label>
-                        </div>
-                    </section>
-
-                    <!-- Tab 2: AI 助手 -->
-                    <section class="s-tab" data-s-tab="ai">
-                        <div class="ai-settings-layout">
-                            <!-- 左侧：供应商列表 + 管理 -->
-                            <div class="ai-settings-left">
-                                <button type="button" class="ai-provider-add-btn" id="wbAiAddProvider">
-                                    <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 2v7M2 5.5h7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>添加
-                                </button>
-                                <div class="ai-provider-list" id="wbAiProviderList"></div>
-                            </div>
-
-                            <!-- 右侧：配置编辑 -->
-                            <div class="ai-settings-right">
-                                <h4 class="ai-config-title">编辑配置 <span class="s-badge" id="wbAiProviderBadge">腾讯混元</span></h4>
-                                <div class="s-row">
-                                    <div class="s-row-left"><span class="s-row-label">名称</span></div>
-                                    <div class="s-row-right s-input-wrap">
-                                        <input type="text" id="wbMeAiName" class="s-input" placeholder="供应商名称" style="width:120px;">
-                                    </div>
-                                </div>
-                                <div class="s-row">
-                                    <div class="s-row-left"><span class="s-row-label">API Key</span></div>
-                                    <div class="s-row-right s-input-wrap">
-                                        <input type="password" id="wbMeAiApiKey" placeholder="sk-..." class="s-input">
-                                        <button class="s-input-icon" id="sToggleAiKey" title="显示/隐藏">👁</button>
-                                    </div>
-                                </div>
-                                <div class="s-row">
-                                    <div class="s-row-left"><span class="s-row-label">端点</span></div>
-                                    <div class="s-row-right s-input-wrap">
-                                        <input type="text" id="wbMeAiEndpoint" class="s-input" placeholder="https://api.example.com/v1/chat/completions">
-                                    </div>
-                                </div>
-                                <div class="s-row">
-                                    <div class="s-row-left"><span class="s-row-label">模型</span></div>
-                                    <div class="s-row-right s-input-wrap">
-                                        <input type="text" id="wbMeAiModel" class="s-input" style="width:140px;" placeholder="模型名称">
-                                    </div>
-                                </div>
-                                <button type="button" class="s-action-btn" id="wbMeAiSaveKey"><span>保存当前供应商配置</span></button>
-                                <div class="ai-config-actions">
-                                    <button type="button" class="s-action-btn" id="wbMeAiGenerate"><span>生成每日总结</span></button>
-                                    <button type="button" class="s-action-btn" id="wbMeAiQuickChat"><span>打开对话</span></button>
-                                </div>
-                                <div class="wb-settings-ai-result" id="wbMeAiResult" style="display:none;margin-top:10px;">
-                                    <div id="wbMeAiContent"></div>
-                                    <button type="button" class="s-action-btn" id="wbMeAiSaveNote" style="margin-top:8px;"><span>保存为笔记</span></button>
-                                </div>
-                            </div>
                         </div>
                     </section>
 
@@ -1389,9 +1330,6 @@
     <script src="js/fileConfig.js" defer></script>
     <script src="js/state.js" defer></script>
     <script src="js/utils.js" defer></script>
-    <script src="js/ai-providers.js" defer></script>
-    <script src="js/ai-modules.js" defer></script>
-    <script src="js/ai-chat.js" defer></script>
     <script src="js/quotes.js" defer></script>
     <script src="js/weather.js" defer></script>
     <script src="js/dailyGreetingCard.js" defer></script>

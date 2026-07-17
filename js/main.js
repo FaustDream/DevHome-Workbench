@@ -109,17 +109,9 @@ let weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四',
     ns.boot = async function () {
 let perfBoot = performance.now();
 
-        // === Phase 0: 主题 & 同步初始化（0ms 开销） ===
+        // === Phase 0: 主题初始化（0ms 开销） ===
         if (ns.theme && typeof ns.theme.init === 'function') {
             ns.theme.init();
-        }
-
-        // AI 供应商 Key 启动时校验（同步，无网络开销）
-        if (ns.validateAllSecretKeys && typeof ns.validateAllSecretKeys === 'function') {
-            ns.validateAllSecretKeys();
-        }
-        if (ns.checkProviderKeyStatus && typeof ns.checkProviderKeyStatus === 'function') {
-            ns.checkProviderKeyStatus();
         }
 
         // === Phase 1: 并行执行独立异步操作 ===
