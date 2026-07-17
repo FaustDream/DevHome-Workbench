@@ -208,7 +208,7 @@ window.DevHome = window.DevHome || {};
             deleteBtn.className = 'tile-delete-btn'; deleteBtn.role = 'button'; deleteBtn.tabIndex = 0;
             deleteBtn.dataset.tileDelete = tile.id;
             deleteBtn.setAttribute('aria-label', '删除 ' + tile.label);
-            deleteBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M8 2l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+            deleteBtn.innerHTML = ns.icon('x', 'dh-icon--sm');
 
             a.appendChild(iconWrap); a.appendChild(label); a.appendChild(deleteBtn);
             a.style.setProperty('--tile-color', tile.color || '#4a9eff');

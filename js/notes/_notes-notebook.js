@@ -93,9 +93,9 @@ window.DevHome = window.DevHome || {};
         const menu = dom.wbNotebookDropdownMenu;
         if (!menu) return;
         state.notebooks.sort(function (a, b) { return a.order - b.order; });
-        let html = '<div class="wb-notebook-dropdown-item' + (!state._notebookFilter ? ' active' : '') + '" data-notebook-id="">📂 全部笔记</div>';
+        let html = '<div class="wb-notebook-dropdown-item' + (!state._notebookFilter ? ' active' : '') + '" data-notebook-id="">' + ns.icon('folder', 'dh-icon--md') + ' 全部笔记</div>';
         state.notebooks.forEach(function (nb) {
-            html += '<div class="wb-notebook-dropdown-item' + (state._notebookFilter === nb.id ? ' active' : '') + '" data-notebook-id="' + nb.id + '">📓 ' + ns.escapeHtml(nb.name) + '</div>';
+            html += '<div class="wb-notebook-dropdown-item' + (state._notebookFilter === nb.id ? ' active' : '') + '" data-notebook-id="' + nb.id + '">' + ns.icon('notebook', 'dh-icon--md') + ' ' + ns.escapeHtml(nb.name) + '</div>';
         });
         menu.innerHTML = html;
     };
@@ -113,10 +113,10 @@ window.DevHome = window.DevHome || {};
         const notebookId = note.notebookId;
         if (notebookId) {
             const nb = state.notebooks.find(function (n) { return n.id === notebookId; });
-            badge.textContent = '📓 ' + (nb ? nb.name : '未知笔记本');
+            badge.innerHTML = ns.icon('notebook', 'dh-icon--md') + ' ' + ns.escapeHtml(nb ? nb.name : '未知笔记本');
             badge.dataset.notebookId = notebookId;
         } else {
-            badge.textContent = '📓 未分类';
+            badge.innerHTML = ns.icon('notebook', 'dh-icon--md') + ' 未分类';
             badge.dataset.notebookId = '';
         }
     };

@@ -14,8 +14,8 @@ window.DevHome = window.DevHome || {};
     const tileManager = ns.tileManager;
 
     /* ===== 分类按钮行 ===== */
-    const timesSvg = '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M8 2l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
-    const plusSvg = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+    const timesSvg = ns.icon('x', 'dh-icon--sm');
+    const plusSvg = ns.icon('plus', 'dh-icon--sm');
     function renderCatRow() {
         if (!dom.catRow) return;
         const buttons = state.pageNames.map(function (name, idx) {

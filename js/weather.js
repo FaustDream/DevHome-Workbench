@@ -18,33 +18,33 @@ window.DevHome = window.DevHome || {};
     /* 自动刷新定时器 ID */
     let autoRefreshTimer = null;
 
-    /** WMO 天气码 → 中文 + Emoji 映射 */
+    /** WMO 天气码 → 中文 + 本地 SVG 图标语义名映射 */
     const WEATHER_MAP = {
-        0:  { text: '晴', icon: '☀️' },
-        1:  { text: '大部晴', icon: '🌤' },
-        2:  { text: '多云', icon: '⛅' },
-        3:  { text: '阴', icon: '☁️' },
-        45: { text: '雾', icon: '🌫' },
-        48: { text: '霜雾', icon: '🌫' },
-        51: { text: '小雨', icon: '🌦' },
-        53: { text: '中雨', icon: '🌧' },
-        55: { text: '大雨', icon: '🌧' },
-        61: { text: '小雨', icon: '🌦' },
-        63: { text: '中雨', icon: '🌧' },
-        65: { text: '大雨', icon: '🌧' },
-        71: { text: '小雪', icon: '🌨' },
-        73: { text: '中雪', icon: '🌨' },
-        75: { text: '大雪', icon: '❄️' },
-        80: { text: '阵雨', icon: '🌦' },
-        81: { text: '暴雨', icon: '⛈' },
-        82: { text: '大暴雨', icon: '⛈' },
-        95: { text: '雷暴', icon: '⛈' },
-        96: { text: '冰雹雷暴', icon: '⛈' },
-        99: { text: '强冰雹', icon: '⛈' }
+        0:  { text: '晴', icon: 'weather-sun' },
+        1:  { text: '大部晴', icon: 'weather-cloud-sun' },
+        2:  { text: '多云', icon: 'weather-cloud-sun' },
+        3:  { text: '阴', icon: 'weather-cloud' },
+        45: { text: '雾', icon: 'weather-fog' },
+        48: { text: '霜雾', icon: 'weather-fog' },
+        51: { text: '小雨', icon: 'weather-rain' },
+        53: { text: '中雨', icon: 'weather-rain' },
+        55: { text: '大雨', icon: 'weather-rain' },
+        61: { text: '小雨', icon: 'weather-rain' },
+        63: { text: '中雨', icon: 'weather-rain' },
+        65: { text: '大雨', icon: 'weather-rain' },
+        71: { text: '小雪', icon: 'weather-snow' },
+        73: { text: '中雪', icon: 'weather-snow' },
+        75: { text: '大雪', icon: 'weather-snowflake' },
+        80: { text: '阵雨', icon: 'weather-rain' },
+        81: { text: '暴雨', icon: 'weather-storm' },
+        82: { text: '大暴雨', icon: 'weather-storm' },
+        95: { text: '雷暴', icon: 'weather-storm' },
+        96: { text: '冰雹雷暴', icon: 'weather-storm' },
+        99: { text: '强冰雹', icon: 'weather-storm' }
     };
 
     function getWeather(code) {
-        return WEATHER_MAP[code] || { text: '未知', icon: '🌡' };
+        return WEATHER_MAP[code] || { text: '未知', icon: 'weather-thermometer' };
     }
 
     /** 尝试获取用户位置，失败则用默认北京坐标 */

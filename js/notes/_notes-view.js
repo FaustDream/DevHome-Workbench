@@ -130,11 +130,14 @@ window.DevHome = window.DevHome || {};
                 const isActive = state.currentNote && state.currentNote.id === item.id;
                 const itemTypes = (item.type || 'note').split(',').filter(Boolean);
                 const primaryType = itemTypes[0] || 'note';
-                const icon = item._kind === 'capture'
-                    ? '⚡'
+                const iconName = item._kind === 'capture'
+                    ? 'capture'
                     : (NOTE_TYPES[primaryType]
                         ? NOTE_TYPES[primaryType].icon
-                        : ((state._customTypeIcons || {})[primaryType] || '📝'));
+                        : ((state._customTypeIcons || {})[primaryType] || 'note'));
+                const iconHtml = typeof ns.icon === 'function' && /^[a-z0-9-]+$/i.test(iconName)
+                    ? ns.icon(iconName, 'dh-icon--md')
+                    : ns.escapeHtml(iconName);
                 const timeStr = formatRelativeTime(item.updatedAt || item.createdAt);
                 const typeLabels = Object.assign({
                     note: '笔记', idea: '想法', bug: 'Bug', meeting: '会议', webclip: '剪藏', capture: '捕获'
@@ -154,15 +157,15 @@ window.DevHome = window.DevHome || {};
 
                 html += '<div class="' + rowClass + '" data-note-id="' + ns.escapeHtml(item.id) + '" data-kind="' + item._kind + '">' +
                     '<div class="wb-note-list-title">' +
-                    '<span class="wb-note-list-title-text">' + icon + ' ' + ns.escapeHtml(item.title) + '</span>' +
+                    '<span class="wb-note-list-title-text">' + iconHtml + ' ' + ns.escapeHtml(item.title) + '</span>' +
                     typeBadgesHtml +
                     '</div>' +
                     '<div class="wb-note-list-meta">' +
-                    '<span class="wb-note-date-badge">📅 ' + ns.escapeHtml(dateBadgeTag) + '</span>' +
+                    '<span class="wb-note-date-badge">' + ns.icon('meeting', 'dh-icon--md') + ' ' + ns.escapeHtml(dateBadgeTag) + '</span>' +
                     '<span>' + ns.escapeHtml(timeStr) + '</span>' +
                     tagsHtml +
                     '</div>' +
-                    '<button class="wb-note-list-del" data-del-id="' + ns.escapeHtml(item.id) + '" data-del-kind="' + item._kind + '" title="删除">✕</button>' +
+                    '<button class="wb-note-list-del" data-del-id="' + ns.escapeHtml(item.id) + '" data-del-kind="' + item._kind + '" title="删除">' + ns.icon('x', 'dh-icon--sm') + '</button>' +
                     '</div>';
             });
         });

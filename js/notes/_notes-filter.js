@@ -9,9 +9,17 @@ window.DevHome = window.DevHome || {};
     const state = ns.state;
     const dom = ns.dom;
 
-    /** 解析 "emoji 名称" 字符串 */
+    /** 渲染存储中的图标值：内置语义名走本地 SVG，旧 emoji 数据保留兼容 */
+    function renderStoredIcon(icon, extraClass) {
+        if (typeof ns.icon === 'function' && /^[a-z0-9-]+$/i.test(icon || '')) {
+            return ns.icon(icon, extraClass || 'dh-icon--md');
+        }
+        return ns.escapeHtml(icon || '');
+    }
+
+    /** 解析 "emoji 名称" 字符串，旧输入格式继续兼容 */
     function parseIconAndName(input) {
-        if (!input) return { icon: '🏷️', name: input };
+        if (!input) return { icon: 'tag', name: input };
         const emojiMatch = input.match(/^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F?)\s*/u);
         if (emojiMatch) {
             return {
@@ -19,7 +27,7 @@ window.DevHome = window.DevHome || {};
                 name: input.slice(emojiMatch[0].length).trim() || input
             };
         }
-        return { icon: '🏷️', name: input };
+        return { icon: 'tag', name: input };
     }
 
     /* ===== 自定义标签筛选管理 ===== */
@@ -35,7 +43,7 @@ window.DevHome = window.DevHome || {};
         state._customTypeIcons = {};
         customTypes.forEach(function (ct) {
             state._customTypeLabels[ct.key] = ct.label;
-            state._customTypeIcons[ct.key] = ct.icon || '🏷️';
+            state._customTypeIcons[ct.key] = ct.icon || 'tag';
         });
 
         if (customTypes.length === 0) {
@@ -44,7 +52,7 @@ window.DevHome = window.DevHome || {};
         }
         container.innerHTML = customTypes.map(function (t) {
             return '<button class="wb-filter-chip custom" data-filter="' + ns.escapeHtml(t.key) + '">' +
-                ns.escapeHtml(t.icon) + ' ' + ns.escapeHtml(t.label) + '</button>';
+                renderStoredIcon(t.icon || 'tag', 'dh-icon--md') + ' ' + ns.escapeHtml(t.label) + '</button>';
         }).join('');
     };
 
@@ -96,7 +104,7 @@ window.DevHome = window.DevHome || {};
         const parsed = parseIconAndName(name);
         customTypes.push({
             key: key,
-            icon: icon || parsed.icon || '🏷️',
+            icon: icon || parsed.icon || 'tag',
             label: parsed.name || name
         });
         config.customNoteTypes = customTypes;
@@ -167,7 +175,7 @@ window.DevHome = window.DevHome || {};
         const typeStr = state._currentNoteType || 'note';
         let types = typeStr.split(',').filter(Boolean);
         if (types.length === 0) types = ['note'];
-        const icons = Object.assign({ note: '📝', idea: '💡', bug: '🐛', meeting: '📋', webclip: '🔗', capture: '⚡' }, state._customTypeIcons || {});
+        const icons = Object.assign({ note: 'note', idea: 'idea', bug: 'bug', meeting: 'meeting', webclip: 'link', capture: 'capture' }, state._customTypeIcons || {});
         const labels = Object.assign({ note: '笔记', idea: '想法', bug: 'Bug', meeting: '会议', webclip: '剪藏', capture: '捕获' }, state._customTypeLabels || {});
         const needCustom = types.filter(function (t) { return !labels[t]; });
         if (needCustom.length > 0) {
@@ -184,7 +192,7 @@ window.DevHome = window.DevHome || {};
         function doRender() {
             badge.dataset.currentType = typeStr;
             badge.innerHTML = types.map(function (t) {
-                return '<span class="wb-type-chip">' + ns.escapeHtml(icons[t] || '🏷️') + ' ' + ns.escapeHtml(labels[t] || t) + '<span class="wb-type-chip-del" data-type="' + ns.escapeHtml(t) + '">×</span></span>';
+                return '<span class="wb-type-chip">' + renderStoredIcon(icons[t] || 'tag', 'dh-icon--md') + ' ' + ns.escapeHtml(labels[t] || t) + '<span class="wb-type-chip-del" data-type="' + ns.escapeHtml(t) + '">' + ns.icon('x', 'dh-icon--sm') + '</span></span>';
             }).join('') + '<span class="badge-add">+</span>';
         }
     };
@@ -194,15 +202,15 @@ window.DevHome = window.DevHome || {};
         const picker = document.getElementById('wbTypePickerList');
         if (!picker) return;
         let types = [
-            { key: 'note', icon: '📝', label: '笔记' },
-            { key: 'idea', icon: '💡', label: '想法' },
-            { key: 'bug', icon: '🐛', label: 'Bug' },
-            { key: 'meeting', icon: '📋', label: '会议' },
-            { key: 'webclip', icon: '🔗', label: '剪藏' }
+            { key: 'note', icon: 'note', label: '笔记' },
+            { key: 'idea', icon: 'idea', label: '想法' },
+            { key: 'bug', icon: 'bug', label: 'Bug' },
+            { key: 'meeting', icon: 'meeting', label: '会议' },
+            { key: 'webclip', icon: 'link', label: '剪藏' }
         ];
         const config = await ns.storageV2.get(ns.storageV2.KEYS.CONFIG, ns.DEFAULT_V2_CONFIG);
         (config.customNoteTypes || []).forEach(function (t) {
-            types.push({ key: t.key, icon: t.icon || '🏷️', label: t.label });
+            types.push({ key: t.key, icon: t.icon || 'tag', label: t.label });
         });
         const currentStr = state._currentNoteType || 'note';
         const currentTypes = currentStr.split(',').filter(Boolean);
@@ -210,7 +218,7 @@ window.DevHome = window.DevHome || {};
             const checked = currentTypes.indexOf(t.key) !== -1;
             return '<div class="wb-type-picker-item' + (checked ? ' active' : '') + '" data-type="' + ns.escapeHtml(t.key) + '">' +
                 '<span class="wb-type-picker-check">' + (checked ? '☑' : '☐') + '</span>' +
-                '<span>' + t.icon + '</span><span>' + ns.escapeHtml(t.label) + '</span></div>';
+                renderStoredIcon(t.icon, 'dh-icon--md') + '<span>' + ns.escapeHtml(t.label) + '</span></div>';
         }).join('');
     };
 

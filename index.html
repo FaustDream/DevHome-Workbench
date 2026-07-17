@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="css/fonts.css">
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/tokens.css">
+    <link rel="stylesheet" href="css/icons.css">
     <link rel="stylesheet" href="css/ui-components.css">
     <link rel="stylesheet" href="css/time-search.css">
     <link rel="stylesheet" href="css/tiles.css">
@@ -17,12 +18,39 @@
     <link rel="stylesheet" href="css/workbench-editor.css">
     <link rel="stylesheet" href="css/daily-greeting-card.css">
     <link rel="stylesheet" href="css/animations.css">
-    <!-- 主题样式：默认主题（蔚蓝），支持浅色/深色双模式 -->
+    <!-- 主题样式：默认极简主题，支持浅色/深色双模式 -->
     <link id="theme-default" rel="stylesheet" href="css/themes/default.css">
     <!-- 字体本地化，无需外部 CDN；fonts.css 引用 ../fonts/inter-var.woff2 -->
     <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
 </head>
 <body>
+    <!-- iconfont Symbol Sprite -->
+    <svg xmlns="http://www.w3.org/2000/svg" style="display:none;" id="dhIconSprite">
+        <symbol id="dh-icon-search" viewBox="0 0 24 24"><path d="M10 17a7 7 0 1 0 0-14 7 7 0 0 0 0 14Zm6-2 5 5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></symbol>
+        <symbol id="dh-icon-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+        <symbol id="dh-icon-chevron-right" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+        <symbol id="dh-icon-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></symbol>
+        <symbol id="dh-icon-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></symbol>
+        <symbol id="dh-icon-x" viewBox="0 0 24 24"><path d="M6 6 18 18M18 6 6 18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></symbol>
+        <symbol id="dh-icon-edit" viewBox="0 0 24 24"><path d="M16 3 21 8 8 21H3v-5Z" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+        <symbol id="dh-icon-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+        <symbol id="dh-icon-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 3v5h-5M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 21v-5h5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+        <symbol id="dh-icon-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4l1.4-1.4M17 7l1.4-1.4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></symbol>
+        <symbol id="dh-icon-check" viewBox="0 0 24 24"><path d="M5 13 9 17 19 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+        <symbol id="dh-icon-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></symbol>
+        <symbol id="dh-icon-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><path d="M4 16V4h12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></symbol>
+        <symbol id="dh-icon-upload" viewBox="0 0 24 24"><path d="M12 16V4M5 10l7-7 7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 18v2h16v-2" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+        <symbol id="dh-icon-download" viewBox="0 0 24 24"><path d="M12 4v12M5 11l7 7 7-7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 18v2h16v-2" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+        <symbol id="dh-icon-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="8.5" cy="8.5" r="1.5" stroke="currentColor" stroke-width="2" fill="none"/><path d="m3 16 5-5 4 4 3-3 6 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+        <symbol id="dh-icon-bookmark" viewBox="0 0 24 24"><path d="M4 5v16l8-4 8 4V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2Z" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+        <symbol id="dh-icon-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 16v-4M12 8h.01" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></symbol>
+        <symbol id="dh-icon-warning" viewBox="0 0 24 24"><path d="M12 2 2 22h20L12 2Z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/><path d="M12 10v4M12 18h.01" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></symbol>
+        <symbol id="dh-icon-success" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><path d="m8 12 3 3 5-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+        <symbol id="dh-icon-error" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><path d="M15 9 9 15M9 9l6 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></symbol>
+        <symbol id="dh-icon-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4Z" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 2 11 13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+        <symbol id="dh-icon-list-check" viewBox="0 0 24 24"><path d="M3 12h4M3 6h4M3 18h4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M10 6h10M10 12h10M10 18h10" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M4 14v2" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></symbol>
+    </svg>
+
     <!-- Matrix 数字雨背景 -->
     <canvas id="matrixCanvas"></canvas>
     <!-- 聚焦过渡遮罩 -->
@@ -53,10 +81,7 @@
     <div class="container">
         <!-- 文件配置警告条 -->
         <div class="config-warning-bar" id="configWarningBar" style="display:none;">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink:0;">
-                <circle cx="8" cy="8" r="7" stroke="#856404" stroke-width="1.2" fill="none"/>
-                <path d="M8 4.5v3.5M8 10.5v.5" stroke="#856404" stroke-width="1.5" stroke-linecap="round"/>
-            </svg>
+            <svg class="dh-icon dh-icon--warning dh-icon--md"" role="img"><use href="#dh-icon-warning"></use></svg>
             <span id="configWarningText">请选择配置目录以持久化数据</span>
             <button id="configSelectDirBtn" type="button" class="config-select-dir-btn">选择目录</button>
         </div>
@@ -69,12 +94,12 @@
                         <div class="current-engine" id="currentEngine">
                             <span class="engine-icon-placeholder"></span>
                             <span>搜索</span>
-                            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <svg class="dh-icon dh-icon--chevron-down dh-icon--sm"" role="img"><use href="#dh-icon-chevron-down"></use></svg>
                         </div>
                     </div>
                     <input type="text" class="search-input doc-cmd-input" id="searchInput" placeholder="Search..." autocomplete="off" aria-label="搜索框">
                     <button class="search-button" id="searchButton" aria-label="搜索">
-                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.8"/><path d="M12 12l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                        <svg class="dh-icon dh-icon--search dh-icon--md"" role="img"><use href="#dh-icon-search"></use></svg>
                     </button>
                 </div>
                 <!-- 搜索建议面板 -->
@@ -100,7 +125,7 @@
             <aside class="wb-quadrant-panel" id="wbQuadrantPanel">
                 <!-- 折叠/展开按钮 -->
                 <button class="wb-quadrant-toggle" id="wbQuadrantToggle" title="折叠/展开四象限任务">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 3h12M2 8h12M2 13h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    <svg class="dh-icon dh-icon--menu dh-icon--md"" role="img"><use href="#dh-icon-menu"></use></svg>
                 </button>
 
                 <!-- 标题栏 -->
@@ -168,25 +193,25 @@
                 <div class="wb-notes-toolbar">
                     <div class="wb-notes-toolbar-left">
                         <div class="wb-notes-search">
-                            <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.5 13.5L18 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                            <svg class="dh-icon dh-icon--search dh-icon--md"" role="img"><use href="#dh-icon-search"></use></svg>
                             <input type="text" id="wbNotesSearch" placeholder="搜索笔记..." autocomplete="off">
                         </div>
                         <!-- 笔记本下拉选择器 -->
                         <div class="wb-notebook-dropdown" id="wbNotebookDropdown">
                             <button class="wb-notebook-dropdown-btn" id="wbNotebookDropdownBtn" title="切换笔记本">
-                                <span class="wb-notebook-dropdown-icon">📓</span>
+                                <span class="wb-notebook-dropdown-icon dh-icon dh-icon--notebook dh-icon--md" aria-hidden="true"></span>
                                 <span class="wb-notebook-dropdown-label" id="wbNotebookDropdownLabel">全部笔记</span>
-                                <span class="wb-notebook-dropdown-arrow">▾</span>
+                                <span class="wb-notebook-dropdown-arrow dh-icon dh-icon--chevron-down dh-icon--sm" aria-hidden="true"></span>
                             </button>
                             <div class="wb-notebook-dropdown-menu" id="wbNotebookDropdownMenu" style="display:none;">
-                                <div class="wb-notebook-dropdown-item active" data-notebook-id="">📂 全部笔记</div>
+                                <div class="wb-notebook-dropdown-item active" data-notebook-id=""><svg class="dh-icon dh-icon--folder dh-icon--md"" role="img"><use href="#dh-icon-folder"></use></svg> 全部笔记</div>
                             </div>
                         </div>
                         <!-- 新建操作按钮 -->
                         <div class="wb-notes-toolbar-actions" id="wbNotesToolbarActions">
-                            <button class="wb-notes-action-btn" id="wbNotesAddBtn" title="新建笔记">📝</button>
-                            <button class="wb-notes-action-btn" id="wbNotebookAddBtn" title="新建笔记本">📓</button>
-                            <button class="wb-notes-action-btn" id="wbTagAddBtn" title="新建标签">🏷️</button>
+                            <button class="wb-notes-action-btn" id="wbNotesAddBtn" title="新建笔记"><svg class="dh-icon dh-icon--note dh-icon--md"" role="img"><use href="#dh-icon-note"></use></svg></button>
+                            <button class="wb-notes-action-btn" id="wbNotebookAddBtn" title="新建笔记本"><svg class="dh-icon dh-icon--notebook dh-icon--md"" role="img"><use href="#dh-icon-notebook"></use></svg></button>
+                            <button class="wb-notes-action-btn" id="wbTagAddBtn" title="新建标签"><svg class="dh-icon dh-icon--tag dh-icon--md"" role="img"><use href="#dh-icon-tag"></use></svg></button>
                         </div>
                     </div>
                 </div>
@@ -211,10 +236,7 @@
                     </div>
                     <div class="wb-notes-editor" id="wbNotesEditor">
                         <div class="wb-notes-editor-empty" id="wbNotesEditorEmpty">
-                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" opacity="0.2">
-                                <path d="M12 4h20l10 10v28.5H12V4z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M32 4v10h10M18 24h12M18 32h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
+                            <svg class="dh-icon dh-icon--empty-note dh-icon--xl"" role="img"><use href="#dh-icon-empty-note"></use></svg>
                             <p id="wbNotesEmptyMsg">选择或新建一篇笔记</p>
                         </div>
                         <div class="wb-notes-editor-active" id="wbNotesEditorActive" style="display:none;">
@@ -224,7 +246,7 @@
                             <!-- 标签属性区：标题下方横向 Pill 胶囊徽章 -->
                             <div class="wb-notes-editor-meta" id="wbNotesEditorMeta">
                                 <span class="wb-note-type-badge-editor" id="wbNoteTypeBadge"></span>
-                                <span class="wb-note-notebook-badge" id="wbNotebookBadge" title="点击切换笔记本">📓 未分类</span>
+                                <span class="wb-note-notebook-badge" id="wbNotebookBadge" title="点击切换笔记本"><svg class="dh-icon dh-icon--notebook dh-icon--md"" role="img"><use href="#dh-icon-notebook"></use></svg> 未分类</span>
                                 <!-- 笔记转四象限任务：先选象限 → 再设截止时间（可选） -->
                                 <div class="wb-note-to-task-wrap" id="wbNoteToTaskWrap" style="display:none;">
                                     <button class="wb-note-to-task-btn" id="wbNoteToTaskBtn" title="转为四象限任务">转为任务</button>
@@ -269,7 +291,7 @@
             <aside class="wb-sidebar-right" id="wbSidebarRight">
                 <!-- 折叠/展开按钮 -->
                 <button class="wb-rightbar-toggle" id="wbRightbarToggle" title="折叠/展开右侧栏">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 3h12M2 8h12M2 13h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    <svg class="dh-icon dh-icon--menu dh-icon--md"" role="img"><use href="#dh-icon-menu"></use></svg>
                 </button>
 
                 <div class="wb-rightbar-content" id="wbRightbarContent">
@@ -340,23 +362,23 @@
     <!-- 磁贴右键菜单 -->
     <div class="context-menu" id="contextMenu">
         <div class="context-menu-item" data-action="edit">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M10 2l2 2-8 8H2v-2l8-8z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>编辑磁贴</span>
+            <svg class="dh-icon dh-icon--edit dh-icon--md"" role="img"><use href="#dh-icon-edit"></use></svg><span>编辑磁贴</span>
         </div>
         <div class="context-menu-item" data-action="delete">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 4h10M5 4V2.5h4V4M4 4v7.5h6V4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>删除磁贴</span>
+            <svg class="dh-icon dh-icon--trash dh-icon--md"" role="img"><use href="#dh-icon-trash"></use></svg><span>删除磁贴</span>
         </div>
         <div class="context-menu-divider"></div>
         <div class="context-menu-item" data-action="upload">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 10V2M4 5l3-3 3 3M2 10v2h10v-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>上传磁贴</span>
+            <svg class="dh-icon dh-icon--upload dh-icon--md"" role="img"><use href="#dh-icon-upload"></use></svg><span>上传磁贴</span>
         </div>
         <div class="context-menu-divider" id="ctxMoveDivider" style="display:none;"></div>
         <div class="context-menu-item ctx-has-submenu" id="ctxMoveToItem" data-submenu="move" style="display:none;">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 5l2-3h6l2 3M3 5v6h8V5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>移动到分类</span>
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" class="ctx-sub-arrow"><path d="M3 2l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg class="dh-icon dh-icon--move-folder dh-icon--md"" role="img"><use href="#dh-icon-move-folder"></use></svg><span>移动到分类</span>
+            <span class="ctx-sub-arrow dh-icon dh-icon--chevron-right dh-icon--sm" aria-hidden="true"></span>
         </div>
         <div class="context-menu-item ctx-has-submenu" id="ctxCopyToItem" data-submenu="copy" style="display:none;">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M4 4v-2h8v8h-2M2 10V4h6v6H2z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>复制到分类</span>
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" class="ctx-sub-arrow"><path d="M3 2l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg class="dh-icon dh-icon--copy dh-icon--md"" role="img"><use href="#dh-icon-copy"></use></svg><span>复制到分类</span>
+            <span class="ctx-sub-arrow dh-icon dh-icon--chevron-right dh-icon--sm" aria-hidden="true"></span>
         </div>
     </div>
 
@@ -366,19 +388,19 @@
     <!-- 空白区域右键菜单 -->
     <div class="context-menu" id="blankContextMenu">
         <div class="context-menu-item" data-action="refresh">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7a5 5 0 019-3M12 7a5 5 0 01-9 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12 1v3H9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>刷新</span>
+            <svg class="dh-icon dh-icon--refresh dh-icon--md"" role="img"><use href="#dh-icon-refresh"></use></svg><span>刷新</span>
             <kbd class="doc-kbd ctx-kbd">F5</kbd>
         </div>
         <div class="context-menu-item ctx-daily-only" data-action="addTile">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>新添磁贴</span>
+            <svg class="dh-icon dh-icon--plus dh-icon--md"" role="img"><use href="#dh-icon-plus"></use></svg><span>新添磁贴</span>
             <kbd class="doc-kbd ctx-kbd">Ctrl+N</kbd>
         </div>
         <div class="context-menu-item" data-action="openWorkbench">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" class="wb-icon"><rect x="1.5" y="2.5" width="11" height="8" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M5 13V10.5h4V13" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span id="ctxFocusModeLabel">进入专注模式</span>
+            <span class="wb-icon dh-icon dh-icon--workbench dh-icon--md" aria-hidden="true"></span><span id="ctxFocusModeLabel">进入专注模式</span>
             <kbd class="doc-kbd ctx-kbd" id="ctxFocusModeKey">Ctrl+K</kbd>
         </div>
         <div class="context-menu-item ctx-daily-only" data-action="addPage">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 2h6l3 3v7.5H3V2z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 2v3h3M7 7v3M5.5 8.5h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>新建分类</span>
+            <svg class="dh-icon dh-icon--new-page dh-icon--md"" role="img"><use href="#dh-icon-new-page"></use></svg><span>新建分类</span>
         </div>
     </div>
 
@@ -387,10 +409,10 @@
 
 
         <div class="context-menu-item" data-editor-action="copy">
-            <span>📋 复制</span><kbd class="doc-kbd ctx-kbd">Ctrl+C</kbd>
+            <span><svg class="dh-icon dh-icon--clipboard dh-icon--md"" role="img"><use href="#dh-icon-clipboard"></use></svg> 复制</span><kbd class="doc-kbd ctx-kbd">Ctrl+C</kbd>
         </div>
         <div class="context-menu-item" data-editor-action="pasteText">
-            <span>📝 粘贴纯文本</span><kbd class="doc-kbd ctx-kbd">Ctrl+Shift+V</kbd>
+            <span><svg class="dh-icon dh-icon--note dh-icon--md"" role="img"><use href="#dh-icon-note"></use></svg> 粘贴纯文本</span><kbd class="doc-kbd ctx-kbd">Ctrl+Shift+V</kbd>
         </div>
         <div class="context-menu-item" data-editor-action="pasteHtml">
             <span>📄 粘贴（含格式）</span><kbd class="doc-kbd ctx-kbd">Ctrl+V</kbd>
@@ -400,10 +422,7 @@
 
     <!-- 固定设置入口 -->
     <button class="settings-gear-btn" id="settingsGearBtn" type="button" title="设置" aria-label="打开设置">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.6"/>
-            <path d="M17.4 6.6l-1.0-.4-.7-1.2.3-1.0-1.6-.9-.9.5-1.2-.3-.4-1.1H9.1l-.4 1.1-1.2.3-.9-.5-1.6.9.3 1.0-.7 1.2-1.0.4v1.8l1.0.4.7 1.2-.3 1.0 1.6.9.9-.5 1.2.3.4 1.1h1.8l.4-1.1 1.2-.3.9.5 1.6-.9-.3-1.0.7-1.2 1.0-.4V6.6z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+        <svg class="dh-icon dh-icon--settings dh-icon--lg"" role="img"><use href="#dh-icon-settings"></use></svg>
     </button>
 
     <div class="settings-overlay" id="settingsOverlay">
@@ -491,7 +510,7 @@
 
                         <h3 class="s-section-title">背景</h3>
                         <button type="button" class="s-action-btn" data-setting-action="uploadBg">
-                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2" width="13" height="11" rx="1.5" stroke="currentColor" stroke-width="1.2"/><circle cx="5.5" cy="6.5" r="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M1.5 12l3.5-3.5L8 11.5l3-3L14.5 12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>上传背景图片</span>
+                            <svg class="dh-icon dh-icon--image dh-icon--md"" role="img"><use href="#dh-icon-image"></use></svg><span>上传背景图片</span>
                         </button>
                         <label class="s-slider-row" id="sBgBlurRow" style="display:none;">
                             <span>模糊度 <span class="slider-value" id="sBgBlurValue">0px</span></span>
@@ -502,7 +521,7 @@
                             <input type="range" id="sBgOverlaySlider" min="0" max="100" value="30" class="context-slider">
                         </label>
                         <button type="button" class="s-action-btn" data-setting-action="resetBg">
-                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 8a6 6 0 0110-4M14 8a6 6 0 01-10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 3v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>重置背景</span>
+                            <svg class="dh-icon dh-icon--refresh dh-icon--md"" role="img"><use href="#dh-icon-refresh"></use></svg><span>重置背景</span>
                         </button>
 
                         <h3 class="s-section-title">搜索框设置</h3>
@@ -728,18 +747,18 @@
 
                         <h3 class="s-section-title">备份</h3>
                         <button type="button" class="s-action-btn" data-setting-action="exportData">
-                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 6l3 3 3-3M2 10v3h12v-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>导出全部数据</span>
+                            <svg class="dh-icon dh-icon--download dh-icon--md"" role="img"><use href="#dh-icon-download"></use></svg><span>导出全部数据</span>
                         </button>
                         <button type="button" class="s-action-btn" data-setting-action="importData">
-                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 14V6M5 10l3-3 3 3M2 3v3h12V3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>导入备份数据</span>
+                            <svg class="dh-icon dh-icon--upload dh-icon--md"" role="img"><use href="#dh-icon-upload"></use></svg><span>导入备份数据</span>
                         </button>
 
                         <h3 class="s-section-title">文件同步</h3>
                         <button type="button" class="s-action-btn" data-setting-action="syncToFile" id="configSyncBtn" style="display:none;">
-                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 8a6 6 0 0110-4M14 8a6 6 0 01-10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 3v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>立即同步到文件</span>
+                            <svg class="dh-icon dh-icon--refresh dh-icon--md"" role="img"><use href="#dh-icon-refresh"></use></svg><span>立即同步到文件</span>
                         </button>
                         <button type="button" class="s-action-btn" data-setting-action="changeConfigDir" id="configChangeDirBtn">
-                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 3v10l5-3 5 3V3H3z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="configDirLabel">选择配置目录</span>
+                            <svg class="dh-icon dh-icon--bookmark dh-icon--md"" role="img"><use href="#dh-icon-bookmark"></use></svg><span id="configDirLabel">选择配置目录</span>
                         </button>
                         <div class="s-subtext" id="configSyncStatus"></div>
                     </section>
@@ -775,13 +794,13 @@
 
                         <h3 class="s-section-title">关于</h3>
                         <button type="button" class="s-action-btn" id="changelogBtn">
-                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 2v12M2 4h10l2 2v6.5H2V4z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 8h4M6 11h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>更新说明 v2.14.0</span>
+                            <svg class="dh-icon dh-icon--release-note dh-icon--md"" role="img"><use href="#dh-icon-release-note"></use></svg><span>更新说明 v2.14.0</span>
                         </button>
 
                         <div class="s-danger-zone">
                             <h3 class="s-section-title" style="color:var(--color-danger);">危险操作</h3>
                             <button type="button" class="s-danger-btn" data-setting-action="resetSettings">
-                                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 8a6 6 0 0110-4M14 8a6 6 0 01-10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 3v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>重置所有设置</span>
+                                <svg class="dh-icon dh-icon--refresh dh-icon--md"" role="img"><use href="#dh-icon-refresh"></use></svg><span>重置所有设置</span>
                             </button>
                         </div>
                     </section>
@@ -793,6 +812,17 @@
     <!-- 更新说明内容（供 Shadcn Dialog 动态读取渲染） -->
     <div id="changelogBodyTemplate" style="display:none">
         <div class="changelog-body" id="changelogBody">
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.23.8</span>
+                        <span class="changelog-date">2026-07-17</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>设计</strong> 全局视觉改为极简风：中性纯色背景、石墨文字、低饱和强调色</li>
+                        <li><strong>优化</strong> 去除大面积渐变、毛玻璃、发光阴影和强装饰图标，不改变页面布局与功能入口</li>
+                        <li><strong>技术</strong> 新增 minimal-global.css 作为最终视觉覆盖层，并纳入构建产物</li>
+                    </ul>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">
                         <span class="changelog-version-tag">v2.23.0</span>
@@ -1280,24 +1310,25 @@
     <!-- 搜索引擎下拉弹窗（body 直接子级，避免层叠上下文限制）-->
     <div class="engine-dropdown" id="engineDropdown">
         <div class="engine-option" data-engine="google" data-url="https://www.google.com/search?q=">
-            <svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="8" y="11.5" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor">G</text></svg><span>Google</span>
+            <svg class="dh-icon dh-icon--google dh-icon--md"" role="img"><use href="#dh-icon-google"></use></svg><span>Google</span>
         </div>
         <div class="engine-option" data-engine="baidu" data-url="https://www.baidu.com/s?wd=">
-            <span class="engine-badge" aria-hidden="true">百</span><span>百度</span>
+            <svg class="dh-icon dh-icon--baidu dh-icon--md"" role="img"><use href="#dh-icon-baidu"></use></svg><span>百度</span>
         </div>
         <div class="engine-option" data-engine="bing" data-url="https://www.bing.com/search?q=">
-            <svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="8" y="11.5" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor">B</text></svg><span>Bing</span>
+            <svg class="dh-icon dh-icon--bing dh-icon--md"" role="img"><use href="#dh-icon-bing"></use></svg><span>Bing</span>
         </div>
         <div class="engine-option" data-engine="duckduckgo" data-url="https://duckduckgo.com/?q=">
-            <svg width="16" height="16" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>DuckDuckGo</span>
+            <svg class="dh-icon dh-icon--duckduckgo dh-icon--md"" role="img"><use href="#dh-icon-duckduckgo"></use></svg><span>DuckDuckGo</span>
         </div>
         <div class="engine-option" data-engine="yahoo" data-url="https://search.yahoo.com/search?p=">
-            <svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="8" y="11.5" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor">Y</text></svg><span>Yahoo</span>
+            <svg class="dh-icon dh-icon--yahoo dh-icon--md"" role="img"><use href="#dh-icon-yahoo"></use></svg><span>Yahoo</span>
         </div>
     </div>
 
     <!-- Shadcn/ui 依赖：React 18 + Tailwind base + 组件编译产物 -->
     <link rel="stylesheet" href="css/tailwind-base.css">
+    <link rel="stylesheet" href="css/minimal-global.css">
     <script src="js/lib/react.production.min.js" defer></script>
     <script src="js/lib/react-dom.production.min.js" defer></script>
     <script src="js/ui-components/button.js" defer></script>
@@ -1316,6 +1347,7 @@
     <script src="js/lib/dayjs.min.js" defer></script>
 
     <script src="js/secrets.js" defer></script>
+    <script src="js/icons.js" defer></script>
     <script src="js/config.js" defer></script>
     <script src="js/logger.js" defer></script>
     <script src="js/storage.js" defer></script>

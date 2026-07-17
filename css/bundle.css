@@ -5321,3 +5321,576 @@ body {
 /* 工具类简表（按需使用，主流 Tailwind class 均可用） */
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border-width: 0; }
 
+
+/* === css/minimal-global.css === */
+/* ============================================
+   DevHome Workbench - 全局极简视觉覆盖层
+   仅调整视觉风格，不改变功能入口、DOM 结构与主要布局尺寸。
+   ============================================ */
+
+:root {
+    /* 极简主题色板：中性纸灰 + 石墨文字 + 低饱和强调色 */
+    --minimal-bg: #f6f7f7;
+    --minimal-bg-soft: #eef0f0;
+    --minimal-surface: #ffffff;
+    --minimal-surface-hover: #f2f4f4;
+    --minimal-line: #dde1e1;
+    --minimal-line-strong: #c9d0d0;
+    --minimal-text: #202525;
+    --minimal-text-2: #596262;
+    --minimal-text-3: #8a9494;
+    --minimal-accent: #315f62;
+    --minimal-accent-hover: #244a4c;
+    --minimal-accent-soft: rgba(49, 95, 98, 0.08);
+    --minimal-success: #557a5b;
+    --minimal-warning: #9a7542;
+    --minimal-danger: #a25555;
+    --minimal-info: #4f6f87;
+
+    --color-bg: var(--minimal-bg);
+    --color-bg-secondary: var(--minimal-bg-soft);
+    --color-bg-tertiary: #e6eaea;
+    --color-bg-elevated: var(--minimal-surface);
+    --color-surface: var(--minimal-surface);
+    --color-surface-hover: var(--minimal-surface-hover);
+    --color-surface-subtle: rgba(32, 37, 37, 0.025);
+    --color-surface-muted: rgba(32, 37, 37, 0.055);
+    --color-overlay: rgba(32, 37, 37, 0.22);
+    --color-input-bg: var(--minimal-surface);
+    --color-input-border: var(--minimal-line-strong);
+
+    --color-text: var(--minimal-text);
+    --color-text-secondary: var(--minimal-text-2);
+    --color-text-tertiary: var(--minimal-text-3);
+    --color-text-inverse: #ffffff;
+
+    --color-accent: var(--minimal-accent);
+    --color-accent-hover: var(--minimal-accent-hover);
+    --color-accent-active: #183638;
+    --color-accent-disabled: rgba(49, 95, 98, 0.22);
+    --color-success: var(--minimal-success);
+    --color-warning: var(--minimal-warning);
+    --color-danger: var(--minimal-danger);
+    --color-danger-hover: #873f3f;
+    --color-info: var(--minimal-info);
+    --color-link: var(--minimal-accent);
+
+    --color-border: var(--minimal-line);
+    --color-border-hover: var(--minimal-line-strong);
+    --color-border-active: var(--minimal-accent);
+    --color-separator: var(--minimal-line);
+    --color-kbd-bg: #f1f3f3;
+    --color-kbd-border: var(--minimal-line);
+    --color-accent-glow: rgba(49, 95, 98, 0.12);
+    --color-glass-bg: var(--minimal-surface);
+    --color-glass-border: var(--minimal-line);
+    --color-nav-bg: rgba(255, 255, 255, 0.92);
+    --color-sidebar-bg: #f3f5f5;
+
+    --color-accent-bg-04: rgba(49, 95, 98, 0.04);
+    --color-accent-bg-05: rgba(49, 95, 98, 0.05);
+    --color-accent-bg-06: rgba(49, 95, 98, 0.06);
+    --color-accent-bg-08: rgba(49, 95, 98, 0.08);
+    --color-accent-bg-10: rgba(49, 95, 98, 0.10);
+    --color-accent-bg-12: rgba(49, 95, 98, 0.12);
+    --color-accent-bg-15: rgba(49, 95, 98, 0.15);
+    --color-accent-bg-16: rgba(49, 95, 98, 0.16);
+    --color-accent-bg-18: rgba(49, 95, 98, 0.18);
+    --color-accent-border-18: rgba(49, 95, 98, 0.18);
+    --color-accent-border-20: rgba(49, 95, 98, 0.20);
+    --color-accent-border-30: rgba(49, 95, 98, 0.30);
+    --color-accent-border-46: rgba(49, 95, 98, 0.46);
+    --color-accent-border-56: rgba(49, 95, 98, 0.56);
+    --color-accent-border-70: rgba(49, 95, 98, 0.70);
+    --color-accent-border-88: rgba(49, 95, 98, 0.88);
+
+    --color-danger-bg-08: rgba(162, 85, 85, 0.08);
+    --color-danger-bg-10: rgba(162, 85, 85, 0.10);
+    --color-danger-bg-12: rgba(162, 85, 85, 0.12);
+    --color-danger-bg-15: rgba(162, 85, 85, 0.15);
+    --color-danger-bg-20: rgba(162, 85, 85, 0.20);
+    --color-danger-bg-85: rgba(162, 85, 85, 0.85);
+    --color-danger-bg-92: rgba(162, 85, 85, 0.92);
+    --color-danger-bg-94: rgba(162, 85, 85, 0.94);
+    --color-danger-border-20: rgba(162, 85, 85, 0.20);
+    --color-danger-border-30: rgba(162, 85, 85, 0.30);
+    --color-danger-border-60: rgba(162, 85, 85, 0.60);
+    --color-danger-shadow: 0 1px 4px rgba(162, 85, 85, 0.14);
+    --color-accent-shadow: 0 1px 4px rgba(49, 95, 98, 0.12);
+
+    --color-scrollbar-thumb: #cfd5d5;
+    --color-tile-bg: #ffffff;
+    --color-tile-drag-bg: #eef3f3;
+    --color-tile-drag-over: #e7eeee;
+    --color-popup-item-bg: #ffffff;
+    --color-popup-item-border: var(--minimal-line);
+    --color-popup-phone-border: var(--minimal-line);
+    --color-note-badge-note: #4f6f87;
+    --color-note-badge-webclip: #6c6585;
+    --color-pomodoro-running-text: var(--minimal-danger);
+
+    --shadow-sm: 0 1px 2px rgba(32, 37, 37, 0.04);
+    --shadow-md: 0 4px 12px rgba(32, 37, 37, 0.055);
+    --shadow-lg: 0 10px 24px rgba(32, 37, 37, 0.08);
+    --gradient-page: var(--minimal-bg);
+    --gradient-overlay: rgba(246, 247, 247, 0.72);
+
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 8px;
+    --radius-xl: 8px;
+    --shortcut-radius: 8px;
+    --tile-radius-override: 8px;
+    --card-radius: 8px;
+    --card-border: 1px solid var(--color-border);
+}
+
+/* 全局背景：纯色画布，保留背景功能但弱化为极低干扰层 */
+html,
+body {
+    background: var(--minimal-bg) !important;
+    color: var(--color-text);
+}
+
+body::before,
+body::after {
+    display: none !important;
+}
+
+#matrixCanvas {
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+#bgImage,
+#bgVideo {
+    opacity: 0.08 !important;
+    filter: grayscale(1) contrast(0.8) brightness(1.15) !important;
+}
+
+#bgOverlay {
+    background: var(--gradient-overlay) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* 去除重装饰：保留层级边界，取消毛玻璃、强阴影、文字光晕 */
+* {
+    text-shadow: none !important;
+}
+
+.search-wrapper,
+.tile,
+.add-tile-btn,
+.context-menu,
+.engine-dropdown,
+.weather-panel,
+.settings-gear-btn,
+.settings-panel,
+.wb-toast,
+.wb-quadrant-picker-menu,
+.wb-task-context-menu,
+.wb-link-popup,
+.wb-pomodoro-sidebar,
+.wb-mini-calendar,
+.wb-quick-settings,
+.db-stat-card,
+.db-heatmap,
+.db-pomodoro-ring,
+.rt-toast-item,
+.devhomes-popup-preview,
+.devhomes-popup-phone {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* 按钮与图标：线性、低饱和、无渐变 */
+button,
+.cat-btn,
+.current-engine,
+.search-button,
+.engine-badge,
+.s-seg-btn.active,
+.s-toggle input:checked + .s-toggle-thumb,
+.wb-task-check.checked,
+.wb-time-picker-confirm,
+.wb-task-input-confirm,
+.wb-link-popup-save,
+.wb-pomodoro-bar-btn.primary,
+.wb-cal-view-btn.active,
+.wb-cal-day.today,
+.rt-toast-icon,
+.changelog-version-tag,
+.devhomes-popup-tabs span.active {
+    background-image: none !important;
+    box-shadow: none !important;
+}
+
+svg,
+.engine-badge,
+.db-stat-icon,
+.dh-weather-icon,
+.weather-icon,
+.wpd-icon,
+.wb-notebook-dropdown-icon,
+.wb-notes-action-btn,
+.wb-note-notebook-badge,
+.wb-type-chip,
+.wb-task-note-badge,
+.ai-chat-header-btn {
+    filter: grayscale(1) saturate(0.35) !important;
+}
+
+svg {
+    stroke-width: 1.5;
+}
+
+.engine-badge,
+.rt-toast-icon {
+    background: var(--color-bg-secondary) !important;
+    border: 1px solid var(--color-border) !important;
+    color: var(--color-text-secondary) !important;
+}
+
+/* 首页搜索、分类、磁贴 */
+.search-wrapper,
+.dh-interactive-zone .search-wrapper {
+    border: 1px solid var(--color-border) !important;
+    border-radius: 8px !important;
+    background: var(--color-surface) !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+.search-wrapper:focus-within,
+.dh-interactive-zone .search-wrapper:focus-within {
+    border-color: var(--color-border-active) !important;
+    box-shadow: 0 0 0 2px rgba(49, 95, 98, 0.10) !important;
+}
+
+.current-engine:hover {
+    background: var(--color-surface-hover) !important;
+}
+
+.search-button {
+    background: transparent !important;
+    color: var(--color-text-secondary) !important;
+}
+
+.search-button:hover {
+    color: var(--color-accent) !important;
+    transform: none !important;
+}
+
+.cat-btn {
+    border: 1px solid transparent !important;
+    border-radius: 8px !important;
+    background: transparent !important;
+    color: var(--color-text-secondary) !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.cat-btn:hover,
+.cat-btn.active,
+.cat-btn.active:hover {
+    border-color: var(--color-border) !important;
+    background: var(--color-surface) !important;
+    color: var(--color-text) !important;
+    transform: none !important;
+    font-weight: 600 !important;
+}
+
+.cat-add-btn,
+.add-tile-btn {
+    border-color: var(--color-border) !important;
+    background: transparent !important;
+    color: var(--color-text-tertiary) !important;
+}
+
+.tile {
+    border: 1px solid transparent !important;
+    background: rgba(255, 255, 255, 0.52) !important;
+    box-shadow: none !important;
+}
+
+.tile:hover {
+    border-color: var(--color-border) !important;
+    background: var(--color-surface) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+.tile-icon-wrap .tile-img,
+.tile-icon-wrap img {
+    border-radius: 6px !important;
+    filter: grayscale(0.7) saturate(0.55) contrast(0.95) !important;
+}
+
+.tile-label {
+    color: var(--color-text-secondary) !important;
+    font-weight: 500 !important;
+}
+
+/* 工作台：保留三栏布局，统一为纸面式细边界 */
+.devhome-stage,
+.devhome-popup-stage {
+    background: var(--color-bg) !important;
+}
+
+.wb-quadrant-panel,
+.wb-sidebar-right {
+    background: var(--color-sidebar-bg) !important;
+}
+
+.wb-main,
+.wb-notes-editor,
+.wb-notes-sidebar {
+    background: var(--color-bg) !important;
+}
+
+.wb-quadrant-group,
+.wb-pomodoro-sidebar,
+.wb-mini-calendar,
+.wb-quick-settings,
+.db-stat-card,
+.db-heatmap,
+.db-pomodoro-ring,
+.wb-link-view-item,
+.wb-task-input-row,
+.wb-task-input-detail {
+    background: var(--color-surface) !important;
+    border-color: var(--color-border) !important;
+    box-shadow: none !important;
+}
+
+.wb-sidebar-head-title,
+.wb-pomodoro-bar-time,
+.db-streak-badge,
+.db-stat-num,
+.wb-pomodoro-mode-label.working,
+.wb-task-note-badge {
+    color: var(--color-accent) !important;
+}
+
+.wb-qdot {
+    background: var(--color-text-tertiary) !important;
+}
+
+.wb-cal-day.today,
+.wb-pomodoro-bar-btn.primary,
+.wb-link-popup-save,
+.wb-time-picker-confirm,
+.wb-task-input-confirm,
+.wb-task-check.checked {
+    background: var(--color-accent) !important;
+    color: var(--color-text-inverse) !important;
+}
+
+.wb-cal-view-switch,
+.wb-quadrant-group-count {
+    background: var(--color-bg-secondary) !important;
+}
+
+.wb-cal-view-btn.active,
+.wb-pomodoro-mode-btn.active,
+.wb-pomodoro-auto-cycle-btn.active,
+.wb-pomodoro-quick-btn.active {
+    background: var(--minimal-accent-soft) !important;
+    border-color: var(--color-accent-border-30) !important;
+    color: var(--color-accent) !important;
+}
+
+/* 笔记与编辑器 */
+.wb-notes-toolbar,
+.wb-notes-filter-bar,
+.tiptap-fixed-toolbar {
+    background: var(--color-bg) !important;
+    border-color: var(--color-border) !important;
+    box-shadow: none !important;
+}
+
+.wb-notes-search,
+.wb-notebook-dropdown-btn,
+.wb-notes-action-btn,
+.wb-filter-chip,
+.wb-filter-add-btn,
+.wb-note-type-badge-editor,
+.wb-note-notebook-badge,
+.wb-note-to-task-btn,
+.tiptap-fixed-btn,
+.tiptap-fixed-heading-select,
+.tiptap-bubble-toolbar {
+    border-color: var(--color-border) !important;
+    background: var(--color-surface) !important;
+    color: var(--color-text-secondary) !important;
+    box-shadow: none !important;
+}
+
+.wb-filter-chip.active,
+.tiptap-fixed-btn.active,
+.wb-type-chip {
+    background: var(--minimal-accent-soft) !important;
+    border-color: var(--color-accent-border-30) !important;
+    color: var(--color-accent) !important;
+}
+
+.wb-note-title-input,
+.wb-note-editable,
+.ProseMirror {
+    color: var(--color-text) !important;
+}
+
+/* 弹层、设置、Toast */
+.context-menu,
+.ctx-submenu,
+.engine-dropdown,
+.weather-panel,
+.settings-panel,
+.wb-quadrant-picker-menu,
+.wb-task-context-menu,
+.wb-link-popup,
+.rt-toast-item {
+    border: 1px solid var(--color-border) !important;
+    border-radius: 8px !important;
+    background: var(--color-bg-elevated) !important;
+    box-shadow: var(--shadow-md) !important;
+}
+
+.context-menu-item:hover,
+.engine-option:hover,
+.suggestion-item:hover,
+.suggestion-item.active,
+.s-nav-item:hover,
+.s-action-btn:hover,
+.wb-task-context-menu button:hover,
+.wb-quadrant-picker-menu button:hover {
+    background: var(--color-surface-hover) !important;
+    color: var(--color-text) !important;
+}
+
+.settings-overlay {
+    background: rgba(32, 37, 37, 0.24) !important;
+}
+
+.settings-gear-btn {
+    border-color: var(--color-border) !important;
+    background: var(--color-surface) !important;
+    color: var(--color-text-secondary) !important;
+}
+
+.settings-gear-btn:hover {
+    border-color: var(--color-border-active) !important;
+    color: var(--color-accent) !important;
+    transform: none !important;
+}
+
+.s-nav-item.active,
+.s-theme-card.active,
+.s-seg-btn.active {
+    background: var(--minimal-accent-soft) !important;
+    border-color: var(--color-accent-border-30) !important;
+    color: var(--color-accent) !important;
+}
+
+.s-toggle-thumb::after {
+    background: #ffffff !important;
+    box-shadow: 0 1px 2px rgba(32, 37, 37, 0.12) !important;
+}
+
+.s-input,
+.wb-pomodoro-task-select,
+.wb-time-picker-date,
+.wb-time-picker-time,
+.wb-task-input-date {
+    background: var(--color-input-bg) !important;
+    border-color: var(--color-border) !important;
+    color: var(--color-text) !important;
+}
+
+/* 问候与天气：弱化装饰，保持位置与文本层级 */
+.dh-greeting-main {
+    font-weight: 650 !important;
+    letter-spacing: 0 !important;
+}
+
+.dh-weather-badge {
+    background: rgba(255, 255, 255, 0.5) !important;
+    border: 1px solid var(--color-border) !important;
+}
+
+.dh-weather-badge:hover {
+    background: var(--color-surface) !important;
+    transform: none !important;
+}
+
+.dh-encourage-text {
+    border-left-color: var(--color-border) !important;
+}
+
+.dh-encourage-text:hover {
+    border-left-color: var(--color-accent) !important;
+}
+
+/* 图表与进度：保持信息色，但去掉发光 */
+.db-stat-card::before,
+.rt-toast-progress-bar {
+    background: var(--color-accent) !important;
+}
+
+.db-stat-card:hover {
+    transform: none !important;
+    border-color: var(--color-border-hover) !important;
+}
+
+.db-heatmap-cell.active .db-heatmap-dot {
+    background: var(--color-accent) !important;
+    border-color: var(--color-accent) !important;
+    box-shadow: none !important;
+}
+
+/* 更新说明与状态色保留语义，降低饱和度 */
+.changelog-list li::before {
+    background: var(--color-text-tertiary) !important;
+}
+
+.wb-task-item-time.overdue,
+.wb-link-view-unlink,
+.s-danger-btn,
+.context-menu-item.danger:hover {
+    color: var(--color-danger) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-color-scheme="light"]) {
+        --minimal-bg: #181b1b;
+        --minimal-bg-soft: #202424;
+        --minimal-surface: #232828;
+        --minimal-surface-hover: #2a3030;
+        --minimal-line: #343b3b;
+        --minimal-line-strong: #485252;
+        --minimal-text: #eceeee;
+        --minimal-text-2: #b5bcbc;
+        --minimal-text-3: #808b8b;
+        --minimal-accent: #8ab4b3;
+        --minimal-accent-hover: #a4c9c8;
+        --gradient-overlay: rgba(24, 27, 27, 0.84);
+    }
+}
+
+[data-color-scheme="dark"] {
+    --minimal-bg: #181b1b;
+    --minimal-bg-soft: #202424;
+    --minimal-surface: #232828;
+    --minimal-surface-hover: #2a3030;
+    --minimal-line: #343b3b;
+    --minimal-line-strong: #485252;
+    --minimal-text: #eceeee;
+    --minimal-text-2: #b5bcbc;
+    --minimal-text-3: #808b8b;
+    --minimal-accent: #8ab4b3;
+    --minimal-accent-hover: #a4c9c8;
+    --minimal-accent-soft: rgba(138, 180, 179, 0.10);
+    --color-text-inverse: #161a1a;
+    --gradient-overlay: rgba(24, 27, 27, 0.84);
+}
+

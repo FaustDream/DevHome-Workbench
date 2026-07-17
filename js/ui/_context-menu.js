@@ -22,7 +22,7 @@ window.DevHome = window.DevHome || {};
             const item = document.createElement('div');
             item.className = 'context-menu-item';
             item.setAttribute('data-page', idx);
-            const arrowSvg = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="opacity:0.5"><path d="M4 2l4 4-4 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+            const arrowSvg = ns.icon('chevron-right', 'dh-icon--sm ctx-sub-arrow');
             item.innerHTML = arrowSvg + '<span>' + escapeHtml(name) + '</span>';
             container.appendChild(item);
         });
@@ -151,12 +151,11 @@ window.DevHome = window.DevHome || {};
         const wbItem = dom.blankContextMenu.querySelector('[data-action="openWorkbench"]');
         if (wbItem) {
             const isDaily = !isFocus;
-            wbItem.querySelector('span').textContent = isDaily ? '进入专注模式' : '退出专注模式';
-            const wbIcon = wbItem.querySelector('svg');
+            const label = wbItem.querySelector('#ctxFocusModeLabel');
+            if (label) label.textContent = isDaily ? '进入专注模式' : '退出专注模式';
+            const wbIcon = wbItem.querySelector('.wb-icon');
             if (wbIcon) {
-                wbIcon.innerHTML = isDaily
-                    ? '<rect x="1.5" y="2.5" width="11" height="8" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M5 13V10.5h4V13" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>'
-                    : '<path d="M2 7h10M7 2l-5 5 5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
+                wbIcon.className = 'wb-icon dh-icon dh-icon--' + (isDaily ? 'workbench' : 'x') + ' dh-icon--md';
             }
         }
 

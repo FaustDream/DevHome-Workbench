@@ -82,19 +82,19 @@ window.DevHome = window.DevHome || {};
         return text;
     }
 
-    /* ===== WMO 天气码映射 ===== */
+    /* ===== WMO 天气码映射：使用本地 SVG 图标语义名 ===== */
     const WEATHER_ICON_MAP = {
-        0: { text: '晴', icon: '☀️' },     1: { text: '大部晴', icon: '🌤' },
-        2: { text: '多云', icon: '⛅' },     3: { text: '阴', icon: '☁️' },
-        45: { text: '雾', icon: '🌫' },      48: { text: '霜雾', icon: '🌫' },
-        51: { text: '小雨', icon: '🌦' },    53: { text: '中雨', icon: '🌧' },
-        55: { text: '大雨', icon: '🌧' },    61: { text: '小雨', icon: '🌦' },
-        63: { text: '中雨', icon: '🌧' },    65: { text: '大雨', icon: '🌧' },
-        71: { text: '小雪', icon: '🌨' },    73: { text: '中雪', icon: '🌨' },
-        75: { text: '大雪', icon: '❄️' },    80: { text: '阵雨', icon: '🌦' },
-        81: { text: '暴雨', icon: '⛈' },     82: { text: '大暴雨', icon: '⛈' },
-        95: { text: '雷暴', icon: '⛈' },     96: { text: '冰雹雷暴', icon: '⛈' },
-        99: { text: '强冰雹', icon: '⛈' }
+        0: { text: '晴', icon: 'weather-sun' },           1: { text: '大部晴', icon: 'weather-cloud-sun' },
+        2: { text: '多云', icon: 'weather-cloud-sun' },   3: { text: '阴', icon: 'weather-cloud' },
+        45: { text: '雾', icon: 'weather-fog' },          48: { text: '霜雾', icon: 'weather-fog' },
+        51: { text: '小雨', icon: 'weather-rain' },       53: { text: '中雨', icon: 'weather-rain' },
+        55: { text: '大雨', icon: 'weather-rain' },       61: { text: '小雨', icon: 'weather-rain' },
+        63: { text: '中雨', icon: 'weather-rain' },       65: { text: '大雨', icon: 'weather-rain' },
+        71: { text: '小雪', icon: 'weather-snow' },       73: { text: '中雪', icon: 'weather-snow' },
+        75: { text: '大雪', icon: 'weather-snowflake' },  80: { text: '阵雨', icon: 'weather-rain' },
+        81: { text: '暴雨', icon: 'weather-storm' },      82: { text: '大暴雨', icon: 'weather-storm' },
+        95: { text: '雷暴', icon: 'weather-storm' },      96: { text: '冰雹雷暴', icon: 'weather-storm' },
+        99: { text: '强冰雹', icon: 'weather-storm' }
     };
 
     /* ===== 渲染鼓励话语文本（带闪动反馈） ===== */
@@ -146,13 +146,13 @@ window.DevHome = window.DevHome || {};
     function renderWeatherBadge(data) {
         let badge = document.getElementById('dhWeatherBadge');
         if (!badge) return;
-        let w = WEATHER_ICON_MAP[data.currentCode] || { text: '未知', icon: '🌡' };
+        let w = WEATHER_ICON_MAP[data.currentCode] || { text: '未知', icon: 'weather-thermometer' };
 
         let iconEl = badge.querySelector('.dh-weather-icon');
         let tempEl = document.getElementById('dhWeatherTempText');
         let descEl = document.getElementById('dhWeatherDescText');
 
-        if (iconEl) iconEl.textContent = w.icon;
+        if (iconEl && typeof ns.icon === 'function') iconEl.innerHTML = ns.icon(w.icon, 'dh-icon--md');
         if (tempEl) tempEl.textContent = data.currentTemp + '°';
         if (descEl) descEl.textContent = w.text;
 

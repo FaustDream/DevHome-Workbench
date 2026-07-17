@@ -50,7 +50,7 @@ window.DevHome = window.DevHome || {};
         state._customTypeIcons = {};
         customTypes.forEach(function (ct) {
             state._customTypeLabels[ct.key] = ct.label;
-            state._customTypeIcons[ct.key] = ct.icon || '🏷️';
+            state._customTypeIcons[ct.key] = ct.icon || 'tag';
         });
         console.log('[标签] 已加载 ' + customTypes.length + ' 个自定义类型');
     };

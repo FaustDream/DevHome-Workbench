@@ -108,21 +108,21 @@ window.DevHome = window.DevHome || {};
         if (suggestions.length === 0) {
             if (q) { panel.classList.remove('visible'); state.suggestionsVisible = false; return; }
             const empty = document.createElement('div'); empty.className = 'suggestion-empty';
-            empty.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.2"/><path d="M7 4v3l2 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>暂无搜索历史</span>';
+            empty.innerHTML = ns.icon('history', 'dh-icon--md') + '<span>暂无搜索历史</span>';
             list.appendChild(empty);
             panel.classList.add('visible'); state.suggestionsVisible = true; return;
         }
         const frag = document.createDocumentFragment();
         suggestions.forEach(function (sug, index) {
             const div = document.createElement('div'); div.className = 'suggestion-item'; div.dataset.index = index;
-            if (sug.type === 'history') div.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.2"/><path d="M7 4v3l2 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>' + escapeHtml(sug.label) + '</span>';
-            else if (sug.type === 'online') div.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.2"/><path d="M10 10l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>' + escapeHtml(sug.label) + '</span>';
+            if (sug.type === 'history') div.innerHTML = ns.icon('history', 'dh-icon--md') + '<span>' + escapeHtml(sug.label) + '</span>';
+            else if (sug.type === 'online') div.innerHTML = ns.icon('search', 'dh-icon--md') + '<span>' + escapeHtml(sug.label) + '</span>';
             else {
                 let iconHtml = '';
                 if (sug.iconType === 'fa') iconHtml = '<i class="' + escapeHtml(sug.icon) + '"></i>';
                 else if (sug.iconType === 'emoji') iconHtml = '<span style="font-size:14px">' + escapeHtml(sug.icon) + '</span>';
                 else if (sug.iconType === 'image' && sug.imageData) iconHtml = '<img src="' + escapeHtml(sug.imageData) + '" style="width:16px;height:16px;border-radius:2px">';
-                else iconHtml = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><path d="M7 2H4a1.5 1.5 0 00-1.5 1.5V12L7 9l4.5 3V3.5A1.5 1.5 0 0010 2H7z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+                else iconHtml = ns.icon('bookmark', 'dh-icon--md');
                 div.innerHTML = iconHtml + '<span>' + escapeHtml(sug.label) + '</span><span style="margin-left:auto;color:var(--color-text-tertiary);font-size:var(--font-size-xs)">打开</span>';
             }
             div.addEventListener('mousedown', function (e) { e.preventDefault(); ns.applySuggestion(sug); });
@@ -159,7 +159,7 @@ window.DevHome = window.DevHome || {};
     };
 
     /* ===== 搜索引擎 ===== */
-    const chevronDownSvg = '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    const chevronDownSvg = ns.icon('chevron-down', 'dh-icon--sm');
     ns.initEngine = function () { ns.setEngine(storage.get('engine', 'google'), false); };
     ns.setEngine = function (key, save) {
         const eng = engines[key]; if (!eng) return;

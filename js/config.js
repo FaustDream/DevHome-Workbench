@@ -24,11 +24,11 @@ window.DevHome = window.DevHome || {};
 
     /* ===== 搜索引擎配置 ===== */
     ns.engines = {
-        google:   { svg: '<svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="8" y="11.5" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor">G</text></svg>', name: 'Google', url: 'https://www.google.com/search?q=' },
-        baidu:    { badge: '百', name: '百度', url: 'https://www.baidu.com/s?wd=' },
-        bing:     { svg: '<svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="8" y="11.5" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor">B</text></svg>', name: 'Bing', url: 'https://www.bing.com/search?q=' },
-        duckduckgo:{ svg: '<svg width="16" height="16" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>', name: 'DuckDuckGo', url: 'https://duckduckgo.com/?q=' },
-        yahoo:    { svg: '<svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="8" y="11.5" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor">Y</text></svg>', name: 'Yahoo', url: 'https://search.yahoo.com/search?p=' }
+        google:   { iconName: 'google', name: 'Google', url: 'https://www.google.com/search?q=' },
+        baidu:    { iconName: 'baidu', name: '百度', url: 'https://www.baidu.com/s?wd=' },
+        bing:     { iconName: 'bing', name: 'Bing', url: 'https://www.bing.com/search?q=' },
+        duckduckgo:{ iconName: 'duckduckgo', name: 'DuckDuckGo', url: 'https://duckduckgo.com/?q=' },
+        yahoo:    { iconName: 'yahoo', name: 'Yahoo', url: 'https://search.yahoo.com/search?p=' }
     };
 
     /* ===== 默认工作台状态（四象限任务） ===== */
@@ -52,11 +52,11 @@ window.DevHome = window.DevHome || {};
 
     /** 笔记类型 */
     ns.NOTE_TYPES = {
-        note: { label: '笔记', icon: '📝' },
-        idea: { label: '想法', icon: '💡' },
-        bug: { label: 'Bug', icon: '🐛' },
-        meeting: { label: '会议', icon: '📋' },
-        webclip: { label: '剪藏', icon: '🔗' }
+        note: { label: '笔记', icon: 'note' },
+        idea: { label: '想法', icon: 'idea' },
+        bug: { label: 'Bug', icon: 'bug' },
+        meeting: { label: '会议', icon: 'meeting' },
+        webclip: { label: '剪藏', icon: 'link' }
     };
 
     /** 鼓励文案池 */

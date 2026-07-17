@@ -55,7 +55,7 @@ let state = {
     function emitThemeChanged() {
 let detail = {
             themeId: 'default',
-            themeName: '蔚蓝',
+            themeName: '极简',
             colorScheme: state.colorScheme,
             resolvedScheme: state.colorScheme,
             isDark: state.colorScheme === 'dark'

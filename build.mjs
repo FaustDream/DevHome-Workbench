@@ -11,7 +11,7 @@
  *   1. 编译 js/components/ui/*.jsx → js/ui-components/*.js（React 组件）
  *   2. 打包 js/tiptap-editor.js → js/tiptap-bundle.js（Tiptap 编辑器）
  *   3. [--bundle] 业务代码打包：js/main.js + 所有依赖 → js/bundle.js
- *   4. [--bundle] CSS 合并：12 个 CSS 文件按顺序合并 → css/bundle.css
+ *   4. [--bundle] CSS 合并：主题与覆盖层按顺序合并 → css/bundle.css
  */
 import * as esbuild from 'esbuild';
 import { readdirSync, mkdirSync, existsSync, readFileSync, writeFileSync, statSync } from 'node:fs';
@@ -102,6 +102,7 @@ if (doBundle) {
     // 注意：不包含 React/Tiptap/Shadcn 编译产物和外部库（marked/dayjs）
     const businessFiles = [
         'js/secrets.js',
+        'js/icons.js',
         'js/config.js',
         'js/logger.js',
         'js/storage.js',
@@ -201,6 +202,7 @@ if (doBundle) {
     const cssFiles = [
         'css/tokens.css',
         'css/themes/default.css',
+        'css/icons.css',
         'css/base.css',
         'css/fonts.css',
         'css/ui-components.css',
@@ -210,7 +212,8 @@ if (doBundle) {
         'css/workbench.css',
         'css/daily-greeting-card.css',
         'css/sidepanel.css',
-        'css/tailwind-base.css'
+        'css/tailwind-base.css',
+        'css/minimal-global.css'
     ];
 
     let combinedCss = '/* DevHome Workbench - CSS 合并 (' + modeLabel + ') */\n';

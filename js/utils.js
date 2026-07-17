@@ -52,6 +52,9 @@ let val = String(attr.value || '').trim().toLowerCase();
 
     /* ===== 搜索引擎图标渲染 ===== */
     ns.renderEngineIcon = function (engine) {
+        if (engine.iconName && typeof ns.icon === 'function') {
+            return ns.icon(engine.iconName, 'dh-icon--md engine-vector-icon');
+        }
         if (engine.badge) {
             return '<span class="engine-badge" aria-hidden="true">' + engine.badge + '</span>';
         }
