@@ -1,209 +1,200 @@
 /* ============================================
-   DevHome Workbench - Default Theme (default.css)
-   深海科技渐变 · 浅色与深色双模式
-   Primitive → Semantic 两层 Token 赋值
+   DevHome Workbench - Apple Light Theme
+   经典苹果浅色配色系统 · Primitive → Semantic
    ============================================ */
 
 /* ========================================
-   Primitive 原始色值（内部使用，不暴露给组件）
+   Primitive 原始色值（Apple 浅色默认）
    ======================================== */
 
 :root {
-    /* ----- 深海深色 Primitive（默认） ----- */
-    --_deep-bg:              #071b26;
-    --_deep-bg-secondary:    rgba(20, 48, 63, 0.78);
-    --_deep-bg-tertiary:     rgba(30, 65, 82, 0.72);
-    --_deep-bg-panel:        rgba(9, 31, 42, 0.92);
-    --_deep-bg-elevated:     rgba(18, 20, 22, 0.92);
-    --_deep-surface:         rgba(34, 75, 94, 0.48);
-    --_deep-surface-hover:   rgba(47, 100, 122, 0.62);
-    --_deep-surface-subtle:  rgba(255, 255, 255, 0.04);
-    --_deep-surface-muted:   rgba(255, 255, 255, 0.06);
-    --_deep-surface-card:    rgba(34, 75, 94, 0.34);
-    --_deep-overlay:         rgba(0, 0, 0, 0.7);
-    --_deep-input-bg:        rgba(255, 255, 255, 0.06);
-    --_deep-input-border:    rgba(153, 220, 226, 0.18);
+    /* ----- Apple Light Primitive（默认） ----- */
+    --_deep-bg:              #FFFFFF;
+    --_deep-bg-secondary:    #F5F5F7;
+    --_deep-bg-tertiary:     #E8E8ED;
+    --_deep-bg-panel:        #FFFFFF;
+    --_deep-bg-elevated:     #FFFFFF;
+    --_deep-surface:         #F2F2F7;
+    --_deep-surface-hover:   #E5E5EA;
+    --_deep-surface-subtle:  rgba(0, 0, 0, 0.03);
+    --_deep-surface-muted:   rgba(0, 0, 0, 0.05);
+    --_deep-surface-card:    #FFFFFF;
+    --_deep-overlay:         rgba(0, 0, 0, 0.35);
+    --_deep-input-bg:        #F2F2F7;
+    --_deep-input-border:    #E5E5EA;
 
-    --_deep-text:            #edf8f7;
-    --_deep-text-secondary:  #a8c4c9;
-    --_deep-text-tertiary:   #90b4bf; /* WCAG AA 4.5:1 对比度，原 #6f8c94 仅 3.8:1 */
-    --_deep-text-inverse:    #0c0c0c;
+    --_deep-text:            #1D1D1F;
+    --_deep-text-secondary:  #86868B;
+    --_deep-text-tertiary:   #AEAEB2;
+    --_deep-text-inverse:    #FFFFFF;
 
-    --_deep-accent:          #55e6d2;
-    --_deep-accent-hover:    #7ad7ff;
-    --_deep-accent-active:   #3dc4b0;
-    --_deep-accent-disabled: rgba(85, 230, 210, 0.3);
+    --_deep-accent:          #007AFF;
+    --_deep-accent-hover:    #0056CC;
+    --_deep-accent-active:   #004499;
+    --_deep-accent-disabled: rgba(0, 122, 255, 0.25);
 
-    --_deep-green:           #47f0a2;
-    --_deep-cyan:            #7ad7ff;
-    --_deep-amber:           #ffcc66;
-    --_deep-danger:          #ff4757;
-    --_deep-danger-hover:    #ff6b81;
+    --_deep-green:           #34C759;
+    --_deep-cyan:            #5AC8FA;
+    --_deep-amber:           #FF9500;
+    --_deep-danger:          #FF3B30;
+    --_deep-danger-hover:    #D70015;
 
-    --_deep-border:          rgba(153, 220, 226, 0.16);
-    --_deep-border-hover:    rgba(153, 220, 226, 0.28);
-    --_deep-border-active:   rgba(85, 230, 210, 0.36);
-    --_deep-border-strong:   rgba(85, 230, 210, 0.36);
-    --_deep-separator:       rgba(153, 220, 226, 0.12);
-    --_deep-kbd-bg:          rgba(255, 255, 255, 0.07);
-    --_deep-kbd-border:      rgba(255, 255, 255, 0.14);
-    --_deep-grid-line:       rgba(181, 235, 241, 0.045);
-    --_deep-accent-glow:     rgba(85, 230, 210, 0.50);
-    --_deep-glass-bg:        rgba(34, 75, 94, 0.24);
-    --_deep-glass-border:    rgba(153, 220, 226, 0.10);
-    --_deep-nav-bg:          rgba(9, 31, 42, 0.82);
-    --_deep-sidebar-bg:      rgba(12, 38, 51, 0.72);
+    --_deep-border:          #E5E5EA;
+    --_deep-border-hover:    #C7C7CC;
+    --_deep-border-active:   #007AFF;
+    --_deep-border-strong:   #007AFF;
+    --_deep-separator:       #E5E5EA;
+    --_deep-kbd-bg:          #F2F2F7;
+    --_deep-kbd-border:      #E5E5EA;
+    --_deep-grid-line:       transparent;
+    --_deep-accent-glow:     rgba(0, 122, 255, 0.15);
+    --_deep-glass-bg:        rgba(255, 255, 255, 0.80);
+    --_deep-glass-border:    rgba(0, 0, 0, 0.08);
+    --_deep-nav-bg:          rgba(245, 245, 247, 0.95);
+    --_deep-sidebar-bg:      rgba(242, 242, 247, 0.95);
 
-    /* 交互背景 Token（避免模块 CSS 中硬编码 rgba） */
-    --_deep-accent-bg-04:    rgba(85, 230, 210, 0.04);
-    --_deep-accent-bg-05:    rgba(85, 230, 210, 0.05);
-    --_deep-accent-bg-06:    rgba(85, 230, 210, 0.06);
-    --_deep-accent-bg-08:    rgba(85, 230, 210, 0.08);
-    --_deep-accent-bg-10:    rgba(85, 230, 210, 0.10);
-    --_deep-accent-bg-12:    rgba(85, 230, 210, 0.12);
-    --_deep-accent-bg-15:    rgba(85, 230, 210, 0.15);
-    --_deep-accent-bg-16:    rgba(85, 230, 210, 0.16);
-    --_deep-accent-bg-18:    rgba(85, 230, 210, 0.18);
-    --_deep-accent-border-18: rgba(85, 230, 210, 0.18);
-    --_deep-accent-border-20: rgba(85, 230, 210, 0.20);
-    --_deep-accent-border-30: rgba(85, 230, 210, 0.30);
-    --_deep-accent-border-46: rgba(85, 230, 210, 0.46);
-    --_deep-accent-border-56: rgba(85, 230, 210, 0.56);
-    --_deep-accent-border-70: rgba(85, 230, 210, 0.70);
-    --_deep-accent-border-88: rgba(85, 230, 210, 0.88);
-    --_deep-danger-bg-08:    rgba(255, 71, 87, 0.08);
-    --_deep-danger-bg-10:    rgba(255, 71, 87, 0.10);
-    --_deep-danger-bg-12:    rgba(255, 71, 87, 0.12);
-    --_deep-danger-bg-15:    rgba(255, 107, 107, 0.15);
-    --_deep-danger-bg-20:    rgba(255, 107, 107, 0.20);
-    --_deep-danger-bg-85:    rgba(255, 107, 107, 0.85);
-    --_deep-danger-bg-92:    rgba(255, 71, 87, 0.92);
-    --_deep-danger-bg-94:    rgba(255, 71, 87, 0.94);
-    --_deep-danger-border-20: rgba(255, 71, 87, 0.20);
-    --_deep-danger-border-30: rgba(255, 71, 87, 0.30);
-    --_deep-danger-border-60: rgba(255, 71, 87, 0.60);
-    --_deep-danger-shadow:   0 6px 16px rgba(255, 71, 87, 0.22);
-    --_deep-accent-shadow:   0 0 8px rgba(71, 240, 162, 0.25);
-    --_deep-scrollbar-thumb: rgba(255, 255, 255, 0.06);
-    --_deep-tile-bg:         rgba(85, 230, 210, 0.10);
-    --_deep-tile-drag-bg:    rgba(85, 230, 210, 0.12);
-    --_deep-tile-drag-over:  rgba(85, 230, 210, 0.10);
-    --_deep-popup-item-bg:   rgba(255, 255, 255, 0.06);
-    --_deep-popup-item-border: rgba(255, 255, 255, 0.1);
-    --_deep-popup-phone-border: rgba(255, 255, 255, 0.09);
-    --_deep-note-badge-note: #858ebe;
-    --_deep-note-badge-webclip: #c89be6;
-    --_deep-pomodoro-running-text: #ff6b6b;
+    /* 交互背景 Token（Apple Blue accent） */
+    --_deep-accent-bg-04:    rgba(0, 122, 255, 0.04);
+    --_deep-accent-bg-05:    rgba(0, 122, 255, 0.05);
+    --_deep-accent-bg-06:    rgba(0, 122, 255, 0.06);
+    --_deep-accent-bg-08:    rgba(0, 122, 255, 0.08);
+    --_deep-accent-bg-10:    rgba(0, 122, 255, 0.10);
+    --_deep-accent-bg-12:    rgba(0, 122, 255, 0.12);
+    --_deep-accent-bg-15:    rgba(0, 122, 255, 0.15);
+    --_deep-accent-bg-16:    rgba(0, 122, 255, 0.16);
+    --_deep-accent-bg-18:    rgba(0, 122, 255, 0.18);
+    --_deep-accent-border-18: rgba(0, 122, 255, 0.18);
+    --_deep-accent-border-20: rgba(0, 122, 255, 0.20);
+    --_deep-accent-border-30: rgba(0, 122, 255, 0.30);
+    --_deep-accent-border-46: rgba(0, 122, 255, 0.46);
+    --_deep-accent-border-56: rgba(0, 122, 255, 0.56);
+    --_deep-accent-border-70: rgba(0, 122, 255, 0.70);
+    --_deep-accent-border-88: rgba(0, 122, 255, 0.88);
+    --_deep-danger-bg-08:    rgba(255, 59, 48, 0.08);
+    --_deep-danger-bg-10:    rgba(255, 59, 48, 0.10);
+    --_deep-danger-bg-12:    rgba(255, 59, 48, 0.12);
+    --_deep-danger-bg-15:    rgba(255, 59, 48, 0.15);
+    --_deep-danger-bg-20:    rgba(255, 59, 48, 0.20);
+    --_deep-danger-bg-85:    rgba(255, 59, 48, 0.85);
+    --_deep-danger-bg-92:    rgba(255, 59, 48, 0.92);
+    --_deep-danger-bg-94:    rgba(255, 59, 48, 0.94);
+    --_deep-danger-border-20: rgba(255, 59, 48, 0.20);
+    --_deep-danger-border-30: rgba(255, 59, 48, 0.30);
+    --_deep-danger-border-60: rgba(255, 59, 48, 0.60);
+    --_deep-danger-shadow:   0 4px 12px rgba(255, 59, 48, 0.15);
+    --_deep-accent-shadow:   0 0 12px rgba(0, 122, 255, 0.15);
+    --_deep-scrollbar-thumb: rgba(0, 0, 0, 0.12);
+    --_deep-tile-bg:         rgba(0, 122, 255, 0.06);
+    --_deep-tile-drag-bg:    rgba(0, 122, 255, 0.08);
+    --_deep-tile-drag-over:  rgba(0, 122, 255, 0.06);
+    --_deep-popup-item-bg:   rgba(0, 0, 0, 0.04);
+    --_deep-popup-item-border: rgba(0, 0, 0, 0.06);
+    --_deep-popup-phone-border: rgba(0, 0, 0, 0.04);
+    --_deep-note-badge-note: #007AFF;
+    --_deep-note-badge-webclip: #AF52DE;
+    --_deep-pomodoro-running-text: #FF3B30;
 
-    --_deep-shadow-sm:       0 1px 3px rgba(0,0,0,0.3);
-    --_deep-shadow-md:       0 4px 16px rgba(0,0,0,0.4);
-    --_deep-shadow-lg:       0 8px 32px rgba(0,0,0,0.5);
+    --_deep-shadow-sm:       0 1px 3px rgba(0,0,0,0.06);
+    --_deep-shadow-md:       0 4px 16px rgba(0,0,0,0.08);
+    --_deep-shadow-lg:       0 8px 32px rgba(0,0,0,0.10);
 
-    --_deep-gradient-page:
-        radial-gradient(circle at 18% 12%, rgba(71, 240, 162, 0.16), transparent 30%),
-        radial-gradient(circle at 78% 18%, rgba(122, 215, 255, 0.16), transparent 34%),
-        radial-gradient(circle at 52% 82%, rgba(48, 126, 153, 0.18), transparent 42%),
-        linear-gradient(135deg, #071820 0%, #12384b 48%, #071923 100%);
-    --_deep-gradient-overlay:
-        radial-gradient(circle at 18% 12%, rgba(71, 240, 162, 0.10), transparent 30%),
-        radial-gradient(circle at 82% 18%, rgba(122, 215, 255, 0.10), transparent 34%),
-        linear-gradient(135deg, rgba(7, 24, 32, 0.54) 0%, rgba(8, 28, 38, 0.68) 100%);
+    --_deep-gradient-page:        #FFFFFF;
+    --_deep-gradient-overlay:     transparent;
 
-    /* ----- 浅色 Primitive ----- */
-    --_light-bg:             #f8fafc;
-    --_light-bg-secondary:   #f1f5f9;
-    --_light-bg-tertiary:    #e2e8f0;
-    --_light-bg-panel:       #ffffff;
-    --_light-bg-elevated:    #ffffff;
-    --_light-surface:        #ffffff;
-    --_light-surface-hover:  #f1f5f9;
-    --_light-surface-subtle: rgba(0, 0, 0, 0.02);
-    --_light-surface-muted:  rgba(0, 0, 0, 0.03);
-    --_light-surface-card:   #ffffff;
-    --_light-overlay:        rgba(15, 23, 42, 0.5);
-    --_light-input-bg:       #f8fafc;
-    --_light-input-border:   #cbd5e1;
+    /* ----- Light Primitive（保留双模式兼容） ----- */
+    --_light-bg:             #FFFFFF;
+    --_light-bg-secondary:   #F5F5F7;
+    --_light-bg-tertiary:    #E8E8ED;
+    --_light-bg-panel:       #FFFFFF;
+    --_light-bg-elevated:    #FFFFFF;
+    --_light-surface:        #F2F2F7;
+    --_light-surface-hover:  #E5E5EA;
+    --_light-surface-subtle: rgba(0, 0, 0, 0.03);
+    --_light-surface-muted:  rgba(0, 0, 0, 0.05);
+    --_light-surface-card:   #FFFFFF;
+    --_light-overlay:        rgba(0, 0, 0, 0.35);
+    --_light-input-bg:       #F2F2F7;
+    --_light-input-border:   #E5E5EA;
 
-    --_light-text:           #0f172a;
-    --_light-text-secondary: #475569;
-    --_light-text-tertiary:  #94a3b8;
-    --_light-text-inverse:   #f8fafc;
+    --_light-text:           #1D1D1F;
+    --_light-text-secondary: #86868B;
+    --_light-text-tertiary:  #AEAEB2;
+    --_light-text-inverse:   #FFFFFF;
 
-    --_light-accent:         #0ea5e9;
-    --_light-accent-hover:   #0284c7;
-    --_light-accent-active:  #0369a1;
-    --_light-accent-disabled:rgba(14, 165, 233, 0.3);
+    --_light-accent:         #007AFF;
+    --_light-accent-hover:   #0056CC;
+    --_light-accent-active:  #004499;
+    --_light-accent-disabled:rgba(0, 122, 255, 0.25);
 
-    --_light-green:          #10b981;
-    --_light-cyan:           #06b6d4;
-    --_light-amber:          #f59e0b;
-    --_light-danger:         #ef4444;
-    --_light-danger-hover:   #dc2626;
+    --_light-green:          #34C759;
+    --_light-cyan:           #5AC8FA;
+    --_light-amber:          #FF9500;
+    --_light-danger:         #FF3B30;
+    --_light-danger-hover:   #D70015;
 
-    --_light-border:         #e2e8f0;
-    --_light-border-hover:   #cbd5e1;
-    --_light-border-active:  #0ea5e9;
-    --_light-separator:      #f1f5f9;
-    --_light-kbd-bg:         #f1f5f9;
-    --_light-kbd-border:     #e2e8f0;
+    --_light-border:         #E5E5EA;
+    --_light-border-hover:   #C7C7CC;
+    --_light-border-active:  #007AFF;
+    --_light-separator:      #E5E5EA;
+    --_light-kbd-bg:         #F2F2F7;
+    --_light-kbd-border:     #E5E5EA;
     --_light-grid-line:      transparent;
-    --_light-accent-glow:    rgba(14, 165, 233, 0.35);
-    --_light-glass-bg:       rgba(255, 255, 255, 0.55);
-    --_light-glass-border:   rgba(0, 0, 0, 0.06);
-    --_light-nav-bg:         rgba(248, 250, 252, 0.88);
-    --_light-sidebar-bg:     rgba(241, 245, 249, 0.78);
+    --_light-accent-glow:    rgba(0, 122, 255, 0.15);
+    --_light-glass-bg:       rgba(255, 255, 255, 0.80);
+    --_light-glass-border:   rgba(0, 0, 0, 0.08);
+    --_light-nav-bg:         rgba(245, 245, 247, 0.95);
+    --_light-sidebar-bg:     rgba(242, 242, 247, 0.95);
 
-    /* 交互背景 Token（浅色模式，避免模块 CSS 中硬编码 rgba） */
-    --_light-accent-bg-04:   rgba(14, 165, 233, 0.04);
-    --_light-accent-bg-05:   rgba(14, 165, 233, 0.05);
-    --_light-accent-bg-06:   rgba(14, 165, 233, 0.06);
-    --_light-accent-bg-08:   rgba(14, 165, 233, 0.08);
-    --_light-accent-bg-10:   rgba(14, 165, 233, 0.10);
-    --_light-accent-bg-12:   rgba(14, 165, 233, 0.12);
-    --_light-accent-bg-15:   rgba(14, 165, 233, 0.15);
-    --_light-accent-bg-16:   rgba(14, 165, 233, 0.16);
-    --_light-accent-bg-18:   rgba(14, 165, 233, 0.18);
-    --_light-accent-border-18: rgba(14, 165, 233, 0.18);
-    --_light-accent-border-20: rgba(14, 165, 233, 0.20);
-    --_light-accent-border-30: rgba(14, 165, 233, 0.30);
-    --_light-accent-border-46: rgba(14, 165, 233, 0.46);
-    --_light-accent-border-56: rgba(14, 165, 233, 0.56);
-    --_light-accent-border-70: rgba(14, 165, 233, 0.70);
-    --_light-accent-border-88: rgba(14, 165, 233, 0.88);
-    --_light-danger-bg-08:   rgba(239, 68, 68, 0.08);
-    --_light-danger-bg-10:   rgba(239, 68, 68, 0.10);
-    --_light-danger-bg-12:   rgba(239, 68, 68, 0.12);
-    --_light-danger-bg-15:   rgba(239, 68, 68, 0.15);
-    --_light-danger-bg-20:   rgba(239, 68, 68, 0.20);
-    --_light-danger-bg-85:   rgba(239, 68, 68, 0.85);
-    --_light-danger-bg-92:   rgba(239, 68, 68, 0.92);
-    --_light-danger-bg-94:   rgba(239, 68, 68, 0.94);
-    --_light-danger-border-20: rgba(239, 68, 68, 0.20);
-    --_light-danger-border-30: rgba(239, 68, 68, 0.30);
-    --_light-danger-border-60: rgba(239, 68, 68, 0.60);
-    --_light-danger-shadow:  0 6px 16px rgba(239, 68, 68, 0.15);
-    --_light-accent-shadow:  0 0 16px rgba(14, 165, 233, 0.2);
-    --_light-scrollbar-thumb: rgba(0, 0, 0, 0.08);
-    --_light-tile-bg:        rgba(14, 165, 233, 0.08);
-    --_light-tile-drag-bg:   rgba(14, 165, 233, 0.10);
-    --_light-tile-drag-over: rgba(14, 165, 233, 0.08);
+    --_light-accent-bg-04:   rgba(0, 122, 255, 0.04);
+    --_light-accent-bg-05:   rgba(0, 122, 255, 0.05);
+    --_light-accent-bg-06:   rgba(0, 122, 255, 0.06);
+    --_light-accent-bg-08:   rgba(0, 122, 255, 0.08);
+    --_light-accent-bg-10:   rgba(0, 122, 255, 0.10);
+    --_light-accent-bg-12:   rgba(0, 122, 255, 0.12);
+    --_light-accent-bg-15:   rgba(0, 122, 255, 0.15);
+    --_light-accent-bg-16:   rgba(0, 122, 255, 0.16);
+    --_light-accent-bg-18:   rgba(0, 122, 255, 0.18);
+    --_light-accent-border-18: rgba(0, 122, 255, 0.18);
+    --_light-accent-border-20: rgba(0, 122, 255, 0.20);
+    --_light-accent-border-30: rgba(0, 122, 255, 0.30);
+    --_light-accent-border-46: rgba(0, 122, 255, 0.46);
+    --_light-accent-border-56: rgba(0, 122, 255, 0.56);
+    --_light-accent-border-70: rgba(0, 122, 255, 0.70);
+    --_light-accent-border-88: rgba(0, 122, 255, 0.88);
+    --_light-danger-bg-08:   rgba(255, 59, 48, 0.08);
+    --_light-danger-bg-10:   rgba(255, 59, 48, 0.10);
+    --_light-danger-bg-12:   rgba(255, 59, 48, 0.12);
+    --_light-danger-bg-15:   rgba(255, 59, 48, 0.15);
+    --_light-danger-bg-20:   rgba(255, 59, 48, 0.20);
+    --_light-danger-bg-85:   rgba(255, 59, 48, 0.85);
+    --_light-danger-bg-92:   rgba(255, 59, 48, 0.92);
+    --_light-danger-bg-94:   rgba(255, 59, 48, 0.94);
+    --_light-danger-border-20: rgba(255, 59, 48, 0.20);
+    --_light-danger-border-30: rgba(255, 59, 48, 0.30);
+    --_light-danger-border-60: rgba(255, 59, 48, 0.60);
+    --_light-danger-shadow:  0 4px 12px rgba(255, 59, 48, 0.15);
+    --_light-accent-shadow:  0 0 12px rgba(0, 122, 255, 0.15);
+    --_light-scrollbar-thumb: rgba(0, 0, 0, 0.12);
+    --_light-tile-bg:        rgba(0, 122, 255, 0.06);
+    --_light-tile-drag-bg:   rgba(0, 122, 255, 0.08);
+    --_light-tile-drag-over: rgba(0, 122, 255, 0.06);
     --_light-popup-item-bg:  rgba(0, 0, 0, 0.04);
-    --_light-popup-item-border: rgba(0, 0, 0, 0.08);
-    --_light-popup-phone-border: rgba(0, 0, 0, 0.06);
-    --_light-note-badge-note: #6366f1;
-    --_light-note-badge-webclip: #a855f7;
-    --_light-pomodoro-running-text: #dc2626;
+    --_light-popup-item-border: rgba(0, 0, 0, 0.06);
+    --_light-popup-phone-border: rgba(0, 0, 0, 0.04);
+    --_light-note-badge-note: #007AFF;
+    --_light-note-badge-webclip: #AF52DE;
+    --_light-pomodoro-running-text: #FF3B30;
 
-    --_light-shadow-sm:      0 1px 2px rgba(0,0,0,0.05);
-    --_light-shadow-md:      0 4px 12px rgba(0,0,0,0.06);
-    --_light-shadow-lg:      0 8px 24px rgba(0,0,0,0.08);
+    --_light-shadow-sm:      0 1px 3px rgba(0,0,0,0.06);
+    --_light-shadow-md:      0 4px 16px rgba(0,0,0,0.08);
+    --_light-shadow-lg:      0 8px 32px rgba(0,0,0,0.10);
 
-    --_light-gradient-page:  #f8fafc;
+    --_light-gradient-page:  #FFFFFF;
     --_light-gradient-overlay: transparent;
 }
 
 /* ========================================
-   Semantic Token 赋值（深色默认值）
+   Semantic Token 赋值（Apple Light 默认）
    ======================================== */
 
 :root {
@@ -252,7 +243,6 @@
     --shadow-md:             var(--_deep-shadow-md);
     --shadow-lg:             var(--_deep-shadow-lg);
 
-    /* 交互背景 Token（统一暴露给模块 CSS，消除硬编码 rgba） */
     --color-accent-bg-04:    var(--_deep-accent-bg-04);
     --color-accent-bg-05:    var(--_deep-accent-bg-05);
     --color-accent-bg-06:    var(--_deep-accent-bg-06);
@@ -302,100 +292,68 @@
 }
 
 /* ========================================
-   浅色覆盖（由 data-color-scheme 控制）
+   深色模式覆盖（由 data-color-scheme 控制，保留双模式兼容）
    ======================================== */
 
-[data-color-scheme="light"] {
-    --color-bg:              var(--_light-bg);
-    --color-bg-secondary:    var(--_light-bg-secondary);
-    --color-bg-tertiary:     var(--_light-bg-tertiary);
-    --color-bg-elevated:     var(--_light-bg-panel);
-    --color-surface:         var(--_light-surface);
-    --color-surface-hover:   var(--_light-surface-hover);
-    --color-surface-subtle:  var(--_light-surface-subtle);
-    --color-surface-muted:   var(--_light-surface-muted);
-    --color-overlay:         var(--_light-overlay);
-    --color-input-bg:        var(--_light-input-bg);
-    --color-input-border:    var(--_light-input-border);
+[data-color-scheme="dark"] {
+    --color-bg:              #1C1C1E;
+    --color-bg-secondary:    #2C2C2E;
+    --color-bg-tertiary:     #3A3A3C;
+    --color-bg-elevated:     #2C2C2E;
+    --color-surface:         #3A3A3C;
+    --color-surface-hover:   #48484A;
+    --color-surface-subtle:  rgba(255, 255, 255, 0.06);
+    --color-surface-muted:   rgba(255, 255, 255, 0.08);
+    --color-overlay:         rgba(0, 0, 0, 0.55);
+    --color-input-bg:        #3A3A3C;
+    --color-input-border:    #48484A;
 
-    --color-text:            var(--_light-text);
-    --color-text-secondary:  var(--_light-text-secondary);
-    --color-text-tertiary:   var(--_light-text-tertiary);
-    --color-text-inverse:    var(--_light-text-inverse);
+    --color-text:            #F5F5F7;
+    --color-text-secondary:  #AEAEB2;
+    --color-text-tertiary:   #8E8E93;
+    --color-text-inverse:    #1D1D1F;
 
-    --color-accent:          var(--_light-accent);
-    --color-accent-hover:    var(--_light-accent-hover);
-    --color-accent-active:   var(--_light-accent-active);
-    --color-accent-disabled: var(--_light-accent-disabled);
+    --color-accent:          #0A84FF;
+    --color-accent-hover:    #409CFF;
+    --color-accent-active:   #0066CC;
+    --color-accent-disabled: rgba(10, 132, 255, 0.3);
 
-    --color-success:         var(--_light-green);
-    --color-warning:         var(--_light-amber);
-    --color-danger:          var(--_light-danger);
-    --color-danger-hover:    var(--_light-danger-hover);
-    --color-info:            var(--_light-cyan);
-    --color-link:            var(--_light-accent);
+    --color-success:         #30D158;
+    --color-warning:         #FF9F0A;
+    --color-danger:          #FF453A;
+    --color-danger-hover:    #FF6961;
+    --color-info:            #64D2FF;
+    --color-link:            #0A84FF;
 
-    --color-border:          var(--_light-border);
-    --color-border-hover:    var(--_light-border-hover);
-    --color-border-active:   var(--_light-border-active);
-    --color-separator:       var(--_light-separator);
-    --color-kbd-bg:          var(--_light-kbd-bg);
-    --color-kbd-border:      var(--_light-kbd-border);
-    --color-accent-glow:     var(--_light-accent-glow);
-    --color-glass-bg:        var(--_light-glass-bg);
-    --color-glass-border:    var(--_light-glass-border);
-    --color-nav-bg:          var(--_light-nav-bg);
-    --color-sidebar-bg:      var(--_light-sidebar-bg);
+    --color-border:          #48484A;
+    --color-border-hover:    #636366;
+    --color-border-active:   #0A84FF;
+    --color-separator:       #38383A;
+    --color-kbd-bg:          #3A3A3C;
+    --color-kbd-border:      #48484A;
+    --color-accent-glow:     rgba(10, 132, 255, 0.20);
+    --color-glass-bg:        rgba(44, 44, 46, 0.85);
+    --color-glass-border:    rgba(255, 255, 255, 0.10);
+    --color-nav-bg:          rgba(44, 44, 46, 0.95);
+    --color-sidebar-bg:      rgba(44, 44, 46, 0.90);
 
-    --shadow-sm:             var(--_light-shadow-sm);
-    --shadow-md:             var(--_light-shadow-md);
-    --shadow-lg:             var(--_light-shadow-lg);
+    --shadow-sm:             0 1px 3px rgba(0,0,0,0.3);
+    --shadow-md:             0 4px 16px rgba(0,0,0,0.4);
+    --shadow-lg:             0 8px 32px rgba(0,0,0,0.5);
 
-    /* 交互背景 Token（浅色覆盖） */
-    --color-accent-bg-04:    var(--_light-accent-bg-04);
-    --color-accent-bg-05:    var(--_light-accent-bg-05);
-    --color-accent-bg-06:    var(--_light-accent-bg-06);
-    --color-accent-bg-08:    var(--_light-accent-bg-08);
-    --color-accent-bg-10:    var(--_light-accent-bg-10);
-    --color-accent-bg-12:    var(--_light-accent-bg-12);
-    --color-accent-bg-15:    var(--_light-accent-bg-15);
-    --color-accent-bg-16:    var(--_light-accent-bg-16);
-    --color-accent-bg-18:    var(--_light-accent-bg-18);
-    --color-accent-border-18: var(--_light-accent-border-18);
-    --color-accent-border-20: var(--_light-accent-border-20);
-    --color-accent-border-30: var(--_light-accent-border-30);
-    --color-accent-border-46: var(--_light-accent-border-46);
-    --color-accent-border-56: var(--_light-accent-border-56);
-    --color-accent-border-70: var(--_light-accent-border-70);
-    --color-accent-border-88: var(--_light-accent-border-88);
-    --color-danger-bg-08:    var(--_light-danger-bg-08);
-    --color-danger-bg-10:    var(--_light-danger-bg-10);
-    --color-danger-bg-12:    var(--_light-danger-bg-12);
-    --color-danger-bg-15:    var(--_light-danger-bg-15);
-    --color-danger-bg-20:    var(--_light-danger-bg-20);
-    --color-danger-bg-85:    var(--_light-danger-bg-85);
-    --color-danger-bg-92:    var(--_light-danger-bg-92);
-    --color-danger-bg-94:    var(--_light-danger-bg-94);
-    --color-danger-border-20: var(--_light-danger-border-20);
-    --color-danger-border-30: var(--_light-danger-border-30);
-    --color-danger-border-60: var(--_light-danger-border-60);
-    --color-danger-shadow:   var(--_light-danger-shadow);
-    --color-accent-shadow:   var(--_light-accent-shadow);
-    --color-scrollbar-thumb: var(--_light-scrollbar-thumb);
-    --color-tile-bg:         var(--_light-tile-bg);
-    --color-tile-drag-bg:    var(--_light-tile-drag-bg);
-    --color-tile-drag-over:  var(--_light-tile-drag-over);
-    --color-popup-item-bg:   var(--_light-popup-item-bg);
-    --color-popup-item-border: var(--_light-popup-item-border);
-    --color-popup-phone-border: var(--_light-popup-phone-border);
-    --color-note-badge-note: var(--_light-note-badge-note);
-    --color-note-badge-webclip: var(--_light-note-badge-webclip);
-    --color-pomodoro-running-text: var(--_light-pomodoro-running-text);
+    --color-accent-bg-04:    rgba(10, 132, 255, 0.04);
+    --color-accent-bg-06:    rgba(10, 132, 255, 0.06);
+    --color-accent-bg-08:    rgba(10, 132, 255, 0.08);
+    --color-accent-bg-10:    rgba(10, 132, 255, 0.10);
+    --color-accent-bg-12:    rgba(10, 132, 255, 0.12);
+    --color-accent-bg-16:    rgba(10, 132, 255, 0.16);
+    --color-accent-border-20: rgba(10, 132, 255, 0.20);
+    --color-accent-border-46: rgba(10, 132, 255, 0.46);
+    --color-accent-border-56: rgba(10, 132, 255, 0.56);
+    --color-danger-bg-08:    rgba(255, 69, 58, 0.08);
+    --color-danger-bg-12:    rgba(255, 69, 58, 0.12);
+    --color-danger-bg-20:    rgba(255, 69, 58, 0.20);
 
-    --gradient-page:         var(--_light-gradient-page);
-    --gradient-overlay:      var(--_light-gradient-overlay);
+    --gradient-page:         #1C1C1E;
+    --gradient-overlay:      transparent;
 }
-
-/* ========================================
-   深色模式（:root 默认即为深色，此选择器已合并到 :root 以消除冗余）
-   ======================================== */
