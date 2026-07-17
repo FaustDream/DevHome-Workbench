@@ -171,60 +171,47 @@ window.DevHome = window.DevHome || {};
         badge.style.display = '';
     }
 
-    /* ===== 天气徽章双击处理 ===== */
-    async function onWeatherDblClick(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        let badge = document.getElementById('dhWeatherBadge');
-        if (!badge) return;
-
-        console.log('[交互] 双击天气徽章 → 刷新天气');
-        // 闪动反馈
-        badge.classList.add('reloading');
-        setTimeout(function () { badge.classList.remove('reloading'); }, 400);
-
-        showWeatherLoading();
-
-        try {
-            if (typeof ns.refreshWeather === 'function') {
-                await ns.refreshWeather();
-            }
-        } catch (err) {
-            console.warn('[警告] 天气刷新失败:', err.message);
-            let descEl = document.getElementById('dhWeatherDescText');
-            if (descEl && descEl.textContent === '刷新中…') {
-                descEl.textContent = '失败';
-            }
-        }
-    }
-
-    /* ===== 鼓励话语双击处理 ===== */
-    function onEncourageDblClick(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        let el = document.getElementById('dhEncourageText');
-        if (!el) return;
-
-        console.log('[交互] 双击鼓励话语 → 刷新内容');
-        let newText = refreshEncourage();
-        renderEncourageText(newText, true);
-    }
-
-    /* ===== 绑定事件 ===== */
+    /* ===== 绑定事件（事件委托模式，防止DOM重建导致监听丢失） ===== */
     function bindEvents() {
-        // 天气徽章：双击刷新（不与单击冲突，单击无操作）
-        let weatherBadge = document.getElementById('dhWeatherBadge');
-        if (weatherBadge) {
-            weatherBadge.addEventListener('dblclick', onWeatherDblClick);
-        }
+        var area = document.getElementById('dhGreetingArea');
+        if (!area) return;
 
-        // 鼓励话语：双击刷新
-        let encText = document.getElementById('dhEncourageText');
-        if (encText) {
-            encText.addEventListener('dblclick', onEncourageDblClick);
-        }
+        // 使用事件委托：在问候区域上监听双击，按目标元素分发
+        area.addEventListener('dblclick', function (e) {
+            var target = e.target;
 
-        console.log('[每日问候] 事件绑定完成（双击交互）');
+            // 点击天气徽章或其子元素 → 刷新天气
+            var weatherBadge = target.closest('#dhWeatherBadge');
+            if (weatherBadge) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('[交互] 双击天气徽章 → 刷新天气');
+                weatherBadge.classList.add('reloading');
+                setTimeout(function () { weatherBadge.classList.remove('reloading'); }, 400);
+                showWeatherLoading();
+                if (typeof ns.refreshWeather === 'function') {
+                    ns.refreshWeather().catch(function (err) {
+                        console.warn('[警告] 天气刷新失败:', err.message);
+                        var descEl = document.getElementById('dhWeatherDescText');
+                        if (descEl && descEl.textContent === '刷新中…') descEl.textContent = '失败';
+                    });
+                }
+                return;
+            }
+
+            // 点击鼓励话语 → 刷新内容
+            var encText = target.closest('#dhEncourageText');
+            if (encText) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('[交互] 双击鼓励话语 → 刷新内容');
+                var newText = refreshEncourage();
+                renderEncourageText(newText, true);
+                return;
+            }
+        });
+
+        console.log('[每日问候] 事件委托绑定完成（双击交互）');
     }
 
     /* ===== 更新日期（每分钟检查跨日） ===== */
