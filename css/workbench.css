@@ -933,7 +933,9 @@
 .wb-notes-action-btn:hover {
     background: var(--color-surface-hover);
     border-color: var(--color-glass-border);
+    color: var(--color-accent);
 }
+.wb-notes-action-btn:hover .dh-icon { color: inherit; }
 
 /* 标签筛选行 */
 .wb-notes-filter-bar {
@@ -1061,6 +1063,7 @@
     margin-left: 2px;
 }
 .wb-filter-add-btn:hover { border-color: var(--color-accent); color: var(--color-accent); }
+.wb-filter-add-btn:hover .dh-icon { color: inherit; }
 
 /* 行内编辑标签输入框 */
 .wb-filter-chip-editing {

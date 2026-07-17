@@ -33,6 +33,7 @@
     user-select: none;
 }
 .context-menu-item:hover { background: var(--color-accent-bg-12); color: var(--color-accent); }
+.context-menu-item:hover .dh-icon { color: inherit; } /* hover时图标跟随变蓝 */
 .context-menu-item[data-action="openWorkbench"]:hover {
     background: var(--color-accent-bg-12);
     color: var(--color-accent);
@@ -148,6 +149,7 @@
     transition: color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast), background var(--transition-fast);
 }
 .settings-gear-btn:hover { color: var(--color-accent); border-color: var(--color-accent-border-56); transform: translateY(-1px); }
+.settings-gear-btn:hover .dh-icon { color: inherit; }
 
 /* ===== 设置侧边栏遮罩层 ===== */
 .settings-overlay {
@@ -311,6 +313,7 @@
 .s-action-btn svg { flex-shrink: 0; opacity: 0.6; }
 .s-action-btn:hover { border-color: var(--color-accent); color: var(--color-accent); background: var(--color-accent-bg-04); }
 .s-action-btn:hover svg { opacity: 1; }
+.s-action-btn:hover .dh-icon { color: inherit; } /* hover时图标跟随变蓝 */
 
 /* ===== 数据统计卡片 ===== */
 .s-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 8px; }
