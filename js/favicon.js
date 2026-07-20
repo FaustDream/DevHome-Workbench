@@ -195,8 +195,8 @@ window.DevHome = window.DevHome || {};
         let sourceIndex = -1;
 
         /**
-         * 尝试下一级回退源
-         * 所有源都失败时显示字母方块
+         * 尝试下一级回退源（严格按优先级顺序）
+         * 索引每 +1 代表尝试更低优先级的图标源；全部源都失败时显示字母方块兜底
          */
         function tryNextSource() {
             sourceIndex++;
@@ -204,39 +204,52 @@ window.DevHome = window.DevHome || {};
                 // 清除旧的 onerror 标记，允许新源触发错误处理
                 imgElement.dataset.faviconFallback = '';
                 imgElement.src = faviconSources[sourceIndex].url;
+                console.log('[降级] 尝试图标源 ' + (sourceIndex + 1) + '/' + faviconSources.length +
+                    ' 域名=' + domain + ' 地址=' + faviconSources[sourceIndex].url);
             } else {
-                // 全部源加载失败 → 字母方块兜底，并上报失败及原因
+                // 全部源加载失败 → 字母方块兜底（最终兜底方案），并上报失败及原因
                 imgElement.src = '';
                 createColorFallback(domain, iconWrap);
-                console.warn('[图标] 全部源失败，使用字母回退 域名=' + domain);
+                console.warn('[降级] 所有图标源均失败，启用最终兜底字母图标 域名=' + domain);
                 reportResult(false, { reason: '所有图标源均无法访问（网络受限或域名无图标）' });
             }
         }
 
         // Step A: 优先从 IndexedDB 缓存加载（无网络依赖，一进页面就显示）
+        // 这是回退链的唯一启动入口：命中缓存则直接用，未命中/异常则启动网络回退链。
+        // 注意：本函数内 img 的 src 始终在回调/事件处理器绑定之后才赋值，
+        // 因此不存在"处理器绑定前已加载/失败"的竞态，无需额外 complete 兜底。
         ns.getFaviconFromDB(domain).then(function (cached) {
             if (cached && typeof cached === 'string' && cached.startsWith('data:image')) {
                 // 缓存命中 → 直接显示高清版，不再走网络回退链
                 imgElement.src = cached;
                 imgElement.dataset.faviconCached = '1';
                 imgElement.dataset.faviconDone = '1';
-                console.log('[图标] 缓存命中 域名=' + domain);
+                console.log('[降级] 命中本地缓存，直接使用 域名=' + domain);
                 // 命中本地缓存即视为成功获取
                 reportResult(true, { source: '缓存' });
             } else {
-                // 无缓存 → 启动 img.src 多级回退链
+                // 无缓存 → 启动 img.src 多级回退链（严格顺序降级）
+                console.log('[降级] 无本地缓存，启动图标源回退链 域名=' + domain);
                 tryNextSource();
             }
+        }).catch(function (err) {
+            // 缓存读取异常（如 IndexedDB 不可用）→ 不阻塞，直接降级到网络源
+            console.warn('[降级] 读取缓存失败，降级到网络源 域名=' + domain +
+                ' 原因=' + (err && err.message ? err.message : err));
+            tryNextSource();
         });
 
-        // Step B: img 加载失败 → 自动切换下一级源
+        // Step B: img 加载失败 → 自动切换下一级（更低优先级）源
         imgElement.onerror = function () {
-            if (imgElement.dataset.faviconFallback === '1') return; // 已在处理中
+            if (imgElement.dataset.faviconFallback === '1') return; // 已在处理中，防止单事件重复触发
             imgElement.dataset.faviconFallback = '1';
+            console.log('[降级] 当前图标源加载失败，准备降级 域名=' + domain +
+                ' 当前已尝试序号=' + (sourceIndex + 1));
             tryNextSource();
         };
 
-        // Step C: img 加载成功 → 后台尝试缓存高清版（仅 Google S2 成功时才有意义）
+        // Step C: img 加载成功 → 上报成功并尝试后台缓存高清版（仅 Google S2 成功时才有意义）
         imgElement.onload = function () {
             // 缓存命中的跳过（dataURL 已经在 DB 中，且命中时已上报成功）
             if (imgElement.dataset.faviconCached === '1') return;
@@ -244,7 +257,8 @@ window.DevHome = window.DevHome || {};
             imgElement.dataset.faviconDone = '1';
 
             const currentSrc = imgElement.currentSrc || imgElement.src;
-            // 从真实图标源加载成功 → 上报成功
+            // 从真实图标源加载成功 → 上报成功（中断回退链）
+            console.log('[降级] 图标源加载成功，终止回退 域名=' + domain + ' 源=' + sourceLabel(currentSrc));
             reportResult(true, { source: sourceLabel(currentSrc) });
 
             // 仅对 Google S2 的 128px 结果尝试缓存（api.xinac.net 返回尺寸不可控）
@@ -252,15 +266,6 @@ window.DevHome = window.DevHome || {};
                 _cacheFaviconFromSrc(domain, currentSrc);
             }
         };
-
-        // 兜底：如果在回调绑定之前就已经失败/成功（极端情况）
-        if (imgElement.complete) {
-            if (imgElement.naturalWidth > 0) {
-                imgElement.onload && imgElement.onload();
-            } else if (!imgElement.dataset.faviconCached) {
-                imgElement.onerror && imgElement.onerror();
-            }
-        }
     };
 
     /**
