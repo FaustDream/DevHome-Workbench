@@ -197,9 +197,20 @@ window.DevHome = window.DevHome || {};
 
             // 统一使用 favicon 加载，支持 imageData 兼容旧数据
             if (tile.type === 'image' && tile.imageData) {
-                const img = document.createElement('img'); img.className = 'tile-img'; img.src = tile.imageData; iconWrap.appendChild(img);
+                const img = document.createElement('img');
+                img.className = 'tile-img';
+                img.src = tile.imageData;
+                img.width = 56;    // 显式 intrinsic 尺寸，减少重排
+                img.height = 56;
+                img.decoding = 'async';  // 异步解码，不阻塞主线程
+                iconWrap.appendChild(img);
             } else {
-                const img2 = document.createElement('img'); img2.className = 'tile-img'; iconWrap.appendChild(img2);
+                const img2 = document.createElement('img');
+                img2.className = 'tile-img';
+                img2.width = 56;
+                img2.height = 56;
+                img2.decoding = 'async';
+                iconWrap.appendChild(img2);
                 loadFavicon(tile.url, img2, iconWrap);
             }
 

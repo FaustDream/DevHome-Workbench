@@ -827,7 +827,7 @@
 
                         <h3 class="s-section-title">关于</h3>
                         <button type="button" class="s-action-btn" id="changelogBtn">
-                            <svg class="dh-icon dh-icon--release-note dh-icon--md"" role="img"><use href="#dh-icon-release-note"></use></svg><span>更新说明 v2.25.2</span>
+                            <svg class="dh-icon dh-icon--release-note dh-icon--md"" role="img"><use href="#dh-icon-release-note"></use></svg><span>更新说明 v2.26.0</span>
                         </button>
 
                         <div class="s-danger-zone">
@@ -845,6 +845,18 @@
     <!-- 更新说明内容（供 Shadcn Dialog 动态读取渲染） -->
     <div id="changelogBodyTemplate" style="display:none">
         <div class="changelog-body" id="changelogBody">
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.26.0</span>
+                        <span class="changelog-date">2026-07-20</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>优化</strong> 磁贴图标清晰度大幅提升——使用 Google S2 128px 高分辨率源取代替换低分辨率第三方 API，覆盖 2x/3x Retina 显示</li>
+                        <li><strong>新增</strong> 多级 favicon 回退策略：128px → 64px → DuckDuckGo → 纯色字母方块，确保极端网络条件下图标不会丢失</li>
+                        <li><strong>优化</strong> CSS 缩放渲染：启用 <code>image-rendering: -webkit-optimize-contrast</code> 和 GPU 硬件加速，消除边缘模糊和 hover 抖动</li>
+                        <li><strong>优化</strong> 并发请求合并：同一域名多个磁贴共享一次网络请求，减少重复流量</li>
+                    </ul>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">
                         <span class="changelog-version-tag">v2.25.2</span>

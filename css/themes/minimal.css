@@ -322,7 +322,7 @@ a { color: inherit; text-decoration: none; }
     border-radius: var(--radius);
     flex-shrink: 0;
 }
-.tile-icon-wrap img { width: 28px; height: 28px; object-fit: contain; }
+.tile-icon-wrap img { width: 28px; height: 28px; object-fit: contain; image-rendering: auto; image-rendering: -webkit-optimize-contrast; backface-visibility: hidden; }
 
 .tile-label {
     font-size: var(--fs-micro);
@@ -578,7 +578,7 @@ body::before, body::after { display: none !important; }
     box-shadow: none !important;
     backdrop-filter: none !important;
 }
-.tile-icon-wrap img { width: 28px !important; height: 28px !important; }
+.tile-icon-wrap img { width: 28px !important; height: 28px !important; image-rendering: auto !important; image-rendering: -webkit-optimize-contrast !important; object-fit: contain !important; }
 
 /* 磁贴删除按钮：默认隐藏 */
 .tile-delete-btn {

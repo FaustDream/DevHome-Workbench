@@ -252,7 +252,20 @@
     filter: var(--tile-icon-shadow, none);
 }
 
-.tile-icon-wrap .tile-img { width: var(--shortcut-icon); height: var(--shortcut-icon); object-fit: contain; border-radius: 8px; }
+.tile-icon-wrap .tile-img {
+    width: var(--shortcut-icon);
+    height: var(--shortcut-icon);
+    object-fit: contain;
+    border-radius: 8px;
+    /* 高 DPI 图标渲染优化：使用浏览器最优缩放算法，边缘更清晰 */
+    image-rendering: auto;                          /* 现代浏览器默认 bicubic */
+    image-rendering: -webkit-optimize-contrast;     /* WebKit：优化对比度，减少模糊 */
+    /* 防止 hover 变换时的子像素重绘模糊 */
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    /* GPU 加速渲染，避免缩放时 CPU 重采样 */
+    will-change: transform;
+}
 
 .tile-label {
     display: var(--tile-label-display, block);
