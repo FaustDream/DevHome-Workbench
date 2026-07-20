@@ -113,7 +113,17 @@ window.DevHome = window.DevHome || {};
         wbNotebookDropdownMenu: ns.$('#wbNotebookDropdownMenu'),
         wbNotebookAddBtn: ns.$('#wbNotebookAddBtn'),
         wbTagAddBtn: ns.$('#wbTagAddBtn'),
-        wbNotebookBadge: ns.$('#wbNotebookBadge')
+        wbNotebookBadge: ns.$('#wbNotebookBadge'),
+        // 代理配置 DOM
+        proxyEnabledToggle: ns.$('#proxyEnabledToggle'),
+        proxyConfigSection: ns.$('#proxyConfigSection'),
+        proxyModeSeg: ns.$('#proxyModeSeg'),
+        proxyManualConfig: ns.$('#proxyManualConfig'),
+        proxyHostInput: ns.$('#proxyHostInput'),
+        proxyPortInput: ns.$('#proxyPortInput'),
+        proxyStatusBadge: ns.$('#proxyStatusBadge'),
+        googleStatusBadge: ns.$('#googleStatusBadge'),
+        proxyRetestBtn: ns.$('#proxyRetestBtn')
     };
 
     /* ===== 全局状态 ===== */

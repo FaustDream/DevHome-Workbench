@@ -91,6 +91,9 @@ window.DevHome = window.DevHome || {};
         _bindTileSettings();
         _bindFontSettings();
         _bindAnimationSettings();
+
+        // 代理配置事件
+        _bindProxySettings();
     };
 
     /* ===== 快捷键录制 ===== */
@@ -480,6 +483,58 @@ window.DevHome = window.DevHome || {};
         if (ns.storageV2 && ns.storageV2.isAvailable()) chrome.storage.local.set({ 'v2/taskNotifySettings': settings }).catch(function () {});
         console.log('[设置] 任务通知 ' + (settings.enabled ? '开启' : '关闭') + ' 提前' + settings.remindBefore + '分钟');
     };
+
+    /* ===== 代理配置事件 ===== */
+    function _bindProxySettings() {
+        const dom = ns.dom;
+
+        // 代理开关
+        if (dom.proxyEnabledToggle) {
+            dom.proxyEnabledToggle.addEventListener('change', function () {
+                if (!ns.proxyManager) return;
+                const enabled = this.checked;
+                ns.proxyManager.updateConfig({ enabled: enabled });
+                if (dom.proxyConfigSection) dom.proxyConfigSection.style.display = enabled ? '' : 'none';
+                console.log('[代理] ' + (enabled ? '已启用' : '已禁用'));
+            });
+        }
+
+        // 代理模式分段按钮
+        const modeSeg = document.getElementById('proxyModeSeg');
+        if (modeSeg) {
+            modeSeg.addEventListener('click', function (e) {
+                const btn = e.target.closest('.s-seg-btn');
+                if (!btn || !btn.dataset.proxyMode) return;
+                e.stopPropagation();
+                if (!ns.proxyManager) return;
+                const mode = btn.dataset.proxyMode;
+                ns.proxyManager.updateConfig({ mode: mode });
+                if (dom.proxyManualConfig) dom.proxyManualConfig.style.display = mode === 'manual' ? '' : 'none';
+                // 更新按钮 active 状态
+                modeSeg.querySelectorAll('.s-seg-btn').forEach(function (b) {
+                    b.classList.toggle('active', b.dataset.proxyMode === mode);
+                });
+            });
+        }
+
+        // 重新检测按钮
+        if (dom.proxyRetestBtn) {
+            dom.proxyRetestBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                ns.handleSettingsAction('proxyRetest');
+            });
+        }
+
+        // 手动代理输入保存（失焦时自动保存）
+        const saveManualProxy = function () {
+            ns.handleSettingsAction('proxySaveManual');
+        };
+        if (dom.proxyHostInput) dom.proxyHostInput.addEventListener('blur', saveManualProxy);
+        if (dom.proxyPortInput) dom.proxyPortInput.addEventListener('blur', saveManualProxy);
+        // 回车也保存
+        if (dom.proxyHostInput) dom.proxyHostInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') saveManualProxy(); });
+        if (dom.proxyPortInput) dom.proxyPortInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') saveManualProxy(); });
+    }
 
     ns.syncTaskNotifySettings = function () {
         const toggle = document.getElementById('taskNotifyToggle'), select = document.getElementById('remindBeforeSelect'), remindRow = document.getElementById('taskNotifyRemindRow');

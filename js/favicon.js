@@ -238,6 +238,7 @@ window.DevHome = window.DevHome || {};
 
     /**
      * 后台将当前显示的 favicon URL 下载并缓存到 IndexedDB
+     * 对于 Google 服务的 URL，使用代理管理器检测连通性后再请求
      * 使用 fetch + AbortController 5 秒超时，失败不影响显示
      * @param {string} domain - 域名
      * @param {string} url - favicon 图片 URL
@@ -247,34 +248,55 @@ window.DevHome = window.DevHome || {};
         if (_pendingFetches[domain]) return;
         _pendingFetches[domain] = true;
 
-        const controller = new AbortController();
-        const timeoutId = setTimeout(function () { controller.abort(); }, 5000);
+        /**
+         * 执行实际的 fetch + 缓存
+         */
+        function doFetch() {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(function () { controller.abort(); }, 5000);
 
-        fetch(url, { signal: controller.signal })
-            .then(function (response) {
-                clearTimeout(timeoutId);
-                if (!response.ok) { delete _pendingFetches[domain]; return null; }
-                return response.blob();
-            })
-            .then(function (blob) {
-                if (!blob || !blob.type.startsWith('image/')) {
+            fetch(url, { signal: controller.signal })
+                .then(function (response) {
+                    clearTimeout(timeoutId);
+                    if (!response.ok) { delete _pendingFetches[domain]; return null; }
+                    return response.blob();
+                })
+                .then(function (blob) {
+                    if (!blob || !blob.type.startsWith('image/')) {
+                        delete _pendingFetches[domain];
+                        return;
+                    }
+                    const reader = new FileReader();
+                    reader.onloadend = function () {
+                        ns.setFaviconInDB(domain, reader.result);
+                        delete _pendingFetches[domain];
+                        console.log('[图标] 已缓存高清图标 域名=' + domain);
+                    };
+                    reader.onerror = function () { delete _pendingFetches[domain]; };
+                    reader.readAsDataURL(blob);
+                })
+                .catch(function () {
+                    clearTimeout(timeoutId);
                     delete _pendingFetches[domain];
-                    return;
-                }
-                const reader = new FileReader();
-                reader.onloadend = function () {
-                    ns.setFaviconInDB(domain, reader.result);
-                    delete _pendingFetches[domain];
-                    console.log('[图标] 已缓存高清图标 域名=' + domain);
-                };
-                reader.onerror = function () { delete _pendingFetches[domain]; };
-                reader.readAsDataURL(blob);
-            })
-            .catch(function () {
-                clearTimeout(timeoutId);
+                    // 静默失败：fetch 缓存失败不影响 img.src 已经显示的图标
+                });
+        }
+
+        // Google 服务 → 检查代理连通性后决定是否发起 fetch
+        const isGoogleUrl = url.indexOf('google.com') !== -1;
+        if (isGoogleUrl && ns.proxyManager) {
+            // 使用代理管理器判断 Google 是否可达
+            if (ns.proxyManager.isGoogleReachable()) {
+                doFetch();
+            } else {
+                // Google 不可达 → 跳过缓存请求，避免无谓超时
                 delete _pendingFetches[domain];
-                // 静默失败：fetch 缓存失败不影响 img.src 已经显示的图标
-            });
+                console.log('[图标] 跳过缓存（Google 不可达）域名=' + domain);
+            }
+        } else {
+            // 非 Google 服务 → 直接 fetch
+            doFetch();
+        }
     }
 
 })(window.DevHome);

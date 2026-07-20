@@ -825,9 +825,47 @@
                             </div>
                         </div>
 
+                        <h3 class="s-section-title">网络代理</h3>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">代理感知</span><span class="s-row-desc">自动检测系统代理，优化 Google 服务访问</span></div>
+                            <label class="s-toggle" id="sToggleProxyEnabled"><input type="checkbox" id="proxyEnabledToggle"><span class="s-toggle-thumb"></span></label>
+                        </div>
+                        <div id="proxyConfigSection" style="display:none;">
+                            <div class="s-row">
+                                <div class="s-row-left"><span class="s-row-label">代理模式</span></div>
+                                <div class="s-row-right">
+                                    <div class="s-seg" id="proxyModeSeg">
+                                        <button class="s-seg-btn" data-proxy-mode="auto">自动检测</button>
+                                        <button class="s-seg-btn" data-proxy-mode="manual">手动配置</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="proxyManualConfig" style="display:none;margin-top:6px;">
+                                <div class="s-row">
+                                    <div class="s-row-left"><span class="s-row-label">代理地址</span></div>
+                                    <div class="s-row-right" style="display:flex;gap:6px;align-items:center;">
+                                        <input type="text" id="proxyHostInput" class="s-input" placeholder="127.0.0.1" style="width:120px;">
+                                        <span style="font-size:12px;color:var(--color-text-tertiary);">:</span>
+                                        <input type="number" id="proxyPortInput" class="s-input" placeholder="7890" min="1" max="65535" style="width:80px;">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="s-row">
+                                <div class="s-row-left" style="flex:1;"><span class="s-row-label">系统代理状态</span></div>
+                                <div class="s-row-right"><span id="proxyStatusBadge" class="s-badge" style="background:var(--color-bg-secondary);font-size:11px;padding:2px 8px;border-radius:4px;">检测中...</span></div>
+                            </div>
+                            <div class="s-row">
+                                <div class="s-row-left" style="flex:1;"><span class="s-row-label">Google 连通性</span></div>
+                                <div class="s-row-right"><span id="googleStatusBadge" class="s-badge" style="background:var(--color-bg-secondary);font-size:11px;padding:2px 8px;border-radius:4px;">检测中...</span></div>
+                            </div>
+                            <button type="button" class="s-action-btn" id="proxyRetestBtn" style="margin-top:6px;">
+                                <svg class="dh-icon dh-icon--refresh dh-icon--sm"" role="img"><use href="#dh-icon-refresh"></use></svg><span>重新检测</span>
+                            </button>
+                        </div>
+
                         <h3 class="s-section-title">关于</h3>
                         <button type="button" class="s-action-btn" id="changelogBtn">
-                            <svg class="dh-icon dh-icon--release-note dh-icon--md"" role="img"><use href="#dh-icon-release-note"></use></svg><span>更新说明 v2.26.1</span>
+                            <svg class="dh-icon dh-icon--release-note dh-icon--md"" role="img"><use href="#dh-icon-release-note"></use></svg><span>更新说明 v2.27.0</span>
                         </button>
 
                         <div class="s-danger-zone">
@@ -845,6 +883,19 @@
     <!-- 更新说明内容（供 Shadcn Dialog 动态读取渲染） -->
     <div id="changelogBodyTemplate" style="display:none">
         <div class="changelog-body" id="changelogBody">
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.27.0</span>
+                        <span class="changelog-date">2026-07-20</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>新增</strong> 代理管理模块：自动检测系统代理状态，支持手动指定代理地址和端口</li>
+                        <li><strong>新增</strong> 实时监听系统代理变更（chrome.proxy.settings.onChange + 轮询兜底），代理端口变化时自动同步</li>
+                        <li><strong>新增</strong> 设置面板「高级」Tab 增加代理配置区域：开关、自动/手动模式、代理地址/端口、系统代理状态、Google 连通性指示</li>
+                        <li><strong>优化</strong> 所有 Google 服务请求（favicon 等）感知代理状态，Google 不可达时自动跳过缓存请求避免无谓超时</li>
+                        <li><strong>技术</strong> 新增 proxyManager.js 模块，新增 proxy 权限及 Google/DuckDuckGo 域名 host_permissions</li>
+                    </ul>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">
                         <span class="changelog-version-tag">v2.26.1</span>
@@ -1444,6 +1495,7 @@
     <script src="js/quotes.js" defer></script>
     <script src="js/weather.js" defer></script>
     <script src="js/dailyGreetingCard.js" defer></script>
+    <script src="js/proxyManager.js" defer></script>
     <script src="js/favicon.js" defer></script>
     <script src="js/theme-manager.js" defer></script>
     <script src="js/bgManager.js" defer></script>

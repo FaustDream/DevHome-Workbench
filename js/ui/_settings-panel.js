@@ -139,6 +139,9 @@ window.DevHome = window.DevHome || {};
             shortcutKeys.textContent = parts.join(' + ');
         }
 
+        // 代理配置同步
+        _syncProxyControls();
+
         if (ns.fileConfig && ns.fileConfig.isSupported()) {
             const syncInfo = ns.fileConfig.getSyncInfo();
             const hasDir = !!syncInfo.dirName;
@@ -204,9 +207,100 @@ window.DevHome = window.DevHome || {};
                     location.reload();
                 });
                 break;
+            case 'proxyRetest':
+            case 'proxySaveManual':
+                _handleProxyAction(action);
+                break;
         }
         ns.syncSettingsControls();
     };
+
+    /* ===== 代理配置同步 ===== */
+    /**
+     * 将代理管理器的状态同步到设置面板控件
+     */
+    function _syncProxyControls() {
+        const dom = ns.dom;
+        if (!dom.proxyEnabledToggle) return;
+        if (!ns.proxyManager) return;
+        const config = ns.proxyManager.getConfig();
+
+        // 代理开关
+        dom.proxyEnabledToggle.checked = config.enabled;
+        dom.proxyConfigSection.style.display = config.enabled ? '' : 'none';
+
+        // 代理模式分段按钮
+        const modeBtns = document.querySelectorAll('#proxyModeSeg .s-seg-btn');
+        modeBtns.forEach(function (btn) {
+            btn.classList.toggle('active', btn.dataset.proxyMode === config.mode);
+        });
+        dom.proxyManualConfig.style.display = config.mode === 'manual' ? '' : 'none';
+
+        // 手动代理输入
+        if (dom.proxyHostInput) dom.proxyHostInput.value = config.host || '127.0.0.1';
+        if (dom.proxyPortInput) dom.proxyPortInput.value = config.port || 7890;
+
+        // 系统代理状态徽章
+        if (dom.proxyStatusBadge) {
+            if (config.lastChecked === 0) {
+                dom.proxyStatusBadge.textContent = '检测中...';
+                dom.proxyStatusBadge.style.background = 'var(--color-bg-secondary)';
+            } else if (config.systemProxyDetected) {
+                dom.proxyStatusBadge.textContent = '已检测到';
+                dom.proxyStatusBadge.style.background = '#27ae60';
+                dom.proxyStatusBadge.style.color = '#fff';
+            } else {
+                dom.proxyStatusBadge.textContent = '未检测到';
+                dom.proxyStatusBadge.style.background = '#e67e22';
+                dom.proxyStatusBadge.style.color = '#fff';
+            }
+        }
+
+        // Google 连通性徽章
+        if (dom.googleStatusBadge) {
+            if (config.lastChecked === 0) {
+                dom.googleStatusBadge.textContent = '检测中...';
+                dom.googleStatusBadge.style.background = 'var(--color-bg-secondary)';
+            } else if (config.googleReachable) {
+                dom.googleStatusBadge.textContent = '可访问';
+                dom.googleStatusBadge.style.background = '#27ae60';
+                dom.googleStatusBadge.style.color = '#fff';
+            } else {
+                dom.googleStatusBadge.textContent = '不可达';
+                dom.googleStatusBadge.style.background = '#d94a3a';
+                dom.googleStatusBadge.style.color = '#fff';
+            }
+        }
+    }
+    // 将同步函数暴露到 ns 上，供代理回调使用
+    ns._syncProxyControls = _syncProxyControls;
+
+    /**
+     * 处理代理相关设置动作
+     * @param {string} action
+     */
+    function _handleProxyAction(action) {
+        if (!ns.proxyManager) return;
+        switch (action) {
+            case 'proxyRetest':
+                ns.proxyManager.refreshGoogleReachability().then(function () {
+                    _syncProxyControls();
+                    ns.showToast('代理检测完成', 'info');
+                });
+                break;
+            case 'proxySaveManual':
+                const host = (dom.proxyHostInput && dom.proxyHostInput.value.trim()) || '127.0.0.1';
+                const port = parseInt((dom.proxyPortInput && dom.proxyPortInput.value) || '7890');
+                if (isNaN(port) || port < 1 || port > 65535) {
+                    ns.showToast('端口号无效，请输入 1-65535 之间的数字', 'error');
+                    return;
+                }
+                ns.proxyManager.updateConfig({ host: host, port: port });
+                _syncProxyControls();
+                ns.showToast('代理配置已保存', 'success');
+                break;
+        }
+    }
 
     /* ===== 数据导出（完整快照备份） ===== */
     /**

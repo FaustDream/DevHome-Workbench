@@ -148,6 +148,19 @@ let v2DataPromise = Promise.resolve();
 
         ns.logger && ns.logger.info('boot', '启动序列开始', { configReady: state.configReady });
 
+        // 代理管理器初始化（异步，不阻塞启动）
+        if (ns.proxyManager && typeof ns.proxyManager.init === 'function') {
+            ns.proxyManager.init().catch(function (e) {
+                console.warn('[Main] 代理管理器初始化失败:', e.message);
+            });
+            // 代理状态变更时自动更新设置面板
+            ns.proxyManager.on('googleReachabilityChanged', function () {
+                if (typeof ns._syncProxyControls === 'function') {
+                    ns._syncProxyControls();
+                }
+            });
+        }
+
         // === Phase 2: 立即渲染首屏 UI（不等数据加载完） ===
         ns.initEngine();
         ns.applyShortcutSize(storage.get('shortcut_size', ns.DEFAULT_SHORTCUT_SIZE), false);
