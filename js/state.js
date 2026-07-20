@@ -123,7 +123,8 @@ window.DevHome = window.DevHome || {};
         proxyPortInput: ns.$('#proxyPortInput'),
         proxyStatusBadge: ns.$('#proxyStatusBadge'),
         googleStatusBadge: ns.$('#googleStatusBadge'),
-        proxyRetestBtn: ns.$('#proxyRetestBtn')
+        proxyRetestBtn: ns.$('#proxyRetestBtn'),
+        tileImageInput: ns.$('#tileImageInput')
     };
 
     /* ===== 全局状态 ===== */

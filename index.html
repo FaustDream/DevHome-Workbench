@@ -401,6 +401,13 @@
             <svg class="dh-icon dh-icon--trash dh-icon--md"" role="img"><use href="#dh-icon-trash"></use></svg><span>删除磁贴</span>
         </div>
         <div class="context-menu-divider"></div>
+        <div class="context-menu-item ctx-daily-only" data-action="refreshImage">
+            <svg class="dh-icon dh-icon--refresh dh-icon--md"" role="img"><use href="#dh-icon-refresh"></use></svg><span>重新获取图片</span>
+        </div>
+        <div class="context-menu-item ctx-daily-only" data-action="uploadImage">
+            <svg class="dh-icon dh-icon--image dh-icon--md"" role="img"><use href="#dh-icon-image"></use></svg><span>上传图片</span>
+        </div>
+        <div class="context-menu-divider"></div>
         <div class="context-menu-item" data-action="upload">
             <svg class="dh-icon dh-icon--upload dh-icon--md"" role="img"><use href="#dh-icon-upload"></use></svg><span>上传磁贴</span>
         </div>
@@ -865,7 +872,7 @@
 
                         <h3 class="s-section-title">关于</h3>
                         <button type="button" class="s-action-btn" id="changelogBtn">
-                            <svg class="dh-icon dh-icon--release-note dh-icon--md"" role="img"><use href="#dh-icon-release-note"></use></svg><span>更新说明 v2.27.0</span>
+                            <svg class="dh-icon dh-icon--release-note dh-icon--md"" role="img"><use href="#dh-icon-release-note"></use></svg><span>更新说明 v2.27.1</span>
                         </button>
 
                         <div class="s-danger-zone">
@@ -883,6 +890,18 @@
     <!-- 更新说明内容（供 Shadcn Dialog 动态读取渲染） -->
     <div id="changelogBodyTemplate" style="display:none">
         <div class="changelog-body" id="changelogBody">
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.27.1</span>
+                        <span class="changelog-date">2026-07-20</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>新增</strong> 磁贴右键菜单「重新获取图片」——清除域名缓存并强制重新请求 favicon 服务获取最新图标</li>
+                        <li><strong>新增</strong> 磁贴右键菜单「上传图片」——支持从本地选择图片文件（jpg/png/gif/webp），转 base64 后替换磁贴图标</li>
+                        <li><strong>限制</strong> 新菜单项仅在日常模式（非专注模式）下显示，专注模式下自动隐藏</li>
+                        <li><strong>安全</strong> 上传图片文件大小限制 2MB，仅接受 image/* 类型，含格式校验与加载状态提示</li>
+                    </ul>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">
                         <span class="changelog-version-tag">v2.27.0</span>
@@ -1442,6 +1461,7 @@
     <!-- 隐藏的背景文件上传 -->
     <input type="file" id="bgInput" accept="image/*,video/*" hidden>
     <input type="file" id="importInput" accept=".json" hidden>
+    <input type="file" id="tileImageInput" accept="image/*" hidden>
 
     <!-- 搜索引擎下拉弹窗（body 直接子级，避免层叠上下文限制）-->
     <div class="engine-dropdown" id="engineDropdown">

@@ -99,6 +99,10 @@ window.DevHome = window.DevHome || {};
                 ctxCopyItem.onmouseleave = hideCategorySubMenu;
             }
         }
+        // 日常模式专属菜单项过滤（如重新获取图片、上传图片）
+        const isFocusMode = state.currentDevhomeMode === 'focus';
+        const dailyOnlyItems = dom.contextMenu.querySelectorAll('.ctx-daily-only');
+        dailyOnlyItems.forEach(function (item) { item.style.display = isFocusMode ? 'none' : ''; });
         dom.contextMenu.classList.add('visible');
         setTimeout(function () { document.addEventListener('click', hideContextMenu, { once: true }); }, 0);
     };
@@ -123,6 +127,8 @@ window.DevHome = window.DevHome || {};
                     if (ok) { tileManager.remove(tileId); ns.renderTiles(); }
                 });
                 break;
+            case 'refreshImage': _handleRefreshImage(tile); break;
+            case 'uploadImage': _handleUploadImage(tile); break;
             case 'upload': ns.openUploadModal(); break;
         }
         hideContextMenu();
@@ -173,6 +179,101 @@ window.DevHome = window.DevHome || {};
         dom.blankContextMenu.style.top = posY + 'px';
         setTimeout(function () { document.addEventListener('click', ns.hideBlankContextMenu, { once: true }); }, 0);
     };
+
+    /**
+     * 重新获取磁贴图片
+     * 清除域名关联的 IndexedDB 缓存和内存缓存，
+     * 强制重新请求 favicon 服务获取最新图标
+     * @param {Object} tile - 磁贴数据对象
+     */
+    function _handleRefreshImage(tile) {
+        console.log('[右键] 重新获取图片 tile=' + tile.label + ' url=' + tile.url);
+        // 重置磁贴类型为 favicon，强制重新走 favicon 加载流程
+        tile.type = 'favicon';
+        tile.imageData = null;
+        // 如果磁贴在 IndexedDB 缓存中，清除该域名的缓存
+        let domain;
+        try {
+            domain = new URL(tile.url).hostname;
+        } catch (_) { domain = null; }
+        if (domain && window.DevHome && window.DevHome.openFaviconDB) {
+            // 通过打开 DB 连接来清除特定域名的缓存条目
+            window.DevHome.openFaviconDB().then(function (db) {
+                try {
+                    const tx = db.transaction('favicons', 'readwrite');
+                    const store = tx.objectStore('favicons');
+                    store.delete(domain);
+                    console.log('[右键] 已清除域名缓存的 favicon 域名=' + domain);
+                } catch (e) {
+                    console.warn('[右键] 清除缓存失败:', e.message);
+                }
+            }).catch(function () {});
+        }
+        // 更新 tiles 数据并重新渲染
+        try {
+            window.DevHome.tileManager.save();
+        } catch (_) {}
+        ns.renderTiles();
+        ns.showToast('正在重新获取 "' + tile.label + '" 的图标...', 'info');
+    }
+
+    /**
+     * 上传本地图片作为磁贴图标
+     * 打开文件选择器 → 读取图片 → 转 base64 data URL → 更新磁贴并保存
+     * @param {Object} tile - 磁贴数据对象
+     */
+    function _handleUploadImage(tile) {
+        console.log('[右键] 上传图片 tile=' + tile.label);
+        const input = document.getElementById('tileImageInput');
+        if (!input) {
+            ns.showToast('图片上传功能暂不可用', 'error');
+            return;
+        }
+        // 清除之前的监听器（避免重复绑定）
+        const newInput = input.cloneNode(true);
+        input.parentNode.replaceChild(newInput, input);
+        // 更新 DOM 引用（原节点已被替换）
+        window.DevHome.dom.tileImageInput = newInput;
+        // 绑定文件选择事件
+        newInput.addEventListener('change', function () {
+            const file = newInput.files && newInput.files[0];
+            if (!file) return;
+            // 验证文件类型
+            if (!file.type.startsWith('image/')) {
+                ns.showToast('请选择图片文件（jpg、png、gif、webp 等）', 'error');
+                return;
+            }
+            // 验证文件大小（最大 2MB）
+            if (file.size > 2 * 1024 * 1024) {
+                ns.showToast('图片文件不能超过 2MB', 'error');
+                return;
+            }
+            // 显示加载提示
+            ns.showToast('正在处理图片...', 'info');
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const dataUrl = e.target.result;
+                // 更新磁贴为图片类型
+                tile.type = 'image';
+                tile.imageData = dataUrl;
+                // 持久化保存
+                try {
+                    window.DevHome.tileManager.save();
+                } catch (_) {}
+                // 重新渲染
+                ns.renderTiles();
+                console.log('[右键] 已上传图片 文件名=' + file.name + ' 大小=' + Math.round(file.size / 1024) + 'KB');
+                ns.showToast('图片已更新', 'success');
+            };
+            reader.onerror = function () {
+                ns.showToast('图片读取失败，请重试', 'error');
+            };
+            reader.readAsDataURL(file);
+            // 重置 input 以支持重复选择同一文件
+            newInput.value = '';
+        });
+        newInput.click();
+    }
 
     ns.hideBlankContextMenu = function () { dom.blankContextMenu.classList.remove('visible'); };
 
