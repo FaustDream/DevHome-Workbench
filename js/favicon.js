@@ -99,88 +99,6 @@ window.DevHome = window.DevHome || {};
     };
 
     /* ================================================================
-     * 高分辨率 Favicon 获取策略
-     * ================================================================ */
-
-    /**
-     * 从 Google S2 服务获取 favicon
-     * Google 的 S2 favicon 服务会尝试返回指定尺寸的图标，
-     * 如果原始图标支持更大尺寸则直接返回，否则会缩放。
-     * @param {string} domain - 域名
-     * @param {number} size - 请求尺寸（像素），最大 256
-     * @returns {Promise<string|null>} base64 data URL，失败返回 null
-     */
-    function fetchGoogleS2(domain, size) {
-        const url = 'https://www.google.com/s2/favicons?domain=' +
-            encodeURIComponent(domain) + '&sz=' + size;
-        return fetchFaviconAsDataUrl(url, domain);
-    }
-
-    /**
-     * 从 DuckDuckGo favicon 服务获取（回退方案）
-     * DuckDuckGo 返回的图标质量中等，但稳定性高
-     */
-    function fetchDuckDuckGo(domain) {
-        const url = 'https://icons.duckduckgo.com/ip3/' +
-            encodeURIComponent(domain) + '.ico';
-        return fetchFaviconAsDataUrl(url, domain);
-    }
-
-    /**
-     * 通用 favicon URL → data URL 转换
-     * 校验返回的是有效图片（通过 Blob.type 检查）
-     * @param {string} fetchUrl - favicon 服务 URL
-     * @param {string} domain - 域名（用于日志）
-     * @returns {Promise<string|null>}
-     */
-    function fetchFaviconAsDataUrl(fetchUrl, domain) {
-        return fetch(fetchUrl)
-            .then(function (response) {
-                if (!response.ok) return null;
-                return response.blob();
-            })
-            .then(function (blob) {
-                if (!blob || !blob.type.startsWith('image/')) return null;
-                return new Promise(function (resolve) {
-                    const reader = new FileReader();
-                    reader.onloadend = function () {
-                        resolve(reader.result);
-                    };
-                    reader.onerror = function () {
-                        resolve(null);
-                    };
-                    reader.readAsDataURL(blob);
-                });
-            })
-            .catch(function () {
-                return null;
-            });
-    }
-
-    /**
-     * 多级回退获取高分辨率 favicon
-     * 策略：128px → 64px → DuckDuckGo → null
-     * @param {string} domain - 域名
-     * @returns {Promise<string|null>} base64 data URL
-     */
-    async function fetchHighResFavicon(domain) {
-        // Tier 1: Google S2 128px（覆盖 2x Retina 112px 需求）
-        const s2128 = await fetchGoogleS2(domain, 128);
-        if (s2128) return s2128;
-
-        // Tier 2: Google S2 64px（降级方案）
-        const s264 = await fetchGoogleS2(domain, 64);
-        if (s264) return s264;
-
-        // Tier 3: DuckDuckGo 服务
-        const ddg = await fetchDuckDuckGo(domain);
-        if (ddg) return ddg;
-
-        // Tier 4: 全部失败
-        return null;
-    }
-
-    /* ================================================================
      * 纯色字母回退（favicon 获取完全失败时使用）
      * ================================================================ */
 
@@ -224,11 +142,12 @@ window.DevHome = window.DevHome || {};
 
     /**
      * 加载磁贴 favicon
-     * 加载流程：
-     *   1. 检查 IndexedDB 缓存 → 命中则立即显示
-     *   2. 后台进行多级高分辨率源网络请求
-     *   3. 成功后更新缓存 + 替换 img src
-     *   4. 全部失败则显示纯色字母方块
+     *
+     * 加载流程（v2.26.1 修复国内网络兼容）：
+     *   A. 从 IndexedDB 缓存读取 → 命中则立即显示高清 dataURL
+     *   B. 无缓存时，用 img.src 多级回退加载（不受 CORS 限制）：
+     *      Google S2 128px → Google S2 64px → DuckDuckGo → api.xinac.net → 字母方块
+     *   C. 后台用 fetch 尝试下载并缓存（失败静默，不影响显示）
      *
      * @param {string} url - 磁贴目标 URL（用于提取域名）
      * @param {HTMLImageElement} imgElement - 要设置的 <img> 元素
@@ -239,50 +158,123 @@ window.DevHome = window.DevHome || {};
         try {
             domain = new URL(url).hostname;
         } catch (e) {
-            // URL 解析失败 → 回退
             createColorFallback('?', iconWrap);
             return;
         }
 
-        // 步骤 1: 优先从 IndexedDB 缓存加载
+        // 多级 favicon URL 回退链（按优先级排列，img.src 直接使用不受 CORS 限制）
+        const faviconSources = [
+            { url: 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(domain) + '&sz=128' },
+            { url: 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(domain) + '&sz=64' },
+            { url: 'https://icons.duckduckgo.com/ip3/' + encodeURIComponent(domain) + '.ico' },
+            { url: 'https://api.xinac.net/icon/?url=' + encodeURIComponent(domain) }
+        ];
+
+        // 回退索引（追踪当前使用的源）
+        let sourceIndex = -1;
+
+        /**
+         * 尝试下一级回退源
+         * 所有源都失败时显示字母方块
+         */
+        function tryNextSource() {
+            sourceIndex++;
+            if (sourceIndex < faviconSources.length) {
+                // 清除旧的 onerror 标记，允许新源触发错误处理
+                imgElement.dataset.faviconFallback = '';
+                imgElement.src = faviconSources[sourceIndex].url;
+            } else {
+                // 全部源加载失败 → 字母方块兜底
+                imgElement.src = '';
+                createColorFallback(domain, iconWrap);
+                console.warn('[图标] 全部源失败，使用字母回退 域名=' + domain);
+            }
+        }
+
+        // Step A: 优先从 IndexedDB 缓存加载（无网络依赖，一进页面就显示）
         ns.getFaviconFromDB(domain).then(function (cached) {
             if (cached && typeof cached === 'string' && cached.startsWith('data:image')) {
+                // 缓存命中 → 直接显示高清版，不再走网络回退链
                 imgElement.src = cached;
-                // 标记为已缓存，下文不再重复 fetch
                 imgElement.dataset.faviconCached = '1';
+                imgElement.dataset.faviconDone = '1';
+                console.log('[图标] 缓存命中 域名=' + domain);
+            } else {
+                // 无缓存 → 启动 img.src 多级回退链
+                tryNextSource();
             }
         });
 
-        // 步骤 2: 后台网络请求高分辨率 favicon（去重合并并发）
-        if (!_pendingFetches[domain]) {
-            _pendingFetches[domain] = fetchHighResFavicon(domain).then(function (dataUrl) {
-                delete _pendingFetches[domain];
-                if (dataUrl) {
-                    // 缓存到 IndexedDB 供后续使用
-                    ns.setFaviconInDB(domain, dataUrl);
-                }
-                return dataUrl;
-            });
-        }
-        _pendingFetches[domain].then(function (dataUrl) {
-            if (dataUrl) {
-                // 无论之前是否显示了缓存版本，都用新获取的高清版替换
-                imgElement.src = dataUrl;
-            } else if (!imgElement.src || imgElement.dataset.faviconCached !== '1') {
-                // 无缓存且网络请求全部失败 → 字母回退
-                createColorFallback(domain, iconWrap);
-            }
-        });
-
-        // 步骤 3: 图片加载错误处理（兜底）
+        // Step B: img 加载失败 → 自动切换下一级源
         imgElement.onerror = function () {
-            // 已经显示过回退则不再重复创建
-            if (imgElement.dataset.faviconFallback === '1') return;
+            if (imgElement.dataset.faviconFallback === '1') return; // 已在处理中
             imgElement.dataset.faviconFallback = '1';
-            imgElement.src = '';
-            createColorFallback(domain, iconWrap);
-            console.warn('[图标] 图片加载失败，使用字母回退 域名=' + domain);
+            tryNextSource();
         };
+
+        // Step C: img 加载成功 → 后台尝试缓存高清版（仅 Google S2 成功时才有意义）
+        imgElement.onload = function () {
+            // 缓存命中的跳过（dataURL 已经在 DB 中）
+            if (imgElement.dataset.faviconCached === '1') return;
+            // 标记为已完成，防止重复
+            imgElement.dataset.faviconDone = '1';
+
+            const currentSrc = imgElement.currentSrc || imgElement.src;
+            // 仅对 Google S2 的 128px 结果尝试缓存（api.xinac.net 返回尺寸不可控）
+            if (currentSrc.indexOf('google.com/s2/favicons') !== -1 && currentSrc.indexOf('sz=128') !== -1) {
+                _cacheFaviconFromSrc(domain, currentSrc);
+            }
+        };
+
+        // 兜底：如果在回调绑定之前就已经失败/成功（极端情况）
+        if (imgElement.complete) {
+            if (imgElement.naturalWidth > 0) {
+                imgElement.onload && imgElement.onload();
+            } else if (!imgElement.dataset.faviconCached) {
+                imgElement.onerror && imgElement.onerror();
+            }
+        }
     };
+
+    /**
+     * 后台将当前显示的 favicon URL 下载并缓存到 IndexedDB
+     * 使用 fetch + AbortController 5 秒超时，失败不影响显示
+     * @param {string} domain - 域名
+     * @param {string} url - favicon 图片 URL
+     */
+    function _cacheFaviconFromSrc(domain, url) {
+        // 并发去重
+        if (_pendingFetches[domain]) return;
+        _pendingFetches[domain] = true;
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(function () { controller.abort(); }, 5000);
+
+        fetch(url, { signal: controller.signal })
+            .then(function (response) {
+                clearTimeout(timeoutId);
+                if (!response.ok) { delete _pendingFetches[domain]; return null; }
+                return response.blob();
+            })
+            .then(function (blob) {
+                if (!blob || !blob.type.startsWith('image/')) {
+                    delete _pendingFetches[domain];
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onloadend = function () {
+                    ns.setFaviconInDB(domain, reader.result);
+                    delete _pendingFetches[domain];
+                    console.log('[图标] 已缓存高清图标 域名=' + domain);
+                };
+                reader.onerror = function () { delete _pendingFetches[domain]; };
+                reader.readAsDataURL(blob);
+            })
+            .catch(function () {
+                clearTimeout(timeoutId);
+                delete _pendingFetches[domain];
+                // 静默失败：fetch 缓存失败不影响 img.src 已经显示的图标
+            });
+    }
 
 })(window.DevHome);

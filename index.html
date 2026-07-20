@@ -827,7 +827,7 @@
 
                         <h3 class="s-section-title">关于</h3>
                         <button type="button" class="s-action-btn" id="changelogBtn">
-                            <svg class="dh-icon dh-icon--release-note dh-icon--md"" role="img"><use href="#dh-icon-release-note"></use></svg><span>更新说明 v2.26.0</span>
+                            <svg class="dh-icon dh-icon--release-note dh-icon--md"" role="img"><use href="#dh-icon-release-note"></use></svg><span>更新说明 v2.26.1</span>
                         </button>
 
                         <div class="s-danger-zone">
@@ -845,6 +845,16 @@
     <!-- 更新说明内容（供 Shadcn Dialog 动态读取渲染） -->
     <div id="changelogBodyTemplate" style="display:none">
         <div class="changelog-body" id="changelogBody">
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.26.1</span>
+                        <span class="changelog-date">2026-07-20</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>修复</strong> 国内网络环境下图标全部变成字母方块的问题——主流程回到 <code>img.src</code> + onerror 多级回退（不受 CORS 限制），回退链包含国内可访问的 api.xinac.net</li>
+                        <li><strong>优化</strong> 图标缓存改为后台 <code>fetch</code> + 5 秒超时，失败不影响主显示流程</li>
+                    </ul>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">
                         <span class="changelog-version-tag">v2.26.0</span>
