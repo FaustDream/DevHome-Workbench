@@ -70,34 +70,112 @@ chrome.alarms.onAlarm.addListener(async function (alarm) {
     }
 });
 
-/* ===== 后台代理 favicon fetch（绕过页面级 CORS） ===== */
+/* ===== 后台解析目标站点真实 favicon（绕过页面级 CORS） ===== */
 /**
- * 在 Service Worker 中请求 favicon 并转成 dataURL 回传
+ * 在 Service Worker 中解析并抓取目标站点的真实 favicon，转成 dataURL 回传
  *
- * 为什么放 SW：扩展页面直接 fetch 跨域 favicon 会被 CORS 拦截（响应无
- * Access-Control-Allow-Origin）。而 SW 对 host_permissions 覆盖的域名
- * （含 www.google.com 与 *.gstatic.com）发起的 fetch 可豁免 CORS，
- * 从而正确读取 Google S2 重定向后 gstatic 的图片字节。
- * @param {string} url - favicon 图片地址
- * @returns {Promise<string>} base64 dataURL
+ * 为什么放 SW：扩展页面直接 fetch 任意站点会被 CORS 拦截（无法读取首页 HTML
+ * 与图标字节）。而 SW 对 host_permissions（含 <all_urls>）覆盖的域名发起的
+ * fetch 可豁免 CORS，因此能读取目标站点首页 HTML 与图标资源。
+ *
+ * 解析策略（按优先级）：
+ *   1. 约定路径 https://<domain>/favicon.ico（多数站点直接提供，体积小）
+ *   2. 抓取首页 HTML，提取 <link rel="icon"> / rel="apple-touch-icon">
+ *      （apple-touch-icon 分辨率高，优先使用），支持相对/绝对/协议相对地址
+ * @param {string} domain - 目标域名
+ * @returns {Promise<string|null>} 成功返回 base64 dataURL，未找到返回 null
  */
-function handleFetchFavicon(url) {
+function resolveRealFavicon(domain) {
+    const root = 'https://' + domain;
     const controller = new AbortController();
-    const timeoutId = setTimeout(function () { controller.abort(); }, 5000);
-    return fetch(url, { signal: controller.signal })
-        .then(function (res) {
-            clearTimeout(timeoutId);
-            if (!res.ok) { throw new Error('HTTP ' + res.status); }
-            return res.blob();
+    const timeoutId = setTimeout(function () { controller.abort(); }, 6000);
+
+    // 将图标 URL 抓取为 dataURL；非图片或抓取失败返回 null
+    function toDataUrl(url) {
+        return fetch(url, { signal: controller.signal, redirect: 'follow' })
+            .then(function (res) {
+                if (!res.ok) return null;
+                const ct = res.headers.get('content-type') || '';
+                // 仅接受图片类型（data: 内联图标已自带前缀，由调用方处理）
+                if (ct.indexOf('image/') === -1 &&
+                    !/\.(ico|png|jpg|jpeg|svg|webp|gif)$/i.test(url)) {
+                    return null;
+                }
+                return res.blob();
+            })
+            .then(function (blob) {
+                if (!blob || !blob.type.startsWith('image/')) return null;
+                // 将二进制 blob 转成 dataURL，便于页面写入 IndexedDB 长期缓存
+                return new Promise(function (resolve, reject) {
+                    const reader = new FileReader();
+                    reader.onloadend = function () { resolve(reader.result); };
+                    reader.onerror = function () { reject(reader.error || new Error('read blob failed')); };
+                    reader.readAsDataURL(blob);
+                });
+            })
+            .catch(function () { return null; });
+    }
+
+    // 从首页 HTML 中提取图标链接，按优先级排序（apple-touch-icon 最高）
+    function parseIconLinks(html, baseOrigin) {
+        const links = [];
+        const linkRe = /<link\b[^>]*>/gi;
+        let m;
+        while ((m = linkRe.exec(html))) {
+            const tag = m[0];
+            const relM = tag.match(/\brel=["']([^"']*)["']/i);
+            const hrefM = tag.match(/\bhref=["']([^"']*)["']/i);
+            if (!relM || !hrefM) continue;
+            const rel = relM[1].toLowerCase();
+            if (rel.indexOf('icon') === -1) continue; // 仅处理图标类 link
+            let href = hrefM[1];
+            if (href.indexOf('data:image') === 0) {
+                // 内联 data URI 图标，直接采用（优先级最高）
+                links.push({ url: href, score: 4 });
+                continue;
+            }
+            if (href.startsWith('//')) href = 'https:' + href;
+            else if (href.startsWith('/')) href = baseOrigin + href;
+            else if (!/^https?:/i.test(href)) href = baseOrigin + '/' + href;
+            // apple-touch-icon 分辨率高，优先；shortcut icon 次之
+            const score = rel.indexOf('apple-touch') !== -1 ? 3 : (rel === 'shortcut icon' ? 2 : 1);
+            links.push({ url: href, score: score });
+        }
+        links.sort(function (a, b) { return b.score - a.score; });
+        return links;
+    }
+
+    return Promise.resolve()
+        .then(function () {
+            // 1) 先尝试约定路径 favicon.ico
+            return toDataUrl(root + '/favicon.ico');
         })
-        .then(function (blob) {
-            // 将二进制 blob 转成 dataURL，便于页面写入 IndexedDB 长期缓存
-            return new Promise(function (resolve, reject) {
-                const reader = new FileReader();
-                reader.onloadend = function () { resolve(reader.result); };
-                reader.onerror = function () { reject(reader.error || new Error('read blob failed')); };
-                reader.readAsDataURL(blob);
-            });
+        .then(function (dataUrl) {
+            if (dataUrl) return dataUrl;
+            // 2) 拉取首页 HTML，解析 <link rel="icon"> 系列
+            return fetch(root + '/', { signal: controller.signal, redirect: 'follow' })
+                .then(function (htmlResp) {
+                    if (!htmlResp.ok) return null;
+                    // 以最终响应地址的 origin 作为相对路径基准（处理重定向）
+                    const finalOrigin = (function () {
+                        try { return new URL(htmlResp.url).origin; } catch (e) { return root; }
+                    })();
+                    return htmlResp.text().then(function (html) {
+                        const links = parseIconLinks(html, finalOrigin);
+                        // 按优先级逐个尝试，命中真实图标即返回
+                        return links.reduce(function (chain, link) {
+                            return chain.then(function (acc) {
+                                return acc ? acc : toDataUrl(link.url);
+                            });
+                        }, Promise.resolve(null));
+                    });
+                })
+                .then(function (parsed) { return parsed; })
+                .catch(function () { return null; });
+        })
+        .then(function (result) {
+            clearTimeout(timeoutId);
+            return result || null;
         });
 }
 
@@ -143,11 +221,11 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
             if (sender.tab) { chrome.sidePanel.open({ tabId: sender.tab.id }); }
             sendResponse({ success: true });
             break;
-        case 'FETCH_FAVICON':
-            // 由后台 SW 代理 favicon fetch：SW 拥有 host_permissions 可豁免 CORS，
-            // 再把图片转成 dataURL 回传，避免扩展页面直接 fetch 被浏览器拦截。
-            handleFetchFavicon(message.url)
-                .then(function (dataUrl) { sendResponse({ success: true, dataUrl: dataUrl }); })
+        case 'RESOLVE_FAVICON':
+            // 由后台 SW 解析目标站点的真实 favicon：SW 拥有 <all_urls> host_permissions
+            // 可豁免 CORS，直接抓取站点自身图标并转成 dataURL 回传，避免拿到默认地球。
+            resolveRealFavicon(message.domain)
+                .then(function (dataUrl) { sendResponse({ success: true, dataUrl: dataUrl || null }); })
                 .catch(function (err) {
                     sendResponse({ success: false, reason: (err && err.message) ? err.message : String(err) });
                 });

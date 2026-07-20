@@ -1,15 +1,17 @@
 /**
- * DevHome Workbench - 高分辨率 Favicon 获取与缓存 v2
+ * DevHome Workbench - 高分辨率 Favicon 获取与缓存 v3
  *
- * 核心改进（v2.26.0）：
- *   1. 高分辨率源：使用 Google S2 服务请求 128px 图标，覆盖 2x/3x Retina 显示
- *   2. 多级回退策略：128px → 64px → DuckDuckGo → 纯色字母方块
- *   3. IndexedDB LRU 缓存（上限 200），避免重复网络请求
- *   4. 并发控制：同一域名并发请求合并为单个 Promise
- *
- * 原方案问题：
- *   api.xinac.net/icon 返回 16×16 或 32×32 的默认 favicon，
- *   在 56px CSS 像素（2x=112px, 3x=168px device pixels）磁贴中严重模糊。
+ * 核心改进（v2.27.5）：
+ *   1. 真实站点图标优先：通过后台 Service Worker 直接抓取目标站点自身的
+ *      favicon（约定路径 /favicon.ico 或解析首页 <link rel="icon"> /
+ *      <link rel="apple-touch-icon">），保证拿到站点真实图标，而非第三方
+ *      服务的默认地球（即用户看到的"模糊的球"）。
+ *   2. 绕过 CORS：SW 拥有 host_permissions（含 <all_urls>），对目标站点的
+ *      fetch 可豁免 CORS，从而能读取首页 HTML 与图标字节。
+ *   3. 字母兜底先行：网络请求期间先显示纯色字母方块占位，真实图标到达后
+ *      无缝替换；彻底避免先闪一下默认地球的问题。
+ *   4. IndexedDB LRU 缓存（上限 200），存储的是真实图标 dataURL；
+ *      数据库版本升至 3，清空旧版本可能缓存的默认地球图标。
  */
 window.DevHome = window.DevHome || {};
 (function (ns) {
@@ -18,7 +20,7 @@ window.DevHome = window.DevHome || {};
     const FAVICON_LRU_MAX = 200;
     let faviconDB = null;
 
-    // 并发请求去重：同一域名的进行中请求合并
+    // 并发请求去重：同一域名的进行中请求合并为单个
     const _pendingFetches = {};
 
     /* ================================================================
@@ -28,10 +30,11 @@ window.DevHome = window.DevHome || {};
     /**
      * 打开/创建 IndexedDB 数据库
      * 存储结构：{ domain (主键), dataUrl: base64 图片, lastAccess: 时间戳 }
+     * 版本升至 3：重建存储，清空旧版本可能缓存的默认地球图标（dataURL）。
      */
     ns.openFaviconDB = function () {
         return new Promise(function (resolve, reject) {
-            const req = indexedDB.open('TabPageFaviconDB', 2);
+            const req = indexedDB.open('TabPageFaviconDB', 3);
             req.onupgradeneeded = function (e) {
                 const db = e.target.result;
                 if (!db.objectStoreNames.contains('favicons')) {
@@ -99,7 +102,7 @@ window.DevHome = window.DevHome || {};
     };
 
     /* ================================================================
-     * 纯色字母回退（favicon 获取完全失败时使用）
+     * 纯色字母回退（favicon 获取完全失败 / 网络请求期间占位时使用）
      * ================================================================ */
 
     /** 暖色系色板，确保白色文字可读 */
@@ -113,12 +116,25 @@ window.DevHome = window.DevHome || {};
     }
 
     /**
-     * 创建纯色字母方块作为兜底图标
-     * 显示域名首字母在彩色圆角方块上，视觉统一且美观
+     * 创建/复用纯色字母方块（最终兜底 & 加载占位）
+     *
+     * 关键调整（v2.27.5）：不再清空 iconWrap，而是保留 <img> 元素。
+     * 加载期间隐藏 <img> 显示字母占位；真实图标到达后由 img.onload
+     * 移除字母方块并显示 <img>，实现无缝替换；仅在失败时保持字母显示。
+     * @param {string} domain - 域名
+     * @param {HTMLElement} iconWrap - 图标容器
+     * @param {HTMLImageElement} [imgElement] - 关联的 <img>，失败/占位时隐藏
      */
-    function createColorFallback(domain, iconWrap) {
-        const div = document.createElement('div');
-        div.className = 'tile-icon-fallback';
+    function createColorFallback(domain, iconWrap, imgElement) {
+        // 隐藏 <img>，避免加载期间露出破图图标
+        if (imgElement) imgElement.style.display = 'none';
+        // 复用已有字母方块，避免重复创建
+        let div = iconWrap.querySelector('.tile-icon-fallback');
+        if (!div) {
+            div = document.createElement('div');
+            div.className = 'tile-icon-fallback';
+            iconWrap.appendChild(div);
+        }
         div.style.width = 'var(--shortcut-icon, 32px)';
         div.style.height = 'var(--shortcut-icon, 32px)';
         div.style.borderRadius = '8px';
@@ -131,9 +147,13 @@ window.DevHome = window.DevHome || {};
         div.style.fontWeight = '700';
         div.style.fontFamily = 'var(--font-sans)';
         div.textContent = (domain.charAt(0) || '?').toUpperCase();
-        iconWrap.innerHTML = '';
-        iconWrap.appendChild(div);
         console.log('[图标] 使用字母回退 域名=' + domain);
+    }
+
+    /** 移除字母占位方块（真实图标成功显示后调用） */
+    function removeColorFallback(iconWrap) {
+        const div = iconWrap.querySelector('.tile-icon-fallback');
+        if (div) div.remove();
     }
 
     /* ================================================================
@@ -141,36 +161,30 @@ window.DevHome = window.DevHome || {};
      * ================================================================ */
 
     /**
-     * 加载磁贴 favicon
+     * 加载磁贴 favicon（v2.27.5 重构）
      *
-     * 加载流程（v2.26.1 修复国内网络兼容）：
-     *   A. 从 IndexedDB 缓存读取 → 命中则立即显示高清 dataURL
-     *   B. 无缓存时，用 img.src 多级回退加载（不受 CORS 限制）：
-     *      Google S2 128px → Google S2 64px → DuckDuckGo → api.xinac.net → 字母方块
-     *   C. 后台用 fetch 尝试下载并缓存（失败静默，不影响显示）
+     * 加载流程：
+     *   A. 优先从 IndexedDB 缓存读取真实图标 dataURL → 命中则立即显示
+     *   B. 无缓存时，先显示字母占位，再向后台 SW 请求目标站点真实 favicon
+     *      （SW 抓取 /favicon.ico 或解析首页 <link rel="icon">/apple-touch-icon）
+     *   C. SW 返回真实图标 → 替换显示并写入缓存；无真实图标 → 保持字母兜底
+     *
+     * 相比旧方案：不再使用 Google S2 / DuckDuckGo 等第三方服务作为展示源，
+     * 因此不会出现第三方默认地球（"模糊的球"）被当成结果展示或缓存的问题。
      *
      * @param {string} url - 磁贴目标 URL（用于提取域名）
      * @param {HTMLImageElement} imgElement - 要设置的 <img> 元素
-     * @param {HTMLElement} iconWrap - 图标容器（错误时用于创建 fallback）
+     * @param {HTMLElement} iconWrap - 图标容器（失败/占位时用于创建 fallback）
      * @param {Function} [onResult] - 可选回调，加载结束（成功或失败）时调用，
      *        签名 onResult(success: boolean, info: {reason?: string, source?: string})
      */
     ns.loadFavicon = function (url, imgElement, iconWrap, onResult) {
-        // 结果回调只触发一次，避免多级回退 / 缓存命中重复上报
+        // 结果回调只触发一次，避免重复上报
         let resultReported = false;
         function reportResult(success, info) {
             if (resultReported || typeof onResult !== 'function') return;
             resultReported = true;
             onResult(success, info || {});
-        }
-
-        // 根据最终图片源 URL 推断来源标签，用于成功提示
-        function sourceLabel(src) {
-            if (src.indexOf('sz=128') !== -1) return 'Google 128px';
-            if (src.indexOf('google.com/s2/favicons') !== -1) return 'Google';
-            if (src.indexOf('duckduckgo') !== -1) return 'DuckDuckGo';
-            if (src.indexOf('xinac') !== -1) return 'xinac';
-            return '缓存';
         }
 
         let domain;
@@ -179,143 +193,94 @@ window.DevHome = window.DevHome || {};
         } catch (e) {
             // 网址无法解析 → 直接失败并给出原因
             reportResult(false, { reason: '网址无法解析' });
-            createColorFallback('?', iconWrap);
+            createColorFallback('?', iconWrap, imgElement);
             return;
         }
 
-        // 多级 favicon URL 回退链（按优先级排列，img.src 直接使用不受 CORS 限制）
-        const faviconSources = [
-            { url: 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(domain) + '&sz=128' },
-            { url: 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(domain) + '&sz=64' },
-            { url: 'https://icons.duckduckgo.com/ip3/' + encodeURIComponent(domain) + '.ico' },
-            { url: 'https://api.xinac.net/icon/?url=' + encodeURIComponent(domain) }
-        ];
+        // 先显示字母占位，真实图标到达后替换（避免先闪默认地球）
+        createColorFallback(domain, iconWrap, imgElement);
 
-        // 回退索引（追踪当前使用的源）
-        let sourceIndex = -1;
+        // 真实图标 dataURL 加载失败 → 保持字母兜底（已是最终状态）
+        imgElement.onerror = function () {
+            imgElement.style.display = 'none';
+        };
+        // 真实图标加载成功 → 显示 <img> 并移除字母占位
+        imgElement.onload = function () {
+            imgElement.style.display = '';
+            removeColorFallback(iconWrap);
+        };
 
-        /**
-         * 尝试下一级回退源（严格按优先级顺序）
-         * 索引每 +1 代表尝试更低优先级的图标源；全部源都失败时显示字母方块兜底
-         */
-        function tryNextSource() {
-            sourceIndex++;
-            if (sourceIndex < faviconSources.length) {
-                // 清除旧的 onerror 标记，允许新源触发错误处理
-                imgElement.dataset.faviconFallback = '';
-                imgElement.src = faviconSources[sourceIndex].url;
-                console.log('[降级] 尝试图标源 ' + (sourceIndex + 1) + '/' + faviconSources.length +
-                    ' 域名=' + domain + ' 地址=' + faviconSources[sourceIndex].url);
-            } else {
-                // 全部源加载失败 → 字母方块兜底（最终兜底方案），并上报失败及原因
-                imgElement.src = '';
-                createColorFallback(domain, iconWrap);
-                console.warn('[降级] 所有图标源均失败，启用最终兜底字母图标 域名=' + domain);
-                reportResult(false, { reason: '所有图标源均无法访问（网络受限或域名无图标）' });
-            }
-        }
-
-        // Step A: 优先从 IndexedDB 缓存加载（无网络依赖，一进页面就显示）
-        // 这是回退链的唯一启动入口：命中缓存则直接用，未命中/异常则启动网络回退链。
-        // 注意：本函数内 img 的 src 始终在回调/事件处理器绑定之后才赋值，
-        // 因此不存在"处理器绑定前已加载/失败"的竞态，无需额外 complete 兜底。
+        // Step A：优先从 IndexedDB 缓存加载（无网络依赖，一进页面就显示）
         ns.getFaviconFromDB(domain).then(function (cached) {
             if (cached && typeof cached === 'string' && cached.startsWith('data:image')) {
-                // 缓存命中 → 直接显示高清版，不再走网络回退链
+                // 缓存命中 → 直接显示真实高清版，不再走网络
                 imgElement.src = cached;
                 imgElement.dataset.faviconCached = '1';
                 imgElement.dataset.faviconDone = '1';
-                console.log('[降级] 命中本地缓存，直接使用 域名=' + domain);
-                // 命中本地缓存即视为成功获取
+                console.log('[图标] 命中本地缓存，直接使用 域名=' + domain);
                 reportResult(true, { source: '缓存' });
             } else {
-                // 无缓存 → 启动 img.src 多级回退链（严格顺序降级）
-                console.log('[降级] 无本地缓存，启动图标源回退链 域名=' + domain);
-                tryNextSource();
+                // 无缓存 → 向后台 SW 请求目标站点真实 favicon
+                console.log('[图标] 无本地缓存，向 SW 请求真实 favicon 域名=' + domain);
+                _requestRealFavicon(domain, imgElement, iconWrap, reportResult);
             }
         }).catch(function (err) {
             // 缓存读取异常（如 IndexedDB 不可用）→ 不阻塞，直接降级到网络源
-            console.warn('[降级] 读取缓存失败，降级到网络源 域名=' + domain +
+            console.warn('[图标] 读取缓存失败，降级到 SW 域名=' + domain +
                 ' 原因=' + (err && err.message ? err.message : err));
-            tryNextSource();
+            _requestRealFavicon(domain, imgElement, iconWrap, reportResult);
         });
-
-        // Step B: img 加载失败 → 自动切换下一级（更低优先级）源
-        imgElement.onerror = function () {
-            if (imgElement.dataset.faviconFallback === '1') return; // 已在处理中，防止单事件重复触发
-            imgElement.dataset.faviconFallback = '1';
-            console.log('[降级] 当前图标源加载失败，准备降级 域名=' + domain +
-                ' 当前已尝试序号=' + (sourceIndex + 1));
-            tryNextSource();
-        };
-
-        // Step C: img 加载成功 → 上报成功并尝试后台缓存高清版（仅 Google S2 成功时才有意义）
-        imgElement.onload = function () {
-            // 缓存命中的跳过（dataURL 已经在 DB 中，且命中时已上报成功）
-            if (imgElement.dataset.faviconCached === '1') return;
-            // 标记为已完成，防止重复
-            imgElement.dataset.faviconDone = '1';
-
-            const currentSrc = imgElement.currentSrc || imgElement.src;
-            // 从真实图标源加载成功 → 上报成功（中断回退链）
-            console.log('[降级] 图标源加载成功，终止回退 域名=' + domain + ' 源=' + sourceLabel(currentSrc));
-            reportResult(true, { source: sourceLabel(currentSrc) });
-
-            // 仅对 Google S2 的 128px 结果尝试缓存（api.xinac.net 返回尺寸不可控）
-            if (currentSrc.indexOf('google.com/s2/favicons') !== -1 && currentSrc.indexOf('sz=128') !== -1) {
-                _cacheFaviconFromSrc(domain, currentSrc);
-            }
-        };
     };
 
     /**
-     * 后台将当前显示的 favicon 下载并缓存到 IndexedDB
+     * 通过后台 Service Worker 解析并获取目标站点的真实 favicon
      *
-     * 关键约束：favicon 来自 Google S2 / gstatic 等跨域服务，扩展**页面**直接
-     * fetch 会被 CORS 拦截（响应缺少 Access-Control-Allow-Origin，控制台报
-     * "blocked by CORS policy"）。但扩展的 Service Worker 对 host_permissions
-     * 覆盖的域名发起的 fetch 可豁免 CORS。
+     * 由 SW 代理的原因：扩展页面直接 fetch 任意站点会被 CORS 拦截（无法读取
+     * 首页 HTML 与图标字节）；而 SW 拥有 <all_urls> host_permissions，其 fetch
+     * 可豁免 CORS。SW 解析到真实图标后转成 dataURL 回传，页面写入 IndexedDB。
      *
-     * 因此本函数不再在页面直接 fetch，而是：
-     *   1. 通过 chrome.runtime.sendMessage 把请求交给后台 SW 代理
-     *   2. SW 代理 fetch 并把图片转成 dataURL 回传
-     *   3. 页面把合法 dataURL 写入 IndexedDB，加速后续加载
-     *
-     * 注意：Step B（img.src 多级回退）展示完全不受影响，本步仅用于缓存加速。
      * @param {string} domain - 域名
-     * @param {string} url - favicon 图片 URL
+     * @param {HTMLImageElement} imgElement - 显示用 <img>
+     * @param {HTMLElement} iconWrap - 图标容器
+     * @param {Function} report - 结果回调 (success, info)
      */
-    function _cacheFaviconFromSrc(domain, url) {
-        // 并发去重：同一域名的缓存请求合并为单个，避免重复写库
+    function _requestRealFavicon(domain, imgElement, iconWrap, report) {
+        // 并发去重：同一域名的缓存请求合并为单个
         if (_pendingFetches[domain]) return;
         _pendingFetches[domain] = true;
 
-        // 收尾：无论成功/失败都释放去重标记，避免该域名被永久跳过
+        // 收尾：无论成功失败都释放去重标记，避免该域名被永久跳过
         function finish() { delete _pendingFetches[domain]; }
 
         try {
-            // 交给后台 SW 代理：规避页面级 CORS，由 SW 的 host_permissions 豁免
-            chrome.runtime.sendMessage({ type: 'FETCH_FAVICON', url: url }, function (resp) {
+            // 交给后台 SW 代理：抓取目标站点自身图标，规避页面级 CORS
+            chrome.runtime.sendMessage({ type: 'RESOLVE_FAVICON', domain: domain }, function (resp) {
                 if (chrome.runtime.lastError) {
-                    // 后台未就绪或通信异常 → 静默放弃缓存（不影响已显示的图标）
-                    console.warn('[图标] 后台代理 favicon 请求失败 域名=' + domain +
+                    // 后台未就绪或通信异常 → 保留字母兜底（不影响主要流程）
+                    console.warn('[图标] 后台解析 favicon 失败 域名=' + domain +
                         ' 原因=' + chrome.runtime.lastError.message);
                     finish();
+                    report(false, { reason: '后台解析失败' });
                     return;
                 }
-                // 回传必须是合法的图片 dataURL 才写入缓存
-                if (!resp || !resp.success || typeof resp.dataUrl !== 'string' ||
-                    resp.dataUrl.indexOf('data:image') !== 0) {
+                if (resp && resp.success && typeof resp.dataUrl === 'string' &&
+                    resp.dataUrl.indexOf('data:image') === 0) {
+                    // 回传的是合法图片 dataURL → 写入缓存并展示
+                    imgElement.src = resp.dataUrl; // onload 会显示并移除字母占位
+                    ns.setFaviconInDB(domain, resp.dataUrl);
+                    console.log('[图标] 已获取并缓存真实 favicon 域名=' + domain);
                     finish();
-                    return;
+                    report(true, { source: '真实站点图标' });
+                } else {
+                    // 站点无可用真实图标 → 保留字母兜底，不缓存
+                    finish();
+                    report(false, { reason: '站点无可用 favicon' });
                 }
-                ns.setFaviconInDB(domain, resp.dataUrl);
-                console.log('[图标] 已缓存高清图标 域名=' + domain);
-                finish();
             });
         } catch (e) {
             // 极端情况下 message 端口不可用 → 直接放弃，不阻塞主流程
             finish();
+            report(false, { reason: '请求异常' });
         }
     }
 
