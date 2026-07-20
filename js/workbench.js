@@ -252,8 +252,8 @@ window.DevHome = window.DevHome || {};
         if (dom.devhomeStage) dom.devhomeStage.classList.remove('visible');
         if (dom.container) dom.container.classList.remove('devhome-dimmed');
 
-        // 恢复之前保存的分类页
-        if (typeof state._savedPageIndex === 'number' && state._savedPageIndex !== state.currentPage) {
+        // 恢复之前保存的分类页（无论是否与当前相同，都须重新渲染）
+        if (typeof state._savedPageIndex === 'number') {
             state.currentPage = state._savedPageIndex;
             if (typeof ns.tileManager !== 'undefined' && ns.tileManager.updateCurrentTiles) {
                 ns.tileManager.updateCurrentTiles();

@@ -177,6 +177,10 @@ let tilesLoadPromise = ns.tileManager.load();
 
         await tilesLoadPromise;
 
+        // 数据加载完成后，无条件重新渲染磁贴（修复首次进入和非分类记忆模式下的空白问题）
+        ns.tileManager.updateCurrentTiles();
+        ns.renderTiles();
+
         // === Phase 4: 同步 UI 状态 ===
 let autoFocusOn = storage.get('auto_focus', false);
         if (dom.autoFocusText) dom.autoFocusText.textContent = autoFocusOn ? '自动聚焦：开' : '自动聚焦：关';

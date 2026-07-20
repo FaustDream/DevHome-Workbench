@@ -827,7 +827,7 @@
 
                         <h3 class="s-section-title">关于</h3>
                         <button type="button" class="s-action-btn" id="changelogBtn">
-                            <svg class="dh-icon dh-icon--release-note dh-icon--md"" role="img"><use href="#dh-icon-release-note"></use></svg><span>更新说明 v2.25.1</span>
+                            <svg class="dh-icon dh-icon--release-note dh-icon--md"" role="img"><use href="#dh-icon-release-note"></use></svg><span>更新说明 v2.25.2</span>
                         </button>
 
                         <div class="s-danger-zone">
@@ -845,6 +845,16 @@
     <!-- 更新说明内容（供 Shadcn Dialog 动态读取渲染） -->
     <div id="changelogBodyTemplate" style="display:none">
         <div class="changelog-body" id="changelogBody">
+                <div class="changelog-entry">
+                    <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.25.2</span>
+                        <span class="changelog-date">2026-07-20</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>修复</strong> 日常模式下"常用"分类快捷方式首次不显示的问题——启动流程中数据加载完成后无条件重新渲染磁贴</li>
+                        <li><strong>修复</strong> 从专注模式退出后分类页磁贴空白的问题——去掉 <code>state.currentPage</code> 相等时的跳过条件，确保恢复分支总是执行</li>
+                    </ul>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">
                         <span class="changelog-version-tag">v2.25.1</span>
