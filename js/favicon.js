@@ -19,6 +19,9 @@ window.DevHome = window.DevHome || {};
 
     const FAVICON_LRU_MAX = 200;
     let faviconDB = null;
+    // 数据库打开单例：首次需要时才打开，后续复用同一 Promise，
+    // 避免「openFaviconDB 异步未完成时 loadFavicon 已执行」导致缓存链路形同虚设。
+    let _dbOpenPromise = null;
 
     // 并发请求去重：同一域名的进行中请求合并为单个
     const _pendingFetches = {};
@@ -28,12 +31,16 @@ window.DevHome = window.DevHome || {};
      * ================================================================ */
 
     /**
-     * 打开/创建 IndexedDB 数据库
+     * 打开/创建 IndexedDB 数据库（单例）
      * 存储结构：{ domain (主键), dataUrl: base64 图片, lastAccess: 时间戳 }
      * 版本升至 3：重建存储，清空旧版本可能缓存的默认地球图标（dataURL）。
+     *
+     * 返回缓存的 Promise 单例：多次调用只真正打开一次，
+     * 因此 loadFavicon 在 openFaviconDB 未完成时也能通过 _ensureDB 复用同一实例。
      */
     ns.openFaviconDB = function () {
-        return new Promise(function (resolve, reject) {
+        if (_dbOpenPromise) return _dbOpenPromise;
+        _dbOpenPromise = new Promise(function (resolve, reject) {
             const req = indexedDB.open('TabPageFaviconDB', 3);
             req.onupgradeneeded = function (e) {
                 const db = e.target.result;
@@ -45,60 +52,76 @@ window.DevHome = window.DevHome || {};
             req.onsuccess = function (e) { faviconDB = e.target.result; resolve(faviconDB); };
             req.onerror = function (e) { reject(e.target.error); };
         });
+        return _dbOpenPromise;
     };
+
+    /**
+     * 惰性确保数据库已打开：首次调用时打开，之后复用已打开实例。
+     * 这样无论 openFaviconDB 是否已被外部显式调用、以及调用时机如何，
+     * get/set 都不会因 faviconDB 为 null 而静默失效，保证本地缓存真正可用。
+     * @returns {Promise<IDBDatabase>}
+     */
+    function _ensureDB() {
+        if (faviconDB) return Promise.resolve(faviconDB);
+        return ns.openFaviconDB();
+    }
 
     /** 从 IndexedDB 读取缓存的 favicon data URL */
     ns.getFaviconFromDB = function (domain) {
-        return new Promise(function (resolve) {
-            if (!faviconDB) return resolve(null);
-            try {
-                const tx = faviconDB.transaction('favicons', 'readwrite');
-                const store = tx.objectStore('favicons');
-                const getReq = store.get(domain);
-                getReq.onsuccess = function () {
-                    if (getReq.result) {
-                        // 更新最后访问时间（LRU 排序依据）
-                        store.put({ domain: domain, dataUrl: getReq.result.dataUrl, lastAccess: Date.now() });
-                        resolve(getReq.result.dataUrl);
-                    } else {
-                        resolve(null);
-                    }
-                };
-                getReq.onerror = function () { resolve(null); };
-            } catch (e) { resolve(null); }
-        });
+        return _ensureDB().then(function (db) {
+            return new Promise(function (resolve) {
+                if (!db) return resolve(null);
+                try {
+                    const tx = db.transaction('favicons', 'readwrite');
+                    const store = tx.objectStore('favicons');
+                    const getReq = store.get(domain);
+                    getReq.onsuccess = function () {
+                        if (getReq.result) {
+                            // 更新最后访问时间（LRU 排序依据）
+                            store.put({ domain: domain, dataUrl: getReq.result.dataUrl, lastAccess: Date.now() });
+                            resolve(getReq.result.dataUrl);
+                        } else {
+                            resolve(null);
+                        }
+                    };
+                    getReq.onerror = function () { resolve(null); };
+                } catch (e) { resolve(null); }
+            });
+        }).catch(function () { return null; });
     };
 
     /** 将 favicon data URL 存入 IndexedDB，并触发 LRU 淘汰 */
     ns.setFaviconInDB = function (domain, dataUrl) {
-        if (!faviconDB) return;
-        try {
-            const tx = faviconDB.transaction('favicons', 'readwrite');
-            const store = tx.objectStore('favicons');
-            store.put({ domain: domain, dataUrl: dataUrl, lastAccess: Date.now() });
-            tx.oncomplete = function () {
-                // LRU 淘汰：超过上限时删除最旧的条目
-                const countReq = faviconDB.transaction('favicons', 'readonly')
-                    .objectStore('favicons').count();
-                countReq.onsuccess = function () {
-                    if (countReq.result > FAVICON_LRU_MAX) {
-                        const delTx = faviconDB.transaction('favicons', 'readwrite');
-                        const delStore = delTx.objectStore('favicons');
-                        const idx = delStore.index('lastAccess');
-                        const cursorReq = idx.openCursor();
-                        let toDelete = countReq.result - FAVICON_LRU_MAX;
-                        cursorReq.onsuccess = function (e) {
-                            const cursor = e.target.result;
-                            if (cursor && toDelete > 0) {
-                                cursor.delete();
-                                toDelete--;
-                                cursor.continue();
-                            }
-                        };
-                    }
+        _ensureDB().then(function (db) {
+            if (!db) return;
+            try {
+                const tx = db.transaction('favicons', 'readwrite');
+                const store = tx.objectStore('favicons');
+                store.put({ domain: domain, dataUrl: dataUrl, lastAccess: Date.now() });
+                tx.oncomplete = function () {
+                    // LRU 淘汰：超过上限时删除最旧的条目
+                    const countReq = db.transaction('favicons', 'readonly')
+                        .objectStore('favicons').count();
+                    countReq.onsuccess = function () {
+                        if (countReq.result > FAVICON_LRU_MAX) {
+                            const delTx = db.transaction('favicons', 'readwrite');
+                            const delStore = delTx.objectStore('favicons');
+                            const idx = delStore.index('lastAccess');
+                            const cursorReq = idx.openCursor();
+                            let toDelete = countReq.result - FAVICON_LRU_MAX;
+                            cursorReq.onsuccess = function (e) {
+                                const cursor = e.target.result;
+                                if (cursor && toDelete > 0) {
+                                    cursor.delete();
+                                    toDelete--;
+                                    cursor.continue();
+                                }
+                            };
+                        }
+                    };
                 };
-            };
-        } catch (e) { /* 静默失败，不影响主要流程 */ }
+            } catch (e) { /* 静默失败，不影响主要流程 */ }
+        }).catch(function () { /* 数据库不可用时放弃缓存，不影响显示 */ });
     };
 
     /* ================================================================
@@ -197,9 +220,6 @@ window.DevHome = window.DevHome || {};
             return;
         }
 
-        // 先显示字母占位，真实图标到达后替换（避免先闪默认地球）
-        createColorFallback(domain, iconWrap, imgElement);
-
         // 真实图标 dataURL 加载失败 → 保持字母兜底（已是最终状态）
         imgElement.onerror = function () {
             imgElement.style.display = 'none';
@@ -213,21 +233,23 @@ window.DevHome = window.DevHome || {};
         // Step A：优先从 IndexedDB 缓存加载（无网络依赖，一进页面就显示）
         ns.getFaviconFromDB(domain).then(function (cached) {
             if (cached && typeof cached === 'string' && cached.startsWith('data:image')) {
-                // 缓存命中 → 直接显示真实高清版，不再走网络
+                // 缓存命中 → 直接显示真实高清版，不显示字母占位，避免闪动
                 imgElement.src = cached;
                 imgElement.dataset.faviconCached = '1';
                 imgElement.dataset.faviconDone = '1';
                 console.log('[图标] 命中本地缓存，直接使用 域名=' + domain);
                 reportResult(true, { source: '缓存' });
             } else {
-                // 无缓存 → 向后台 SW 请求目标站点真实 favicon
+                // 无缓存 → 先显示字母占位，再向后台 SW 请求目标站点真实 favicon
+                createColorFallback(domain, iconWrap, imgElement);
                 console.log('[图标] 无本地缓存，向 SW 请求真实 favicon 域名=' + domain);
                 _requestRealFavicon(domain, imgElement, iconWrap, reportResult);
             }
         }).catch(function (err) {
-            // 缓存读取异常（如 IndexedDB 不可用）→ 不阻塞，直接降级到网络源
+            // 缓存读取异常（如 IndexedDB 不可用）→ 不阻塞，显示字母占位并降级到网络源
             console.warn('[图标] 读取缓存失败，降级到 SW 域名=' + domain +
                 ' 原因=' + (err && err.message ? err.message : err));
+            createColorFallback(domain, iconWrap, imgElement);
             _requestRealFavicon(domain, imgElement, iconWrap, reportResult);
         });
     };
