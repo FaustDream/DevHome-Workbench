@@ -196,8 +196,30 @@ window.DevHome = window.DevHome || {};
         try {
             domain = new URL(tile.url).hostname;
         } catch (_) { domain = null; }
+
+        // 通知结果回调：成功 → 绿色提示；失败 → 红色提示并附带失败原因
+        function notifyIconResult(success, info) {
+            if (success) {
+                ns.showToast('图标已更新："' + tile.label + '"', 'success');
+            } else {
+                const reason = (info && info.reason) ? info.reason : '未知原因';
+                ns.showToast('图标获取失败（' + tile.label + '）：' + reason, 'error');
+            }
+        }
+
+        // 先展示进行中提示，再执行实际刷新
+        ns.showToast('正在重新获取 "' + tile.label + '" 的图标...', 'info');
+
+        function doRefresh() {
+            // 更新 tiles 数据并重新渲染（仅对该磁贴附加结果回调）
+            try {
+                window.DevHome.tileManager.save();
+            } catch (_) {}
+            ns.renderTiles({ targetTileId: tile.id, onIconResult: notifyIconResult });
+        }
+
         if (domain && window.DevHome && window.DevHome.openFaviconDB) {
-            // 通过打开 DB 连接来清除特定域名的缓存条目
+            // 先清除缓存，确保真正重新请求图标服务，再渲染并监听结果
             window.DevHome.openFaviconDB().then(function (db) {
                 try {
                     const tx = db.transaction('favicons', 'readwrite');
@@ -207,14 +229,11 @@ window.DevHome = window.DevHome || {};
                 } catch (e) {
                     console.warn('[右键] 清除缓存失败:', e.message);
                 }
-            }).catch(function () {});
+                doRefresh();
+            }).catch(function () { doRefresh(); });
+        } else {
+            doRefresh();
         }
-        // 更新 tiles 数据并重新渲染
-        try {
-            window.DevHome.tileManager.save();
-        } catch (_) {}
-        ns.renderTiles();
-        ns.showToast('正在重新获取 "' + tile.label + '" 的图标...', 'info');
     }
 
     /**

@@ -152,12 +152,33 @@ window.DevHome = window.DevHome || {};
      * @param {string} url - 磁贴目标 URL（用于提取域名）
      * @param {HTMLImageElement} imgElement - 要设置的 <img> 元素
      * @param {HTMLElement} iconWrap - 图标容器（错误时用于创建 fallback）
+     * @param {Function} [onResult] - 可选回调，加载结束（成功或失败）时调用，
+     *        签名 onResult(success: boolean, info: {reason?: string, source?: string})
      */
-    ns.loadFavicon = function (url, imgElement, iconWrap) {
+    ns.loadFavicon = function (url, imgElement, iconWrap, onResult) {
+        // 结果回调只触发一次，避免多级回退 / 缓存命中重复上报
+        let resultReported = false;
+        function reportResult(success, info) {
+            if (resultReported || typeof onResult !== 'function') return;
+            resultReported = true;
+            onResult(success, info || {});
+        }
+
+        // 根据最终图片源 URL 推断来源标签，用于成功提示
+        function sourceLabel(src) {
+            if (src.indexOf('sz=128') !== -1) return 'Google 128px';
+            if (src.indexOf('google.com/s2/favicons') !== -1) return 'Google';
+            if (src.indexOf('duckduckgo') !== -1) return 'DuckDuckGo';
+            if (src.indexOf('xinac') !== -1) return 'xinac';
+            return '缓存';
+        }
+
         let domain;
         try {
             domain = new URL(url).hostname;
         } catch (e) {
+            // 网址无法解析 → 直接失败并给出原因
+            reportResult(false, { reason: '网址无法解析' });
             createColorFallback('?', iconWrap);
             return;
         }
@@ -184,10 +205,11 @@ window.DevHome = window.DevHome || {};
                 imgElement.dataset.faviconFallback = '';
                 imgElement.src = faviconSources[sourceIndex].url;
             } else {
-                // 全部源加载失败 → 字母方块兜底
+                // 全部源加载失败 → 字母方块兜底，并上报失败及原因
                 imgElement.src = '';
                 createColorFallback(domain, iconWrap);
                 console.warn('[图标] 全部源失败，使用字母回退 域名=' + domain);
+                reportResult(false, { reason: '所有图标源均无法访问（网络受限或域名无图标）' });
             }
         }
 
@@ -199,6 +221,8 @@ window.DevHome = window.DevHome || {};
                 imgElement.dataset.faviconCached = '1';
                 imgElement.dataset.faviconDone = '1';
                 console.log('[图标] 缓存命中 域名=' + domain);
+                // 命中本地缓存即视为成功获取
+                reportResult(true, { source: '缓存' });
             } else {
                 // 无缓存 → 启动 img.src 多级回退链
                 tryNextSource();
@@ -214,12 +238,15 @@ window.DevHome = window.DevHome || {};
 
         // Step C: img 加载成功 → 后台尝试缓存高清版（仅 Google S2 成功时才有意义）
         imgElement.onload = function () {
-            // 缓存命中的跳过（dataURL 已经在 DB 中）
+            // 缓存命中的跳过（dataURL 已经在 DB 中，且命中时已上报成功）
             if (imgElement.dataset.faviconCached === '1') return;
             // 标记为已完成，防止重复
             imgElement.dataset.faviconDone = '1';
 
             const currentSrc = imgElement.currentSrc || imgElement.src;
+            // 从真实图标源加载成功 → 上报成功
+            reportResult(true, { source: sourceLabel(currentSrc) });
+
             // 仅对 Google S2 的 128px 结果尝试缓存（api.xinac.net 返回尺寸不可控）
             if (currentSrc.indexOf('google.com/s2/favicons') !== -1 && currentSrc.indexOf('sz=128') !== -1) {
                 _cacheFaviconFromSrc(domain, currentSrc);

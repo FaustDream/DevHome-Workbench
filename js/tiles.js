@@ -176,7 +176,8 @@ window.DevHome = window.DevHome || {};
     };
 
     /* ===== 磁贴 DOM 渲染 ===== */
-    ns.renderTiles = function () {
+    // options.targetTileId + options.onIconResult 用于"重新获取图标"时上报成功/失败
+    ns.renderTiles = function (options) {
         dom.tilesContainer.innerHTML = '';
         const frag = document.createDocumentFragment();
         ns.tileManager.currentTiles.forEach(function (tile, index) {
@@ -211,7 +212,11 @@ window.DevHome = window.DevHome || {};
                 img2.height = 56;
                 img2.decoding = 'async';
                 iconWrap.appendChild(img2);
-                loadFavicon(tile.url, img2, iconWrap);
+                // 若为"重新获取图标"指定的磁贴，附加结果回调以通知成功/失败
+                const onResult = (options && options.targetTileId === tile.id && typeof options.onIconResult === 'function')
+                    ? options.onIconResult
+                    : null;
+                loadFavicon(tile.url, img2, iconWrap, onResult);
             }
 
             let label = document.createElement('span'); label.className = 'tile-label'; label.textContent = tile.label;
