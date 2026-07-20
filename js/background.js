@@ -70,6 +70,37 @@ chrome.alarms.onAlarm.addListener(async function (alarm) {
     }
 });
 
+/* ===== 后台代理 favicon fetch（绕过页面级 CORS） ===== */
+/**
+ * 在 Service Worker 中请求 favicon 并转成 dataURL 回传
+ *
+ * 为什么放 SW：扩展页面直接 fetch 跨域 favicon 会被 CORS 拦截（响应无
+ * Access-Control-Allow-Origin）。而 SW 对 host_permissions 覆盖的域名
+ * （含 www.google.com 与 *.gstatic.com）发起的 fetch 可豁免 CORS，
+ * 从而正确读取 Google S2 重定向后 gstatic 的图片字节。
+ * @param {string} url - favicon 图片地址
+ * @returns {Promise<string>} base64 dataURL
+ */
+function handleFetchFavicon(url) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(function () { controller.abort(); }, 5000);
+    return fetch(url, { signal: controller.signal })
+        .then(function (res) {
+            clearTimeout(timeoutId);
+            if (!res.ok) { throw new Error('HTTP ' + res.status); }
+            return res.blob();
+        })
+        .then(function (blob) {
+            // 将二进制 blob 转成 dataURL，便于页面写入 IndexedDB 长期缓存
+            return new Promise(function (resolve, reject) {
+                const reader = new FileReader();
+                reader.onloadend = function () { resolve(reader.result); };
+                reader.onerror = function () { reject(reader.error || new Error('read blob failed')); };
+                reader.readAsDataURL(blob);
+            });
+        });
+}
+
 /* ===== 消息处理 ===== */
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     switch (message.type) {
@@ -111,6 +142,15 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
         case 'OPEN_SIDE_PANEL':
             if (sender.tab) { chrome.sidePanel.open({ tabId: sender.tab.id }); }
             sendResponse({ success: true });
+            break;
+        case 'FETCH_FAVICON':
+            // 由后台 SW 代理 favicon fetch：SW 拥有 host_permissions 可豁免 CORS，
+            // 再把图片转成 dataURL 回传，避免扩展页面直接 fetch 被浏览器拦截。
+            handleFetchFavicon(message.url)
+                .then(function (dataUrl) { sendResponse({ success: true, dataUrl: dataUrl }); })
+                .catch(function (err) {
+                    sendResponse({ success: false, reason: (err && err.message) ? err.message : String(err) });
+                });
             break;
         default:
             sendResponse({ success: false, reason: 'unknown_message_type' });

@@ -269,65 +269,53 @@ window.DevHome = window.DevHome || {};
     };
 
     /**
-     * 后台将当前显示的 favicon URL 下载并缓存到 IndexedDB
-     * 对于 Google 服务的 URL，使用代理管理器检测连通性后再请求
-     * 使用 fetch + AbortController 5 秒超时，失败不影响显示
+     * 后台将当前显示的 favicon 下载并缓存到 IndexedDB
+     *
+     * 关键约束：favicon 来自 Google S2 / gstatic 等跨域服务，扩展**页面**直接
+     * fetch 会被 CORS 拦截（响应缺少 Access-Control-Allow-Origin，控制台报
+     * "blocked by CORS policy"）。但扩展的 Service Worker 对 host_permissions
+     * 覆盖的域名发起的 fetch 可豁免 CORS。
+     *
+     * 因此本函数不再在页面直接 fetch，而是：
+     *   1. 通过 chrome.runtime.sendMessage 把请求交给后台 SW 代理
+     *   2. SW 代理 fetch 并把图片转成 dataURL 回传
+     *   3. 页面把合法 dataURL 写入 IndexedDB，加速后续加载
+     *
+     * 注意：Step B（img.src 多级回退）展示完全不受影响，本步仅用于缓存加速。
      * @param {string} domain - 域名
      * @param {string} url - favicon 图片 URL
      */
     function _cacheFaviconFromSrc(domain, url) {
-        // 并发去重
+        // 并发去重：同一域名的缓存请求合并为单个，避免重复写库
         if (_pendingFetches[domain]) return;
         _pendingFetches[domain] = true;
 
-        /**
-         * 执行实际的 fetch + 缓存
-         */
-        function doFetch() {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(function () { controller.abort(); }, 5000);
+        // 收尾：无论成功/失败都释放去重标记，避免该域名被永久跳过
+        function finish() { delete _pendingFetches[domain]; }
 
-            fetch(url, { signal: controller.signal })
-                .then(function (response) {
-                    clearTimeout(timeoutId);
-                    if (!response.ok) { delete _pendingFetches[domain]; return null; }
-                    return response.blob();
-                })
-                .then(function (blob) {
-                    if (!blob || !blob.type.startsWith('image/')) {
-                        delete _pendingFetches[domain];
-                        return;
-                    }
-                    const reader = new FileReader();
-                    reader.onloadend = function () {
-                        ns.setFaviconInDB(domain, reader.result);
-                        delete _pendingFetches[domain];
-                        console.log('[图标] 已缓存高清图标 域名=' + domain);
-                    };
-                    reader.onerror = function () { delete _pendingFetches[domain]; };
-                    reader.readAsDataURL(blob);
-                })
-                .catch(function () {
-                    clearTimeout(timeoutId);
-                    delete _pendingFetches[domain];
-                    // 静默失败：fetch 缓存失败不影响 img.src 已经显示的图标
-                });
-        }
-
-        // Google 服务 → 检查代理连通性后决定是否发起 fetch
-        const isGoogleUrl = url.indexOf('google.com') !== -1;
-        if (isGoogleUrl && ns.proxyManager) {
-            // 使用代理管理器判断 Google 是否可达
-            if (ns.proxyManager.isGoogleReachable()) {
-                doFetch();
-            } else {
-                // Google 不可达 → 跳过缓存请求，避免无谓超时
-                delete _pendingFetches[domain];
-                console.log('[图标] 跳过缓存（Google 不可达）域名=' + domain);
-            }
-        } else {
-            // 非 Google 服务 → 直接 fetch
-            doFetch();
+        try {
+            // 交给后台 SW 代理：规避页面级 CORS，由 SW 的 host_permissions 豁免
+            chrome.runtime.sendMessage({ type: 'FETCH_FAVICON', url: url }, function (resp) {
+                if (chrome.runtime.lastError) {
+                    // 后台未就绪或通信异常 → 静默放弃缓存（不影响已显示的图标）
+                    console.warn('[图标] 后台代理 favicon 请求失败 域名=' + domain +
+                        ' 原因=' + chrome.runtime.lastError.message);
+                    finish();
+                    return;
+                }
+                // 回传必须是合法的图片 dataURL 才写入缓存
+                if (!resp || !resp.success || typeof resp.dataUrl !== 'string' ||
+                    resp.dataUrl.indexOf('data:image') !== 0) {
+                    finish();
+                    return;
+                }
+                ns.setFaviconInDB(domain, resp.dataUrl);
+                console.log('[图标] 已缓存高清图标 域名=' + domain);
+                finish();
+            });
+        } catch (e) {
+            // 极端情况下 message 端口不可用 → 直接放弃，不阻塞主流程
+            finish();
         }
     }
 
