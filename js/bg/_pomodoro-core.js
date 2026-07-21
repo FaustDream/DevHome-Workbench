@@ -25,8 +25,8 @@ const pomodoroState = {
     phaseTotalSeconds: 0,
     remaining: 0
 };
-const pomodoroTimer = null;
-const _phaseEndInProgress = false;
+let pomodoroTimer = null;
+let _phaseEndInProgress = false;
 
 function computeRemaining() {
     if (!pomodoroState.active || !pomodoroState.phaseStartAt) return pomodoroState.remaining;
@@ -48,7 +48,7 @@ async function restorePomodoroState() {
         const result = await chrome.storage.local.get(POMODORO_STORAGE_KEY);
         const saved = result[POMODORO_STORAGE_KEY];
         if (!saved) return;
-        pomodoroState = Object.assign(pomodoroState, saved);
+        Object.assign(pomodoroState, saved);
         if (!pomodoroState.active) return;
         pomodoroState.remaining = computeRemaining();
         if (pomodoroState.remaining <= 0) {
