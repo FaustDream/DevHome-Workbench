@@ -21,6 +21,10 @@ import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
+import TextAlign from '@tiptap/extension-text-align';
+import Highlight from '@tiptap/extension-highlight';
+// TextStyle 是 Color / FontSize 的载体标记，三者需同时注册
+import { TextStyle, Color, FontSize } from '@tiptap/extension-text-style';
 
 window.DevHome = window.DevHome || {};
 
@@ -229,8 +233,22 @@ window.DevHome = window.DevHome || {};
             codeBlock: { HTMLAttributes: { class: 'tiptap-code-block' } },
             blockquote: { HTMLAttributes: { class: 'tiptap-blockquote' } },
             bulletList: { HTMLAttributes: { class: 'tiptap-list' } },
-            orderedList: { HTMLAttributes: { class: 'tiptap-list' } }
+            orderedList: { HTMLAttributes: { class: 'tiptap-list' } },
+            // StarterKit v3 已内置 Link，此处仅配置：不自动跳转、新窗口打开
+            link: {
+                openOnClick: false,
+                autolink: true,
+                HTMLAttributes: { class: 'tiptap-link', rel: 'noopener noreferrer', target: '_blank' }
+            }
         }),
+        // 文字颜色 / 字号：均依赖 TextStyle 标记
+        TextStyle,
+        Color,
+        FontSize,
+        // 背景高亮（多色）
+        Highlight.configure({ multicolor: true, HTMLAttributes: { class: 'tiptap-highlight' } }),
+        // 段落 / 标题对齐
+        TextAlign.configure({ types: ['heading', 'paragraph'] }),
         Placeholder.configure({
             placeholder: '在此编写内容...'
         }),
@@ -372,6 +390,97 @@ window.DevHome = window.DevHome || {};
         toolbar.style.display = 'flex';
     }
 
+    /* ===== 颜色 / 高亮调色板（供工具栏弹层复用） ===== */
+    var TEXT_COLORS = ['#e03131', '#f08c00', '#f59f00', '#2f9e44', '#1971c2', '#7048e8', '#e64980', '#343a40'];
+    var HL_COLORS = ['#fff3bf', '#d3f9d8', '#d0ebff', '#ffe3e3', '#f3d9fa', '#ffe8cc'];
+
+    /** 构建色块弹层：点击色块回调 onPick，点击底部按钮回调 onClear */
+    function buildColorPopover(colors, onPick, onClear, clearLabel) {
+        var pop = document.createElement('div');
+        pop.className = 'tiptap-color-popover';
+        var grid = document.createElement('div');
+        grid.className = 'tiptap-color-grid';
+        colors.forEach(function (c) {
+            var sw = document.createElement('button');
+            sw.type = 'button';
+            sw.className = 'tiptap-color-swatch';
+            sw.style.background = c;
+            sw.title = c;
+            sw.addEventListener('mousedown', function (e) { e.preventDefault(); e.stopPropagation(); onPick(c); });
+            grid.appendChild(sw);
+        });
+        pop.appendChild(grid);
+        var clr = document.createElement('button');
+        clr.type = 'button';
+        clr.className = 'tiptap-color-clear';
+        clr.textContent = clearLabel || '清除';
+        clr.addEventListener('mousedown', function (e) { e.preventDefault(); e.stopPropagation(); onClear(); });
+        pop.appendChild(clr);
+        return pop;
+    }
+
+    /**
+     * 创建带下拉弹层的工具栏按钮（颜色 / 高亮）。
+     * @param {HTMLElement} container 工具栏容器
+     * @param {object} def { label, title, buildPopover(close) }
+     */
+    function createPopoverButton(container, def) {
+        var wrap = document.createElement('span');
+        wrap.className = 'tiptap-fixed-popover-wrap';
+        var btn = document.createElement('button');
+        btn.className = 'tiptap-fixed-btn';
+        btn.innerHTML = def.label;
+        btn.title = def.title;
+        btn.type = 'button';
+        var pop = null;
+        function closePop() {
+            if (pop) { pop.remove(); pop = null; document.removeEventListener('mousedown', onOutside); }
+        }
+        function onOutside(e) { if (!wrap.contains(e.target)) closePop(); }
+        btn.addEventListener('mousedown', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (pop) { closePop(); return; }
+            pop = def.buildPopover(closePop);
+            wrap.appendChild(pop);
+            setTimeout(function () { document.addEventListener('mousedown', onOutside); }, 0);
+            console.log('[面板] 打开' + def.title + '弹层');
+        });
+        wrap.appendChild(btn);
+        container.appendChild(wrap);
+        return btn;
+    }
+
+    /**
+     * 处理插入 / 编辑 / 移除超链接。
+     * 已在链接上时直接移除；否则弹出输入框（禁用原生 prompt，改用 ns.showPrompt）。
+     * @param {Editor} editor - Tiptap Editor 实例
+     */
+    function promptLink(editor) {
+        // 光标已落在链接内 → 视为“取消链接”
+        if (editor.isActive('link')) {
+            editor.chain().focus().extendMarkRange('link').unsetLink().run();
+            console.log('[编辑] 移除超链接');
+            return;
+        }
+        var prev = editor.getAttributes('link').href || '';
+        var applyLink = function (url) {
+            if (url === null || url === undefined) return; // 用户取消
+            url = String(url).trim();
+            if (!url) { editor.chain().focus().extendMarkRange('link').unsetLink().run(); return; }
+            // 自动补全协议，避免相对路径失效
+            if (!/^(https?:\/\/|mailto:|tel:)/i.test(url)) url = 'https://' + url;
+            editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+            console.log('[编辑] 设置超链接 ' + url);
+        };
+        // ns.showPrompt 返回 Promise<string|null>；用 Promise.resolve 兼容同步兜底
+        if (ns.showPrompt) {
+            Promise.resolve(ns.showPrompt('请输入链接地址', { defaultValue: prev, placeholder: 'https://' })).then(applyLink);
+        } else if (ns.showToast) {
+            ns.showToast('链接输入组件不可用', 'error');
+        }
+    }
+
     /* ===== 固定置顶工具栏（始终可见，更丰富功能） ===== */
 
     /**
@@ -384,8 +493,41 @@ window.DevHome = window.DevHome || {};
         // 清除旧的按钮（防止不同编辑器实例残留）
         container.innerHTML = '';
 
+        var allBtns = [];
+
+        /** 追加分隔符 */
+        function addSep() {
+            var sep = document.createElement('span');
+            sep.className = 'tiptap-fixed-sep';
+            container.appendChild(sep);
+        }
+
+        /** 追加一个普通切换按钮，并登记到 allBtns 供状态同步 */
+        function addButton(def) {
+            var btn = document.createElement('button');
+            btn.className = 'tiptap-fixed-btn';
+            btn.innerHTML = def.label;
+            btn.title = def.title;
+            btn.type = 'button';
+            btn.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                def.action();
+            });
+            btn._update = function () {
+                btn.classList.toggle('active', def.isActive ? def.isActive() : false);
+                if (def.disabled) btn.disabled = def.disabled();
+            };
+            btn._update();
+            container.appendChild(btn);
+            allBtns.push(btn);
+            return btn;
+        }
+
+        // ---- 标题级别选择 ----
         var headingSelect = document.createElement('select');
         headingSelect.className = 'tiptap-fixed-heading-select';
+        headingSelect.title = '段落 / 标题级别';
         headingSelect.innerHTML =
             '<option value="">正文</option>' +
             '<option value="1">标题 1</option>' +
@@ -398,78 +540,152 @@ window.DevHome = window.DevHome || {};
             } else {
                 editor.chain().focus().setParagraph().run();
             }
-            this.value = ''; // 重置选择器
         });
         container.appendChild(headingSelect);
 
-        var sep1 = document.createElement('span');
-        sep1.className = 'tiptap-fixed-sep';
-        container.appendChild(sep1);
-
-        // 按钮组定义
-        var groups = [
-            // 行内格式
-            [
-                { label: '<b>B</b>', title: '加粗 (Ctrl+B)',     action: function () { editor.chain().focus().toggleBold().run(); },          isActive: function () { return editor.isActive('bold'); } },
-                { label: '<i>I</i>', title: '斜体 (Ctrl+I)',     action: function () { editor.chain().focus().toggleItalic().run(); },        isActive: function () { return editor.isActive('italic'); } },
-                { label: '<u>U</u>', title: '下划线 (Ctrl+U)',   action: function () { editor.chain().focus().toggleUnderline().run(); },     isActive: function () { return editor.isActive('underline'); } },
-                { label: '<s>S</s>', title: '删除线',           action: function () { editor.chain().focus().toggleStrike().run(); },        isActive: function () { return editor.isActive('strike'); } }
-            ],
-            // 块级格式
-            [
-                { label: '•≡', title: '无序列表',    action: function () { editor.chain().focus().toggleBulletList().run(); },      isActive: function () { return editor.isActive('bulletList'); } },
-                { label: '1.≡',title: '有序列表',    action: function () { editor.chain().focus().toggleOrderedList().run(); },     isActive: function () { return editor.isActive('orderedList'); } },
-                { label: '☑≡',title: '任务列表',    action: function () { editor.chain().focus().toggleTaskList().run(); },        isActive: function () { return editor.isActive('taskList'); } },
-                { label: '❝', title: '引用块',       action: function () { editor.chain().focus().toggleBlockquote().run(); },      isActive: function () { return editor.isActive('blockquote'); } },
-                { label: '⌨', title: '代码块',       action: function () { editor.chain().focus().toggleCodeBlock().run(); },        isActive: function () { return editor.isActive('codeBlock'); } },
-                { label: '─', title: '水平分割线',    action: function () { editor.chain().focus().setHorizontalRule().run(); },       isActive: function () { return false; } }
-            ],
-            // 历史
-            [
-                { label: '↶', title: '撤销 (Ctrl+Z)', action: function () { editor.chain().focus().undo().run(); },  isActive: function () { return false; }, disabled: function () { return !editor.can().undo(); } },
-                { label: '↷', title: '重做 (Ctrl+Y)', action: function () { editor.chain().focus().redo().run(); },  isActive: function () { return false; }, disabled: function () { return !editor.can().redo(); } }
-            ]
-        ];
-
-        var allBtns = [];
-
-        groups.forEach(function (group, gIdx) {
-            if (gIdx > 0) {
-                var sep = document.createElement('span');
-                sep.className = 'tiptap-fixed-sep';
-                container.appendChild(sep);
+        // ---- 字号选择 ----
+        var fontSizeSelect = document.createElement('select');
+        fontSizeSelect.className = 'tiptap-fixed-fontsize-select';
+        fontSizeSelect.title = '字号';
+        fontSizeSelect.innerHTML =
+            '<option value="">字号</option>' +
+            ['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px'].map(function (s) {
+                return '<option value="' + s + '">' + parseInt(s, 10) + '</option>';
+            }).join('');
+        fontSizeSelect.addEventListener('change', function () {
+            var size = this.value;
+            if (size) {
+                editor.chain().focus().setFontSize(size).run();
+                console.log('[编辑] 应用字号 ' + size);
+            } else {
+                editor.chain().focus().unsetFontSize().run();
+                console.log('[编辑] 清除字号');
             }
-            group.forEach(function (def) {
-                var btn = document.createElement('button');
-                btn.className = 'tiptap-fixed-btn';
-                btn.innerHTML = def.label;
-                btn.title = def.title;
-                btn.type = 'button';
-                btn.addEventListener('mousedown', function (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    def.action();
-                });
-                btn._update = function () {
-                    btn.classList.toggle('active', def.isActive());
-                    if (def.disabled) btn.disabled = def.disabled();
-                };
-                btn._update();
-                container.appendChild(btn);
-                allBtns.push(btn);
-            });
+        });
+        container.appendChild(fontSizeSelect);
+
+        addSep();
+
+        // ---- 行内格式 ----
+        addButton({ label: '<b>B</b>', title: '加粗 (Ctrl+B)', action: function () { editor.chain().focus().toggleBold().run(); }, isActive: function () { return editor.isActive('bold'); } });
+        addButton({ label: '<i>I</i>', title: '斜体 (Ctrl+I)', action: function () { editor.chain().focus().toggleItalic().run(); }, isActive: function () { return editor.isActive('italic'); } });
+        addButton({ label: '<u>U</u>', title: '下划线 (Ctrl+U)', action: function () { editor.chain().focus().toggleUnderline().run(); }, isActive: function () { return editor.isActive('underline'); } });
+        addButton({ label: '<s>S</s>', title: '删除线', action: function () { editor.chain().focus().toggleStrike().run(); }, isActive: function () { return editor.isActive('strike'); } });
+        addButton({ label: '&lt;/&gt;', title: '行内代码', action: function () { editor.chain().focus().toggleCode().run(); }, isActive: function () { return editor.isActive('code'); } });
+
+        // ---- 文字颜色 / 高亮（下拉调色板）----
+        var colorBtn = createPopoverButton(container, {
+            label: '<span class="tiptap-ico-color">A</span>',
+            title: '文字颜色',
+            buildPopover: function (close) {
+                return buildColorPopover(TEXT_COLORS, function (c) {
+                    editor.chain().focus().setColor(c).run();
+                    console.log('[编辑] 应用文字颜色 ' + c);
+                    close();
+                }, function () {
+                    editor.chain().focus().unsetColor().run();
+                    console.log('[编辑] 清除文字颜色');
+                    close();
+                }, '清除颜色');
+            }
+        });
+        var hlBtn = createPopoverButton(container, {
+            label: '<span class="tiptap-ico-hl">A</span>',
+            title: '高亮',
+            buildPopover: function (close) {
+                return buildColorPopover(HL_COLORS, function (c) {
+                    editor.chain().focus().toggleHighlight({ color: c }).run();
+                    console.log('[编辑] 应用高亮 ' + c);
+                    close();
+                }, function () {
+                    editor.chain().focus().unsetHighlight().run();
+                    console.log('[编辑] 清除高亮');
+                    close();
+                }, '清除高亮');
+            }
         });
 
-        // 监听编辑器状态 → 同步所有按钮
+        addSep();
+
+        // ---- 段落对齐（CSS 绘制图标，跟随主题色）----
+        addButton({ label: '<span class="tiptap-ico-align tiptap-ico-align-left"></span>', title: '左对齐', action: function () { editor.chain().focus().setTextAlign('left').run(); }, isActive: function () { return editor.isActive({ textAlign: 'left' }); } });
+        addButton({ label: '<span class="tiptap-ico-align tiptap-ico-align-center"></span>', title: '居中对齐', action: function () { editor.chain().focus().setTextAlign('center').run(); }, isActive: function () { return editor.isActive({ textAlign: 'center' }); } });
+        addButton({ label: '<span class="tiptap-ico-align tiptap-ico-align-right"></span>', title: '右对齐', action: function () { editor.chain().focus().setTextAlign('right').run(); }, isActive: function () { return editor.isActive({ textAlign: 'right' }); } });
+
+        addSep();
+
+        // ---- 块级格式 ----
+        addButton({ label: '•≡', title: '无序列表', action: function () { editor.chain().focus().toggleBulletList().run(); }, isActive: function () { return editor.isActive('bulletList'); } });
+        addButton({ label: '1.≡', title: '有序列表', action: function () { editor.chain().focus().toggleOrderedList().run(); }, isActive: function () { return editor.isActive('orderedList'); } });
+        addButton({ label: '☑≡', title: '任务列表', action: function () { editor.chain().focus().toggleTaskList().run(); }, isActive: function () { return editor.isActive('taskList'); } });
+        addButton({ label: '❝', title: '引用块', action: function () { editor.chain().focus().toggleBlockquote().run(); }, isActive: function () { return editor.isActive('blockquote'); } });
+        addButton({ label: '⌨', title: '代码块', action: function () { editor.chain().focus().toggleCodeBlock().run(); }, isActive: function () { return editor.isActive('codeBlock'); } });
+        addButton({ label: '─', title: '水平分割线', action: function () { editor.chain().focus().setHorizontalRule().run(); }, isActive: function () { return false; } });
+
+        addSep();
+
+        // ---- 链接 / 清除格式 ----
+        addButton({ label: '🔗', title: '插入 / 编辑链接', action: function () { promptLink(editor); }, isActive: function () { return editor.isActive('link'); } });
+        addButton({ label: '🧹', title: '清除格式', action: function () { editor.chain().focus().unsetAllMarks().run(); console.log('[编辑] 清除行内格式'); }, isActive: function () { return false; } });
+
+        addSep();
+
+        // ---- 历史 ----
+        addButton({ label: '↶', title: '撤销 (Ctrl+Z)', action: function () { editor.chain().focus().undo().run(); }, isActive: function () { return false; }, disabled: function () { return !editor.can().undo(); } });
+        addButton({ label: '↷', title: '重做 (Ctrl+Y)', action: function () { editor.chain().focus().redo().run(); }, isActive: function () { return false; }, disabled: function () { return !editor.can().redo(); } });
+
+        addSep();
+
+        // ---- 任务列表视图：隐藏已完成 ----
+        // 落点为“笔记任务列表分组折叠”：勾选后隐藏 data-checked=true 的任务项，
+        // 让未完成任务保持聚焦，方便持续追加，避免任务过多难以处理。
+        var HIDE_DONE_KEY = 'note_hide_completed_tasks';
+        var hideDoneOn = false;
+        try { hideDoneOn = !!(ns.storage && ns.storage.get(HIDE_DONE_KEY, false)); } catch (e) { hideDoneOn = false; }
+
+        var hideDoneBtn = document.createElement('button');
+        hideDoneBtn.className = 'tiptap-fixed-btn tiptap-fixed-hidedone';
+        hideDoneBtn.type = 'button';
+        container.appendChild(hideDoneBtn);
+
+        /** 应用 / 取消“隐藏已完成任务”视图，同步按钮态与已完成计数徽标 */
+        function applyHideDone() {
+            var dom = editor.view && editor.view.dom;
+            if (!dom) return;
+            dom.classList.toggle('wb-hide-completed', hideDoneOn);
+            hideDoneBtn.classList.toggle('active', hideDoneOn);
+            hideDoneBtn.title = hideDoneOn ? '点击显示已完成任务' : '点击隐藏已完成任务';
+            var doneCount = dom.querySelectorAll('li[data-type="taskItem"][data-checked="true"]').length;
+            var badge = doneCount > 0 ? '<span class="tiptap-hidedone-count">' + doneCount + '</span>' : '';
+            hideDoneBtn.innerHTML = (hideDoneOn ? '☑' : '☐') + '<span class="tiptap-hidedone-label">已完成</span>' + badge;
+        }
+        hideDoneBtn.addEventListener('mousedown', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            hideDoneOn = !hideDoneOn;
+            try { if (ns.storage) ns.storage.set(HIDE_DONE_KEY, hideDoneOn); } catch (err) { /* 存储不可用时忽略 */ }
+            applyHideDone();
+            console.log('[编辑] 切换隐藏已完成任务 = ' + hideDoneOn);
+        });
+
+        // 监听编辑器状态 → 同步所有按钮 + 两个下拉选择器 + 已完成计数
         function syncAll() {
             allBtns.forEach(function (b) { if (b._update) b._update(); });
             // 同步标题选择器
             var activeHeadings = [1, 2, 3].filter(function (l) { return editor.isActive('heading', { level: l }); });
             headingSelect.value = activeHeadings.length > 0 ? String(activeHeadings[0]) : '';
+            // 同步字号选择器（无匹配时回落到占位项）
+            var curStyle = editor.getAttributes('textStyle') || {};
+            fontSizeSelect.value = curStyle.fontSize || '';
+            // 刷新已完成任务计数（勾选/取消勾选会触发 transaction）
+            applyHideDone();
         }
 
         editor.on('selectionUpdate', syncAll);
         editor.on('transaction', syncAll);
+
+        // 初始应用持久化的“隐藏已完成”状态
+        applyHideDone();
 
         console.log('[Tiptap] 固定置顶工具栏已创建');
         return { container: container, btns: allBtns, syncFn: syncAll };

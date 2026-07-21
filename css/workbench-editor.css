@@ -158,13 +158,107 @@
 .tiptap-fixed-btn:hover { background: var(--color-surface-hover); color: var(--color-text); }
 .tiptap-fixed-btn.active { background: var(--color-accent); color: var(--color-text-inverse); }
 .tiptap-fixed-btn:disabled { opacity: 0.3; cursor: default; }
-.tiptap-fixed-heading-select {
+.tiptap-fixed-heading-select,
+.tiptap-fixed-fontsize-select {
     height: 28px; padding: 0 6px; border: 1px solid var(--color-glass-border); border-radius: 5px;
     background: var(--color-surface); color: var(--color-text);
     font-size: 11px; font-family: var(--font-sans); cursor: pointer; outline: none; flex-shrink: 0;
 }
-.tiptap-fixed-heading-select:focus { border-color: var(--color-accent); }
+.tiptap-fixed-fontsize-select { width: 52px; }
+.tiptap-fixed-heading-select:focus,
+.tiptap-fixed-fontsize-select:focus { border-color: var(--color-accent); }
 .tiptap-fixed-sep { width: 1px; height: 18px; background: var(--color-glass-border); margin: 0 4px; flex-shrink: 0; }
+
+/* ===== 工具栏图标（文字颜色 / 高亮 / 对齐，跟随主题色）===== */
+/* 文字颜色按钮：A + 底部彩条 */
+.tiptap-ico-color {
+    position: relative; font-weight: 700; line-height: 1;
+    padding-bottom: 3px; border-bottom: 3px solid var(--color-accent);
+}
+/* 高亮按钮：A + 半透明底色 */
+.tiptap-ico-hl {
+    font-weight: 700; line-height: 1; padding: 0 2px; border-radius: 3px;
+    background: #fff3bf; color: #343a40;
+}
+/* 对齐图标：linear-gradient 绘制 3 条横线，currentColor 跟随按钮文字色 */
+.tiptap-ico-align {
+    display: inline-block; width: 14px; height: 10px; background-repeat: no-repeat;
+}
+.tiptap-ico-align-left {
+    background-image:
+        linear-gradient(currentColor, currentColor),
+        linear-gradient(currentColor, currentColor),
+        linear-gradient(currentColor, currentColor);
+    background-size: 100% 2px, 60% 2px, 80% 2px;
+    background-position: left 0, left 4px, left 8px;
+}
+.tiptap-ico-align-center {
+    background-image:
+        linear-gradient(currentColor, currentColor),
+        linear-gradient(currentColor, currentColor),
+        linear-gradient(currentColor, currentColor);
+    background-size: 100% 2px, 60% 2px, 80% 2px;
+    background-position: center 0, center 4px, center 8px;
+}
+.tiptap-ico-align-right {
+    background-image:
+        linear-gradient(currentColor, currentColor),
+        linear-gradient(currentColor, currentColor),
+        linear-gradient(currentColor, currentColor);
+    background-size: 100% 2px, 60% 2px, 80% 2px;
+    background-position: right 0, right 4px, right 8px;
+}
+
+/* ===== 颜色 / 高亮下拉调色板 ===== */
+.tiptap-fixed-popover-wrap { position: relative; display: inline-flex; flex-shrink: 0; }
+.tiptap-color-popover {
+    position: absolute; top: calc(100% + 6px); left: 0; z-index: 2900;
+    padding: 8px; border: var(--card-border); border-radius: 10px;
+    background: var(--color-bg-elevated); box-shadow: var(--shadow-lg);
+    animation: bubbleIn .12s ease;
+}
+.tiptap-color-grid {
+    display: grid; grid-template-columns: repeat(4, 20px); gap: 6px; margin-bottom: 8px;
+}
+.tiptap-color-swatch {
+    width: 20px; height: 20px; border-radius: 5px; border: 1px solid var(--color-glass-border);
+    cursor: pointer; padding: 0; transition: transform .1s ease;
+}
+.tiptap-color-swatch:hover { transform: scale(1.12); }
+.tiptap-color-clear {
+    width: 100%; height: 24px; border: 1px solid var(--color-glass-border); border-radius: 5px;
+    background: var(--color-surface); color: var(--color-text-secondary);
+    font-size: 11px; font-family: var(--font-sans); cursor: pointer; transition: all .12s ease;
+}
+.tiptap-color-clear:hover { background: var(--color-surface-hover); color: var(--color-text); }
+
+/* ===== 编辑器内容：链接 / 高亮渲染 ===== */
+.ProseMirror a.tiptap-link {
+    color: var(--color-accent); text-decoration: underline; cursor: pointer;
+    text-underline-offset: 2px;
+}
+.ProseMirror a.tiptap-link:hover { opacity: .8; }
+.ProseMirror mark.tiptap-highlight {
+    padding: 0 2px; border-radius: 3px; background-color: #fff3bf; color: inherit;
+}
+
+/* ===== 任务列表：隐藏已完成 ===== */
+/* 开启后隐藏已勾选任务项，仅保留进行中任务，便于持续追加 */
+.ProseMirror.wb-hide-completed ul[data-type="taskList"] li[data-checked="true"] { display: none; }
+/* “隐藏已完成”切换按钮：带文字 + 计数徽标，宽度自适应 */
+.tiptap-fixed-hidedone {
+    width: auto; padding: 0 8px; gap: 3px; font-size: 12px;
+}
+.tiptap-hidedone-label { font-size: 10px; }
+.tiptap-hidedone-count {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 15px; height: 15px; padding: 0 4px; margin-left: 2px;
+    border-radius: 8px; font-size: 9px; font-weight: 600; line-height: 1;
+    background: var(--color-accent); color: var(--color-text-inverse);
+}
+.tiptap-fixed-hidedone.active .tiptap-hidedone-count {
+    background: var(--color-text-inverse); color: var(--color-accent);
+}
 
 /* 编辑器 body + 字数统计 */
 .wb-notes-editor-body { flex: 1; display: flex; flex-direction: column; }

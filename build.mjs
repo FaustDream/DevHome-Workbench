@@ -209,8 +209,14 @@ if (doBundle) {
         'css/time-search.css',
         'css/tiles.css',
         'css/overlays.css',
-        'css/workbench.css',
+        // workbench.css 已按领域拆分为以下 4 个文件（与 index.html 加载顺序一致），
+        // 旧的 workbench.css 已废弃，不再纳入打包，避免样式重复与覆盖。
+        'css/workbench-layout.css',
+        'css/workbench-components.css',
+        'css/workbench-notes.css',
+        'css/workbench-editor.css',
         'css/daily-greeting-card.css',
+        'css/animations.css',
         'css/sidepanel.css',
         'css/tailwind-base.css',
         'css/minimal-global.css'

@@ -446,7 +446,18 @@ window.DevHome = window.DevHome || {};
         console.log('[编辑] 开始编辑任务标题 id=' + taskId);
     };
 
-    /** 弹出时间选择器修改已有任务的截止时间 */
+    /** 将 Date 格式化为 input[type=date] 所需的 yyyy-mm-dd */
+    function toDateInputValue(d) {
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
+    /**
+     * 弹出行内时间编辑面板，修改/清除已有任务的截止时间。
+     * 交互重构（需求3+4）：
+     *   - 「取消」仅关闭面板、不改动数据（不再伪装成清除）；
+     *   - 「移除时间」为独立的危险操作按钮，仅在任务已设时间时出现，点击后清空 plannedAt/dueDate；
+     *   - 新增快捷预设（今天/明天/本周末/下周），提升设置效率与视觉层次。
+     */
     ns.setTaskTime = function (taskId, quadrant) {
         const config = ns.getWorkbenchState();
         if (!config.quadrants[quadrant]) return;
@@ -459,33 +470,57 @@ window.DevHome = window.DevHome || {};
         const existing = listEl.querySelector('.wb-task-inline-time-edit');
         if (existing) existing.remove();
 
-        const row = document.createElement('div');
-        row.className = 'wb-task-inline-time-edit';
         // 从 plannedAt 还原日期和时间
-        const curDate = task.plannedAt ? new Date(task.plannedAt) : null;
-        const dateVal = curDate ? curDate.getFullYear() + '-' + String(curDate.getMonth() + 1).padStart(2, '0') + '-' + String(curDate.getDate()).padStart(2, '0') : '';
+        const hasTime = !!task.plannedAt;
+        const curDate = hasTime ? new Date(task.plannedAt) : null;
+        const dateVal = curDate ? toDateInputValue(curDate) : '';
         const timeVal = curDate ? String(curDate.getHours()).padStart(2, '0') + ':' + String(curDate.getMinutes()).padStart(2, '0') : '';
-        row.innerHTML = '<span style="font-size:10px;color:var(--color-text-secondary);margin-right:4px;">截止:</span>' +
-            '<input type="date" class="wb-time-picker-date" value="' + dateVal + '" style="flex:1;">' +
-            '<input type="time" class="wb-time-picker-time" value="' + timeVal + '" style="flex:1;">' +
-            '<button class="wb-task-input-confirm" title="保存">✓</button>' +
-            '<button class="wb-task-input-cancel" title="清除">✕</button>' +
-            '<button class="wb-task-input-expand" title="移除时间" style="font-size:11px;">🗑</button>';
+
+        const panel = document.createElement('div');
+        panel.className = 'wb-task-inline-time-edit';
+        panel.innerHTML =
+            '<div class="wb-time-panel-head">' +
+                '<span class="wb-time-panel-title">⏰ 设置截止时间</span>' +
+                '<button class="wb-time-panel-close" type="button" title="关闭">✕</button>' +
+            '</div>' +
+            '<div class="wb-time-quick">' +
+                '<button class="wb-time-chip" type="button" data-preset="today">今天</button>' +
+                '<button class="wb-time-chip" type="button" data-preset="tomorrow">明天</button>' +
+                '<button class="wb-time-chip" type="button" data-preset="weekend">本周末</button>' +
+                '<button class="wb-time-chip" type="button" data-preset="nextweek">下周</button>' +
+            '</div>' +
+            '<div class="wb-time-fields">' +
+                '<label class="wb-time-field"><span class="wb-time-field-label">日期</span>' +
+                    '<input type="date" class="wb-time-picker-date" value="' + dateVal + '"></label>' +
+                '<label class="wb-time-field"><span class="wb-time-field-label">时间</span>' +
+                    '<input type="time" class="wb-time-picker-time" value="' + timeVal + '"></label>' +
+            '</div>' +
+            '<div class="wb-time-panel-foot">' +
+                (hasTime ? '<button class="wb-time-remove" type="button" title="清除该任务的截止时间">移除时间</button>' : '<span></span>') +
+                '<div class="wb-time-panel-actions">' +
+                    '<button class="wb-time-cancel" type="button">取消</button>' +
+                    '<button class="wb-time-save" type="button">保存</button>' +
+                '</div>' +
+            '</div>';
 
         const taskItem = listEl.querySelector('[data-task-id="' + taskId + '"]');
         if (taskItem) {
-            taskItem.insertAdjacentElement('afterend', row);
+            taskItem.insertAdjacentElement('afterend', panel);
         } else {
-            listEl.insertBefore(row, listEl.firstChild);
+            listEl.insertBefore(panel, listEl.firstChild);
         }
 
-        let dateInput = row.querySelector('input[type="date"]');
-        const timeInput = row.querySelector('input[type="time"]');
-        const confirmBtn = row.querySelector('.wb-task-input-confirm');
-        const cancelBtn = row.querySelector('.wb-task-input-cancel');
-        const removeBtn = row.querySelector('.wb-task-input-expand');
+        const dateInput = panel.querySelector('.wb-time-picker-date');
+        const timeInput = panel.querySelector('.wb-time-picker-time');
+        const saveBtn = panel.querySelector('.wb-time-save');
+        const cancelBtn = panel.querySelector('.wb-time-cancel');
+        const closeBtn = panel.querySelector('.wb-time-panel-close');
+        const removeBtn = panel.querySelector('.wb-time-remove');
 
-        const cleanup = function () { if (row.isConnected) row.remove(); };
+        const cleanup = function () {
+            document.removeEventListener('keydown', onKeydown);
+            if (panel.isConnected) panel.remove();
+        };
 
         const saveTime = function (plannedAt) {
             config.quadrants[quadrant].tasks = config.quadrants[quadrant].tasks.map(function (t) {
@@ -501,20 +536,66 @@ window.DevHome = window.DevHome || {};
             console.log('[编辑] 任务 ' + taskId + ' 截止时间 ' + (plannedAt ? '更新' : '已移除'));
         };
 
-        confirmBtn.addEventListener('click', function () {
+        // 快捷预设：填充日期输入（时间保留已填值，否则给默认时间）
+        const applyPreset = function (preset) {
+            const now = new Date();
+            let target = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            let defaultTime = '18:00';
+            if (preset === 'today') {
+                defaultTime = '18:00';
+            } else if (preset === 'tomorrow') {
+                target.setDate(target.getDate() + 1);
+                defaultTime = '09:00';
+            } else if (preset === 'weekend') {
+                // 本周六（getDay: 0=周日..6=周六）
+                const offset = (6 - target.getDay() + 7) % 7;
+                target.setDate(target.getDate() + offset);
+                defaultTime = '10:00';
+            } else if (preset === 'nextweek') {
+                // 下周一
+                const offset = (8 - target.getDay()) % 7 || 7;
+                target.setDate(target.getDate() + offset);
+                defaultTime = '09:00';
+            }
+            dateInput.value = toDateInputValue(target);
+            if (!timeInput.value) timeInput.value = defaultTime;
+            console.log('[交互] 时间面板快捷预设 ' + preset + ' → ' + dateInput.value + ' ' + timeInput.value);
+        };
+
+        const onKeydown = function (e) {
+            if (e.key === 'Escape') { e.preventDefault(); cleanup(); }
+            else if (e.key === 'Enter') {
+                e.preventDefault();
+                const plannedAt = ns._readTimePickerValueEl(dateInput, timeInput);
+                cleanup();
+                saveTime(plannedAt);
+            }
+        };
+
+        panel.querySelectorAll('.wb-time-chip').forEach(function (chip) {
+            chip.addEventListener('click', function () { applyPreset(chip.dataset.preset); });
+        });
+        saveBtn.addEventListener('click', function () {
             const plannedAt = ns._readTimePickerValueEl(dateInput, timeInput);
             cleanup();
             saveTime(plannedAt);
         });
+        // 「取消」「关闭」仅关闭面板，不改动已保存的时间
         cancelBtn.addEventListener('click', cleanup);
-        removeBtn.addEventListener('click', function () {
-            cleanup();
-            saveTime(null);
-        });
+        closeBtn.addEventListener('click', cleanup);
+        // 「移除时间」独立危险操作，明确清空已设置的时间
+        if (removeBtn) {
+            removeBtn.addEventListener('click', function () {
+                cleanup();
+                saveTime(null);
+                ns.showToast('已移除任务截止时间', 'info');
+            });
+        }
+        document.addEventListener('keydown', onKeydown);
 
         // 自动聚焦日期输入
         if (dateInput) setTimeout(function () { dateInput.focus(); }, 50);
-        console.log('[编辑] 设置任务时间 id=' + taskId);
+        console.log('[编辑] 设置任务时间 id=' + taskId + ' 已有时间=' + hasTime);
     };
 
     /** 从已有的 date/time DOM 元素读取时间戳（供 setTaskTime 内联使用） */
