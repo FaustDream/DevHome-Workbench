@@ -44,22 +44,62 @@ async function persistPomodoroState() {
 
 async function restorePomodoroState() {
     try {
-        if (_phaseEndInProgress) { console.log('[后台] phaseEnd 进行中，跳过状态恢复'); return; }
+        if (_phaseEndInProgress) {
+            console.log('[后台][恢复] phaseEnd 进行中，跳过状态恢复');
+            return;
+        }
+        console.log('[后台][恢复] 开始恢复番茄钟状态, key=' + POMODORO_STORAGE_KEY);
         const result = await chrome.storage.local.get(POMODORO_STORAGE_KEY);
         const saved = result[POMODORO_STORAGE_KEY];
-        if (!saved) return;
+        if (!saved) {
+            console.log('[后台][恢复] 未发现持久化番茄钟状态，无需恢复');
+            return;
+        }
+        // 合并前快照当前内存状态，便于排查「覆盖异常」类问题
+        const before = {
+            active: pomodoroState.active,
+            remaining: pomodoroState.remaining,
+            phaseStartAt: pomodoroState.phaseStartAt
+        };
         Object.assign(pomodoroState, saved);
-        if (!pomodoroState.active) return;
+        console.log('[后台][恢复] 已合并持久化状态',
+            'active=' + pomodoroState.active,
+            'isResting=' + pomodoroState.isResting,
+            'type=' + pomodoroState.type,
+            'duration=' + pomodoroState.duration,
+            'restDuration=' + pomodoroState.restDuration,
+            'sessionCount=' + pomodoroState.sessionCount,
+            'phaseStartAt=' + pomodoroState.phaseStartAt,
+            'phaseTotalSeconds=' + pomodoroState.phaseTotalSeconds,
+            'savedRemaining=' + saved.remaining,
+            'mergeBefore=' + JSON.stringify(before)
+        );
+        if (!pomodoroState.active) {
+            console.log('[后台][恢复] 恢复状态为未激活(active=false)，不重新启动计时');
+            return;
+        }
+        // 以「阶段开始时间戳 + 阶段总时长」推导剩余秒数，日志打出推导过程便于校验
+        const elapsed = pomodoroState.phaseStartAt
+            ? Math.floor((Date.now() - pomodoroState.phaseStartAt) / 1000)
+            : null;
         pomodoroState.remaining = computeRemaining();
+        console.log('[后台][恢复] 计算剩余时长',
+            'phaseStartAt=' + pomodoroState.phaseStartAt,
+            'elapsed=' + elapsed + 's',
+            'phaseTotalSeconds=' + pomodoroState.phaseTotalSeconds,
+            'computedRemaining=' + pomodoroState.remaining
+        );
         if (pomodoroState.remaining <= 0) {
+            console.log('[后台][恢复] 判定剩余<=0，直接进入阶段结束流程');
             await pomodoroPhaseEnd();
         } else {
             startPomodoroTick();
             schedulePomodoroAlarm();
-            console.log('[后台] 恢复番茄钟状态，剩余', formatTime(pomodoroState.remaining));
+            console.log('[后台][恢复] 恢复番茄钟计时，剩余', formatTime(pomodoroState.remaining));
         }
+        console.log('[后台][恢复] 恢复流程完成');
     } catch (e) {
-        console.warn('[后台] 恢复番茄钟状态失败:', e);
+        console.warn('[后台][恢复] 恢复番茄钟状态失败:', e);
     }
 }
 
