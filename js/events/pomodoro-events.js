@@ -41,16 +41,15 @@ window.DevHome = window.DevHome || {};
             });
         });
 
-        // ===== v5 顶部工具栏常驻条事件 =====
+        // ===== v6 顶部工具栏常驻条事件 =====
         const pomoTop = document.getElementById('wbPomodoroTop');
         const pomoTopStart = document.getElementById('wbPomodoroTopStart');
-        const pomoPopover = document.getElementById('wbPomodoroPopover');
 
         // 顶部开始按钮：开始/暂停番茄钟
         if (pomoTopStart) {
             pomoTopStart.addEventListener('click', function (e) {
                 e.stopPropagation();
-                if (pomoTop.classList.contains('pomodoro-active')) {
+                if (pomoTop && pomoTop.classList.contains('pomodoro-active')) {
                     ns.pausePomodoro();
                 } else {
                     ns.startPomodoro();
@@ -58,29 +57,102 @@ window.DevHome = window.DevHome || {};
             });
         }
 
-        // 鼠标悬停常驻条 → 显示/隐藏悬浮完整面板
-        if (pomoTop && pomoPopover) {
-            var hoverTimer = null;
-            pomoTop.addEventListener('mouseenter', function () {
-                clearTimeout(hoverTimer);
-                pomoPopover.style.display = 'block';
-                console.log('[面板] 番茄钟悬浮面板 显示');
-            });
-            pomoTop.addEventListener('mouseleave', function () {
-                hoverTimer = setTimeout(function () {
-                    pomoPopover.style.display = 'none';
-                    console.log('[面板] 番茄钟悬浮面板 隐藏');
-                }, 300); // 300ms 延迟，防止抖动
-            });
-            // 悬浮面板内也保持显示
-            pomoPopover.addEventListener('mouseenter', function () {
-                clearTimeout(hoverTimer);
-            });
-            pomoPopover.addEventListener('mouseleave', function () {
-                pomoPopover.style.display = 'none';
-                console.log('[面板] 番茄钟悬浮面板 隐藏');
+        // ===== v6 悬浮侧边栏：番茄钟图标点击 → 打开悬浮番茄钟面板 =====
+        const floatingPomoBtn = document.getElementById('wbFloatingPomodoroBtn');
+        const floatingPomoPanel = document.getElementById('wbFloatingPomodoro');
+        const floatingPomoClose = document.getElementById('wbFloatingPomodoroClose');
+        const floatingQuadBtn = document.getElementById('wbFloatingQuadrantBtn');
+        const floatingQuadPanel = document.getElementById('wbFloatingQuadrant');
+        const floatingQuadClose = document.getElementById('wbFloatingQuadrantClose');
+        const floatingExitBtn = document.getElementById('wbFloatingExitBtn');
+
+        /**
+         * 切换悬浮面板的显隐
+         * @param {HTMLElement} panel - 目标面板
+         * @param {HTMLElement} btn - 关联图标按钮
+         * @param {HTMLElement} otherPanel - 另一个需要关闭的面板（互斥）
+         * @param {HTMLElement} otherBtn - 另一个需要取消激活的图标
+         */
+        function _toggleFloatingPanel(panel, btn, otherPanel, otherBtn) {
+            if (!panel) return;
+            const isVisible = panel.style.display !== 'none' && panel.style.display !== '';
+            // 互斥：先关闭另一个面板
+            if (otherPanel && !isVisible) {
+                otherPanel.style.display = 'none';
+                if (otherBtn) otherBtn.classList.remove('active');
+            }
+            if (isVisible) {
+                panel.style.display = 'none';
+                if (btn) btn.classList.remove('active');
+                console.log('[面板] 关闭', panel.id);
+            } else {
+                panel.style.display = 'flex';
+                if (btn) btn.classList.add('active');
+                console.log('[面板] 打开', panel.id);
+            }
+        }
+
+        if (floatingPomoBtn) {
+            floatingPomoBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                _toggleFloatingPanel(floatingPomoPanel, floatingPomoBtn, floatingQuadPanel, floatingQuadBtn);
             });
         }
+        if (floatingPomoClose) {
+            floatingPomoClose.addEventListener('click', function () {
+                if (floatingPomoPanel) floatingPomoPanel.style.display = 'none';
+                if (floatingPomoBtn) floatingPomoBtn.classList.remove('active');
+                console.log('[面板] 关闭 wbFloatingPomodoro');
+            });
+        }
+        if (floatingQuadBtn) {
+            floatingQuadBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                _toggleFloatingPanel(floatingQuadPanel, floatingQuadBtn, floatingPomoPanel, floatingPomoBtn);
+            });
+        }
+        if (floatingQuadClose) {
+            floatingQuadClose.addEventListener('click', function () {
+                if (floatingQuadPanel) floatingQuadPanel.style.display = 'none';
+                if (floatingQuadBtn) floatingQuadBtn.classList.remove('active');
+                console.log('[面板] 关闭 wbFloatingQuadrant');
+            });
+        }
+        if (floatingExitBtn) {
+            floatingExitBtn.addEventListener('click', function () {
+                console.log('[交互] 点击 退出专注');
+                ns.showDailyMode();
+            });
+        }
+
+        // 点击空白处关闭悬浮面板（不冒泡到面板内部）
+        document.addEventListener('click', function (e) {
+            if (floatingPomoPanel && floatingPomoPanel.style.display !== 'none') {
+                if (!floatingPomoPanel.contains(e.target) && !floatingPomoBtn.contains(e.target)) {
+                    floatingPomoPanel.style.display = 'none';
+                    if (floatingPomoBtn) floatingPomoBtn.classList.remove('active');
+                }
+            }
+            if (floatingQuadPanel && floatingQuadPanel.style.display !== 'none') {
+                if (!floatingQuadPanel.contains(e.target) && !floatingQuadBtn.contains(e.target)) {
+                    floatingQuadPanel.style.display = 'none';
+                    if (floatingQuadBtn) floatingQuadBtn.classList.remove('active');
+                }
+            }
+        });
+
+        // Esc 键关闭悬浮面板
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                if (floatingPomoPanel && floatingPomoPanel.style.display !== 'none') {
+                    floatingPomoPanel.style.display = 'none';
+                    if (floatingPomoBtn) floatingPomoBtn.classList.remove('active');
+                } else if (floatingQuadPanel && floatingQuadPanel.style.display !== 'none') {
+                    floatingQuadPanel.style.display = 'none';
+                    if (floatingQuadBtn) floatingQuadBtn.classList.remove('active');
+                }
+            }
+        });
 
         // ===== 旧版番茄钟按钮（兼容） =====
         const pomoStart = document.getElementById('wbPomodoroStart');

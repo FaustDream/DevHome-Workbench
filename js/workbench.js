@@ -47,12 +47,9 @@ window.DevHome = window.DevHome || {};
         console.log('[面板] 左侧栏切换到 ' + panelName);
     };
 
-    /* ===== 侧边栏折叠/展开 ===== */
+    /* ===== 侧边栏折叠/展开（v6 已废弃，左侧栏改为悬浮） ===== */
     ns.toggleQuadrantSidebar = function () {
-        const panel = document.getElementById('wbQuadrantPanel');
-        if (!panel) return;
-        const isCollapsed = panel.classList.toggle('collapsed');
-        console.log('[面板] 四象限侧边栏 ' + (isCollapsed ? '折叠' : '展开'));
+        // no-op: 左侧栏已在 v6 中改为悬浮侧边栏，此函数废弃保留以兼容旧调用
     };
 
     // 右侧栏已移除（v5 重构），保留空函数以兼容旧调用

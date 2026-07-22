@@ -151,107 +151,10 @@
         </section>
     </div>
 
-        <!-- DevHome 工作台 v4：双栏仪表盘布局 -->
+        <!-- DevHome 工作台 v6：单列布局 + 悬浮面板（脱离文档流） -->
     <section class="devhome-stage" id="devhomeStage" aria-label="DevHome 综合性工作台">
         <div class="wb-shell" id="wbShell">
-            <!-- ========== 左侧可折叠任务面板 ========== -->
-            <aside class="wb-quadrant-panel" id="wbQuadrantPanel">
-                <!-- 折叠/展开按钮 -->
-                <button class="wb-quadrant-toggle" id="wbQuadrantToggle" title="折叠/展开四象限任务">
-                    <svg class="dh-icon dh-icon--menu dh-icon--md"" role="img"><use href="#dh-icon-menu"></use></svg>
-                </button>
-
-                <!-- 侧边栏可滚动内容区 -->
-                <div class="wb-leftbar-scroll" id="wbLeftbarScroll">
-
-                <!-- 标题栏 -->
-                <div class="wb-sidebar-head">
-                    <h2 class="wb-sidebar-head-title">四象限任务</h2>
-                    <div class="wb-sidebar-head-actions">
-                        <button class="wb-task-filter-btn" id="wbTaskFilterBtn" title="切换活跃/全部">活跃</button>
-                        <button class="wb-task-clear-btn" id="wbTaskClearBtn" title="清空已完成">清空</button>
-                    </div>
-                </div>
-
-                <!-- 象限导航分组列表 -->
-                <div class="wb-quadrant-nav" id="wbQuadrantNav">
-                    <!-- q1: 重要且紧急 -->
-                    <div class="wb-quadrant-group" data-quadrant="q1">
-                        <div class="wb-quadrant-group-head">
-                            <span class="wb-qdot" style="background:#ff6b6b;"></span>
-                            <span class="wb-quadrant-group-label">重要且紧急</span>
-                            <span class="wb-quadrant-group-count" id="wbQgCountQ1">0</span>
-                        </div>
-                        <div class="wb-quadrant-group-list" id="wbQgListQ1"></div>
-                        <button class="wb-quadrant-group-add" data-quadrant="q1">+ 添加任务</button>
-                    </div>
-                    <!-- q2: 重要不紧急 -->
-                    <div class="wb-quadrant-group" data-quadrant="q2">
-                        <div class="wb-quadrant-group-head">
-                            <span class="wb-qdot" style="background:#47f0a2;"></span>
-                            <span class="wb-quadrant-group-label">重要不紧急</span>
-                            <span class="wb-quadrant-group-count" id="wbQgCountQ2">0</span>
-                        </div>
-                        <div class="wb-quadrant-group-list" id="wbQgListQ2"></div>
-                        <button class="wb-quadrant-group-add" data-quadrant="q2">+ 添加任务</button>
-                    </div>
-                    <!-- q3: 紧急不重要 -->
-                    <div class="wb-quadrant-group" data-quadrant="q3">
-                        <div class="wb-quadrant-group-head">
-                            <span class="wb-qdot" style="background:#ffcc66;"></span>
-                            <span class="wb-quadrant-group-label">紧急不重要</span>
-                            <span class="wb-quadrant-group-count" id="wbQgCountQ3">0</span>
-                        </div>
-                        <div class="wb-quadrant-group-list" id="wbQgListQ3"></div>
-                        <button class="wb-quadrant-group-add" data-quadrant="q3">+ 添加任务</button>
-                    </div>
-                    <!-- q4: 不紧急不重要 -->
-                    <div class="wb-quadrant-group" data-quadrant="q4">
-                        <div class="wb-quadrant-group-head">
-                            <span class="wb-qdot" style="background:#6f8c94;"></span>
-                            <span class="wb-quadrant-group-label">不紧急不重要</span>
-                            <span class="wb-quadrant-group-count" id="wbQgCountQ4">0</span>
-                        </div>
-                        <div class="wb-quadrant-group-list" id="wbQgListQ4"></div>
-                        <button class="wb-quadrant-group-add" data-quadrant="q4">+ 添加任务</button>
-                    </div>
-                </div>
-
-                <!-- 日历分隔线 -->
-                <div class="wb-leftbar-divider"></div>
-
-                <!-- ===== 日历（左侧侧边栏内，四象限下方） ===== -->
-                <div class="wb-leftbar-calendar" id="wbLeftbarCalendar">
-                    <div class="wb-sidebar-head">
-                        <h2 class="wb-sidebar-head-title">日历</h2>
-                    </div>
-                    <div class="wb-mini-calendar" id="wbMiniCalendar">
-                        <div class="wb-mini-cal-head">
-                            <button class="wb-mini-cal-nav" id="wbMiniCalPrev">&lt;</button>
-                            <h3 class="wb-mini-cal-title" id="wbCalendarTitle">2026年7月</h3>
-                            <button class="wb-mini-cal-nav" id="wbMiniCalNext">&gt;</button>
-                        </div>
-                        <div class="wb-cal-view-switch">
-                            <button class="wb-cal-view-btn active" data-view="month" id="wbCalViewMonth">月</button>
-                            <button class="wb-cal-view-btn" data-view="week" id="wbCalViewWeek">周</button>
-                        </div>
-                        <div class="wb-mini-cal-weekdays"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
-                        <div class="wb-mini-cal-days" id="wbCalendarDays"></div>
-                        <div class="wb-calendar-detail" id="wbCalendarDetail">
-                            <p class="wb-calendar-detail-empty">点击日期查看内容</p>
-                        </div>
-                    </div>
-                </div>
-
-                </div><!-- end wb-leftbar-scroll -->
-
-                <!-- 操作按钮 -->
-                <div class="wb-sidebar-foot">
-                    <button class="wb-task-action-btn" id="devhomeBackHome">退出专注<span class="doc-badge" style="margin-left:4px;">Esc</span></button>
-                </div>
-            </aside>
-
-            <!-- ========== 主工作区 ========== -->
+            <!-- ========== 主工作区：占满整个视口（无左侧 docking） ========== -->
             <main class="wb-main" id="wbMain">
                 <!-- 顶部工具栏：多行布局（番茄钟常驻条 / 笔记工具） -->
                 <div class="wb-topbar" id="wbTopbar">
@@ -312,6 +215,7 @@
                             </div>
                         </div>
                     </div>
+                    <!-- v6: 顶部工具栏不再内嵌 popover（完整番茄钟已移到悬浮面板 wbFloatingPomodoro） -->
 
                     <!-- 笔记标题行：搜索 + 笔记本下拉 + 新建操作 -->
                     <div class="wb-notes-toolbar">
@@ -412,6 +316,126 @@
             </main>
         </div>
     </section>
+
+    <!-- ========== v6 悬浮结构（脱离文档流，position: fixed，不影响笔记区域布局） ========== -->
+    <!-- 悬浮侧边栏：极窄单列，仅 2 个图标入口 -->
+    <aside class="wb-floating-sidebar" id="wbFloatingSidebar" aria-label="悬浮侧边栏">
+        <div class="wb-floating-sidebar-icons">
+            <button class="wb-floating-icon" id="wbFloatingPomodoroBtn" title="番茄钟" aria-label="番茄钟">
+                <svg viewBox="0 0 24 24" class="dh-icon dh-icon--md" role="img"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm.5-13H11v6l5 3 .8-1.3-4.3-2.6V7z" fill="currentColor"/></svg>
+            </button>
+            <button class="wb-floating-icon" id="wbFloatingQuadrantBtn" title="四象限任务" aria-label="四象限任务">
+                <svg viewBox="0 0 24 24" class="dh-icon dh-icon--md" role="img"><rect x="3" y="3" width="8" height="8" stroke="currentColor" stroke-width="1.6" fill="none"/><rect x="13" y="3" width="8" height="8" stroke="currentColor" stroke-width="1.6" fill="none"/><rect x="3" y="13" width="8" height="8" stroke="currentColor" stroke-width="1.6" fill="none"/><rect x="13" y="13" width="8" height="8" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
+            </button>
+        </div>
+        <div class="wb-floating-sidebar-foot">
+            <button class="wb-floating-icon" id="wbFloatingExitBtn" title="退出专注" aria-label="退出专注">
+                <svg viewBox="0 0 24 24" class="dh-icon dh-icon--md" role="img"><path d="M14 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2v-2h-2v2H5V5h7v2h2zm3 4l-1.4 1.4L17.2 14H9v2h8.2l-1.6 1.6L17 19l4-4-4-4z" fill="currentColor"/></svg>
+            </button>
+        </div>
+    </aside>
+
+    <!-- 悬浮四象限任务面板：固定定位，position: fixed，display 默认 none -->
+    <div class="wb-floating-panel" id="wbFloatingQuadrant" style="display:none;" aria-label="四象限任务面板">
+        <div class="wb-floating-panel-head">
+            <h2 class="wb-floating-panel-title">四象限任务</h2>
+            <div class="wb-floating-panel-actions">
+                <button class="wb-task-filter-btn" id="wbTaskFilterBtn" title="切换活跃/全部">活跃</button>
+                <button class="wb-task-clear-btn" id="wbTaskClearBtn" title="清空已完成">清空</button>
+                <button class="wb-floating-panel-close" id="wbFloatingQuadrantClose" title="关闭" aria-label="关闭面板">×</button>
+            </div>
+        </div>
+        <div class="wb-floating-panel-body">
+            <div class="wb-quadrant-nav" id="wbQuadrantNav">
+                <div class="wb-quadrant-group" data-quadrant="q1">
+                    <div class="wb-quadrant-group-head">
+                        <span class="wb-qdot" style="background:#ff6b6b;"></span>
+                        <span class="wb-quadrant-group-label">重要且紧急</span>
+                        <span class="wb-quadrant-group-count" id="wbQgCountQ1">0</span>
+                    </div>
+                    <div class="wb-quadrant-group-list" id="wbQgListQ1"></div>
+                    <button class="wb-quadrant-group-add" data-quadrant="q1">+ 添加任务</button>
+                </div>
+                <div class="wb-quadrant-group" data-quadrant="q2">
+                    <div class="wb-quadrant-group-head">
+                        <span class="wb-qdot" style="background:#47f0a2;"></span>
+                        <span class="wb-quadrant-group-label">重要不紧急</span>
+                        <span class="wb-quadrant-group-count" id="wbQgCountQ2">0</span>
+                    </div>
+                    <div class="wb-quadrant-group-list" id="wbQgListQ2"></div>
+                    <button class="wb-quadrant-group-add" data-quadrant="q2">+ 添加任务</button>
+                </div>
+                <div class="wb-quadrant-group" data-quadrant="q3">
+                    <div class="wb-quadrant-group-head">
+                        <span class="wb-qdot" style="background:#ffcc66;"></span>
+                        <span class="wb-quadrant-group-label">紧急不重要</span>
+                        <span class="wb-quadrant-group-count" id="wbQgCountQ3">0</span>
+                    </div>
+                    <div class="wb-quadrant-group-list" id="wbQgListQ3"></div>
+                    <button class="wb-quadrant-group-add" data-quadrant="q3">+ 添加任务</button>
+                </div>
+                <div class="wb-quadrant-group" data-quadrant="q4">
+                    <div class="wb-quadrant-group-head">
+                        <span class="wb-qdot" style="background:#6f8c94;"></span>
+                        <span class="wb-quadrant-group-label">不紧急不重要</span>
+                        <span class="wb-quadrant-group-count" id="wbQgCountQ4">0</span>
+                    </div>
+                    <div class="wb-quadrant-group-list" id="wbQgListQ4"></div>
+                    <button class="wb-quadrant-group-add" data-quadrant="q4">+ 添加任务</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 悬浮番茄钟面板：固定定位，默认隐藏 -->
+    <div class="wb-floating-panel" id="wbFloatingPomodoro" style="display:none;" aria-label="番茄钟面板">
+        <div class="wb-floating-panel-head">
+            <h2 class="wb-floating-panel-title">番茄钟</h2>
+            <div class="wb-floating-panel-actions">
+                <button class="wb-floating-panel-close" id="wbFloatingPomodoroClose" title="关闭" aria-label="关闭面板">×</button>
+            </div>
+        </div>
+        <div class="wb-floating-panel-body">
+            <div class="wb-pomodoro-sidebar" id="wbPomodoroSidebar">
+                <h4 class="wb-pomodoro-sidebar-title">番茄钟</h4>
+                <div class="wb-pomodoro-task-row" id="wbPomodoroTaskRow">
+                    <span class="wb-pomodoro-task-label">关联任务</span>
+                    <select class="wb-pomodoro-task-select" id="wbPomodoroTaskSelect">
+                        <option value="">无关联</option>
+                    </select>
+                </div>
+                <div class="wb-pomodoro-sidebar-ring">
+                    <svg viewBox="0 0 160 160" class="wb-pomodoro-ring-bar">
+                        <circle cx="80" cy="80" r="64" fill="none" stroke="var(--color-border)" stroke-width="4"/>
+                        <circle cx="80" cy="80" r="64" fill="none" stroke="var(--color-accent)" stroke-width="4" stroke-linecap="round" id="wbPomodoroSideProgress" stroke-dasharray="402.12" stroke-dashoffset="0" transform="rotate(-90 80 80)"/>
+                    </svg>
+                    <div class="wb-pomodoro-bar-time" id="wbPomodoroSideTime">25:00</div>
+                </div>
+                <div class="wb-pomodoro-mode-label" id="wbPomodoroModeLabel"></div>
+                <div class="wb-pomodoro-mode-row">
+                    <button class="wb-pomodoro-mode-btn active" data-mode="countdown" id="wbPomodoroModeCountdown">倒计时</button>
+                    <button class="wb-pomodoro-mode-btn" data-mode="countup" id="wbPomodoroModeCountup">正计时</button>
+                    <button class="wb-pomodoro-auto-cycle-btn active" id="wbPomodoroAutoCycleBtn" title="切换单次/循环">循环中</button>
+                </div>
+                <div class="wb-pomodoro-sidebar-quick">
+                    <button class="wb-pomodoro-quick-btn active" data-duration="25" title="25分钟专注">25</button>
+                    <button class="wb-pomodoro-quick-btn" data-duration="30" title="30分钟专注">30</button>
+                    <button class="wb-pomodoro-quick-btn" data-duration="45" title="45分钟专注">45</button>
+                    <button class="wb-pomodoro-quick-btn" data-duration="60" title="60分钟专注">60</button>
+                </div>
+                <div class="wb-pomodoro-rest-row">
+                    <span class="wb-pomodoro-rest-label">休息</span>
+                    <input type="number" class="wb-pomodoro-rest-input" id="wbPomodoroRestInput" value="5" min="1" max="30" title="休息时长（分钟）">
+                    <span class="wb-pomodoro-rest-unit">分</span>
+                </div>
+                <div class="wb-pomodoro-sidebar-controls">
+                    <button class="wb-pomodoro-bar-btn primary" id="wbPomodoroSideStart">开始</button>
+                    <button class="wb-pomodoro-bar-btn" id="wbPomodoroSideReset">重置</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 磁贴右键菜单 -->
     <div class="context-menu" id="contextMenu">
         <div class="context-menu-item" data-action="edit">
