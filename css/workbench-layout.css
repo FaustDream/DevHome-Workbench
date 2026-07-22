@@ -42,15 +42,15 @@
     pointer-events: auto;
 }
 
-/* ===== Shell 容器：两列布局，左右两侧等宽240px ===== */
+/* ===== Shell 容器：左侧侧边栏 35% + 主工作区 65% ===== */
 .wb-shell {
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: 35% 1fr;
     height: 100%;
     overflow: hidden;
 }
 
-/* ===== 可折叠四象限任务面板 ===== */
+/* ===== 可折叠左侧侧边栏（四象限任务 + 日历） ===== */
 .wb-quadrant-panel {
     display: flex;
     flex-direction: column;
@@ -58,7 +58,6 @@
     border-right: var(--card-border);
     overflow: hidden;
     transition: width 0.3s ease;
-    width: 240px;
     min-width: 240px;
 }
 
@@ -67,11 +66,26 @@
     width: 48px;
     min-width: 48px;
 }
+
+/* 折叠时隐藏内容但不隐藏 toggle */
+.wb-quadrant-panel.collapsed .wb-leftbar-scroll,
 .wb-quadrant-panel.collapsed .wb-sidebar-head,
 .wb-quadrant-panel.collapsed .wb-quadrant-nav,
+.wb-quadrant-panel.collapsed .wb-leftbar-divider,
+.wb-quadrant-panel.collapsed .wb-leftbar-calendar,
 .wb-quadrant-panel.collapsed .wb-sidebar-foot {
     display: none;
 }
+
+/* 左侧栏可滚动内容区 */
+.wb-leftbar-scroll {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    padding: 0 8px;
+}
+.wb-leftbar-scroll::-webkit-scrollbar { display: none; }
 
 /* 折叠/展开按钮 */
 .wb-quadrant-toggle {
@@ -93,62 +107,21 @@
     background: var(--color-surface-hover);
 }
 
-/* ===== 右侧栏 (240px，可折叠) ===== */
-.wb-sidebar-right {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    background: var(--color-sidebar-bg);
-    border-left: var(--card-border);
-    overflow-y: auto;
-    overflow-x: hidden;
-    scrollbar-width: none;
-    padding: 0;
-    transition: width 0.3s ease;
-    width: 240px;
-    min-width: 240px;
+/* ===== 左侧栏内日历 ===== */
+.wb-leftbar-divider {
+    height: 1px;
+    background: var(--color-border);
+    margin: 8px 0;
 }
-.wb-sidebar-right::-webkit-scrollbar { display: none; }
-
-/* 折叠状态 */
-.wb-sidebar-right.collapsed {
-    width: 48px;
-    min-width: 48px;
+.wb-leftbar-calendar {
+    padding: 4px 0 8px;
 }
-.wb-sidebar-right.collapsed .wb-rightbar-content {
-    display: none;
+.wb-leftbar-calendar .wb-sidebar-head {
+    margin-bottom: 4px;
 }
-
-/* 右侧栏折叠/展开按钮 */
-.wb-rightbar-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 36px;
-    border: none;
-    border-bottom: var(--card-border);
-    background: transparent;
-    color: var(--color-text-tertiary);
-    cursor: pointer;
-    transition: all 0.15s ease;
-    flex-shrink: 0;
+.wb-leftbar-calendar .wb-mini-calendar {
+    max-width: 100%;
 }
-.wb-rightbar-toggle:hover {
-    color: var(--color-accent);
-    background: var(--color-surface-hover);
-}
-
-/* 右侧栏内容区 */
-.wb-rightbar-content {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 0 10px 10px;
-    overflow-y: auto;
-    scrollbar-width: none;
-}
-.wb-rightbar-content::-webkit-scrollbar { display: none; }
 
 /* ===== 主工作区 ===== */
 .wb-main {
@@ -237,21 +210,147 @@
     .devhome-stage { padding: 0; }
     .wb-shell {
         grid-template-columns: 1fr;
-        grid-template-rows: auto 1fr auto;
+        grid-template-rows: auto 1fr;
     }
     .wb-quadrant-panel {
         width: 100%; min-width: auto; max-height: 40vh;
         border-right: none; border-bottom: var(--card-border);
     }
     .wb-quadrant-panel.collapsed { width: 100%; min-width: auto; max-height: 40px; }
-    .wb-sidebar-right {
-        width: 100%; min-width: auto; max-height: 55vh;
-        border-left: none; border-top: var(--card-border);
-    }
-    .wb-sidebar-right.collapsed { width: 100%; min-width: auto; max-height: 40px; }
     .wb-notes-sidebar { width: 180px; min-width: 180px; }
     .wb-pomodoro-sidebar { padding: 10px; gap: 8px; }
     .wb-mini-calendar { min-width: 240px; }
+}
+
+/* ===== 顶部工具栏（v5 新增） ===== */
+.wb-topbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-bottom: var(--card-border);
+    background: var(--color-sidebar-bg);
+    flex-shrink: 0;
+}
+
+/* ===== 番茄钟顶部常驻条 ===== */
+.wb-pomodoro-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px;
+    border-radius: var(--card-radius);
+    background: var(--color-bg-secondary, var(--color-surface));
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+    transition: background 0.15s ease;
+    flex-shrink: 0;
+}
+.wb-pomodoro-top:hover {
+    background: var(--color-surface-hover);
+}
+.wb-pomodoro-top-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    min-width: 0;
+}
+.wb-pomodoro-top-time {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-accent);
+    font-size: 14px;
+    white-space: nowrap;
+}
+.wb-pomodoro-top-task {
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 120px;
+}
+.wb-pomodoro-top.pomodoro-active .wb-pomodoro-top-time {
+    color: var(--color-danger, #e74c3c);
+}
+.wb-pomodoro-top.pomodoro-active .wb-pomodoro-top-info {
+    color: var(--color-danger);
+}
+.wb-pomodoro-top-actions {
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
+}
+.wb-pomodoro-top-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.15s ease;
+}
+.wb-pomodoro-top-btn:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-accent);
+}
+.wb-pomodoro-top-btn.primary {
+    background: var(--color-accent);
+    color: #fff;
+}
+.wb-pomodoro-top-btn.primary:hover {
+    opacity: 0.85;
+}
+
+/* ===== 番茄钟悬浮面板 ===== */
+.wb-pomodoro-popover {
+    position: absolute;
+    top: 100%;
+    right: 10px;
+    z-index: 2700;
+    width: 320px;
+    max-height: 70vh;
+    overflow-y: auto;
+    background: var(--color-sidebar-bg, var(--color-surface));
+    border: var(--card-border);
+    border-radius: var(--card-radius);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    padding: 12px;
+}
+.wb-pomodoro-popover::-webkit-scrollbar { display: none; }
+/* 番茄钟运行时隐藏悬浮面板中与顶部条重复的内容 */
+.wb-pomodoro-popover .wb-pomodoro-sidebar-ring {
+    margin-bottom: 8px;
+}
+
+/* ===== 日常模式设置按钮 ===== */
+.wb-dailymode-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+.wb-dailymode-btn:hover {
+    background: var(--color-surface-hover);
+}
+.wb-dailymode-icon {
+    width: 20px;
+    height: 20px;
 }
 
 /* ===== 偏好动画减少 ===== */

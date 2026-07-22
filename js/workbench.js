@@ -55,11 +55,9 @@ window.DevHome = window.DevHome || {};
         console.log('[面板] 四象限侧边栏 ' + (isCollapsed ? '折叠' : '展开'));
     };
 
+    // 右侧栏已移除（v5 重构），保留空函数以兼容旧调用
     ns.toggleRightSidebar = function () {
-        const panel = document.getElementById('wbSidebarRight');
-        if (!panel) return;
-        const isCollapsed = panel.classList.toggle('collapsed');
-        console.log('[面板] 右侧栏（日历+番茄钟） ' + (isCollapsed ? '折叠' : '展开'));
+        // no-op: 右侧栏已在 v5 中随日历移至左侧、番茄钟移至顶部工具栏而废弃
     };
 
     /* ===== 专注模式切换 ===== */

@@ -95,16 +95,29 @@ function resolveRealFavicon(domain) {
         return fetch(url, { signal: controller.signal, redirect: 'follow' })
             .then(function (res) {
                 if (!res.ok) return null;
-                const ct = res.headers.get('content-type') || '';
-                // 仅接受图片类型（data: 内联图标已自带前缀，由调用方处理）
-                if (ct.indexOf('image/') === -1 &&
-                    !/\.(ico|png|jpg|jpeg|svg|webp|gif)$/i.test(url)) {
-                    return null;
-                }
+                const ct = (res.headers.get('content-type') || '').toLowerCase();
+                // .ico 文件始终接受（许多服务器返回错误的 content-type）
+                const isIco = /\.ico(\?|$)/i.test(url);
+                // 有效的图片 MIME 类型（含旧版 IE .ico 的类型）
+                const isImageType = ct.indexOf('image/') === 0 ||
+                    ct.indexOf('image-x-icon') !== -1 ||
+                    ct.indexOf('vnd.microsoft.icon') !== -1;
+                // 文件名是已知图片扩展名也接受（防御 content-type 配置错误）
+                const isImageExt = /\.(ico|png|jpg|jpeg|svg|webp|gif)(\?|$)/i.test(url);
+                if (!isImageType && !isImageExt) return null;
                 return res.blob();
             })
             .then(function (blob) {
-                if (!blob || !blob.type.startsWith('image/')) return null;
+                if (!blob) return null;
+                // .ico 文件的 blob.type 经常为空或 application/octet-stream，无条件接受
+                if (!blob.type || !blob.type.startsWith('image/')) {
+                    const isIco = /\.ico(\?|$)/i.test(url);
+                    if (blob.size > 0 && blob.size < 2097152 && isIco) {
+                        // .ico 文件，手动设置 MIME 以通过 FileReader
+                        return new Blob([blob], { type: 'image/x-icon' });
+                    }
+                    if (!isIco) return null; // 非图片 blob
+                }
                 // 将二进制 blob 转成 dataURL，便于页面写入 IndexedDB 长期缓存
                 return new Promise(function (resolve, reject) {
                     const reader = new FileReader();

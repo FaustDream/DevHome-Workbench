@@ -13,6 +13,12 @@ window.DevHome = window.DevHome || {};
         const storage = ns.storage;
 
         if (dom.settingsGearBtn) dom.settingsGearBtn.addEventListener('click', ns.openSettingsPanel);
+        // v5: 专注模式顶部工具栏中的日常模式设置按钮
+        const devhomeSettingsBtn = document.getElementById('devhomeSettingsBtn');
+        if (devhomeSettingsBtn) devhomeSettingsBtn.addEventListener('click', function () {
+            console.log('[交互] 点击 日常模式设置按钮');
+            ns.openSettingsPanel();
+        });
         if (dom.settingsCloseBtn) dom.settingsCloseBtn.addEventListener('click', ns.closeSettingsPanel);
         if (dom.settingsOverlay) dom.settingsOverlay.addEventListener('click', function (e) { if (e.target === dom.settingsOverlay) ns.closeSettingsPanel(); });
         if (dom.changelogBtn) dom.changelogBtn.addEventListener('click', function () { ns.closeSettingsPanel(); ns.openChangelog(); });

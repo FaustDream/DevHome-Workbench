@@ -10,11 +10,37 @@ window.DevHome = window.DevHome || {};
 
     /* ===== 辅助函数 ===== */
 
-    /** 更新番茄钟时间显示 */
+    /** 更新番茄钟时间显示（侧边栏 + 顶部工具栏同步） */
     function _pomoUpdateTimeEls(textFn) {
-        const timeEl = document.getElementById('wbPomodoroSideTime');
         const text = textFn();
+        const timeEl = document.getElementById('wbPomodoroSideTime');
         if (timeEl) timeEl.textContent = text;
+        // v5: 同步顶部工具栏时间
+        const topTime = document.getElementById('wbPomodoroTopTime');
+        if (topTime) topTime.textContent = text;
+    }
+
+    /** v5: 同步顶部工具栏运行状态 */
+    function _pomoSyncToolbarActive(isActive, isResting, taskTitle) {
+        const top = document.getElementById('wbPomodoroTop');
+        const topStart = document.getElementById('wbPomodoroTopStart');
+        if (top) {
+            top.classList.toggle('pomodoro-active', isActive);
+            if (isResting) top.classList.toggle('pomodoro-resting', true);
+            else top.classList.remove('pomodoro-resting');
+        }
+        if (topStart) {
+            topStart.textContent = isActive ? '⏸' : '▶';
+        }
+        const topTask = document.getElementById('wbPomodoroTopTask');
+        if (topTask) {
+            topTask.textContent = taskTitle || '';
+        }
+        // 运行时时间不显示为 --:--，无状态时重置
+        if (!isActive) {
+            const topTime = document.getElementById('wbPomodoroTopTime');
+            if (topTime && !topTime.textContent.match(/^\d/)) topTime.textContent = '--:--';
+        }
     }
 
     /** 设置进度环偏移 */
@@ -191,6 +217,8 @@ window.DevHome = window.DevHome || {};
         if (sideReset) sideReset.style.display = '';
         const labelEl = document.getElementById('wbPomodoroLabel');
         if (labelEl) labelEl.textContent = '专注中...';
+        // v5: 同步顶部工具栏运行状态
+        _pomoSyncToolbarActive(true, false, taskTitle);
     };
 
     ns.pausePomodoro = function () {
@@ -203,6 +231,8 @@ window.DevHome = window.DevHome || {};
         if (sideStart) { sideStart.textContent = '继续'; sideStart.classList.remove('is-running'); }
         const labelEl = document.getElementById('wbPomodoroLabel');
         if (labelEl) labelEl.textContent = '已暂停';
+        // v5: 同步顶部工具栏（非活跃状态）
+        _pomoSyncToolbarActive(false, false, '');
     };
 
     ns.resetPomodoro = function () {
@@ -215,6 +245,10 @@ window.DevHome = window.DevHome || {};
         const sideStart = document.getElementById('wbPomodoroSideStart');
         if (sideStart) { sideStart.textContent = '开始'; sideStart.classList.remove('is-running'); }
         ns.updatePomodoroDisplay();
+        // v5: 同步顶部工具栏（重置为默认）
+        _pomoSyncToolbarActive(false, false, '');
+        const topTime = document.getElementById('wbPomodoroTopTime');
+        if (topTime) topTime.textContent = '--:--';
     };
 
     /* ===== 后台番茄钟状态监听（倒计时模式显示更新） =====
@@ -243,6 +277,8 @@ window.DevHome = window.DevHome || {};
             if (modeEl) { modeEl.textContent = ''; modeEl.className = 'wb-pomodoro-mode-label'; }
             _stopPomodoroDisplayTimer();
             ns.updatePomodoroDisplay();
+            // v5: 同步顶部工具栏为停止状态
+            _pomoSyncToolbarActive(false, false, '');
             return;
         }
 
@@ -259,6 +295,10 @@ window.DevHome = window.DevHome || {};
         const total = phaseDuration * 60;
         if (total > 0) {
             _pomoUpdateProgress(remaining / total * 100, 100);
+        }
+        // v5: 同步顶部工具栏运行状态（运行时）
+        if (data.active) {
+            _pomoSyncToolbarActive(true, data.isResting || false, data.taskTitle || '');
         }
     }
 

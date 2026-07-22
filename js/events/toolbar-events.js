@@ -27,8 +27,7 @@ window.DevHome = window.DevHome || {};
         const quadToggleBtn = document.getElementById('wbQuadrantToggle');
         if (quadToggleBtn) quadToggleBtn.addEventListener('click', function () { ns.toggleQuadrantSidebar(); });
 
-        const rightbarToggleBtn = document.getElementById('wbRightbarToggle');
-        if (rightbarToggleBtn) rightbarToggleBtn.addEventListener('click', function () { ns.toggleRightSidebar(); });
+        // 右侧栏已在 v5 重构中移除，不再监听折叠按钮
 
         // 新建笔记
         const wbNotesAddBtn = document.getElementById('wbNotesAddBtn');

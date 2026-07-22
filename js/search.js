@@ -57,7 +57,7 @@ window.DevHome = window.DevHome || {};
         const url = 'https://api.bing.com/osjson.aspx?query=' + encodeURIComponent(query);
         fetch(url).then(function (r) { return r.json(); }).then(function (data) {
             if (Array.isArray(data) && Array.isArray(data[1])) callback(data[1]); else callback([]);
-        }).catch(function (err) { console.error("网络联想词获取失败:", err); callback([]); });
+        }).catch(function (err) { console.warn('[网络] 联想词获取失败，网络原因自动跳过 详情:', (err && err.message) || err); callback([]); });
     }
 
     ns.renderSuggestions = function () {

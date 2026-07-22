@@ -161,6 +161,9 @@
                     <svg class="dh-icon dh-icon--menu dh-icon--md"" role="img"><use href="#dh-icon-menu"></use></svg>
                 </button>
 
+                <!-- 侧边栏可滚动内容区 -->
+                <div class="wb-leftbar-scroll" id="wbLeftbarScroll">
+
                 <!-- 标题栏 -->
                 <div class="wb-sidebar-head">
                     <h2 class="wb-sidebar-head-title">四象限任务</h2>
@@ -214,16 +217,98 @@
                     </div>
                 </div>
 
+                <!-- 日历分隔线 -->
+                <div class="wb-leftbar-divider"></div>
+
+                <!-- ===== 日历（左侧侧边栏内，四象限下方） ===== -->
+                <div class="wb-leftbar-calendar" id="wbLeftbarCalendar">
+                    <div class="wb-sidebar-head">
+                        <h2 class="wb-sidebar-head-title">日历</h2>
+                    </div>
+                    <div class="wb-mini-calendar" id="wbMiniCalendar">
+                        <div class="wb-mini-cal-head">
+                            <button class="wb-mini-cal-nav" id="wbMiniCalPrev">&lt;</button>
+                            <h3 class="wb-mini-cal-title" id="wbCalendarTitle">2026年7月</h3>
+                            <button class="wb-mini-cal-nav" id="wbMiniCalNext">&gt;</button>
+                        </div>
+                        <div class="wb-cal-view-switch">
+                            <button class="wb-cal-view-btn active" data-view="month" id="wbCalViewMonth">月</button>
+                            <button class="wb-cal-view-btn" data-view="week" id="wbCalViewWeek">周</button>
+                        </div>
+                        <div class="wb-mini-cal-weekdays"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+                        <div class="wb-mini-cal-days" id="wbCalendarDays"></div>
+                        <div class="wb-calendar-detail" id="wbCalendarDetail">
+                            <p class="wb-calendar-detail-empty">点击日期查看内容</p>
+                        </div>
+                    </div>
+                </div>
+
+                </div><!-- end wb-leftbar-scroll -->
+
                 <!-- 操作按钮 -->
                 <div class="wb-sidebar-foot">
                     <button class="wb-task-action-btn" id="devhomeBackHome">退出专注<span class="doc-badge" style="margin-left:4px;">Esc</span></button>
                 </div>
             </aside>
 
-            <!-- ========== 主工作区：笔记（剩余全部空间） ========== -->
+            <!-- ========== 主工作区 ========== -->
             <main class="wb-main" id="wbMain">
-                <!-- 笔记标题行：搜索 + 笔记本下拉 + 新建操作 -->
-                <div class="wb-notes-toolbar">
+                <!-- 顶部工具栏：笔记工具 + 番茄钟常驻条 + 日常模式设置 -->
+                <div class="wb-topbar" id="wbTopbar">
+                    <!-- 番茄钟常驻条（始终可见） -->
+                    <div class="wb-pomodoro-top" id="wbPomodoroTop">
+                        <div class="wb-pomodoro-top-info">
+                            <svg class="dh-icon dh-icon--history dh-icon--md" role="img"><use href="#dh-icon-history"></use></svg>
+                            <span class="wb-pomodoro-top-time" id="wbPomodoroTopTime">--:--</span>
+                            <span class="wb-pomodoro-top-task" id="wbPomodoroTopTask"></span>
+                        </div>
+                        <div class="wb-pomodoro-top-actions">
+                            <button class="wb-pomodoro-top-btn primary" id="wbPomodoroTopStart" title="开始番茄钟">▶</button>
+                        </div>
+                    </div>
+                    <!-- 番茄钟悬浮面板（hover 常驻条时弹出） -->
+                    <div class="wb-pomodoro-popover" id="wbPomodoroPopover" style="display:none;">
+                        <div class="wb-pomodoro-sidebar" id="wbPomodoroSidebar">
+                            <h4 class="wb-pomodoro-sidebar-title">番茄钟</h4>
+                            <div class="wb-pomodoro-task-row" id="wbPomodoroTaskRow">
+                                <span class="wb-pomodoro-task-label">关联任务</span>
+                                <select class="wb-pomodoro-task-select" id="wbPomodoroTaskSelect">
+                                    <option value="">无关联</option>
+                                </select>
+                            </div>
+                            <div class="wb-pomodoro-sidebar-ring">
+                                <svg viewBox="0 0 160 160" class="wb-pomodoro-ring-bar">
+                                    <circle cx="80" cy="80" r="64" fill="none" stroke="var(--color-border)" stroke-width="4"/>
+                                    <circle cx="80" cy="80" r="64" fill="none" stroke="var(--color-accent)" stroke-width="4" stroke-linecap="round" id="wbPomodoroSideProgress" stroke-dasharray="402.12" stroke-dashoffset="0" transform="rotate(-90 80 80)"/>
+                                </svg>
+                                <div class="wb-pomodoro-bar-time" id="wbPomodoroSideTime">25:00</div>
+                            </div>
+                            <div class="wb-pomodoro-mode-label" id="wbPomodoroModeLabel"></div>
+                            <div class="wb-pomodoro-mode-row">
+                                <button class="wb-pomodoro-mode-btn active" data-mode="countdown" id="wbPomodoroModeCountdown">倒计时</button>
+                                <button class="wb-pomodoro-mode-btn" data-mode="countup" id="wbPomodoroModeCountup">正计时</button>
+                                <button class="wb-pomodoro-auto-cycle-btn active" id="wbPomodoroAutoCycleBtn" title="切换单次/循环">循环中</button>
+                            </div>
+                            <div class="wb-pomodoro-sidebar-quick">
+                                <button class="wb-pomodoro-quick-btn active" data-duration="25" title="25分钟专注">25</button>
+                                <button class="wb-pomodoro-quick-btn" data-duration="30" title="30分钟专注">30</button>
+                                <button class="wb-pomodoro-quick-btn" data-duration="45" title="45分钟专注">45</button>
+                                <button class="wb-pomodoro-quick-btn" data-duration="60" title="60分钟专注">60</button>
+                            </div>
+                            <div class="wb-pomodoro-rest-row">
+                                <span class="wb-pomodoro-rest-label">休息</span>
+                                <input type="number" class="wb-pomodoro-rest-input" id="wbPomodoroRestInput" value="5" min="1" max="30" title="休息时长（分钟）">
+                                <span class="wb-pomodoro-rest-unit">分</span>
+                            </div>
+                            <div class="wb-pomodoro-sidebar-controls">
+                                <button class="wb-pomodoro-bar-btn primary" id="wbPomodoroSideStart">开始</button>
+                                <button class="wb-pomodoro-bar-btn" id="wbPomodoroSideReset">重置</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 笔记标题行：搜索 + 笔记本下拉 + 新建操作 -->
+                    <div class="wb-notes-toolbar">
                     <div class="wb-notes-toolbar-left">
                         <div class="wb-notes-search">
                             <svg class="dh-icon dh-icon--search dh-icon--md"" role="img"><use href="#dh-icon-search"></use></svg>
@@ -247,6 +332,10 @@
                             <button class="wb-notes-action-btn" id="wbTagAddBtn" title="新建标签"><svg class="dh-icon dh-icon--tag dh-icon--md"" role="img"><use href="#dh-icon-tag"></use></svg></button>
                         </div>
                     </div>
+                    <!-- 日常模式设置按钮 -->
+                    <button class="wb-dailymode-btn" id="devhomeSettingsBtn" title="日常模式设置">
+                        <svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" class="wb-dailymode-icon"><path d="M512 512m-512 0a512 512 0 1 0 1024 0 512 512 0 1 0-1024 0Z" fill="#57A6FF"/><path d="M140.4844 241.955886a46.55193 101.696557 29.75 1 0 80.832661 46.199672 46.55193 101.696557 29.75 1 0-80.832661-46.199672Z" fill="#FFFFFF"/><path d="M93.495652 431.86087m-22.260869 0a22.26087 22.26087 0 1 0 44.521739 0 22.26087 22.26087 0 1 0-44.521739 0Z" fill="#FFFFFF"/><path d="M832.556522 857.043478a24.486957 24.486957 0 1 0 0-48.973913 24.486957 24.486957 0 0 0 0 48.973913z m0 24.486957a48.973913 48.973913 0 1 0 0-97.947826 48.973913 48.973913 0 0 0 0 97.947826z" fill="#FFFFFF"/><path d="M822.245287 453.347061a16.980591 16.980591 0 0 0-0.489739-2.965148v-0.569878l-0.284939-1.549357c-5.004243-24.424626-21.15673-40.158609-41.253844-40.158608h-3.321322c-34.281739 0-62.063304-27.959652-62.063304-62.125635 0-7.898157 3.668591-19.126539 5.217948-23.08007 9.732452-22.723896-0.623304-48.626643-24.682852-61.831791l-75.678052-42.847722-1.406887-0.489739c-5.645357-1.834296-12.198957-4.024765-19.536139-4.024765-13.685983 0-29.054887 6.3488-38.58254 15.885356-11.914017 11.780452-36.10713 29.357635-50.487652 29.357635-14.318191 0-38.582539-17.505948-50.505461-29.357635A55.367235 55.367235 0 0 0 420.59687 213.704348c-7.550887 0-13.890783 2.119235-19.53614 4.024765l-1.273321 0.489739-79.337739 42.990191-0.498644 0.28494c-19.2512 12.065391-27.078122 39.740104-17.274435 61.689321l0.14247 0.284939 0.133565 0.276035c1.558261 3.463791 6.3488 15.181913 6.3488 25.413009 0 34.308452-27.924035 62.11673-62.063304 62.11673h-3.312418c-21.014261 0-36.748243 15.529183-41.262747 40.443548l-0.276035 1.415792v0.489739c0 0.712348-0.284939 1.691826-0.498644 2.965147-1.763061 10.658504-5.992626 35.795478-5.992626 56.328905 0 20.54233 4.15833 45.6704 5.992626 56.328904 0.14247 1.273322 0.284939 2.324035 0.498644 2.965148v0.560974l0.276035 1.558261c5.013148 24.415722 21.165635 40.158609 41.262747 40.158608h1.691826c34.281739 0 62.063304 27.959652 62.063305 62.116731 0 7.907061-3.668591 19.126539-5.217948 23.080069-9.385183 21.388243-0.498643 48.849252 20.239583 62.686609l0.560973 0.276035 74.760905 41.645635 1.415791 0.498643c5.636452 1.834296 12.056487 4.015861 19.39367 4.015861 15.653843 0 29.75833-5.992626 38.573634-15.876452 0.845913-0.632209 1.691826-1.478122 2.680209-2.332939 9.029009-7.907061 33.293357-28.796661 49.303374-28.796661 11.914017 0 31.877565 12.4928 51.974678 32.607722A55.367235 55.367235 0 0 0 599.948243 810.295652c9.732452 0 16.918261-2.680209 25.110261-6.704974l0.276035-0.142469 76.666435-42.420313 0.276035-0.284939c19.260104-12.065391 27.087026-39.740104 17.274434-61.689322l-0.133565-0.284939-0.142469-0.284939c-0.14247-0.06233-6.135096-12.55513-5.004244-23.783514l0.14247-0.712347v-0.694539c0-34.308452 27.924035-62.11673 62.063304-62.116731h3.526122c21.014261 0 36.739339-15.529183 41.253843-40.452452l0.284939-1.406887v-0.498644c0.14247-0.560974 0.284939-1.406887 0.48974-2.537739 1.834296-10.373565 6.072765-34.584487 6.072765-56.747408 0.14247-20.48-4.024765-45.52793-5.859061-56.186435z m-310.316522 156.983652c-54.236383 0-98.170435-43.987478-98.170435-98.259478 0-54.280904 43.934052-98.259478 98.170435-98.259478 54.227478 0 98.170435 43.978574 98.170435 98.259478s-43.934052 98.259478-98.170435 98.259478z" fill="#FFFFFF"/></svg>
+                    </button>
                 </div>
                 <!-- 标签筛选行 -->
                 <div class="wb-notes-filter-bar">
@@ -319,77 +408,6 @@
                     </div>
                 </div>
             </main>
-
-            <!-- ========== 右侧栏：日历 + 番茄钟 (240px，可折叠) ========== -->
-            <aside class="wb-sidebar-right" id="wbSidebarRight">
-                <!-- 折叠/展开按钮 -->
-                <button class="wb-rightbar-toggle" id="wbRightbarToggle" title="折叠/展开右侧栏">
-                    <svg class="dh-icon dh-icon--menu dh-icon--md"" role="img"><use href="#dh-icon-menu"></use></svg>
-                </button>
-
-                <div class="wb-rightbar-content" id="wbRightbarContent">
-                    <div class="wb-mini-calendar" id="wbMiniCalendar">
-                        <div class="wb-mini-cal-head">
-                            <button class="wb-mini-cal-nav" id="wbMiniCalPrev">&lt;</button>
-                            <h3 class="wb-mini-cal-title" id="wbCalendarTitle">2026年7月</h3>
-                            <button class="wb-mini-cal-nav" id="wbMiniCalNext">&gt;</button>
-                        </div>
-                        <!-- 视图切换 -->
-                        <div class="wb-cal-view-switch">
-                            <button class="wb-cal-view-btn active" data-view="month" id="wbCalViewMonth">月</button>
-                            <button class="wb-cal-view-btn" data-view="week" id="wbCalViewWeek">周</button>
-                        </div>
-                        <div class="wb-mini-cal-weekdays"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
-                        <div class="wb-mini-cal-days" id="wbCalendarDays"></div>
-                        <div class="wb-calendar-detail" id="wbCalendarDetail">
-                            <p class="wb-calendar-detail-empty">点击日期查看内容</p>
-                        </div>
-                    </div>
-
-                    <!-- 番茄钟：在日历下方 -->
-                    <div class="wb-pomodoro-sidebar" id="wbPomodoroSidebar">
-                        <h4 class="wb-pomodoro-sidebar-title">番茄钟</h4>
-                        <!-- 关联任务选择器 -->
-                        <div class="wb-pomodoro-task-row" id="wbPomodoroTaskRow">
-                            <span class="wb-pomodoro-task-label">关联任务</span>
-                            <select class="wb-pomodoro-task-select" id="wbPomodoroTaskSelect">
-                                <option value="">无关联</option>
-                            </select>
-                        </div>
-                        <div class="wb-pomodoro-sidebar-ring">
-                            <svg viewBox="0 0 160 160" class="wb-pomodoro-ring-bar">
-                                <circle cx="80" cy="80" r="64" fill="none" stroke="var(--color-border)" stroke-width="4"/>
-                                <circle cx="80" cy="80" r="64" fill="none" stroke="var(--color-accent)" stroke-width="4" stroke-linecap="round" id="wbPomodoroSideProgress" stroke-dasharray="402.12" stroke-dashoffset="0" transform="rotate(-90 80 80)"/>
-                            </svg>
-                            <div class="wb-pomodoro-bar-time" id="wbPomodoroSideTime">25:00</div>
-                        </div>
-                        <!-- 当前模式标签 -->
-                        <div class="wb-pomodoro-mode-label" id="wbPomodoroModeLabel"></div>
-                        <!-- 模式切换：倒计时 / 正计时 -->
-                        <div class="wb-pomodoro-mode-row">
-                            <button class="wb-pomodoro-mode-btn active" data-mode="countdown" id="wbPomodoroModeCountdown">倒计时</button>
-                            <button class="wb-pomodoro-mode-btn" data-mode="countup" id="wbPomodoroModeCountup">正计时</button>
-                            <button class="wb-pomodoro-auto-cycle-btn active" id="wbPomodoroAutoCycleBtn" title="切换单次/循环">循环中</button>
-                        </div>
-                        <div class="wb-pomodoro-sidebar-quick">
-                            <button class="wb-pomodoro-quick-btn active" data-duration="25" title="25分钟专注">25</button>
-                            <button class="wb-pomodoro-quick-btn" data-duration="30" title="30分钟专注">30</button>
-                            <button class="wb-pomodoro-quick-btn" data-duration="45" title="45分钟专注">45</button>
-                            <button class="wb-pomodoro-quick-btn" data-duration="60" title="60分钟专注">60</button>
-                        </div>
-                        <!-- 休息时长 -->
-                        <div class="wb-pomodoro-rest-row">
-                            <span class="wb-pomodoro-rest-label">休息</span>
-                            <input type="number" class="wb-pomodoro-rest-input" id="wbPomodoroRestInput" value="5" min="1" max="30" title="休息时长（分钟）">
-                            <span class="wb-pomodoro-rest-unit">分</span>
-                        </div>
-                        <div class="wb-pomodoro-sidebar-controls">
-                            <button class="wb-pomodoro-bar-btn primary" id="wbPomodoroSideStart">开始</button>
-                            <button class="wb-pomodoro-bar-btn" id="wbPomodoroSideReset">重置</button>
-                        </div>
-                    </div>
-                </div>
-            </aside>
         </div>
     </section>
     <!-- 磁贴右键菜单 -->
