@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "DevHome Workbench",
-  "version": "2.29.6",
+  "version": "2.29.7",
   "author": "凌致",
   "description": "综合性开发工作台——融合任务、笔记、日历、番茄钟、网页剪藏与行为追踪的个人工作操作系统",
     "permissions": [

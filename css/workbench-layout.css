@@ -46,9 +46,10 @@
 
 /* ===== Shell 容器：v6 单列布局，笔记区占满整个视口 ===== */
 .wb-shell {
-    display: grid;
-    grid-template-columns: 1fr;
-    flex: 1;  /* v2.29.6: 用 flex 替代 height:100%（position:fixed 父元素下后者会失效） */
+    /* v2.29.7: 改用 flex column 替代 grid（grid 行高 auto 陷阱） */
+    display: flex;
+    flex-direction: column;
+    flex: 1;
     min-height: 0;
     overflow: hidden;
     /* 左侧留出 44px 给悬浮侧边栏，防止内容被遮挡 */
@@ -60,10 +61,10 @@
 .wb-main {
     display: flex;
     flex-direction: column;
+    flex: 1;  /* v2.29.7: flex column 下需 flex:1 撑满父级 */
+    min-height: 0;
     min-width: 0;
     width: 100%;
-    min-height: 0;  /* v2.29.6: 显式声明，避免 flex 截断 */
-    height: 100%;
     /* 不设 overflow: hidden，让子元素的 overflow-y: auto 正常工作 */
 }
 
@@ -214,7 +215,6 @@
     flex: 1;
     display: flex;
     min-height: 0;
-    height: 100%;  /* v2.29.6: 显式 height 100% 确保填满父级 */
     overflow: hidden;
     background: var(--color-bg, var(--color-sidebar-bg)); /* 底部溢出时填补空白 */
 }
