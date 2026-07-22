@@ -5,12 +5,14 @@
    拆分自 workbench.css (原 2377行)
    ============================================ */
 
-/* ===== 笔记编辑器布局 ===== */
+/* ===== 笔记编辑器布局（v2.29.6 修复：背景统一 + 真实铺满） ===== */
 .wb-notes-editor {
     flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0;
     overflow-y: auto; scrollbar-width: thin;
     scrollbar-color: var(--color-scrollbar-thumb) transparent;
     background: var(--color-bg, var(--color-surface));
+    /* 铺满：自身负责滚动，背景延伸至底 */
+    align-self: stretch;
 }
 .wb-notes-editor::-webkit-scrollbar { width: 4px; }
 .wb-notes-editor::-webkit-scrollbar-thumb { background: var(--color-scrollbar-thumb); border-radius: 2px; }
@@ -19,7 +21,11 @@
     flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 12px; color: var(--color-text-tertiary); font-size: 13px;
 }
-.wb-notes-editor-active { flex: 1; display: flex; flex-direction: column; padding: 16px 20px; }
+/* v2.29.6 修复：激活态背景与父容器一致，不再出现"卡片"感 */
+.wb-notes-editor-active {
+    flex: 1; display: flex; flex-direction: column; padding: 16px 20px;
+    min-height: 0; background: transparent;
+}
 
 .wb-notes-editor-head { display: flex; align-items: center; margin-bottom: 8px; }
 .wb-note-title-input {

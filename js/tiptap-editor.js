@@ -266,6 +266,12 @@ window.DevHome = window.DevHome || {};
             HTMLAttributes: { class: 'tiptap-task-item' },
             nested: true,
             /**
+             * v2.29.6: 允许任务项内包含任意块（代码块、引用块等），
+             * 实现"代码块/引用块被任务列表外部包裹"。
+             * 默认 content: 'paragraph' 会被 ProseMirror schema 拒绝块级子节点。
+             */
+            content: 'block+',
+            /**
              * 自定义任务列表项的剪贴板文本序列化
              * 修复复制任务列表时每个任务项之间产生大量空白行的格式错误。
              * 默认行为会将 <li> 内的 <p> 渲染为多行，导致任务项之间出现双倍换行。
@@ -312,6 +318,123 @@ window.DevHome = window.DevHome || {};
     };
 
     /**
+     * v2.29.6: 将当前代码块或引用块包裹进任务列表
+     * 保留原始块的类型与渲染，作为任务项的内容。
+     * 用于修复"代码块/引用块不能外部包裹一层任务列表"。
+     * @param {Editor} editor
+     */
+    ns._wrapInTaskList = function (editor) {
+        if (!editor) return false;
+        var state = editor.state;
+        var schema = state.schema;
+        var taskListType = schema.nodes.taskList;
+        var taskItemType = schema.nodes.taskItem;
+        if (!taskListType || !taskItemType) return false;
+
+        var $from = state.selection.$from;
+        // 向上找到 codeBlock 或 blockquote
+        var depth = $from.depth;
+        var blockDepth = -1;
+        var blockNode = null;
+        for (var d = $from.depth; d >= 0; d--) {
+            var n = $from.node(d);
+            if (n && (n.type.name === 'codeBlock' || n.type.name === 'blockquote')) {
+                blockDepth = d;
+                blockNode = n;
+                break;
+            }
+        }
+        if (blockDepth === -1 || !blockNode) return false;
+
+        // 计算该块在文档中的位置范围
+        var blockPos = $from.before(blockDepth);
+        var blockEnd = blockPos + blockNode.nodeSize;
+
+        // 构造 taskList > taskItem > 原始块
+        // 注意：content 必须是 taskItem 支持的类型（已配置为 'block+'）
+        var newTaskItem = taskItemType.create({ checked: false }, [blockNode.copy(blockNode.content)]);
+        var newTaskList = taskListType.create(null, [newTaskItem]);
+
+        var tr = state.tr.replaceWith(blockPos, blockEnd, newTaskList);
+        // 将光标定位到任务项的开头
+        try {
+            tr = tr.setSelection(state.selection.constructor.near(tr.doc.resolve(blockPos + 2)));
+        } catch (e) { /* 选区定位失败不影响主流程 */ }
+        editor.view.dispatch(tr);
+        console.log('[编辑] 代码块/引用块已包裹到任务列表');
+        return true;
+    };
+
+    /**
+     * v2.29.6: 在任务列表内切换标题/正文，不清空外层任务列表包装
+     * 默认 toggleHeading 会调用 clearNodes() 移除 taskList，导致样式切换时任务列表样式丢失。
+     * @param {Editor} editor
+     * @param {number} level - heading level 1-3；传 0 或 null 表示切换为正文
+     */
+    ns._setHeadingPreserveList = function (editor, level) {
+        if (!editor) return false;
+        var state = editor.state;
+        var schema = state.schema;
+        var headingType = schema.nodes.heading;
+        var paragraphType = schema.nodes.paragraph;
+        if (!headingType || !paragraphType) return false;
+
+        var $from = state.selection.$from;
+        // 找最深的 paragraph 或 heading 节点
+        var paraDepth = -1;
+        for (var d = $from.depth; d >= 0; d--) {
+            var n = $from.node(d);
+            if (n && (n.type.name === 'paragraph' || n.type.name === 'heading')) {
+                paraDepth = d;
+                break;
+            }
+        }
+        if (paraDepth === -1) return false;
+
+        var pos = $from.before(paraDepth);
+        var blockNode = state.doc.nodeAt(pos);
+        if (!blockNode) return false;
+
+        var tr = state.tr;
+        if (level && level >= 1 && level <= 3) {
+            // 切换为标题（保留父级 taskList/listItem 包装）
+            tr.setNodeMarkup(pos, headingType, { level: level });
+        } else {
+            // 切换为正文
+            tr.setNodeMarkup(pos, paragraphType, null);
+        }
+        editor.view.dispatch(tr);
+        return true;
+    };
+
+    /**
+     * v2.29.6: 切换任务列表项的 block 类型（标题/正文/blockquote/codeBlock）
+     * 不清空外层 taskList 包装。
+     */
+    ns._setBlockTypePreserveList = function (editor, typeName, attrs) {
+        if (!editor) return false;
+        var state = editor.state;
+        var schema = state.schema;
+        var newType = schema.nodes[typeName];
+        if (!newType) return false;
+        var $from = state.selection.$from;
+        var pos = -1;
+        for (var d = $from.depth; d >= 0; d--) {
+            var n = $from.node(d);
+            if (!n) continue;
+            if (n.type.name === 'paragraph' || n.type.name === 'heading' ||
+                n.type.name === 'codeBlock' || n.type.name === 'blockquote') {
+                pos = $from.before(d);
+                break;
+            }
+        }
+        if (pos === -1) return false;
+        var tr = state.tr.setNodeMarkup(pos, newType, attrs || null);
+        editor.view.dispatch(tr);
+        return true;
+    };
+
+    /**
      * 创建并挂载浮动气泡工具栏
      * @param {Editor} editor - Tiptap Editor 实例
      * @returns {HTMLElement} 工具栏 DOM 元素
@@ -328,19 +451,38 @@ window.DevHome = window.DevHome || {};
             { label: 'S',  title: '删除线',   action: function () { editor.chain().focus().toggleStrike().run(); },       isActive: function () { return editor.isActive('strike'); } },
             { label: '◆',  title: '高亮',     action: function () { editor.chain().focus().toggleHighlight().run(); },     isActive: function () { return editor.isActive('highlight'); } },
             null,
-            { label: 'H1', title: '标题1',    action: function () { editor.chain().focus().toggleHeading({ level: 1 }).run(); }, isActive: function () { return editor.isActive('heading', { level: 1 }); } },
-            { label: 'H2', title: '标题2',    action: function () { editor.chain().focus().toggleHeading({ level: 2 }).run(); }, isActive: function () { return editor.isActive('heading', { level: 2 }); } },
-            { label: 'H3', title: '标题3',    action: function () { editor.chain().focus().toggleHeading({ level: 3 }).run(); }, isActive: function () { return editor.isActive('heading', { level: 3 }); } },
+            { label: 'H1', title: '标题1',    action: function () {
+                if (editor.isActive('taskList') || editor.isActive('listItem')) { ns._setHeadingPreserveList(editor, 1); }
+                else { editor.chain().focus().toggleHeading({ level: 1 }).run(); }
+            }, isActive: function () { return editor.isActive('heading', { level: 1 }); } },
+            { label: 'H2', title: '标题2',    action: function () {
+                if (editor.isActive('taskList') || editor.isActive('listItem')) { ns._setHeadingPreserveList(editor, 2); }
+                else { editor.chain().focus().toggleHeading({ level: 2 }).run(); }
+            }, isActive: function () { return editor.isActive('heading', { level: 2 }); } },
+            { label: 'H3', title: '标题3',    action: function () {
+                if (editor.isActive('taskList') || editor.isActive('listItem')) { ns._setHeadingPreserveList(editor, 3); }
+                else { editor.chain().focus().toggleHeading({ level: 3 }).run(); }
+            }, isActive: function () { return editor.isActive('heading', { level: 3 }); } },
             null,
             { label: '•',  title: '无序列表',   action: function () { editor.chain().focus().toggleBulletList().run(); },     isActive: function () { return editor.isActive('bulletList'); } },
             { label: '1.', title: '有序列表',   action: function () { editor.chain().focus().toggleOrderedList().run(); },    isActive: function () { return editor.isActive('orderedList'); } },
-            { label: '☑', title: '任务列表',   action: function () {
-                if (editor.isActive('codeBlock')) { editor.chain().focus().toggleCodeBlock().toggleTaskList().run(); }
-                else if (editor.isActive('blockquote')) { editor.chain().focus().toggleBlockquote().toggleTaskList().run(); }
-                else { editor.chain().focus().toggleTaskList().run(); }
+            { label: '☑', title: '任务列表（代码/引用块外部包裹）', action: function () {
+                if (editor.isActive('codeBlock') || editor.isActive('blockquote')) {
+                    if (!ns._wrapInTaskList(editor)) {
+                        if (editor.isActive('codeBlock')) editor.chain().focus().toggleCodeBlock().run();
+                        if (editor.isActive('blockquote')) editor.chain().focus().toggleBlockquote().run();
+                        editor.chain().focus().toggleTaskList().run();
+                    }
+                } else { editor.chain().focus().toggleTaskList().run(); }
             }, isActive: function () { return editor.isActive('taskList'); } },
-            { label: '❝', title: '引用块',     action: function () { editor.chain().focus().toggleBlockquote().run(); },     isActive: function () { return editor.isActive('blockquote'); } },
-            { label: '⌨', title: '代码块',     action: function () { editor.chain().focus().toggleCodeBlock().run(); },       isActive: function () { return editor.isActive('codeBlock'); } },
+            { label: '❝', title: '引用块',     action: function () {
+                if (editor.isActive('taskList') || editor.isActive('listItem')) { ns._setBlockTypePreserveList(editor, 'blockquote'); }
+                else { editor.chain().focus().toggleBlockquote().run(); }
+            }, isActive: function () { return editor.isActive('blockquote'); } },
+            { label: '⌨', title: '代码块',     action: function () {
+                if (editor.isActive('taskList') || editor.isActive('listItem')) { ns._setBlockTypePreserveList(editor, 'codeBlock'); }
+                else { editor.chain().focus().toggleCodeBlock().run(); }
+            }, isActive: function () { return editor.isActive('codeBlock'); } },
             null,
             { label: '⊞', title: '折叠代码/引用块', action: function () { ns._toggleBlockCollapse(editor); }, isActive: function () { return false; } }
         ];
@@ -574,11 +716,20 @@ window.DevHome = window.DevHome || {};
             '<option value="2">标题 2</option>' +
             '<option value="3">标题 3</option>';
         headingSelect.addEventListener('change', function () {
-            var level = this.value;
+            var level = parseInt(this.value, 10);
             if (level) {
-                editor.chain().focus().toggleHeading({ level: parseInt(level) }).run();
+                // v2.29.6: 在任务列表内切换标题时，保留父级任务列表包装
+                if (editor.isActive('taskList') || editor.isActive('listItem')) {
+                    ns._setHeadingPreserveList(editor, level);
+                } else {
+                    editor.chain().focus().toggleHeading({ level: level }).run();
+                }
             } else {
-                editor.chain().focus().setParagraph().run();
+                if (editor.isActive('taskList') || editor.isActive('listItem')) {
+                    ns._setHeadingPreserveList(editor, 0);
+                } else {
+                    editor.chain().focus().setParagraph().run();
+                }
             }
         });
         container.appendChild(headingSelect);
@@ -657,14 +808,23 @@ window.DevHome = window.DevHome || {};
         // ---- 块级格式 ----
         addButton({ label: '•≡', title: '无序列表', action: function () { editor.chain().focus().toggleBulletList().run(); }, isActive: function () { return editor.isActive('bulletList'); } });
         addButton({ label: '1.≡', title: '有序列表', action: function () { editor.chain().focus().toggleOrderedList().run(); }, isActive: function () { return editor.isActive('orderedList'); } });
-        addButton({ label: '☑≡', title: '任务列表', action: function () {
-            // Fix: 代码块/引用块内先退出再切换为任务列表
-            if (editor.isActive('codeBlock')) { editor.chain().focus().toggleCodeBlock().toggleTaskList().run(); }
-            else if (editor.isActive('blockquote')) { editor.chain().focus().toggleBlockquote().toggleTaskList().run(); }
-            else { editor.chain().focus().toggleTaskList().run(); }
+        addButton({ label: '☑≡', title: '任务列表（代码/引用块外部包裹）', action: function () {
+            if (editor.isActive('codeBlock') || editor.isActive('blockquote')) {
+                if (!ns._wrapInTaskList(editor)) {
+                    if (editor.isActive('codeBlock')) editor.chain().focus().toggleCodeBlock().run();
+                    if (editor.isActive('blockquote')) editor.chain().focus().toggleBlockquote().run();
+                    editor.chain().focus().toggleTaskList().run();
+                }
+            } else { editor.chain().focus().toggleTaskList().run(); }
         }, isActive: function () { return editor.isActive('taskList'); } });
-        addButton({ label: '❝', title: '引用块', action: function () { editor.chain().focus().toggleBlockquote().run(); }, isActive: function () { return editor.isActive('blockquote'); } });
-        addButton({ label: '⌨', title: '代码块', action: function () { editor.chain().focus().toggleCodeBlock().run(); }, isActive: function () { return editor.isActive('codeBlock'); } });
+        addButton({ label: '❝', title: '引用块', action: function () {
+            if (editor.isActive('taskList') || editor.isActive('listItem')) { ns._setBlockTypePreserveList(editor, 'blockquote'); }
+            else { editor.chain().focus().toggleBlockquote().run(); }
+        }, isActive: function () { return editor.isActive('blockquote'); } });
+        addButton({ label: '⌨', title: '代码块', action: function () {
+            if (editor.isActive('taskList') || editor.isActive('listItem')) { ns._setBlockTypePreserveList(editor, 'codeBlock'); }
+            else { editor.chain().focus().toggleCodeBlock().run(); }
+        }, isActive: function () { return editor.isActive('codeBlock'); } });
         addButton({ label: '─', title: '水平分割线', action: function () { editor.chain().focus().setHorizontalRule().run(); }, isActive: function () { return false; } });
 
         addSep();
