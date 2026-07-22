@@ -134,22 +134,21 @@
     cursor: pointer;
 }
 
-/* ===== 固定设置按钮 ===== */
+/* ===== 固定设置按钮（v2.29.4 简化为纯图标，无圆形边框） ===== */
 .settings-gear-btn {
     position: fixed; right: 22px; bottom: 22px; z-index: 1200;
     width: 44px; height: 44px;
-    border: 1px solid var(--color-border-active);
-    border-radius: 50%;
-    background: var(--color-bg-elevated);
+    border: none;
+    border-radius: 0;
+    background: transparent;
     color: var(--color-text-secondary);
     display: grid; place-items: center;
     cursor: pointer;
-    box-shadow: var(--shadow-md);
-    /* 移除 backdrop-filter 模糊，保持 Apple 风格的清晰锐利 */
-    transition: color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast), background var(--transition-fast);
+    box-shadow: none;
+    transition: color var(--transition-fast), transform var(--transition-fast);
 }
-.settings-gear-btn:hover { color: var(--color-accent); border-color: var(--color-accent-border-56); transform: translateY(-1px); }
-.settings-gear-btn:hover .dh-icon { color: inherit; }
+.settings-gear-btn:hover { color: var(--color-accent); transform: translateY(-1px); }
+.settings-gear-btn svg { width: 32px; height: 32px; }
 
 /* ===== 设置侧边栏遮罩层 ===== */
 .settings-overlay {

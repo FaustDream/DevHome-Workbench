@@ -279,6 +279,39 @@ window.DevHome = window.DevHome || {};
     /* ===== 气泡工具栏（纯 DOM 实现，无框架依赖） ===== */
 
     /**
+     * 折叠/展开当前光标所在的代码块或引用块
+     * 用于 Fix 6：为代码块和引用块提供折叠/展开功能
+     * @param {Editor} editor
+     */
+    ns._toggleBlockCollapse = function (editor) {
+        if (!editor) return;
+        // 查找当前节点链中的代码块或引用块
+        var nodeEl = null;
+        if (editor.isActive('codeBlock')) {
+            // 通过 DOM 向上查找 .tiptap-code-block
+            var from = editor.state.selection.from;
+            var domAtPos = editor.view.domAtPos(from);
+            if (domAtPos && domAtPos.node) {
+                nodeEl = domAtPos.node.closest('.tiptap-code-block, .tiptap-blockquote');
+            }
+        } else if (editor.isActive('blockquote')) {
+            var f2 = editor.state.selection.from;
+            var dap = editor.view.domAtPos(f2);
+            if (dap && dap.node) {
+                nodeEl = dap.node.closest('.tiptap-blockquote');
+            }
+        }
+        if (!nodeEl) {
+            // 尝试通过选区直接查找
+            var selNode = editor.view.domAtPos(editor.state.selection.from).node;
+            if (selNode) nodeEl = selNode.closest && selNode.closest('.tiptap-code-block, .tiptap-blockquote');
+        }
+        if (!nodeEl) return;
+        nodeEl.classList.toggle('tiptap-collapsed');
+        console.log('[编辑] ' + (nodeEl.classList.contains('tiptap-collapsed') ? '折叠' : '展开') + ' ' + (nodeEl.classList.contains('tiptap-code-block') ? '代码块' : '引用块'));
+    };
+
+    /**
      * 创建并挂载浮动气泡工具栏
      * @param {Editor} editor - Tiptap Editor 实例
      * @returns {HTMLElement} 工具栏 DOM 元素
@@ -293,6 +326,7 @@ window.DevHome = window.DevHome || {};
             { label: 'I',  title: '斜体',     action: function () { editor.chain().focus().toggleItalic().run(); },       isActive: function () { return editor.isActive('italic'); } },
             { label: 'U',  title: '下划线',   action: function () { editor.chain().focus().toggleUnderline().run(); },    isActive: function () { return editor.isActive('underline'); } },
             { label: 'S',  title: '删除线',   action: function () { editor.chain().focus().toggleStrike().run(); },       isActive: function () { return editor.isActive('strike'); } },
+            { label: '◆',  title: '高亮',     action: function () { editor.chain().focus().toggleHighlight().run(); },     isActive: function () { return editor.isActive('highlight'); } },
             null,
             { label: 'H1', title: '标题1',    action: function () { editor.chain().focus().toggleHeading({ level: 1 }).run(); }, isActive: function () { return editor.isActive('heading', { level: 1 }); } },
             { label: 'H2', title: '标题2',    action: function () { editor.chain().focus().toggleHeading({ level: 2 }).run(); }, isActive: function () { return editor.isActive('heading', { level: 2 }); } },
@@ -300,9 +334,15 @@ window.DevHome = window.DevHome || {};
             null,
             { label: '•',  title: '无序列表',   action: function () { editor.chain().focus().toggleBulletList().run(); },     isActive: function () { return editor.isActive('bulletList'); } },
             { label: '1.', title: '有序列表',   action: function () { editor.chain().focus().toggleOrderedList().run(); },    isActive: function () { return editor.isActive('orderedList'); } },
-            { label: '☑', title: '任务列表',   action: function () { editor.chain().focus().toggleTaskList().run(); },       isActive: function () { return editor.isActive('taskList'); } },
+            { label: '☑', title: '任务列表',   action: function () {
+                if (editor.isActive('codeBlock')) { editor.chain().focus().toggleCodeBlock().toggleTaskList().run(); }
+                else if (editor.isActive('blockquote')) { editor.chain().focus().toggleBlockquote().toggleTaskList().run(); }
+                else { editor.chain().focus().toggleTaskList().run(); }
+            }, isActive: function () { return editor.isActive('taskList'); } },
             { label: '❝', title: '引用块',     action: function () { editor.chain().focus().toggleBlockquote().run(); },     isActive: function () { return editor.isActive('blockquote'); } },
-            { label: '⌨', title: '代码块',     action: function () { editor.chain().focus().toggleCodeBlock().run(); },       isActive: function () { return editor.isActive('codeBlock'); } }
+            { label: '⌨', title: '代码块',     action: function () { editor.chain().focus().toggleCodeBlock().run(); },       isActive: function () { return editor.isActive('codeBlock'); } },
+            null,
+            { label: '⊞', title: '折叠代码/引用块', action: function () { ns._toggleBlockCollapse(editor); }, isActive: function () { return false; } }
         ];
 
         buttons.forEach(function (def) {
@@ -617,7 +657,12 @@ window.DevHome = window.DevHome || {};
         // ---- 块级格式 ----
         addButton({ label: '•≡', title: '无序列表', action: function () { editor.chain().focus().toggleBulletList().run(); }, isActive: function () { return editor.isActive('bulletList'); } });
         addButton({ label: '1.≡', title: '有序列表', action: function () { editor.chain().focus().toggleOrderedList().run(); }, isActive: function () { return editor.isActive('orderedList'); } });
-        addButton({ label: '☑≡', title: '任务列表', action: function () { editor.chain().focus().toggleTaskList().run(); }, isActive: function () { return editor.isActive('taskList'); } });
+        addButton({ label: '☑≡', title: '任务列表', action: function () {
+            // Fix: 代码块/引用块内先退出再切换为任务列表
+            if (editor.isActive('codeBlock')) { editor.chain().focus().toggleCodeBlock().toggleTaskList().run(); }
+            else if (editor.isActive('blockquote')) { editor.chain().focus().toggleBlockquote().toggleTaskList().run(); }
+            else { editor.chain().focus().toggleTaskList().run(); }
+        }, isActive: function () { return editor.isActive('taskList'); } });
         addButton({ label: '❝', title: '引用块', action: function () { editor.chain().focus().toggleBlockquote().run(); }, isActive: function () { return editor.isActive('blockquote'); } });
         addButton({ label: '⌨', title: '代码块', action: function () { editor.chain().focus().toggleCodeBlock().run(); }, isActive: function () { return editor.isActive('codeBlock'); } });
         addButton({ label: '─', title: '水平分割线', action: function () { editor.chain().focus().setHorizontalRule().run(); }, isActive: function () { return false; } });
