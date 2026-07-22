@@ -5,22 +5,45 @@
    拆分自 workbench.css (原 2377行)
    ============================================ */
 
-/* ===== 笔记编辑器布局（v2.29.6 修复：背景统一 + 真实铺满） ===== */
+/* ===== 笔记编辑器布局（v2.30.0：内容区纯白纸感 + 空状态卡片化） ===== */
 .wb-notes-editor {
-    flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0;
+    flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; min-height: 0;
+    height: 100%;  /* 兜底：即使父级高度解析异常也铺满（视觉重构 v2.30.0） */
     overflow-y: auto; scrollbar-width: thin;
     scrollbar-color: var(--color-scrollbar-thumb) transparent;
-    background: var(--color-bg, var(--color-surface));
-    /* 铺满：自身负责滚动，背景延伸至底 */
+    background: var(--color-surface, #ffffff);  /* 内容区纯白，与辅助灰侧栏形成层级 */
     align-self: stretch;
 }
 .wb-notes-editor::-webkit-scrollbar { width: 4px; }
 .wb-notes-editor::-webkit-scrollbar-thumb { background: var(--color-scrollbar-thumb); border-radius: 2px; }
 
+/* 空状态：铺满居中，内部承载一张引导卡片 */
 .wb-notes-editor-empty {
-    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 12px; color: var(--color-text-tertiary); font-size: 13px;
+    flex: 1 1 auto; display: flex; align-items: center; justify-content: center;
+    padding: 24px; min-height: 0; background: var(--color-surface, #ffffff);
 }
+/* 空状态引导卡片：图标 + 标题 + 描述 + 新建按钮（视觉重构 v2.30.0） */
+.wb-empty-card {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 10px; text-align: center; padding: 40px 48px; border-radius: 16px;
+    background: var(--color-aux-bg, #f5f7fa);
+    border: 1px solid var(--color-glass-border);
+    box-shadow: var(--shadow-sm);
+    max-width: 360px;
+}
+.wb-empty-card-icon { width: 56px; height: 56px; color: var(--color-text-tertiary); opacity: 0.7; }
+.wb-empty-card-title { margin: 0; font-size: 16px; font-weight: 600; color: var(--color-text); letter-spacing: -0.01em; }
+.wb-empty-card-desc { margin: 0; font-size: 12px; color: var(--color-text-tertiary); line-height: 1.5; }
+.wb-empty-create-btn {
+    display: inline-flex; align-items: center; gap: 6px; margin-top: 6px;
+    padding: 8px 18px; border: none; border-radius: 8px; cursor: pointer;
+    background: var(--color-accent); color: var(--color-text-inverse);
+    font-family: var(--font-sans); font-size: 13px; font-weight: 600;
+    transition: all 0.15s ease; box-shadow: 0 2px 8px rgba(22, 119, 255, 0.25);
+}
+.wb-empty-create-btn:hover { background: var(--color-accent-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(22, 119, 255, 0.32); }
+.wb-empty-create-btn:active { transform: translateY(0); }
+.wb-empty-plus { width: 14px; height: 14px; }
 /* v2.29.6 修复：激活态背景与父容器一致，不再出现"卡片"感 */
 .wb-notes-editor-active {
     flex: 1; display: flex; flex-direction: column; padding: 16px 20px;

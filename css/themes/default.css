@@ -207,6 +207,9 @@
     --color-surface-hover:   #F2F3F5;
     --color-surface-subtle:  rgba(0, 0, 0, 0.03);
     --color-surface-muted:   #E9EBEE;
+    /* 交互辅助令牌：辅助灰背景 + 浅蓝 hover 反馈（视觉重构 v2.30.0） */
+    --color-aux-bg:          #f5f7fa;   /* 侧栏/次级表面：独立于纯白内容区 */
+    --color-hover-bg:        #eaf3ff;   /* Ant Design 蓝 hover 浅底，交互更鲜明 */
     --color-overlay:         var(--_deep-overlay);
     --color-input-bg:        #FFFFFF;
     --color-input-border:    #D8DCE1;
@@ -218,10 +221,11 @@
     --color-text-disabled:   #C9CDD4;
     --color-text-inverse:    #FFFFFF;
 
-    --color-accent:          var(--_deep-accent);
-    --color-accent-hover:    var(--_deep-accent-hover);
-    --color-accent-active:   var(--_deep-accent-active);
-    --color-accent-disabled: var(--_deep-accent-disabled);
+    /* 主色：Ant Design 蓝 #1677ff，交互反馈更鲜明（视觉重构 v2.30.0） */
+    --color-accent:          #1677ff;
+    --color-accent-hover:    #0958d9;
+    --color-accent-active:   #003eb3;
+    --color-accent-disabled: rgba(22, 119, 255, 0.25);
 
     --color-success:         var(--_deep-green);
     --color-warning:         var(--_deep-amber);
@@ -308,6 +312,8 @@
     --color-surface-hover:   #48484A;
     --color-surface-subtle:  rgba(255, 255, 255, 0.06);
     --color-surface-muted:   rgba(255, 255, 255, 0.08);
+    --color-aux-bg:          #232325;
+    --color-hover-bg:        rgba(10, 132, 255, 0.16);
     --color-overlay:         rgba(0, 0, 0, 0.55);
     --color-input-bg:        #3A3A3C;
     --color-input-border:    #48484A;

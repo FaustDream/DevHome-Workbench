@@ -242,6 +242,12 @@
                             <button class="wb-notes-action-btn" id="wbTagAddBtn" title="新建标签"><svg class="dh-icon dh-icon--tag dh-icon--md"" role="img"><use href="#dh-icon-tag"></use></svg></button>
                         </div>
                     </div>
+                    <!-- 顶栏右侧状态：同步状态（视觉重构 v2.30.0） -->
+                    <div class="wb-notes-toolbar-right">
+                        <span class="wb-sync-status" id="wbSyncStatus" title="本地数据已保存">
+                            <span class="wb-sync-dot"></span>已同步
+                        </span>
+                    </div>
                 </div>
                 <!-- 标签筛选行 -->
                 <div class="wb-notes-filter-bar">
@@ -260,12 +266,24 @@
 
                 <div class="wb-notes-layout" id="wbNotesLayout">
                     <div class="wb-notes-sidebar" id="wbNotesSidebar">
+                        <button class="wb-sidebar-new-btn" id="wbSidebarNewBtn" type="button">
+                            <svg class="wb-empty-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+                            新建笔记
+                        </button>
+                        <div class="wb-sidebar-section-label">笔记</div>
                         <div class="wb-notes-list" id="wbNotesList"></div>
                     </div>
                     <div class="wb-notes-editor" id="wbNotesEditor">
                         <div class="wb-notes-editor-empty" id="wbNotesEditorEmpty">
-                            <svg class="dh-icon dh-icon--empty-note dh-icon--xl"" role="img"><use href="#dh-icon-empty-note"></use></svg>
-                            <p id="wbNotesEmptyMsg">选择或新建一篇笔记</p>
+                            <div class="wb-empty-card">
+                                <svg class="dh-icon dh-icon--empty-note wb-empty-card-icon" role="img"><use href="#dh-icon-empty-note"></use></svg>
+                                <h3 class="wb-empty-card-title">暂无笔记</h3>
+                                <p class="wb-empty-card-desc" id="wbNotesEmptyMsg">选择左侧一篇笔记，或新建你的第一篇</p>
+                                <button class="wb-empty-create-btn" id="wbNotesEmptyCreateBtn" type="button">
+                                    <svg class="wb-empty-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+                                    新建笔记
+                                </button>
+                            </div>
                         </div>
                         <div class="wb-notes-editor-active" id="wbNotesEditorActive" style="display:none;">
                             <div class="wb-notes-editor-head">

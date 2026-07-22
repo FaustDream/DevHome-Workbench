@@ -210,36 +210,27 @@
     display: none !important;
 }
 
-/* ===== v6 笔记列表背景铺满全屏高度 ===== */
+/* ===== v6 笔记布局：侧栏(辅助灰) + 内容(纯白) 明确层级（视觉重构 v2.30.0） ===== */
 .wb-notes-layout {
-    flex: 1;
+    flex: 1 1 auto;
     display: flex;
     min-height: 0;
     overflow: hidden;
-    background: var(--color-bg, var(--color-sidebar-bg)); /* 底部溢出时填补空白 */
+    background: var(--color-aux-bg, var(--color-bg)); /* 溢出时填补空白，与纯白内容区区分 */
 }
-/* 笔记侧边栏背景铺满，不受列表数量影响 */
+
+/* 笔记侧边栏：辅助灰背景，独立沉底，不受列表数量影响 */
 .wb-notes-sidebar {
     width: 220px;
     min-width: 220px;
-    border-right: var(--card-border);
-    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.05);  /* 侧栏与主区明确边界（视觉重构 v2.29.9） */
+    /* 仅靠阴影建立边界，去掉生硬右边框（视觉重构 v2.30.0） */
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.06);
     overflow-y: auto;
     scrollbar-width: none;
-    padding: 6px;
-    background: var(--color-sidebar-bg, var(--color-surface));
+    padding: 10px 8px;
+    background: var(--color-aux-bg, #f5f7fa);
     min-height: 0;
-    align-self: stretch;  /* v2.29.6: 强制拉伸至父级高度 */
-}
-.wb-notes-sidebar::-webkit-scrollbar { display: none; }
-}
-.wb-notes-sidebar {
-    width: 220px;
-    min-width: 220px;
-    border-right: var(--card-border);
-    overflow-y: auto;
-    scrollbar-width: none;
-    padding: 6px;
+    align-self: stretch;  /* 强制拉伸至父级高度 */
 }
 .wb-notes-sidebar::-webkit-scrollbar { display: none; }
 
@@ -324,17 +315,19 @@
     }
 }
 
-/* ===== 顶部工具栏（v5 新增，多行布局） ===== */
+/* ===== 顶部工具栏（v5 新增，多行布局；v2.30.0 收紧高度 + 柔化边界） ===== */
 .wb-topbar {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 6px;
-    padding: 8px 10px;
-    border-bottom: var(--card-border);
+    gap: 4px;
+    padding: 6px 10px;
+    /* 用极淡阴影替代生硬底边框（视觉重构 v2.30.0） */
+    box-shadow: 0 1px 0 var(--color-glass-border);
     background: var(--color-sidebar-bg);
     flex-shrink: 0;
     position: relative;
+    z-index: 5;
 }
 .wb-topbar-row {
     display: flex;

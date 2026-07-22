@@ -41,6 +41,30 @@ window.DevHome = window.DevHome || {};
             });
         }
 
+        // 空状态引导卡片「新建笔记」按钮
+        const wbNotesEmptyCreateBtn = document.getElementById('wbNotesEmptyCreateBtn');
+        if (wbNotesEmptyCreateBtn) {
+            wbNotesEmptyCreateBtn.addEventListener('click', function () {
+                ns.createNote({ title: '新笔记', content: '', type: 'note', tags: [] }).then(function (note) {
+                    ns.openNoteEditor(note);
+                    ns.renderNotesList(state._notesFilter, state._notesSearch);
+                    console.log('[交互] 空状态 新建笔记');
+                });
+            });
+        }
+
+        // 侧栏顶部「新建笔记」按钮
+        const wbSidebarNewBtn = document.getElementById('wbSidebarNewBtn');
+        if (wbSidebarNewBtn) {
+            wbSidebarNewBtn.addEventListener('click', function () {
+                ns.createNote({ title: '新笔记', content: '', type: 'note', tags: [] }).then(function (note) {
+                    ns.openNoteEditor(note);
+                    ns.renderNotesList(state._notesFilter, state._notesSearch);
+                    console.log('[交互] 侧栏 新建笔记');
+                });
+            });
+        }
+
         // 新建笔记本
         const wbNotebookAddBtn = document.getElementById('wbNotebookAddBtn');
         if (wbNotebookAddBtn) {

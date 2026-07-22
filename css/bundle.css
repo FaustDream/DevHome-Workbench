@@ -360,6 +360,9 @@
     --color-surface-hover:   #F2F3F5;
     --color-surface-subtle:  rgba(0, 0, 0, 0.03);
     --color-surface-muted:   #E9EBEE;
+    /* 交互辅助令牌：辅助灰背景 + 浅蓝 hover 反馈（视觉重构 v2.30.0） */
+    --color-aux-bg:          #f5f7fa;   /* 侧栏/次级表面：独立于纯白内容区 */
+    --color-hover-bg:        #eaf3ff;   /* Ant Design 蓝 hover 浅底，交互更鲜明 */
     --color-overlay:         var(--_deep-overlay);
     --color-input-bg:        #FFFFFF;
     --color-input-border:    #D8DCE1;
@@ -371,10 +374,11 @@
     --color-text-disabled:   #C9CDD4;
     --color-text-inverse:    #FFFFFF;
 
-    --color-accent:          var(--_deep-accent);
-    --color-accent-hover:    var(--_deep-accent-hover);
-    --color-accent-active:   var(--_deep-accent-active);
-    --color-accent-disabled: var(--_deep-accent-disabled);
+    /* 主色：Ant Design 蓝 #1677ff，交互反馈更鲜明（视觉重构 v2.30.0） */
+    --color-accent:          #1677ff;
+    --color-accent-hover:    #0958d9;
+    --color-accent-active:   #003eb3;
+    --color-accent-disabled: rgba(22, 119, 255, 0.25);
 
     --color-success:         var(--_deep-green);
     --color-warning:         var(--_deep-amber);
@@ -461,6 +465,8 @@
     --color-surface-hover:   #48484A;
     --color-surface-subtle:  rgba(255, 255, 255, 0.06);
     --color-surface-muted:   rgba(255, 255, 255, 0.08);
+    --color-aux-bg:          #232325;
+    --color-hover-bg:        rgba(10, 132, 255, 0.16);
     --color-overlay:         rgba(0, 0, 0, 0.55);
     --color-input-bg:        #3A3A3C;
     --color-input-border:    #48484A;
@@ -2760,36 +2766,27 @@ body::before {
     display: none !important;
 }
 
-/* ===== v6 笔记列表背景铺满全屏高度 ===== */
+/* ===== v6 笔记布局：侧栏(辅助灰) + 内容(纯白) 明确层级（视觉重构 v2.30.0） ===== */
 .wb-notes-layout {
-    flex: 1;
+    flex: 1 1 auto;
     display: flex;
     min-height: 0;
     overflow: hidden;
-    background: var(--color-bg, var(--color-sidebar-bg)); /* 底部溢出时填补空白 */
+    background: var(--color-aux-bg, var(--color-bg)); /* 溢出时填补空白，与纯白内容区区分 */
 }
-/* 笔记侧边栏背景铺满，不受列表数量影响 */
+
+/* 笔记侧边栏：辅助灰背景，独立沉底，不受列表数量影响 */
 .wb-notes-sidebar {
     width: 220px;
     min-width: 220px;
-    border-right: var(--card-border);
-    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.05);  /* 侧栏与主区明确边界（视觉重构 v2.29.9） */
+    /* 仅靠阴影建立边界，去掉生硬右边框（视觉重构 v2.30.0） */
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.06);
     overflow-y: auto;
     scrollbar-width: none;
-    padding: 6px;
-    background: var(--color-sidebar-bg, var(--color-surface));
+    padding: 10px 8px;
+    background: var(--color-aux-bg, #f5f7fa);
     min-height: 0;
-    align-self: stretch;  /* v2.29.6: 强制拉伸至父级高度 */
-}
-.wb-notes-sidebar::-webkit-scrollbar { display: none; }
-}
-.wb-notes-sidebar {
-    width: 220px;
-    min-width: 220px;
-    border-right: var(--card-border);
-    overflow-y: auto;
-    scrollbar-width: none;
-    padding: 6px;
+    align-self: stretch;  /* 强制拉伸至父级高度 */
 }
 .wb-notes-sidebar::-webkit-scrollbar { display: none; }
 
@@ -2874,17 +2871,19 @@ body::before {
     }
 }
 
-/* ===== 顶部工具栏（v5 新增，多行布局） ===== */
+/* ===== 顶部工具栏（v5 新增，多行布局；v2.30.0 收紧高度 + 柔化边界） ===== */
 .wb-topbar {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 6px;
-    padding: 8px 10px;
-    border-bottom: var(--card-border);
+    gap: 4px;
+    padding: 6px 10px;
+    /* 用极淡阴影替代生硬底边框（视觉重构 v2.30.0） */
+    box-shadow: 0 1px 0 var(--color-glass-border);
     background: var(--color-sidebar-bg);
     flex-shrink: 0;
     position: relative;
+    z-index: 5;
 }
 .wb-topbar-row {
     display: flex;
@@ -3653,12 +3652,23 @@ body > * { position: relative; z-index: 1; }
     background: transparent; font-size: 14px; cursor: pointer;
     display: flex; align-items: center; justify-content: center; transition: all .15s ease; padding: 0;
 }
-.wb-notes-action-btn:hover { background: var(--color-surface-hover); border-color: var(--color-glass-border); }
+.wb-notes-action-btn:hover { background: var(--color-hover-bg, #eaf3ff); border-color: var(--color-glass-border); }
 
-/* 标签筛选行 */
+/* 顶栏右侧同步状态（视觉重构 v2.30.0） */
+.wb-sync-status {
+    display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px;
+    border-radius: 999px; font-size: 11px; font-weight: 500; color: var(--color-text-secondary);
+    background: var(--color-surface-subtle); cursor: default; white-space: nowrap;
+}
+.wb-sync-dot {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--color-success);
+    box-shadow: 0 0 0 3px var(--color-accent-bg-10);
+}
+
+/* 标签筛选行：用内阴影代替生硬底边框（视觉重构 v2.30.0） */
 .wb-notes-filter-bar {
     display: flex; align-items: center; padding: 6px 16px;
-    border-bottom: 1px solid var(--color-glass-border); background: var(--color-surface-subtle);
+    box-shadow: inset 0 -1px 0 var(--color-glass-border); background: var(--color-surface-subtle);
     overflow-x: auto; scrollbar-width: none;
 }
 .wb-notes-filter-bar::-webkit-scrollbar { display: none; }
@@ -3674,7 +3684,9 @@ body > * { position: relative; z-index: 1; }
 /* 笔记工具栏 */
 .wb-notes-toolbar {
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    padding: 12px 16px; border-bottom: var(--card-border); flex-shrink: 0;
+    padding: 10px 16px; flex-shrink: 0;
+    /* 柔化边界：极淡阴影替代生硬边框（视觉重构 v2.30.0） */
+    box-shadow: 0 1px 0 var(--color-glass-border);
 }
 .wb-notes-toolbar-left { display: flex; align-items: center; gap: 8px; flex: 1; }
 .wb-notes-search {
@@ -3730,14 +3742,34 @@ body > * { position: relative; z-index: 1; }
 /* ===== 笔记列表 ===== */
 .wb-notes-list { display: flex; flex-direction: column; gap: 2px; }
 
+/* 侧栏顶部新建按钮 + 分区标签（视觉重构 v2.30.0） */
+.wb-sidebar-new-btn {
+    display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%;
+    padding: 9px 12px; margin-bottom: 10px; border: 1px solid var(--color-glass-border);
+    border-radius: 8px; background: var(--color-surface, #ffffff); color: var(--color-accent);
+    font-family: var(--font-sans); font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: all 0.15s ease; box-shadow: var(--shadow-sm);
+}
+.wb-sidebar-new-btn:hover { background: var(--color-hover-bg, #eaf3ff); border-color: var(--color-accent); }
+.wb-sidebar-new-btn .wb-empty-plus { width: 15px; height: 15px; }
+.wb-sidebar-section-label {
+    padding: 4px 10px 6px; font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--color-text-tertiary);
+}
+
 .wb-note-list-item {
     position: relative; display: flex; flex-direction: column; gap: 3px;
     padding: 9px 10px; border-radius: var(--card-radius); border: 1px solid transparent;
     cursor: pointer; transition: all 0.15s ease; overflow: hidden;
 }
-.wb-note-list-item:hover { background: var(--color-surface-hover); border-color: var(--color-glass-border); }
-.wb-note-list-item.active { background: var(--color-accent-bg-10); border-color: transparent; box-shadow: inset 3px 0 0 var(--color-accent); }
-.wb-note-list-item.active .wb-note-list-title-text { font-weight: 600; color: var(--color-text); }
+.wb-note-list-item:hover { background: var(--color-hover-bg, #eaf3ff); border-color: var(--color-glass-border); }
+/* 选中态：浅蓝底 + 蓝色标识条 + 阴影，层级更突出（视觉重构 v2.30.0） */
+.wb-note-list-item.active {
+    background: var(--color-accent-bg-12, var(--color-hover-bg));
+    border-color: transparent;
+    box-shadow: inset 3px 0 0 var(--color-accent), 0 1px 4px rgba(22, 119, 255, 0.14);
+}
+.wb-note-list-item.active .wb-note-list-title-text { font-weight: 600; color: var(--color-accent); }
 .wb-note-list-item .wb-note-list-del {
     position: absolute; top: 6px; right: 8px; opacity: 0; width: 20px; height: 20px;
     border: none; border-radius: 5px; background: transparent; color: var(--color-text-tertiary);
@@ -3787,22 +3819,45 @@ body > * { position: relative; z-index: 1; }
    拆分自 workbench.css (原 2377行)
    ============================================ */
 
-/* ===== 笔记编辑器布局（v2.29.6 修复：背景统一 + 真实铺满） ===== */
+/* ===== 笔记编辑器布局（v2.30.0：内容区纯白纸感 + 空状态卡片化） ===== */
 .wb-notes-editor {
-    flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0;
+    flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; min-height: 0;
+    height: 100%;  /* 兜底：即使父级高度解析异常也铺满（视觉重构 v2.30.0） */
     overflow-y: auto; scrollbar-width: thin;
     scrollbar-color: var(--color-scrollbar-thumb) transparent;
-    background: var(--color-bg, var(--color-surface));
-    /* 铺满：自身负责滚动，背景延伸至底 */
+    background: var(--color-surface, #ffffff);  /* 内容区纯白，与辅助灰侧栏形成层级 */
     align-self: stretch;
 }
 .wb-notes-editor::-webkit-scrollbar { width: 4px; }
 .wb-notes-editor::-webkit-scrollbar-thumb { background: var(--color-scrollbar-thumb); border-radius: 2px; }
 
+/* 空状态：铺满居中，内部承载一张引导卡片 */
 .wb-notes-editor-empty {
-    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 12px; color: var(--color-text-tertiary); font-size: 13px;
+    flex: 1 1 auto; display: flex; align-items: center; justify-content: center;
+    padding: 24px; min-height: 0; background: var(--color-surface, #ffffff);
 }
+/* 空状态引导卡片：图标 + 标题 + 描述 + 新建按钮（视觉重构 v2.30.0） */
+.wb-empty-card {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 10px; text-align: center; padding: 40px 48px; border-radius: 16px;
+    background: var(--color-aux-bg, #f5f7fa);
+    border: 1px solid var(--color-glass-border);
+    box-shadow: var(--shadow-sm);
+    max-width: 360px;
+}
+.wb-empty-card-icon { width: 56px; height: 56px; color: var(--color-text-tertiary); opacity: 0.7; }
+.wb-empty-card-title { margin: 0; font-size: 16px; font-weight: 600; color: var(--color-text); letter-spacing: -0.01em; }
+.wb-empty-card-desc { margin: 0; font-size: 12px; color: var(--color-text-tertiary); line-height: 1.5; }
+.wb-empty-create-btn {
+    display: inline-flex; align-items: center; gap: 6px; margin-top: 6px;
+    padding: 8px 18px; border: none; border-radius: 8px; cursor: pointer;
+    background: var(--color-accent); color: var(--color-text-inverse);
+    font-family: var(--font-sans); font-size: 13px; font-weight: 600;
+    transition: all 0.15s ease; box-shadow: 0 2px 8px rgba(22, 119, 255, 0.25);
+}
+.wb-empty-create-btn:hover { background: var(--color-accent-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(22, 119, 255, 0.32); }
+.wb-empty-create-btn:active { transform: translateY(0); }
+.wb-empty-plus { width: 14px; height: 14px; }
 /* v2.29.6 修复：激活态背景与父容器一致，不再出现"卡片"感 */
 .wb-notes-editor-active {
     flex: 1; display: flex; flex-direction: column; padding: 16px 20px;
