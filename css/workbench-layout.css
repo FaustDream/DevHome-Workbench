@@ -48,6 +48,9 @@
     grid-template-columns: 1fr;
     height: 100%;
     overflow: hidden;
+    /* 左侧留出 44px 给悬浮侧边栏，防止内容被遮挡 */
+    padding-left: 44px;
+    box-sizing: border-box;
 }
 
 /* ===== 主工作区：占满整个视口（不再有左侧 docking） ===== */
@@ -286,15 +289,22 @@
     .wb-shell {
         grid-template-columns: 1fr;
         grid-template-rows: auto 1fr;
+        padding-left: 0; /* 小屏悬浮侧边栏自动隐藏或缩小，无需 padding */
     }
-    .wb-quadrant-panel {
-        width: 100%; min-width: auto; max-height: 40vh;
-        border-right: none; border-bottom: var(--card-border);
-    }
-    .wb-quadrant-panel.collapsed { width: 100%; min-width: auto; max-height: 40px; }
     .wb-notes-sidebar { width: 180px; min-width: 180px; }
     .wb-pomodoro-sidebar { padding: 10px; gap: 8px; }
-    .wb-mini-calendar { min-width: 240px; }
+    .wb-floating-sidebar {
+        width: 36px;
+    }
+    .wb-floating-icon {
+        width: 28px;
+        height: 28px;
+    }
+    .wb-floating-panel {
+        left: 36px;
+        width: 300px;
+        max-width: 75vw;
+    }
 }
 
 /* ===== 顶部工具栏（v5 新增，多行布局） ===== */
