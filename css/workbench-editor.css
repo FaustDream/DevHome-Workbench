@@ -25,6 +25,7 @@
 .wb-notes-editor-active {
     flex: 1; display: flex; flex-direction: column; padding: 16px 20px;
     min-height: 0; background: transparent;
+    max-width: 860px; width: 100%; margin: 0 auto;  /* 正文居中限宽，融入内容区（视觉重构 v2.29.9） */
 }
 
 .wb-notes-editor-head { display: flex; align-items: center; margin-bottom: 8px; }
@@ -94,7 +95,7 @@
 .tiptap-editor-wrapper .ProseMirror {
     flex: 1; outline: none; font-size: 14px; line-height: 1.7;
     color: var(--color-text); caret-color: var(--color-accent); padding: 0;
-    word-wrap: break-word; overflow-wrap: break-word; min-height: 200px;
+    word-wrap: break-word; overflow-wrap: break-word; min-height: 100%;
 }
 .tiptap-editor-wrapper .ProseMirror p.is-editor-empty:first-child::before {
     content: attr(data-placeholder); float: left; color: var(--color-text-tertiary);

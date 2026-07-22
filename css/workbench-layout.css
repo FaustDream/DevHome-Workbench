@@ -5,11 +5,11 @@
    拆分自 workbench.css (原 2377行)
    ============================================ */
 
-/* ===== 统一卡片 Token ===== */
+/* ===== 统一卡片 Token（视觉重构 v2.29.9：圆角/阴影/边框规范统一） ===== */
 :root {
-    --card-radius: 12px;
-    --card-shadow: none;
-    --card-border: 1px solid var(--color-glass-border);
+    --card-radius: 10px;                                  /* 卡片圆角统一 10px */
+    --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);         /* 微弱阴影，建立悬浮层级 */
+    --card-border: 1px solid var(--color-border);         /* 边框略加深，告别发丝线 */
 }
 
 /* ===== 工作台容器 ===== */
@@ -223,6 +223,7 @@
     width: 220px;
     min-width: 220px;
     border-right: var(--card-border);
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.05);  /* 侧栏与主区明确边界（视觉重构 v2.29.9） */
     overflow-y: auto;
     scrollbar-width: none;
     padding: 6px;

@@ -198,22 +198,25 @@
    ======================================== */
 
 :root {
-    --color-bg:              var(--_deep-bg);
-    --color-bg-secondary:    var(--_deep-bg-secondary);
+    /* 背景层级：主画布浅灰 + 内容卡片纯白，制造明显纵深（视觉重构 v2.29.9） */
+    --color-bg:              #F5F6F8;
+    --color-bg-secondary:    #EEF0F3;
     --color-bg-tertiary:     var(--_deep-bg-tertiary);
-    --color-bg-elevated:     var(--_deep-bg-panel);
-    --color-surface:         var(--_deep-surface);
-    --color-surface-hover:   var(--_deep-surface-hover);
-    --color-surface-subtle:  var(--_deep-surface-subtle);
-    --color-surface-muted:   var(--_deep-surface-muted);
+    --color-bg-elevated:     #FFFFFF;
+    --color-surface:         #FFFFFF;
+    --color-surface-hover:   #F2F3F5;
+    --color-surface-subtle:  rgba(0, 0, 0, 0.03);
+    --color-surface-muted:   #E9EBEE;
     --color-overlay:         var(--_deep-overlay);
-    --color-input-bg:        var(--_deep-input-bg);
-    --color-input-border:    var(--_deep-input-border);
+    --color-input-bg:        #FFFFFF;
+    --color-input-border:    #D8DCE1;
 
-    --color-text:            var(--_deep-text);
-    --color-text-secondary:  var(--_deep-text-secondary);
-    --color-text-tertiary:   var(--_deep-text-tertiary);
-    --color-text-inverse:    var(--_deep-text-inverse);
+    /* 字体色四级层级：标题 / 正文 / 辅助 / 禁用 */
+    --color-text:            #1F2329;
+    --color-text-secondary:  #303133;
+    --color-text-tertiary:   #86909C;
+    --color-text-disabled:   #C9CDD4;
+    --color-text-inverse:    #FFFFFF;
 
     --color-accent:          var(--_deep-accent);
     --color-accent-hover:    var(--_deep-accent-hover);
@@ -237,7 +240,8 @@
     --color-glass-bg:        var(--_deep-glass-bg);
     --color-glass-border:    var(--_deep-glass-border);
     --color-nav-bg:          var(--_deep-nav-bg);
-    --color-sidebar-bg:      var(--_deep-sidebar-bg);
+    /* 侧栏：纯白，与灰色主画布形成明确区分（靠边框+阴影强化边界） */
+    --color-sidebar-bg:      #FFFFFF;
 
     --shadow-sm:             var(--_deep-shadow-sm);
     --shadow-md:             var(--_deep-shadow-md);

@@ -351,22 +351,25 @@
    ======================================== */
 
 :root {
-    --color-bg:              var(--_deep-bg);
-    --color-bg-secondary:    var(--_deep-bg-secondary);
+    /* 背景层级：主画布浅灰 + 内容卡片纯白，制造明显纵深（视觉重构 v2.29.9） */
+    --color-bg:              #F5F6F8;
+    --color-bg-secondary:    #EEF0F3;
     --color-bg-tertiary:     var(--_deep-bg-tertiary);
-    --color-bg-elevated:     var(--_deep-bg-panel);
-    --color-surface:         var(--_deep-surface);
-    --color-surface-hover:   var(--_deep-surface-hover);
-    --color-surface-subtle:  var(--_deep-surface-subtle);
-    --color-surface-muted:   var(--_deep-surface-muted);
+    --color-bg-elevated:     #FFFFFF;
+    --color-surface:         #FFFFFF;
+    --color-surface-hover:   #F2F3F5;
+    --color-surface-subtle:  rgba(0, 0, 0, 0.03);
+    --color-surface-muted:   #E9EBEE;
     --color-overlay:         var(--_deep-overlay);
-    --color-input-bg:        var(--_deep-input-bg);
-    --color-input-border:    var(--_deep-input-border);
+    --color-input-bg:        #FFFFFF;
+    --color-input-border:    #D8DCE1;
 
-    --color-text:            var(--_deep-text);
-    --color-text-secondary:  var(--_deep-text-secondary);
-    --color-text-tertiary:   var(--_deep-text-tertiary);
-    --color-text-inverse:    var(--_deep-text-inverse);
+    /* 字体色四级层级：标题 / 正文 / 辅助 / 禁用 */
+    --color-text:            #1F2329;
+    --color-text-secondary:  #303133;
+    --color-text-tertiary:   #86909C;
+    --color-text-disabled:   #C9CDD4;
+    --color-text-inverse:    #FFFFFF;
 
     --color-accent:          var(--_deep-accent);
     --color-accent-hover:    var(--_deep-accent-hover);
@@ -390,7 +393,8 @@
     --color-glass-bg:        var(--_deep-glass-bg);
     --color-glass-border:    var(--_deep-glass-border);
     --color-nav-bg:          var(--_deep-nav-bg);
-    --color-sidebar-bg:      var(--_deep-sidebar-bg);
+    /* 侧栏：纯白，与灰色主画布形成明确区分（靠边框+阴影强化边界） */
+    --color-sidebar-bg:      #FFFFFF;
 
     --shadow-sm:             var(--_deep-shadow-sm);
     --shadow-md:             var(--_deep-shadow-md);
@@ -2215,22 +2219,21 @@ body::before {
     cursor: pointer;
 }
 
-/* ===== 固定设置按钮 ===== */
+/* ===== 固定设置按钮（v2.29.4 简化为纯图标，无圆形边框） ===== */
 .settings-gear-btn {
     position: fixed; right: 22px; bottom: 22px; z-index: 1200;
     width: 44px; height: 44px;
-    border: 1px solid var(--color-border-active);
-    border-radius: 50%;
-    background: var(--color-bg-elevated);
+    border: none;
+    border-radius: 0;
+    background: transparent;
     color: var(--color-text-secondary);
     display: grid; place-items: center;
     cursor: pointer;
-    box-shadow: var(--shadow-md);
-    /* 移除 backdrop-filter 模糊，保持 Apple 风格的清晰锐利 */
-    transition: color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast), background var(--transition-fast);
+    box-shadow: none;
+    transition: color var(--transition-fast), transform var(--transition-fast);
 }
-.settings-gear-btn:hover { color: var(--color-accent); border-color: var(--color-accent-border-56); transform: translateY(-1px); }
-.settings-gear-btn:hover .dh-icon { color: inherit; }
+.settings-gear-btn:hover { color: var(--color-accent); transform: translateY(-1px); }
+.settings-gear-btn svg { width: 32px; height: 32px; }
 
 /* ===== 设置侧边栏遮罩层 ===== */
 .settings-overlay {
@@ -2552,11 +2555,11 @@ body::before {
    拆分自 workbench.css (原 2377行)
    ============================================ */
 
-/* ===== 统一卡片 Token ===== */
+/* ===== 统一卡片 Token（视觉重构 v2.29.9：圆角/阴影/边框规范统一） ===== */
 :root {
-    --card-radius: 12px;
-    --card-shadow: none;
-    --card-border: 1px solid var(--color-glass-border);
+    --card-radius: 10px;                                  /* 卡片圆角统一 10px */
+    --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);         /* 微弱阴影，建立悬浮层级 */
+    --card-border: 1px solid var(--color-border);         /* 边框略加深，告别发丝线 */
 }
 
 /* ===== 工作台容器 ===== */
@@ -2571,6 +2574,8 @@ body::before {
 .devhome-stage {
     position: fixed;
     inset: 0;
+    width: 100%;
+    height: 100vh;  /* v2.29.6: 显式高度确保子元素 height:100% 解析 */
     z-index: 2600;
     display: flex;
     flex-direction: column;
@@ -2589,128 +2594,194 @@ body::before {
     pointer-events: auto;
 }
 
-/* ===== Shell 容器：两列布局，左右两侧等宽240px ===== */
+/* ===== Shell 容器：v6 单列布局，笔记区占满整个视口 ===== */
 .wb-shell {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    height: 100%;
+    /* v2.29.7: 改用 flex column 替代 grid（grid 行高 auto 陷阱） */
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
     overflow: hidden;
+    /* 左侧留出 44px 给悬浮侧边栏，防止内容被遮挡 */
+    padding-left: 44px;
+    box-sizing: border-box;
 }
 
-/* ===== 可折叠四象限任务面板 ===== */
-.wb-quadrant-panel {
-    display: flex;
-    flex-direction: column;
-    background: var(--color-sidebar-bg);
-    border-right: var(--card-border);
-    overflow: hidden;
-    transition: width 0.3s ease;
-    width: 240px;
-    min-width: 240px;
-}
-
-/* 折叠状态 */
-.wb-quadrant-panel.collapsed {
-    width: 48px;
-    min-width: 48px;
-}
-.wb-quadrant-panel.collapsed .wb-sidebar-head,
-.wb-quadrant-panel.collapsed .wb-quadrant-nav,
-.wb-quadrant-panel.collapsed .wb-sidebar-foot {
-    display: none;
-}
-
-/* 折叠/展开按钮 */
-.wb-quadrant-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 36px;
-    border: none;
-    border-bottom: var(--card-border);
-    background: transparent;
-    color: var(--color-text-tertiary);
-    cursor: pointer;
-    transition: all 0.15s ease;
-    flex-shrink: 0;
-}
-.wb-quadrant-toggle:hover {
-    color: var(--color-accent);
-    background: var(--color-surface-hover);
-}
-
-/* ===== 右侧栏 (240px，可折叠) ===== */
-.wb-sidebar-right {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    background: var(--color-sidebar-bg);
-    border-left: var(--card-border);
-    overflow-y: auto;
-    overflow-x: hidden;
-    scrollbar-width: none;
-    padding: 0;
-    transition: width 0.3s ease;
-    width: 240px;
-    min-width: 240px;
-}
-.wb-sidebar-right::-webkit-scrollbar { display: none; }
-
-/* 折叠状态 */
-.wb-sidebar-right.collapsed {
-    width: 48px;
-    min-width: 48px;
-}
-.wb-sidebar-right.collapsed .wb-rightbar-content {
-    display: none;
-}
-
-/* 右侧栏折叠/展开按钮 */
-.wb-rightbar-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 36px;
-    border: none;
-    border-bottom: var(--card-border);
-    background: transparent;
-    color: var(--color-text-tertiary);
-    cursor: pointer;
-    transition: all 0.15s ease;
-    flex-shrink: 0;
-}
-.wb-rightbar-toggle:hover {
-    color: var(--color-accent);
-    background: var(--color-surface-hover);
-}
-
-/* 右侧栏内容区 */
-.wb-rightbar-content {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 0 10px 10px;
-    overflow-y: auto;
-    scrollbar-width: none;
-}
-.wb-rightbar-content::-webkit-scrollbar { display: none; }
-
-/* ===== 主工作区 ===== */
+/* ===== 主工作区：占满整个视口（不再有左侧 docking） ===== */
 .wb-main {
     display: flex;
     flex-direction: column;
+    flex: 1;  /* v2.29.7: flex column 下需 flex:1 撑满父级 */
+    min-height: 0;
     min-width: 0;
-    overflow: hidden;
+    width: 100%;
+    /* 不设 overflow: hidden，让子元素的 overflow-y: auto 正常工作 */
 }
 
-/* ===== 笔记双窗格 ===== */
+/* ===== v6 悬浮侧边栏：极窄单列，默认隐藏，仅在专注模式下显示 ===== */
+.wb-floating-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 44px;
+    height: 100vh;
+    display: none;  /* 默认隐藏，仅专注模式显示 */
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 0;
+    background: var(--color-sidebar-bg, var(--color-surface));
+    border-right: var(--card-border);
+    z-index: 2700;
+    box-sizing: border-box;
+    gap: 4px;
+}
+/* 专注模式激活时显示悬浮侧边栏 */
+.devhome-stage.visible ~ .wb-floating-sidebar {
+    display: flex;
+}
+.wb-floating-sidebar-icons {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+.wb-floating-sidebar-foot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: auto;
+    padding-top: 8px;
+    border-top: var(--card-border);
+    width: 100%;
+}
+
+/* 悬浮图标按钮 */
+.wb-floating-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+.wb-floating-icon:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-accent);
+}
+.wb-floating-icon.active {
+    background: var(--color-accent-bg-12, rgba(87, 166, 255, 0.12));
+    color: var(--color-accent);
+}
+
+/* ===== v6 悬浮面板：position: fixed，从左侧滑入/滑出 ===== */
+.wb-floating-panel {
+    position: fixed;
+    top: 0;
+    left: 44px;  /* 紧贴悬浮侧边栏右侧 */
+    width: 360px;
+    max-width: 80vw;
+    height: 100vh;
+    background: var(--color-sidebar-bg, var(--color-surface));
+    border-right: var(--card-border);
+    z-index: 2690;  /* 比悬浮侧边栏略低，避免覆盖图标 */
+    display: flex;
+    flex-direction: column;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.08);
+    box-sizing: border-box;
+    transition: transform 0.25s ease, opacity 0.25s ease;
+    transform: translateX(0);
+    opacity: 1;
+}
+.wb-floating-panel[style*="display:none"] {
+    display: none !important;
+}
+.wb-floating-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-bottom: var(--card-border);
+    flex-shrink: 0;
+}
+.wb-floating-panel-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+    letter-spacing: -0.01em;
+}
+.wb-floating-panel-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.wb-floating-panel-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--color-text-tertiary);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.wb-floating-panel-close:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text);
+}
+.wb-floating-panel-body {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    padding: 10px 12px;
+}
+.wb-floating-panel-body::-webkit-scrollbar { display: none; }
+
+/* 兼容旧版日历/侧边栏（v5 遗留） - 默认隐藏，不再使用 */
+.wb-quadrant-panel,
+.wb-sidebar-right,
+.wb-leftbar-scroll,
+.wb-leftbar-divider,
+.wb-leftbar-calendar,
+.wb-pomodoro-popover {
+    display: none !important;
+}
+
+/* ===== v6 笔记列表背景铺满全屏高度 ===== */
 .wb-notes-layout {
     flex: 1;
     display: flex;
     min-height: 0;
     overflow: hidden;
+    background: var(--color-bg, var(--color-sidebar-bg)); /* 底部溢出时填补空白 */
+}
+/* 笔记侧边栏背景铺满，不受列表数量影响 */
+.wb-notes-sidebar {
+    width: 220px;
+    min-width: 220px;
+    border-right: var(--card-border);
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.05);  /* 侧栏与主区明确边界（视觉重构 v2.29.9） */
+    overflow-y: auto;
+    scrollbar-width: none;
+    padding: 6px;
+    background: var(--color-sidebar-bg, var(--color-surface));
+    min-height: 0;
+    align-self: stretch;  /* v2.29.6: 强制拉伸至父级高度 */
+}
+.wb-notes-sidebar::-webkit-scrollbar { display: none; }
 }
 .wb-notes-sidebar {
     width: 220px;
@@ -2784,21 +2855,163 @@ body::before {
     .devhome-stage { padding: 0; }
     .wb-shell {
         grid-template-columns: 1fr;
-        grid-template-rows: auto 1fr auto;
+        grid-template-rows: auto 1fr;
+        padding-left: 0; /* 小屏悬浮侧边栏自动隐藏或缩小，无需 padding */
     }
-    .wb-quadrant-panel {
-        width: 100%; min-width: auto; max-height: 40vh;
-        border-right: none; border-bottom: var(--card-border);
-    }
-    .wb-quadrant-panel.collapsed { width: 100%; min-width: auto; max-height: 40px; }
-    .wb-sidebar-right {
-        width: 100%; min-width: auto; max-height: 55vh;
-        border-left: none; border-top: var(--card-border);
-    }
-    .wb-sidebar-right.collapsed { width: 100%; min-width: auto; max-height: 40px; }
     .wb-notes-sidebar { width: 180px; min-width: 180px; }
     .wb-pomodoro-sidebar { padding: 10px; gap: 8px; }
-    .wb-mini-calendar { min-width: 240px; }
+    .wb-floating-sidebar {
+        width: 36px;
+    }
+    .wb-floating-icon {
+        width: 28px;
+        height: 28px;
+    }
+    .wb-floating-panel {
+        left: 36px;
+        width: 300px;
+        max-width: 75vw;
+    }
+}
+
+/* ===== 顶部工具栏（v5 新增，多行布局） ===== */
+.wb-topbar {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 8px 10px;
+    border-bottom: var(--card-border);
+    background: var(--color-sidebar-bg);
+    flex-shrink: 0;
+    position: relative;
+}
+.wb-topbar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+.wb-topbar-row + .wb-topbar-row { border-top: 0; }
+
+/* ===== 番茄钟顶部常驻条 ===== */
+.wb-pomodoro-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px;
+    border-radius: var(--card-radius);
+    background: var(--color-bg-secondary, var(--color-surface));
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+    transition: background 0.15s ease;
+    flex-shrink: 0;
+}
+.wb-pomodoro-top:hover {
+    background: var(--color-surface-hover);
+}
+.wb-pomodoro-top-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    min-width: 0;
+}
+.wb-pomodoro-top-time {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-accent);
+    font-size: 14px;
+    white-space: nowrap;
+}
+.wb-pomodoro-top-task {
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 200px;
+}
+.wb-pomodoro-top.pomodoro-active .wb-pomodoro-top-time {
+    color: var(--color-danger, #e74c3c);
+}
+.wb-pomodoro-top.pomodoro-active .wb-pomodoro-top-info {
+    color: var(--color-danger);
+}
+.wb-pomodoro-top-actions {
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
+}
+.wb-pomodoro-top-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.15s ease;
+}
+.wb-pomodoro-top-btn:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-accent);
+}
+.wb-pomodoro-top-btn.primary {
+    background: var(--color-accent);
+    color: #fff;
+}
+.wb-pomodoro-top-btn.primary:hover {
+    opacity: 0.85;
+}
+
+/* ===== 番茄钟悬浮面板 ===== */
+.wb-pomodoro-popover {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 10px;
+    z-index: 2700;
+    width: 320px;
+    max-height: 70vh;
+    overflow-y: auto;
+    background: var(--color-sidebar-bg, var(--color-surface));
+    border: var(--card-border);
+    border-radius: var(--card-radius);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    padding: 12px;
+}
+.wb-pomodoro-popover::-webkit-scrollbar { display: none; }
+/* 番茄钟运行时隐藏悬浮面板中与顶部条重复的内容 */
+.wb-pomodoro-popover .wb-pomodoro-sidebar-ring {
+    margin-bottom: 8px;
+}
+
+/* ===== 日常模式设置按钮 ===== */
+.wb-dailymode-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+.wb-dailymode-btn:hover {
+    background: var(--color-surface-hover);
+}
+.wb-dailymode-icon {
+    width: 20px;
+    height: 20px;
 }
 
 /* ===== 偏好动画减少 ===== */
@@ -3463,10 +3676,11 @@ body > * { position: relative; z-index: 1; }
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
     padding: 12px 16px; border-bottom: var(--card-border); flex-shrink: 0;
 }
-.wb-notes-toolbar-left { display: flex; align-items: center; gap: 8px; }
+.wb-notes-toolbar-left { display: flex; align-items: center; gap: 8px; flex: 1; }
 .wb-notes-search {
     display: flex; align-items: center; gap: 8px; padding: 6px 12px;
-    border: var(--card-border); border-radius: 10px; background: var(--color-input-bg); min-width: 180px;
+    border: var(--card-border); border-radius: 10px; background: var(--color-input-bg);
+    min-width: 180px; flex: 1; max-width: 560px;
 }
 .wb-notes-search svg { flex-shrink: 0; color: var(--color-text-tertiary); }
 .wb-notes-search input {
@@ -3522,7 +3736,8 @@ body > * { position: relative; z-index: 1; }
     cursor: pointer; transition: all 0.15s ease; overflow: hidden;
 }
 .wb-note-list-item:hover { background: var(--color-surface-hover); border-color: var(--color-glass-border); }
-.wb-note-list-item.active { background: var(--color-accent-bg-08); border-color: var(--color-accent); }
+.wb-note-list-item.active { background: var(--color-accent-bg-10); border-color: transparent; box-shadow: inset 3px 0 0 var(--color-accent); }
+.wb-note-list-item.active .wb-note-list-title-text { font-weight: 600; color: var(--color-text); }
 .wb-note-list-item .wb-note-list-del {
     position: absolute; top: 6px; right: 8px; opacity: 0; width: 20px; height: 20px;
     border: none; border-radius: 5px; background: transparent; color: var(--color-text-tertiary);
@@ -3572,11 +3787,14 @@ body > * { position: relative; z-index: 1; }
    拆分自 workbench.css (原 2377行)
    ============================================ */
 
-/* ===== 笔记编辑器布局 ===== */
+/* ===== 笔记编辑器布局（v2.29.6 修复：背景统一 + 真实铺满） ===== */
 .wb-notes-editor {
-    flex: 1; display: flex; flex-direction: column; min-width: 0;
+    flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0;
     overflow-y: auto; scrollbar-width: thin;
     scrollbar-color: var(--color-scrollbar-thumb) transparent;
+    background: var(--color-bg, var(--color-surface));
+    /* 铺满：自身负责滚动，背景延伸至底 */
+    align-self: stretch;
 }
 .wb-notes-editor::-webkit-scrollbar { width: 4px; }
 .wb-notes-editor::-webkit-scrollbar-thumb { background: var(--color-scrollbar-thumb); border-radius: 2px; }
@@ -3585,7 +3803,12 @@ body > * { position: relative; z-index: 1; }
     flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 12px; color: var(--color-text-tertiary); font-size: 13px;
 }
-.wb-notes-editor-active { flex: 1; display: flex; flex-direction: column; padding: 16px 20px; }
+/* v2.29.6 修复：激活态背景与父容器一致，不再出现"卡片"感 */
+.wb-notes-editor-active {
+    flex: 1; display: flex; flex-direction: column; padding: 16px 20px;
+    min-height: 0; background: transparent;
+    max-width: 860px; width: 100%; margin: 0 auto;  /* 正文居中限宽，融入内容区（视觉重构 v2.29.9） */
+}
 
 .wb-notes-editor-head { display: flex; align-items: center; margin-bottom: 8px; }
 .wb-note-title-input {
@@ -3654,7 +3877,7 @@ body > * { position: relative; z-index: 1; }
 .tiptap-editor-wrapper .ProseMirror {
     flex: 1; outline: none; font-size: 14px; line-height: 1.7;
     color: var(--color-text); caret-color: var(--color-accent); padding: 0;
-    word-wrap: break-word; overflow-wrap: break-word; min-height: 200px;
+    word-wrap: break-word; overflow-wrap: break-word; min-height: 100%;
 }
 .tiptap-editor-wrapper .ProseMirror p.is-editor-empty:first-child::before {
     content: attr(data-placeholder); float: left; color: var(--color-text-tertiary);
@@ -3836,6 +4059,50 @@ body > * { position: relative; z-index: 1; }
 }
 .wb-note-editable:empty::before { content: attr(placeholder); color: var(--color-text-tertiary); }
 .wb-note-word-count { text-align: right; font-size: 10px; color: var(--color-text-tertiary); margin-top: 8px; }
+
+/* ===== v2.29.4 编辑器区块样式（代码块 / 引用块 / 折叠） ===== */
+.ProseMirror pre.tiptap-code-block {
+    background: var(--color-code-bg, #f5f5f5);
+    color: var(--color-code-text, #333);
+    padding: 12px 14px 12px 36px;
+    border-radius: 8px;
+    font-family: 'Cascadia Code', Consolas, 'Courier New', monospace;
+    white-space: pre-wrap;
+    font-size: 0.92em;
+    overflow-x: auto;
+    position: relative;
+    margin: 8px 0;
+}
+.ProseMirror blockquote.tiptap-blockquote {
+    border-left: 3px solid var(--color-accent);
+    padding: 8px 14px 8px 36px;
+    margin: 8px 0;
+    color: var(--color-text-secondary);
+    font-style: italic;
+    background: var(--color-surface-secondary, rgba(128,128,128,0.04));
+    border-radius: 0 6px 6px 0;
+    position: relative;
+}
+/* 折叠状态：代码块和引用块收起为2行高度 */
+.ProseMirror .tiptap-collapsed {
+    max-height: 2em;
+    overflow: hidden;
+    cursor: pointer;
+    opacity: 0.7;
+}
+.ProseMirror .tiptap-collapsed::after {
+    content: '\2026\ \5c55\5f00';
+    position: absolute;
+    right: 12px;
+    bottom: 4px;
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    font-style: normal;
+    font-family: var(--font-sans);
+}
+.ProseMirror .tiptap-collapsed.tiptap-blockquote::after {
+    font-style: normal;
+}
 
 
 /* === css/daily-greeting-card.css === */
