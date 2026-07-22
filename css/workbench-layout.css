@@ -222,16 +222,25 @@
     .wb-mini-calendar { min-width: 240px; }
 }
 
-/* ===== 顶部工具栏（v5 新增） ===== */
+/* ===== 顶部工具栏（v5 新增，多行布局） ===== */
 .wb-topbar {
     display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 10px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 8px 10px;
     border-bottom: var(--card-border);
     background: var(--color-sidebar-bg);
     flex-shrink: 0;
+    position: relative;
 }
+.wb-topbar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+.wb-topbar-row + .wb-topbar-row { border-top: 0; }
 
 /* ===== 番茄钟顶部常驻条 ===== */
 .wb-pomodoro-top {
@@ -270,7 +279,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 120px;
+    max-width: 200px;
 }
 .wb-pomodoro-top.pomodoro-active .wb-pomodoro-top-time {
     color: var(--color-danger, #e74c3c);
@@ -312,7 +321,7 @@
 /* ===== 番茄钟悬浮面板 ===== */
 .wb-pomodoro-popover {
     position: absolute;
-    top: 100%;
+    top: calc(100% + 4px);
     right: 10px;
     z-index: 2700;
     width: 320px;
