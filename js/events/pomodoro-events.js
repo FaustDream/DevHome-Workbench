@@ -57,30 +57,43 @@ window.DevHome = window.DevHome || {};
             });
         }
 
-        // ===== v6 悬浮侧边栏：番茄钟图标点击 → 打开悬浮番茄钟面板 =====
+        // ===== v6 悬浮侧边栏：番茄钟/四象限/日历图标点击 → 打开对应悬浮面板 =====
         const floatingPomoBtn = document.getElementById('wbFloatingPomodoroBtn');
         const floatingPomoPanel = document.getElementById('wbFloatingPomodoro');
         const floatingPomoClose = document.getElementById('wbFloatingPomodoroClose');
         const floatingQuadBtn = document.getElementById('wbFloatingQuadrantBtn');
         const floatingQuadPanel = document.getElementById('wbFloatingQuadrant');
         const floatingQuadClose = document.getElementById('wbFloatingQuadrantClose');
+        const floatingCalBtn = document.getElementById('wbFloatingCalendarBtn');
+        const floatingCalPanel = document.getElementById('wbFloatingCalendar');
+        const floatingCalClose = document.getElementById('wbFloatingCalendarClose');
         const floatingExitBtn = document.getElementById('wbFloatingExitBtn');
 
+        // 收集所有悬浮面板和对应按钮，用于互斥关闭
+        const _allFloatingPanels = [
+            { btn: floatingQuadBtn, panel: floatingQuadPanel },
+            { btn: floatingPomoBtn, panel: floatingPomoPanel },
+            { btn: floatingCalBtn, panel: floatingCalPanel }
+        ];
+
         /**
-         * 切换悬浮面板的显隐
-         * @param {HTMLElement} panel - 目标面板
-         * @param {HTMLElement} btn - 关联图标按钮
-         * @param {HTMLElement} otherPanel - 另一个需要关闭的面板（互斥）
-         * @param {HTMLElement} otherBtn - 另一个需要取消激活的图标
+         * 关闭所有悬浮面板，移除所有 active 状态
          */
-        function _toggleFloatingPanel(panel, btn, otherPanel, otherBtn) {
+        function _closeAllFloating() {
+            _allFloatingPanels.forEach(function (p) {
+                if (p.panel) p.panel.style.display = 'none';
+                if (p.btn) p.btn.classList.remove('active');
+            });
+        }
+
+        /**
+         * 切换悬浮面板的显隐（互斥：打开一个时关闭其他）
+         */
+        function _toggleFloatingPanel(panel, btn) {
             if (!panel) return;
             const isVisible = panel.style.display !== 'none' && panel.style.display !== '';
-            // 互斥：先关闭另一个面板
-            if (otherPanel && !isVisible) {
-                otherPanel.style.display = 'none';
-                if (otherBtn) otherBtn.classList.remove('active');
-            }
+            // 互斥：先关闭所有
+            if (!isVisible) _closeAllFloating();
             if (isVisible) {
                 panel.style.display = 'none';
                 if (btn) btn.classList.remove('active');
@@ -92,30 +105,40 @@ window.DevHome = window.DevHome || {};
             }
         }
 
-        if (floatingPomoBtn) {
-            floatingPomoBtn.addEventListener('click', function (e) {
-                e.stopPropagation();
-                _toggleFloatingPanel(floatingPomoPanel, floatingPomoBtn, floatingQuadPanel, floatingQuadBtn);
-            });
-        }
-        if (floatingPomoClose) {
-            floatingPomoClose.addEventListener('click', function () {
-                if (floatingPomoPanel) floatingPomoPanel.style.display = 'none';
-                if (floatingPomoBtn) floatingPomoBtn.classList.remove('active');
-                console.log('[面板] 关闭 wbFloatingPomodoro');
-            });
-        }
         if (floatingQuadBtn) {
             floatingQuadBtn.addEventListener('click', function (e) {
                 e.stopPropagation();
-                _toggleFloatingPanel(floatingQuadPanel, floatingQuadBtn, floatingPomoPanel, floatingPomoBtn);
+                _toggleFloatingPanel(floatingQuadPanel, floatingQuadBtn);
+            });
+        }
+        if (floatingPomoBtn) {
+            floatingPomoBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                _toggleFloatingPanel(floatingPomoPanel, floatingPomoBtn);
+            });
+        }
+        if (floatingCalBtn) {
+            floatingCalBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                _toggleFloatingPanel(floatingCalPanel, floatingCalBtn);
             });
         }
         if (floatingQuadClose) {
             floatingQuadClose.addEventListener('click', function () {
                 if (floatingQuadPanel) floatingQuadPanel.style.display = 'none';
                 if (floatingQuadBtn) floatingQuadBtn.classList.remove('active');
-                console.log('[面板] 关闭 wbFloatingQuadrant');
+            });
+        }
+        if (floatingPomoClose) {
+            floatingPomoClose.addEventListener('click', function () {
+                if (floatingPomoPanel) floatingPomoPanel.style.display = 'none';
+                if (floatingPomoBtn) floatingPomoBtn.classList.remove('active');
+            });
+        }
+        if (floatingCalClose) {
+            floatingCalClose.addEventListener('click', function () {
+                if (floatingCalPanel) floatingCalPanel.style.display = 'none';
+                if (floatingCalBtn) floatingCalBtn.classList.remove('active');
             });
         }
         if (floatingExitBtn) {
@@ -127,30 +150,27 @@ window.DevHome = window.DevHome || {};
 
         // 点击空白处关闭悬浮面板（不冒泡到面板内部）
         document.addEventListener('click', function (e) {
-            if (floatingPomoPanel && floatingPomoPanel.style.display !== 'none') {
-                if (!floatingPomoPanel.contains(e.target) && !floatingPomoBtn.contains(e.target)) {
-                    floatingPomoPanel.style.display = 'none';
-                    if (floatingPomoBtn) floatingPomoBtn.classList.remove('active');
+            _allFloatingPanels.forEach(function (p) {
+                if (p.panel && p.panel.style.display !== 'none') {
+                    if (!p.panel.contains(e.target) && !(p.btn && p.btn.contains(e.target))) {
+                        p.panel.style.display = 'none';
+                        if (p.btn) p.btn.classList.remove('active');
+                    }
                 }
-            }
-            if (floatingQuadPanel && floatingQuadPanel.style.display !== 'none') {
-                if (!floatingQuadPanel.contains(e.target) && !floatingQuadBtn.contains(e.target)) {
-                    floatingQuadPanel.style.display = 'none';
-                    if (floatingQuadBtn) floatingQuadBtn.classList.remove('active');
-                }
-            }
+            });
         });
 
         // Esc 键关闭悬浮面板
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') {
-                if (floatingPomoPanel && floatingPomoPanel.style.display !== 'none') {
-                    floatingPomoPanel.style.display = 'none';
-                    if (floatingPomoBtn) floatingPomoBtn.classList.remove('active');
-                } else if (floatingQuadPanel && floatingQuadPanel.style.display !== 'none') {
-                    floatingQuadPanel.style.display = 'none';
-                    if (floatingQuadBtn) floatingQuadBtn.classList.remove('active');
-                }
+                var found = false;
+                _allFloatingPanels.forEach(function (p) {
+                    if (!found && p.panel && p.panel.style.display !== 'none') {
+                        p.panel.style.display = 'none';
+                        if (p.btn) p.btn.classList.remove('active');
+                        found = true;
+                    }
+                });
             }
         });
 
