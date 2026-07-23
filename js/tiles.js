@@ -283,6 +283,13 @@ window.DevHome = window.DevHome || {};
         const rect = tile.getBoundingClientRect();
         tile.style.width = rect.width + 'px'; tile.style.height = rect.height + 'px';
         tile.style.minHeight = rect.height + 'px';
+        // 关键修复：磁贴容器 .tiles-container 被 transform: scale(var(--view-scale)) 缩放，
+        // 会使 position:fixed 的包含块变为该缩放容器，导致 fixed 坐标再次被缩放、图标远离光标。
+        // 拖拽中将磁贴临时移出缩放容器挂到 body，使 fixed 定位基准回归视口，left/top 即为真实屏幕坐标。
+        if (tile.parentNode && tile.parentNode !== document.body) {
+            state._dragOriginParent = tile.parentNode;
+            document.body.appendChild(tile);
+        }
         tile.style.left = rect.left + 'px'; tile.style.top = rect.top + 'px';
         tile.classList.add('dragging'); tile.style.position = 'fixed';
         tile.style.zIndex = '1000'; tile.style.pointerEvents = 'none';
@@ -299,6 +306,8 @@ window.DevHome = window.DevHome || {};
         tile.classList.remove('dragging'); tile.style.position = ''; tile.style.zIndex = '';
         tile.style.left = ''; tile.style.top = ''; tile.style.width = ''; tile.style.height = '';
         tile.style.minHeight = ''; tile.style.pointerEvents = '';
+        // 拖拽中磁贴被临时挂到 body，还原时移除（后续 renderTiles 会重建网格，无需放回原父节点）
+        if (tile.parentNode === document.body) tile.remove();
     }
 
     function resetDragState() {

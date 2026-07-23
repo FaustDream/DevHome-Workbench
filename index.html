@@ -985,6 +985,20 @@
         <div class="changelog-body" id="changelogBody">
                 <div class="changelog-entry">
                     <div class="changelog-version">
+                        <span class="changelog-version-tag">v2.31.0</span>
+                        <span class="changelog-date">2026-07-22</span>
+                    </div>
+                    <ul class="changelog-list">
+                        <li><strong>修复</strong> 复制任务列表时跳过「隐藏已完成」视图中已勾选的任务项，与编辑器视图保持一致</li>
+                        <li><strong>修复</strong> 笔记正文与工具栏取消居中限宽（max-width:860px），改为左对齐铺满横向空间</li>
+                        <li><strong>修复</strong> favicon 解析增加 DuckDuckGo 图标服务兜底，减少「站点有图标却报无可用图标」误判</li>
+                        <li><strong>修复</strong> 磁贴拖拽因容器 transform:scale 导致图标远离光标与落点错位：拖拽中临时移出缩放容器挂到 body，fixed 定位基准回归视口</li>
+                        <li><strong>优化</strong> 搜索联想词网络失败仅控制台告警（warn），不再抛到插件层</li>
+                        <li><strong>优化</strong> 专注模式下新建笔记时确保专注舞台保持可见，避免编辑器在隐藏舞台内不可见</li>
+                    </ul>
+                </div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">
                         <span class="changelog-version-tag">v2.27.1</span>
                         <span class="changelog-date">2026-07-20</span>
                     </div>

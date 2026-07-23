@@ -36,6 +36,13 @@ window.DevHome = window.DevHome || {};
         const isCapture = note._kind === 'capture' || note.type === 'capture';
         console.log('[编辑] 打开笔记 id=' + note.id + ' 标题=' + (note.title || '(无)').slice(0, 30) + ' 捕获=' + isCapture);
 
+        // 专注模式下打开笔记：确保专注舞台保持可见，
+        // 避免编辑器在隐藏舞台内不可见、被误判为“回到日常模式弹出”
+        if (ns.state && ns.state.currentDevhomeMode === 'workbench' && dom.devhomeStage) {
+            dom.devhomeStage.classList.add('visible');
+            console.log('[编辑] 专注模式内打开笔记，确保专注舞台可见');
+        }
+
         if (dom.wbNotesEditorEmpty) dom.wbNotesEditorEmpty.style.display = 'none';
         if (dom.wbNotesEditorActive) dom.wbNotesEditorActive.style.display = 'flex';
         const toTaskWrap = document.getElementById('wbNoteToTaskWrap');

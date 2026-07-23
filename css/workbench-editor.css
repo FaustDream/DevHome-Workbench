@@ -48,7 +48,7 @@
 .wb-notes-editor-active {
     flex: 1; display: flex; flex-direction: column; padding: 16px 20px;
     min-height: 0; background: transparent;
-    max-width: 860px; width: 100%; margin: 0 auto;  /* 正文居中限宽，融入内容区（视觉重构 v2.29.9） */
+    max-width: none; width: 100%; margin: 0;  /* v2.31.0 修复：取消居中限宽，工具栏与正文左对齐铺满横向空间 */
 }
 
 .wb-notes-editor-head { display: flex; align-items: center; margin-bottom: 8px; }

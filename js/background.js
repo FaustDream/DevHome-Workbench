@@ -184,7 +184,12 @@ function resolveRealFavicon(domain) {
                     });
                 })
                 .then(function (parsed) { return parsed; })
-                .catch(function () { return null; });
+                .catch(function () { return null; })
+                // 3) 兜底：DuckDuckGo 图标服务，覆盖“站点有图标但首页无 link 标签 / 解析失败”的误判
+                .then(function (parsed) {
+                    if (parsed) return parsed;
+                    return toDataUrl('https://icons.duckduckgo.com/ip3/' + domain + '.ico');
+                });
         })
         .then(function (result) {
             clearTimeout(timeoutId);

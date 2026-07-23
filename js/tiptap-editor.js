@@ -80,10 +80,20 @@ window.DevHome = window.DevHome || {};
     }
 
     /**
+     * 判断“隐藏已完成任务”是否开启（与编辑器视图状态同源，避免复制时把已隐藏项带出）
+     * @returns {boolean}
+     */
+    function hideCompletedActive() {
+        try { return !!(ns.storage && ns.storage.get('note_hide_completed_tasks', false)); } catch (e) { return false; }
+    }
+
+    /**
      * 序列化单个任务项。
      * 任务项首行保留完成状态；嵌套任务列表另起一行并增加两个空格缩进。
      */
-    function serializeTaskItemText(node, level) {
+    function serializeTaskItemText(node, level, skipCompleted) {
+        // 隐藏已完成任务时，跳过已勾选任务项（与编辑器“隐藏已完成”视图保持一致）
+        if (skipCompleted && node.attrs && node.attrs.checked) return '';
         var checkbox = node.attrs && node.attrs.checked ? '[x]' : '[ ]';
         var nestedParts = [];
         var indent = new Array(level + 1).join('  ');
@@ -91,7 +101,7 @@ window.DevHome = window.DevHome || {};
         node.forEach(function (child) {
             var typeName = child.type && child.type.name;
             if (typeName === 'taskList') {
-                nestedParts.push(serializeTaskListText(child, level + 1));
+                nestedParts.push(serializeTaskListText(child, level + 1, skipCompleted));
                 return;
             }
         });
@@ -103,23 +113,26 @@ window.DevHome = window.DevHome || {};
     }
 
     /** 将一个任务列表序列化为每个任务一行，避免 taskList/taskItem/paragraph 多层 block 叠加空行 */
-    function serializeTaskListText(node, level) {
+    function serializeTaskListText(node, level, skipCompleted) {
         var lines = [];
         node.forEach(function (child) {
             if (child.type && child.type.name === 'taskItem') {
-                lines.push(serializeTaskItemText(child, level || 0));
+                var text = serializeTaskItemText(child, level || 0, skipCompleted);
+                if (text) lines.push(text);
             }
         });
         return lines.join('\n');
     }
 
     /** 将任务项写成紧凑 HTML，防止富文本目标把 li/div/p 默认 margin 粘贴成大量空白 */
-    function serializeTaskItemHtml(node) {
+    function serializeTaskItemHtml(node, skipCompleted) {
+        // 隐藏已完成任务时跳过已勾选项（保持与编辑器视图一致）
+        if (skipCompleted && node.attrs && node.attrs.checked) return '';
         var checked = !!(node.attrs && node.attrs.checked);
         var checkedAttr = checked ? ' checked="checked"' : '';
         var nestedHtml = [];
         node.forEach(function (child) {
-            if (child.type && child.type.name === 'taskList') nestedHtml.push(serializeTaskListHtml(child));
+            if (child.type && child.type.name === 'taskList') nestedHtml.push(serializeTaskListHtml(child, skipCompleted));
         });
         return '<li data-type="taskItem" data-checked="' + checked + '" class="tiptap-task-item" style="margin:0;padding:0;">' +
             '<label contenteditable="false" style="margin:0 6px 0 0;padding:0;vertical-align:middle;">' +
@@ -131,27 +144,32 @@ window.DevHome = window.DevHome || {};
     }
 
     /** 将任务列表写成紧凑 HTML，保留 data-type/data-checked 供回粘到 Tiptap 时识别 */
-    function serializeTaskListHtml(node) {
+    function serializeTaskListHtml(node, skipCompleted) {
         var items = [];
         node.forEach(function (child) {
-            if (child.type && child.type.name === 'taskItem') items.push(serializeTaskItemHtml(child));
+            if (child.type && child.type.name === 'taskItem') {
+                var html = serializeTaskItemHtml(child, skipCompleted);
+                if (html) items.push(html);
+            }
         });
         return '<ul data-type="taskList" class="tiptap-task-list" style="margin:0;padding-left:1.4em;">' + items.join('') + '</ul>';
     }
 
     /** 将包含任务列表的选区写成紧凑 HTML，其它块级内容只保留纯文本段落 */
-    function serializeTaskClipboardHtml(slice) {
+    function serializeTaskClipboardHtml(slice, skipCompleted) {
         if (!slice || !slice.content || !hasTaskNode(slice.content)) return '';
+        // 复制时默认遵循“隐藏已完成任务”视图，避免把已隐藏的已完成项带出
+        if (skipCompleted === undefined) skipCompleted = hideCompletedActive();
 
         var blocks = [];
         slice.content.forEach(function appendNode(node) {
             var typeName = node.type && node.type.name;
             if (typeName === 'taskList') {
-                blocks.push(serializeTaskListHtml(node));
+                blocks.push(serializeTaskListHtml(node, skipCompleted));
                 return;
             }
             if (typeName === 'taskItem') {
-                blocks.push('<ul data-type="taskList" class="tiptap-task-list" style="margin:0;padding-left:1.4em;">' + serializeTaskItemHtml(node) + '</ul>');
+                blocks.push('<ul data-type="taskList" class="tiptap-task-list" style="margin:0;padding-left:1.4em;">' + serializeTaskItemHtml(node, skipCompleted) + '</ul>');
                 return;
             }
             if (node.isBlock) {
@@ -165,20 +183,23 @@ window.DevHome = window.DevHome || {};
     }
 
     /** 将包含任务列表的剪贴板选区序列化为紧凑纯文本 */
-    function serializeTaskClipboardText(slice) {
+    function serializeTaskClipboardText(slice, skipCompleted) {
         if (!slice || !slice.content || !hasTaskNode(slice.content)) {
             return slice && slice.content ? slice.content.textBetween(0, slice.content.size, '\n\n') : '';
         }
+        // 复制时默认遵循“隐藏已完成任务”视图，避免把已隐藏的已完成项带出
+        if (skipCompleted === undefined) skipCompleted = hideCompletedActive();
 
         var blocks = [];
         slice.content.forEach(function appendNode(node) {
             var typeName = node.type && node.type.name;
             if (typeName === 'taskList') {
-                blocks.push(serializeTaskListText(node, 0));
+                blocks.push(serializeTaskListText(node, 0, skipCompleted));
                 return;
             }
             if (typeName === 'taskItem') {
-                blocks.push(serializeTaskItemText(node, 0));
+                var text = serializeTaskItemText(node, 0, skipCompleted);
+                if (text) blocks.push(text);
                 return;
             }
             if (node.isBlock) {

@@ -55,9 +55,19 @@ window.DevHome = window.DevHome || {};
         // 搜索建议开关：当用户关闭时跳过网络请求，仅保留本地历史+磁贴匹配
         if (!ns.getSearchConfig || !ns.getSearchConfig().showSuggestions) { callback([]); return; }
         const url = 'https://api.bing.com/osjson.aspx?query=' + encodeURIComponent(query);
-        fetch(url).then(function (r) { return r.json(); }).then(function (data) {
-            if (Array.isArray(data) && Array.isArray(data[1])) callback(data[1]); else callback([]);
-        }).catch(function (err) { console.warn('[网络] 联想词获取失败，网络原因自动跳过 详情:', (err && err.message) || err); callback([]); });
+        try {
+            fetch(url).then(function (r) { return r.json(); }).then(function (data) {
+                if (Array.isArray(data) && Array.isArray(data[1])) callback(data[1]); else callback([]);
+            }).catch(function (err) {
+                // 网络类异常（离线/超时/CORS/非 JSON 响应）一律仅控制台告警，不抛到插件层
+                console.warn('[网络] 联想词获取失败，网络原因自动跳过 详情:', (err && err.message) || err);
+                callback([]);
+            });
+        } catch (err) {
+            // fetch 同步异常（如运行环境不支持）也仅控制台告警，避免插件层报错
+            console.warn('[网络] 联想词请求异常，已忽略 详情:', (err && err.message) || err);
+            callback([]);
+        }
     }
 
     ns.renderSuggestions = function () {
