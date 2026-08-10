@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevHome Workbench</title>
+    <title>Thrilled</title>
     <link rel="stylesheet" href="css/fonts.css">
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/tokens.css">
@@ -11,12 +11,8 @@
     <link rel="stylesheet" href="css/ui-components.css">
     <link rel="stylesheet" href="css/time-search.css">
     <link rel="stylesheet" href="css/tiles.css">
+  <link rel="stylesheet" href="css/empty-state.css">
     <link rel="stylesheet" href="css/overlays.css">
-    <link rel="stylesheet" href="css/workbench-layout.css">
-    <link rel="stylesheet" href="css/workbench-components.css">
-    <link rel="stylesheet" href="css/workbench-notes.css">
-    <link rel="stylesheet" href="css/workbench-editor.css">
-    <link rel="stylesheet" href="css/daily-greeting-card.css">
     <link rel="stylesheet" href="css/animations.css">
     <!-- 主题样式：默认极简主题，支持浅色/深色双模式 -->
     <link id="theme-default" rel="stylesheet" href="css/themes/default.css">
@@ -65,6 +61,9 @@
         <symbol id="dh-icon-bing" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><text x="12" y="16" text-anchor="middle" font-size="10" font-weight="bold" fill="currentColor" stroke="none">B</text></symbol>
         <symbol id="dh-icon-duckduckgo" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><path d="M8 9a4 4 0 0 1 4-4 4 4 0 0 1 4 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><path d="m15 15 3 3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></symbol>
         <symbol id="dh-icon-yahoo" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><text x="12" y="16" text-anchor="middle" font-size="10" font-weight="bold" fill="currentColor" stroke="none">Y</text></symbol>
+        <symbol id="dh-icon-yandex" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><text x="12" y="16" text-anchor="middle" font-size="9" font-weight="bold" fill="currentColor" stroke="none">Я</text></symbol>
+        <symbol id="dh-icon-gamer520" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><text x="12" y="16" text-anchor="middle" font-size="10" font-weight="bold" fill="currentColor" stroke="none">G</text></symbol>
+        <symbol id="dh-icon-linuxdo" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><text x="12" y="16" text-anchor="middle" font-size="10" font-weight="bold" fill="currentColor" stroke="none">L</text></symbol>
         <!-- === 工作台/笔记类型类 === -->
         <symbol id="dh-icon-workbench" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><path d="M8 21v-4h8v4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
         <symbol id="dh-icon-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 3v5h5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
@@ -82,10 +81,13 @@
         <symbol id="dh-icon-weather-snowflake" viewBox="0 0 24 24"><path d="M12 2v20M12 2 8 6M12 2l4 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="m12 22-4-4m4 4 4-4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12h20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><path d="m2 12 4-4m-4 4 4 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="m22 12-4-4m4 4-4 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
         <symbol id="dh-icon-weather-storm" viewBox="0 0 24 24"><path d="M8 12a4 4 0 0 1-.7-7.9 5.5 5.5 0 0 1 10.4 1A4 4 0 0 1 16 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/><path d="m13 12-4 8h6l-3 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
         <symbol id="dh-icon-weather-thermometer" viewBox="0 0 24 24"><path d="M14 4v10.5a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/><path d="M12 13v-1" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="12" cy="19" r="1.5" fill="currentColor" stroke="none"/></symbol>
+        <symbol id="dh-icon-github" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><text x="12" y="16" text-anchor="middle" font-size="10" font-weight="bold" fill="currentColor" stroke="none">G</text></symbol>
+        <symbol id="dh-icon-bilibili" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><text x="12" y="16" text-anchor="middle" font-size="10" font-weight="bold" fill="currentColor" stroke="none">哔</text></symbol>
+        <symbol id="dh-icon-zhihu" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><text x="12" y="16" text-anchor="middle" font-size="10" font-weight="bold" fill="currentColor" stroke="none">知</text></symbol>
+        <symbol id="dh-icon-weibo" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><text x="12" y="16" text-anchor="middle" font-size="10" font-weight="bold" fill="currentColor" stroke="none">微</text></symbol>
     </svg>
 
     <!-- Matrix 数字雨背景 -->
-    <canvas id="matrixCanvas"></canvas>
     <!-- 聚焦过渡遮罩 -->
     <div class="focus-overlay" id="focusOverlay"></div>
     <!-- 背景容器 -->
@@ -114,7 +116,7 @@
     <div class="container">
         <!-- 文件配置警告条 -->
         <div class="config-warning-bar" id="configWarningBar" style="display:none;">
-            <svg class="dh-icon dh-icon--warning dh-icon--md"" role="img"><use href="#dh-icon-warning"></use></svg>
+            <svg class="dh-icon dh-icon--warning dh-icon--md" role="img"><use href="#dh-icon-warning"></use></svg>
             <span id="configWarningText">请选择配置目录以持久化数据</span>
             <button id="configSelectDirBtn" type="button" class="config-select-dir-btn">选择目录</button>
         </div>
@@ -127,12 +129,12 @@
                         <div class="current-engine" id="currentEngine">
                             <span class="engine-icon-placeholder"></span>
                             <span>搜索</span>
-                            <svg class="dh-icon dh-icon--chevron-down dh-icon--sm"" role="img"><use href="#dh-icon-chevron-down"></use></svg>
+                            <svg class="dh-icon dh-icon--chevron-down dh-icon--sm" role="img"><use href="#dh-icon-chevron-down"></use></svg>
                         </div>
                     </div>
                     <input type="text" class="search-input doc-cmd-input" id="searchInput" placeholder="Search..." autocomplete="off" aria-label="搜索框">
                     <button class="search-button" id="searchButton" aria-label="搜索">
-                        <svg class="dh-icon dh-icon--search dh-icon--md"" role="img"><use href="#dh-icon-search"></use></svg>
+                        <svg class="dh-icon dh-icon--search dh-icon--md" role="img"><use href="#dh-icon-search"></use></svg>
                     </button>
                 </div>
                 <!-- 搜索建议面板 -->
@@ -149,368 +151,33 @@
 
         <div class="hidden-message" id="hiddenMessage" style="display:none;"></div>
         </section>
-    </div>
-
-        <!-- DevHome 工作台 v6：单列布局 + 悬浮面板（脱离文档流） -->
-    <section class="devhome-stage" id="devhomeStage" aria-label="DevHome 综合性工作台">
-        <div class="wb-shell" id="wbShell">
-            <!-- ========== 主工作区：占满整个视口（无左侧 docking） ========== -->
-            <main class="wb-main" id="wbMain">
-                <!-- 顶部工具栏：多行布局（番茄钟常驻条 / 笔记工具） -->
-                <div class="wb-topbar" id="wbTopbar">
-                    <!-- 第 1 行：番茄钟常驻条 + 日常模式设置按钮 -->
-                    <div class="wb-topbar-row">
-                        <div class="wb-pomodoro-top" id="wbPomodoroTop">
-                            <div class="wb-pomodoro-top-info">
-                                <svg class="dh-icon dh-icon--history dh-icon--md" role="img"><use href="#dh-icon-history"></use></svg>
-                                <span class="wb-pomodoro-top-time" id="wbPomodoroTopTime">--:--</span>
-                                <span class="wb-pomodoro-top-task" id="wbPomodoroTopTask"></span>
-                            </div>
-                            <div class="wb-pomodoro-top-actions">
-                                <button class="wb-pomodoro-top-btn primary" id="wbPomodoroTopStart" title="开始番茄钟">▶</button>
-                            </div>
-                        </div>
-                        <!-- 日常模式设置按钮 -->
-                        <button class="wb-dailymode-btn" id="devhomeSettingsBtn" title="设置">
-                            <svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" class="wb-dailymode-icon"><path d="M512 512m-512 0a512 512 0 1 0 1024 0 512 512 0 1 0-1024 0Z" fill="#57A6FF"/><path d="M140.4844 241.955886a46.55193 101.696557 29.75 1 0 80.832661 46.199672 46.55193 101.696557 29.75 1 0-80.832661-46.199672Z" fill="#FFFFFF"/><path d="M93.495652 431.86087m-22.260869 0a22.26087 22.26087 0 1 0 44.521739 0 22.26087 22.26087 0 1 0-44.521739 0Z" fill="#FFFFFF"/><path d="M832.556522 857.043478a24.486957 24.486957 0 1 0 0-48.973913 24.486957 24.486957 0 0 0 0 48.973913z m0 24.486957a48.973913 48.973913 0 1 0 0-97.947826 48.973913 48.973913 0 0 0 0 97.947826z" fill="#FFFFFF"/><path d="M822.245287 453.347061a16.980591 16.980591 0 0 0-0.489739-2.965148v-0.569878l-0.284939-1.549357c-5.004243-24.424626-21.15673-40.158609-41.253844-40.158608h-3.321322c-34.281739 0-62.063304-27.959652-62.063304-62.125635 0-7.898157 3.668591-19.126539 5.217948-23.08007 9.732452-22.723896-0.623304-48.626643-24.682852-61.831791l-75.678052-42.847722-1.406887-0.489739c-5.645357-1.834296-12.198957-4.024765-19.536139-4.024765-13.685983 0-29.054887 6.3488-38.58254 15.885356-11.914017 11.780452-36.10713 29.357635-50.487652 29.357635-14.318191 0-38.582539-17.505948-50.505461-29.357635A55.367235 55.367235 0 0 0 420.59687 213.704348c-7.550887 0-13.890783 2.119235-19.53614 4.024765l-1.273321 0.489739-79.337739 42.990191-0.498644 0.28494c-19.2512 12.065391-27.078122 39.740104-17.274435 61.689321l0.14247 0.284939 0.133565 0.276035c1.558261 3.463791 6.3488 15.181913 6.3488 25.413009 0 34.308452-27.924035 62.11673-62.063304 62.11673h-3.312418c-21.014261 0-36.748243 15.529183-41.262747 40.443548l-0.276035 1.415792v0.489739c0 0.712348-0.284939 1.691826-0.498644 2.965147-1.763061 10.658504-5.992626 35.795478-5.992626 56.328905 0 20.54233 4.15833 45.6704 5.992626 56.328904 0.14247 1.273322 0.284939 2.324035 0.498644 2.965148v0.560974l0.276035 1.558261c5.013148 24.415722 21.165635 40.158609 41.262747 40.158608h1.691826c34.281739 0 62.063304 27.959652 62.063305 62.116731 0 7.907061-3.668591 19.126539-5.217948 23.080069-9.385183 21.388243-0.498643 48.849252 20.239583 62.686609l0.560973 0.276035 74.760905 41.645635 1.415791 0.498643c5.636452 1.834296 12.056487 4.015861 19.39367 4.015861 15.653843 0 29.75833-5.992626 38.573634-15.876452 0.845913-0.632209 1.691826-1.478122 2.680209-2.332939 9.029009-7.907061 33.293357-28.796661 49.303374-28.796661 11.914017 0 31.877565 12.4928 51.974678 32.607722A55.367235 55.367235 0 0 0 599.948243 810.295652c9.732452 0 16.918261-2.680209 25.110261-6.704974l0.276035-0.142469 76.666435-42.420313 0.276035-0.284939c19.260104-12.065391 27.087026-39.740104 17.274434-61.689322l-0.133565-0.284939-0.142469-0.284939c-0.14247-0.06233-6.135096-12.55513-5.004244-23.783514l0.14247-0.712347v-0.694539c0-34.308452 27.924035-62.11673 62.063304-62.116731h3.526122c21.014261 0 36.739339-15.529183 41.253843-40.452452l0.284939-1.406887v-0.498644c0.14247-0.560974 0.284939-1.406887 0.48974-2.537739 1.834296-10.373565 6.072765-34.584487 6.072765-56.747408 0.14247-20.48-4.024765-45.52793-5.859061-56.186435z m-310.316522 156.983652c-54.236383 0-98.170435-43.987478-98.170435-98.259478 0-54.280904 43.934052-98.259478 98.170435-98.259478 54.227478 0 98.170435 43.978574 98.170435 98.259478s-43.934052 98.259478-98.170435 98.259478z" fill="#FFFFFF"/></svg>
-                        </button>
-                    </div>
-                    <!-- 番茄钟悬浮面板（hover 常驻条时弹出，绝对定位不占布局空间） -->
-                    <div class="wb-pomodoro-popover" id="wbPomodoroPopover" style="display:none;">
-                        <div class="wb-pomodoro-sidebar" id="wbPomodoroSidebar">
-                            <h4 class="wb-pomodoro-sidebar-title">番茄钟</h4>
-                            <div class="wb-pomodoro-task-row" id="wbPomodoroTaskRow">
-                                <span class="wb-pomodoro-task-label">关联任务</span>
-                                <select class="wb-pomodoro-task-select" id="wbPomodoroTaskSelect">
-                                    <option value="">无关联</option>
-                                </select>
-                            </div>
-                            <div class="wb-pomodoro-sidebar-ring">
-                                <svg viewBox="0 0 160 160" class="wb-pomodoro-ring-bar">
-                                    <circle cx="80" cy="80" r="64" fill="none" stroke="var(--color-border)" stroke-width="4"/>
-                                    <circle cx="80" cy="80" r="64" fill="none" stroke="var(--color-accent)" stroke-width="4" stroke-linecap="round" id="wbPomodoroSideProgress" stroke-dasharray="402.12" stroke-dashoffset="0" transform="rotate(-90 80 80)"/>
-                                </svg>
-                                <div class="wb-pomodoro-bar-time" id="wbPomodoroSideTime">25:00</div>
-                            </div>
-                            <div class="wb-pomodoro-mode-label" id="wbPomodoroModeLabel"></div>
-                            <div class="wb-pomodoro-mode-row">
-                                <button class="wb-pomodoro-mode-btn active" data-mode="countdown" id="wbPomodoroModeCountdown">倒计时</button>
-                                <button class="wb-pomodoro-mode-btn" data-mode="countup" id="wbPomodoroModeCountup">正计时</button>
-                                <button class="wb-pomodoro-auto-cycle-btn active" id="wbPomodoroAutoCycleBtn" title="切换单次/循环">循环中</button>
-                            </div>
-                            <div class="wb-pomodoro-sidebar-quick">
-                                <button class="wb-pomodoro-quick-btn active" data-duration="25" title="25分钟专注">25</button>
-                                <button class="wb-pomodoro-quick-btn" data-duration="30" title="30分钟专注">30</button>
-                                <button class="wb-pomodoro-quick-btn" data-duration="45" title="45分钟专注">45</button>
-                                <button class="wb-pomodoro-quick-btn" data-duration="60" title="60分钟专注">60</button>
-                            </div>
-                            <div class="wb-pomodoro-rest-row">
-                                <span class="wb-pomodoro-rest-label">休息</span>
-                                <input type="number" class="wb-pomodoro-rest-input" id="wbPomodoroRestInput" value="5" min="1" max="30" title="休息时长（分钟）">
-                                <span class="wb-pomodoro-rest-unit">分</span>
-                            </div>
-                            <div class="wb-pomodoro-sidebar-controls">
-                                <button class="wb-pomodoro-bar-btn primary" id="wbPomodoroSideStart">开始</button>
-                                <button class="wb-pomodoro-bar-btn" id="wbPomodoroSideReset">重置</button>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- v6: 顶部工具栏不再内嵌 popover（完整番茄钟已移到悬浮面板 wbFloatingPomodoro） -->
-
-                    <!-- 笔记标题行：搜索 + 笔记本下拉 + 新建操作 -->
-                    <div class="wb-notes-toolbar">
-                    <div class="wb-notes-toolbar-left">
-                        <div class="wb-notes-search">
-                            <svg class="dh-icon dh-icon--search dh-icon--md"" role="img"><use href="#dh-icon-search"></use></svg>
-                            <input type="text" id="wbNotesSearch" placeholder="搜索笔记..." autocomplete="off">
-                        </div>
-                        <!-- 笔记本下拉选择器 -->
-                        <div class="wb-notebook-dropdown" id="wbNotebookDropdown">
-                            <button class="wb-notebook-dropdown-btn" id="wbNotebookDropdownBtn" title="切换笔记本">
-                                <span class="wb-notebook-dropdown-icon dh-icon dh-icon--notebook dh-icon--md" aria-hidden="true"></span>
-                                <span class="wb-notebook-dropdown-label" id="wbNotebookDropdownLabel">全部笔记</span>
-                                <span class="wb-notebook-dropdown-arrow dh-icon dh-icon--chevron-down dh-icon--sm" aria-hidden="true"></span>
-                            </button>
-                            <div class="wb-notebook-dropdown-menu" id="wbNotebookDropdownMenu" style="display:none;">
-                                <div class="wb-notebook-dropdown-item active" data-notebook-id=""><svg class="dh-icon dh-icon--folder dh-icon--md"" role="img"><use href="#dh-icon-folder"></use></svg> 全部笔记</div>
-                            </div>
-                        </div>
-                        <!-- 新建操作按钮 -->
-                        <div class="wb-notes-toolbar-actions" id="wbNotesToolbarActions">
-                            <button class="wb-notes-action-btn" id="wbNotesAddBtn" title="新建笔记"><svg class="dh-icon dh-icon--note dh-icon--md"" role="img"><use href="#dh-icon-note"></use></svg></button>
-                            <button class="wb-notes-action-btn" id="wbNotebookAddBtn" title="新建笔记本"><svg class="dh-icon dh-icon--notebook dh-icon--md"" role="img"><use href="#dh-icon-notebook"></use></svg></button>
-                            <button class="wb-notes-action-btn" id="wbTagAddBtn" title="新建标签"><svg class="dh-icon dh-icon--tag dh-icon--md"" role="img"><use href="#dh-icon-tag"></use></svg></button>
-                        </div>
-                    </div>
-                    <!-- 顶栏右侧状态：同步状态（视觉重构 v2.30.0） -->
-                    <div class="wb-notes-toolbar-right">
-                        <span class="wb-sync-status" id="wbSyncStatus" title="本地数据已保存">
-                            <span class="wb-sync-dot"></span>已同步
-                        </span>
-                    </div>
-                </div>
-                <!-- 标签筛选行 -->
-                <div class="wb-notes-filter-bar">
-                    <div class="wb-notes-filters" id="wbNotesFilters">
-                        <button class="wb-filter-chip active" data-filter="all">全部</button>
-                        <button class="wb-filter-chip" data-filter="uncategorized">未分类</button>
-                        <button class="wb-filter-chip" data-filter="note">笔记</button>
-                        <button class="wb-filter-chip" data-filter="capture">捕获</button>
-                        <button class="wb-filter-chip" data-filter="idea">想法</button>
-                        <button class="wb-filter-chip" data-filter="bug">Bug</button>
-                        <button class="wb-filter-chip" data-filter="meeting">会议</button>
-                        <span id="wbCustomFilters"></span>
-                        <button class="wb-filter-add-btn" id="wbFilterAddBtn" title="新建标签">+</button>
-                    </div>
-                </div>
-
-            </div><!-- /wbTopbar -->
-
-            <div class="wb-notes-layout" id="wbNotesLayout">
-                    <div class="wb-notes-sidebar" id="wbNotesSidebar">
-                        <button class="wb-sidebar-new-btn" id="wbSidebarNewBtn" type="button">
-                            <svg class="wb-empty-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
-                            新建笔记
-                        </button>
-                        <div class="wb-sidebar-section-label">笔记</div>
-                        <div class="wb-notes-list" id="wbNotesList"></div>
-                    </div>
-                    <div class="wb-notes-editor" id="wbNotesEditor">
-                        <div class="wb-notes-editor-empty" id="wbNotesEditorEmpty">
-                            <div class="wb-empty-card">
-                                <svg class="dh-icon dh-icon--empty-note wb-empty-card-icon" role="img"><use href="#dh-icon-empty-note"></use></svg>
-                                <h3 class="wb-empty-card-title">暂无笔记</h3>
-                                <p class="wb-empty-card-desc" id="wbNotesEmptyMsg">选择左侧一篇笔记，或新建你的第一篇</p>
-                                <button class="wb-empty-create-btn" id="wbNotesEmptyCreateBtn" type="button">
-                                    <svg class="wb-empty-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
-                                    新建笔记
-                                </button>
-                            </div>
-                        </div>
-                        <div class="wb-notes-editor-active" id="wbNotesEditorActive" style="display:none;">
-                            <div class="wb-notes-editor-head">
-                                <input type="text" id="wbNoteTitle" placeholder="笔记标题..." class="wb-note-title-input">
-                            </div>
-                            <!-- 标签属性区：标题下方横向 Pill 胶囊徽章 -->
-                            <div class="wb-notes-editor-meta" id="wbNotesEditorMeta">
-                                <span class="wb-note-type-badge-editor" id="wbNoteTypeBadge"></span>
-                                <span class="wb-note-notebook-badge" id="wbNotebookBadge" title="点击切换笔记本"><svg class="dh-icon dh-icon--notebook dh-icon--md"" role="img"><use href="#dh-icon-notebook"></use></svg> 未分类</span>
-                                <!-- 笔记转四象限任务：先选象限 → 再设截止时间（可选） -->
-                                <div class="wb-note-to-task-wrap" id="wbNoteToTaskWrap" style="display:none;">
-                                    <button class="wb-note-to-task-btn" id="wbNoteToTaskBtn" title="转为四象限任务">转为任务</button>
-                                    <div class="wb-quadrant-picker-menu" id="wbQuadrantPicker" style="display:none;">
-                                        <button data-quadrant="q1">重要且紧急</button>
-                                        <button data-quadrant="q2">重要不紧急</button>
-                                        <button data-quadrant="q3">紧急不重要</button>
-                                        <button data-quadrant="q4">不紧急不重要</button>
-                                    </div>
-                                    <!-- 第二层：截止时间选择器（选完象限后出现） -->
-                                    <div class="wb-quadrant-picker-menu wb-task-time-picker" id="wbTaskTimePicker" style="display:none;">
-                                        <div class="wb-time-picker-label">设置截止时间（可选）</div>
-                                        <div class="wb-time-picker-row">
-                                            <input type="date" id="wbTaskTimeDate" class="wb-time-picker-date">
-                                            <input type="time" id="wbTaskTimeTime" class="wb-time-picker-time">
-                                        </div>
-                                        <div class="wb-time-picker-actions">
-                                            <button class="wb-time-picker-skip" id="wbTimePickerSkip">跳过（不设时间）</button>
-                                            <button class="wb-time-picker-confirm" id="wbTimePickerConfirm">确认转换</button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="wb-note-type-picker" id="wbNoteTypePicker" style="display:none;">
-                                    <div class="wb-type-picker-list" id="wbTypePickerList"></div>
-                                </div>
-                            </div>
-                            <div class="wb-notes-editor-body" id="wbNoteEditorBody">
-                                <!-- Tiptap 固定置顶工具栏（始终可见） -->
-                                <div class="tiptap-fixed-toolbar" id="tiptapFixedToolbar"></div>
-                                <!-- Tiptap 富文本编辑器挂载点 -->
-                                <div class="tiptap-editor-wrapper" id="wbTipTapWrapper">
-                                    <div id="wbNoteContent" class="wb-note-editable" placeholder="在此编写内容..."></div>
-                                </div>
-                                <div class="wb-note-word-count" id="wbNoteWordCount">0 字</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </main>
-        </div>
-    </section>
-
-    <!-- ========== v6 悬浮结构（脱离文档流，position: fixed，不影响笔记区域布局） ========== -->
-    <!-- 悬浮侧边栏：极窄单列，3 个图标入口（四象限 → 番茄钟 → 日历） -->
-    <aside class="wb-floating-sidebar" id="wbFloatingSidebar" aria-label="悬浮侧边栏">
-        <div class="wb-floating-sidebar-icons">
-            <button class="wb-floating-icon" id="wbFloatingQuadrantBtn" title="四象限任务" aria-label="四象限任务">
-                <svg viewBox="0 0 24 24" class="dh-icon dh-icon--md" role="img"><rect x="3" y="3" width="8" height="8" stroke="currentColor" stroke-width="1.6" fill="none"/><rect x="13" y="3" width="8" height="8" stroke="currentColor" stroke-width="1.6" fill="none"/><rect x="3" y="13" width="8" height="8" stroke="currentColor" stroke-width="1.6" fill="none"/><rect x="13" y="13" width="8" height="8" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
-            </button>
-            <button class="wb-floating-icon" id="wbFloatingPomodoroBtn" title="番茄钟" aria-label="番茄钟">
-                <svg viewBox="0 0 24 24" class="dh-icon dh-icon--md" role="img"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm.5-13H11v6l5 3 .8-1.3-4.3-2.6V7z" fill="currentColor"/></svg>
-            </button>
-            <button class="wb-floating-icon" id="wbFloatingCalendarBtn" title="日历" aria-label="日历">
-                <svg viewBox="0 0 24 24" class="dh-icon dh-icon--md" role="img"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/><rect x="8" y="13" width="3" height="3" rx="0.5" fill="currentColor" opacity="0.5"/><rect x="13" y="13" width="3" height="3" rx="0.5" fill="currentColor" opacity="0.3"/></svg>
-            </button>
-        </div>
-        <div class="wb-floating-sidebar-foot">
-            <button class="wb-floating-icon" id="wbFloatingExitBtn" title="退出专注" aria-label="退出专注">
-                <svg viewBox="0 0 24 24" class="dh-icon dh-icon--md" role="img"><path d="M14 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2v-2h-2v2H5V5h7v2h2zm3 4l-1.4 1.4L17.2 14H9v2h8.2l-1.6 1.6L17 19l4-4-4-4z" fill="currentColor"/></svg>
-            </button>
-        </div>
-    </aside>
-
-    <!-- 悬浮四象限任务面板：固定定位，position: fixed，display 默认 none -->
-    <div class="wb-floating-panel" id="wbFloatingQuadrant" style="display:none;" aria-label="四象限任务面板">
-        <div class="wb-floating-panel-head">
-            <h2 class="wb-floating-panel-title">四象限任务</h2>
-            <div class="wb-floating-panel-actions">
-                <button class="wb-task-filter-btn" id="wbTaskFilterBtn" title="切换活跃/全部">活跃</button>
-                <button class="wb-task-clear-btn" id="wbTaskClearBtn" title="清空已完成">清空</button>
-                <button class="wb-floating-panel-close" id="wbFloatingQuadrantClose" title="关闭" aria-label="关闭面板">×</button>
-            </div>
-        </div>
-        <div class="wb-floating-panel-body">
-            <div class="wb-quadrant-nav" id="wbQuadrantNav">
-                <div class="wb-quadrant-group" data-quadrant="q1">
-                    <div class="wb-quadrant-group-head">
-                        <span class="wb-qdot" style="background:#ff6b6b;"></span>
-                        <span class="wb-quadrant-group-label">重要且紧急</span>
-                        <span class="wb-quadrant-group-count" id="wbQgCountQ1">0</span>
-                    </div>
-                    <div class="wb-quadrant-group-list" id="wbQgListQ1"></div>
-                    <button class="wb-quadrant-group-add" data-quadrant="q1">+ 添加任务</button>
-                </div>
-                <div class="wb-quadrant-group" data-quadrant="q2">
-                    <div class="wb-quadrant-group-head">
-                        <span class="wb-qdot" style="background:#47f0a2;"></span>
-                        <span class="wb-quadrant-group-label">重要不紧急</span>
-                        <span class="wb-quadrant-group-count" id="wbQgCountQ2">0</span>
-                    </div>
-                    <div class="wb-quadrant-group-list" id="wbQgListQ2"></div>
-                    <button class="wb-quadrant-group-add" data-quadrant="q2">+ 添加任务</button>
-                </div>
-                <div class="wb-quadrant-group" data-quadrant="q3">
-                    <div class="wb-quadrant-group-head">
-                        <span class="wb-qdot" style="background:#ffcc66;"></span>
-                        <span class="wb-quadrant-group-label">紧急不重要</span>
-                        <span class="wb-quadrant-group-count" id="wbQgCountQ3">0</span>
-                    </div>
-                    <div class="wb-quadrant-group-list" id="wbQgListQ3"></div>
-                    <button class="wb-quadrant-group-add" data-quadrant="q3">+ 添加任务</button>
-                </div>
-                <div class="wb-quadrant-group" data-quadrant="q4">
-                    <div class="wb-quadrant-group-head">
-                        <span class="wb-qdot" style="background:#6f8c94;"></span>
-                        <span class="wb-quadrant-group-label">不紧急不重要</span>
-                        <span class="wb-quadrant-group-count" id="wbQgCountQ4">0</span>
-                    </div>
-                    <div class="wb-quadrant-group-list" id="wbQgListQ4"></div>
-                    <button class="wb-quadrant-group-add" data-quadrant="q4">+ 添加任务</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 悬浮番茄钟面板：固定定位，默认隐藏 -->
-    <div class="wb-floating-panel" id="wbFloatingPomodoro" style="display:none;" aria-label="番茄钟面板">
-        <div class="wb-floating-panel-head">
-            <h2 class="wb-floating-panel-title">番茄钟</h2>
-            <div class="wb-floating-panel-actions">
-                <button class="wb-floating-panel-close" id="wbFloatingPomodoroClose" title="关闭" aria-label="关闭面板">×</button>
-            </div>
-        </div>
-        <div class="wb-floating-panel-body">
-            <div class="wb-pomodoro-sidebar" id="wbPomodoroSidebar">
-                <h4 class="wb-pomodoro-sidebar-title">番茄钟</h4>
-                <div class="wb-pomodoro-task-row" id="wbPomodoroTaskRow">
-                    <span class="wb-pomodoro-task-label">关联任务</span>
-                    <select class="wb-pomodoro-task-select" id="wbPomodoroTaskSelect">
-                        <option value="">无关联</option>
-                    </select>
-                </div>
-                <div class="wb-pomodoro-sidebar-ring">
-                    <svg viewBox="0 0 160 160" class="wb-pomodoro-ring-bar">
-                        <circle cx="80" cy="80" r="64" fill="none" stroke="var(--color-border)" stroke-width="4"/>
-                        <circle cx="80" cy="80" r="64" fill="none" stroke="var(--color-accent)" stroke-width="4" stroke-linecap="round" id="wbPomodoroSideProgress" stroke-dasharray="402.12" stroke-dashoffset="0" transform="rotate(-90 80 80)"/>
-                    </svg>
-                    <div class="wb-pomodoro-bar-time" id="wbPomodoroSideTime">25:00</div>
-                </div>
-                <div class="wb-pomodoro-mode-label" id="wbPomodoroModeLabel"></div>
-                <div class="wb-pomodoro-mode-row">
-                    <button class="wb-pomodoro-mode-btn active" data-mode="countdown" id="wbPomodoroModeCountdown">倒计时</button>
-                    <button class="wb-pomodoro-mode-btn" data-mode="countup" id="wbPomodoroModeCountup">正计时</button>
-                    <button class="wb-pomodoro-auto-cycle-btn active" id="wbPomodoroAutoCycleBtn" title="切换单次/循环">循环中</button>
-                </div>
-                <div class="wb-pomodoro-sidebar-quick">
-                    <button class="wb-pomodoro-quick-btn active" data-duration="25" title="25分钟专注">25</button>
-                    <button class="wb-pomodoro-quick-btn" data-duration="30" title="30分钟专注">30</button>
-                    <button class="wb-pomodoro-quick-btn" data-duration="45" title="45分钟专注">45</button>
-                    <button class="wb-pomodoro-quick-btn" data-duration="60" title="60分钟专注">60</button>
-                </div>
-                <div class="wb-pomodoro-rest-row">
-                    <span class="wb-pomodoro-rest-label">休息</span>
-                    <input type="number" class="wb-pomodoro-rest-input" id="wbPomodoroRestInput" value="5" min="1" max="30" title="休息时长（分钟）">
-                    <span class="wb-pomodoro-rest-unit">分</span>
-                </div>
-                <div class="wb-pomodoro-sidebar-controls">
-                    <button class="wb-pomodoro-bar-btn primary" id="wbPomodoroSideStart">开始</button>
-                    <button class="wb-pomodoro-bar-btn" id="wbPomodoroSideReset">重置</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 悬浮日历面板：固定定位，默认隐藏 -->
-    <div class="wb-floating-panel" id="wbFloatingCalendar" style="display:none;" aria-label="日历面板">
-        <div class="wb-floating-panel-head">
-            <h2 class="wb-floating-panel-title">日历</h2>
-            <div class="wb-floating-panel-actions">
-                <button class="wb-cal-view-btn active" data-view="month" id="wbCalViewMonth">月</button>
-                <button class="wb-cal-view-btn" data-view="week" id="wbCalViewWeek">周</button>
-                <button class="wb-floating-panel-close" id="wbFloatingCalendarClose" title="关闭" aria-label="关闭面板">×</button>
-            </div>
-        </div>
-        <div class="wb-floating-panel-body">
-            <div class="wb-mini-calendar" id="wbMiniCalendar">
-                <div class="wb-mini-cal-head">
-                    <button class="wb-mini-cal-nav" id="wbMiniCalPrev">&lt;</button>
-                    <h3 class="wb-mini-cal-title" id="wbCalendarTitle">2026年7月</h3>
-                    <button class="wb-mini-cal-nav" id="wbMiniCalNext">&gt;</button>
-                </div>
-                <div class="wb-mini-cal-weekdays"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
-                <div class="wb-mini-cal-days" id="wbCalendarDays"></div>
-                <div class="wb-calendar-detail" id="wbCalendarDetail">
-                    <p class="wb-calendar-detail-empty">点击日期查看内容</p>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- 磁贴右键菜单 -->
     <div class="context-menu" id="contextMenu">
         <div class="context-menu-item" data-action="edit">
-            <svg class="dh-icon dh-icon--edit dh-icon--md"" role="img"><use href="#dh-icon-edit"></use></svg><span>编辑磁贴</span>
+            <svg class="dh-icon dh-icon--edit dh-icon--md" role="img"><use href="#dh-icon-edit"></use></svg><span>编辑磁贴</span>
         </div>
         <div class="context-menu-item" data-action="delete">
-            <svg class="dh-icon dh-icon--trash dh-icon--md"" role="img"><use href="#dh-icon-trash"></use></svg><span>删除磁贴</span>
+            <svg class="dh-icon dh-icon--trash dh-icon--md" role="img"><use href="#dh-icon-trash"></use></svg><span>删除磁贴</span>
         </div>
         <div class="context-menu-divider"></div>
         <div class="context-menu-item ctx-daily-only" data-action="refreshImage">
-            <svg class="dh-icon dh-icon--refresh dh-icon--md"" role="img"><use href="#dh-icon-refresh"></use></svg><span>重新获取图片</span>
+            <svg class="dh-icon dh-icon--refresh dh-icon--md" role="img"><use href="#dh-icon-refresh"></use></svg><span>重新获取图片</span>
         </div>
         <div class="context-menu-item ctx-daily-only" data-action="uploadImage">
-            <svg class="dh-icon dh-icon--image dh-icon--md"" role="img"><use href="#dh-icon-image"></use></svg><span>上传图片</span>
+            <svg class="dh-icon dh-icon--image dh-icon--md" role="img"><use href="#dh-icon-image"></use></svg><span>上传图片</span>
         </div>
         <div class="context-menu-divider"></div>
         <div class="context-menu-item" data-action="upload">
-            <svg class="dh-icon dh-icon--upload dh-icon--md"" role="img"><use href="#dh-icon-upload"></use></svg><span>上传磁贴</span>
+            <svg class="dh-icon dh-icon--upload dh-icon--md" role="img"><use href="#dh-icon-upload"></use></svg><span>上传磁贴</span>
         </div>
         <div class="context-menu-divider" id="ctxMoveDivider" style="display:none;"></div>
         <div class="context-menu-item ctx-has-submenu" id="ctxMoveToItem" data-submenu="move" style="display:none;">
-            <svg class="dh-icon dh-icon--move-folder dh-icon--md"" role="img"><use href="#dh-icon-move-folder"></use></svg><span>移动到分类</span>
+            <svg class="dh-icon dh-icon--move-folder dh-icon--md" role="img"><use href="#dh-icon-move-folder"></use></svg><span>移动到分类</span>
             <span class="ctx-sub-arrow dh-icon dh-icon--chevron-right dh-icon--sm" aria-hidden="true"></span>
         </div>
         <div class="context-menu-item ctx-has-submenu" id="ctxCopyToItem" data-submenu="copy" style="display:none;">
-            <svg class="dh-icon dh-icon--copy dh-icon--md"" role="img"><use href="#dh-icon-copy"></use></svg><span>复制到分类</span>
+            <svg class="dh-icon dh-icon--copy dh-icon--md" role="img"><use href="#dh-icon-copy"></use></svg><span>复制到分类</span>
             <span class="ctx-sub-arrow dh-icon dh-icon--chevron-right dh-icon--sm" aria-hidden="true"></span>
         </div>
     </div>
@@ -521,19 +188,15 @@
     <!-- 空白区域右键菜单 -->
     <div class="context-menu" id="blankContextMenu">
         <div class="context-menu-item" data-action="refresh">
-            <svg class="dh-icon dh-icon--refresh dh-icon--md"" role="img"><use href="#dh-icon-refresh"></use></svg><span>刷新</span>
+            <svg class="dh-icon dh-icon--refresh dh-icon--md" role="img"><use href="#dh-icon-refresh"></use></svg><span>刷新</span>
             <kbd class="doc-kbd ctx-kbd">F5</kbd>
         </div>
         <div class="context-menu-item ctx-daily-only" data-action="addTile">
-            <svg class="dh-icon dh-icon--plus dh-icon--md"" role="img"><use href="#dh-icon-plus"></use></svg><span>新添磁贴</span>
+            <svg class="dh-icon dh-icon--plus dh-icon--md" role="img"><use href="#dh-icon-plus"></use></svg><span>新添磁贴</span>
             <kbd class="doc-kbd ctx-kbd">Ctrl+N</kbd>
         </div>
-        <div class="context-menu-item" data-action="openWorkbench">
-            <span class="wb-icon dh-icon dh-icon--workbench dh-icon--md" aria-hidden="true"></span><span id="ctxFocusModeLabel">进入专注模式</span>
-            <kbd class="doc-kbd ctx-kbd" id="ctxFocusModeKey">Ctrl+K</kbd>
-        </div>
         <div class="context-menu-item ctx-daily-only" data-action="addPage">
-            <svg class="dh-icon dh-icon--new-page dh-icon--md"" role="img"><use href="#dh-icon-new-page"></use></svg><span>新建分类</span>
+            <svg class="dh-icon dh-icon--new-page dh-icon--md" role="img"><use href="#dh-icon-new-page"></use></svg><span>新建分类</span>
         </div>
     </div>
 
@@ -542,10 +205,10 @@
 
 
         <div class="context-menu-item" data-editor-action="copy">
-            <span><svg class="dh-icon dh-icon--clipboard dh-icon--md"" role="img"><use href="#dh-icon-clipboard"></use></svg> 复制</span><kbd class="doc-kbd ctx-kbd">Ctrl+C</kbd>
+            <span><svg class="dh-icon dh-icon--clipboard dh-icon--md" role="img"><use href="#dh-icon-clipboard"></use></svg> 复制</span><kbd class="doc-kbd ctx-kbd">Ctrl+C</kbd>
         </div>
         <div class="context-menu-item" data-editor-action="pasteText">
-            <span><svg class="dh-icon dh-icon--note dh-icon--md"" role="img"><use href="#dh-icon-note"></use></svg> 粘贴纯文本</span><kbd class="doc-kbd ctx-kbd">Ctrl+Shift+V</kbd>
+            <span><svg class="dh-icon dh-icon--note dh-icon--md" role="img"><use href="#dh-icon-note"></use></svg> 粘贴纯文本</span><kbd class="doc-kbd ctx-kbd">Ctrl+Shift+V</kbd>
         </div>
         <div class="context-menu-item" data-editor-action="pasteHtml">
             <span>📄 粘贴（含格式）</span><kbd class="doc-kbd ctx-kbd">Ctrl+V</kbd>
@@ -621,29 +284,9 @@
 
                     <!-- Tab 1: 外观与主题 -->
                     <section class="s-tab" data-s-tab="appearance">
-                        <h3 class="s-section-title">Matrix 数字雨</h3>
-                        <div class="s-row">
-                            <div class="s-row-left"><span class="s-row-label">开启数字雨效果</span><span class="s-row-desc">攻防双向流动字符动画</span></div>
-                            <label class="s-toggle" id="sToggleMatrixRain"><input type="checkbox" id="matrixRainToggle"><span class="s-toggle-thumb"></span></label>
-                        </div>
-                        <div id="matrixRainParams" style="display:none;">
-                            <label class="s-slider-row">
-                                <span>字符大小 <span class="slider-value" id="charSizeValue">8px</span></span>
-                                <input type="range" id="charSizeSlider" min="8" max="80" value="8" class="context-slider">
-                            </label>
-                            <label class="s-slider-row">
-                                <span>流动速度 <span class="slider-value" id="flowSpeedValue">2×</span></span>
-                                <input type="range" id="flowSpeedSlider" min="2" max="20" value="2" class="context-slider">
-                            </label>
-                            <label class="s-slider-row">
-                                <span>字符密度 <span class="slider-value" id="charDensityValue">60%</span></span>
-                                <input type="range" id="charDensitySlider" min="3" max="5" value="3" class="context-slider">
-                            </label>
-                        </div>
-
                         <h3 class="s-section-title">背景</h3>
                         <button type="button" class="s-action-btn" data-setting-action="uploadBg">
-                            <svg class="dh-icon dh-icon--image dh-icon--md"" role="img"><use href="#dh-icon-image"></use></svg><span>上传背景图片</span>
+                            <svg class="dh-icon dh-icon--image dh-icon--md" role="img"><use href="#dh-icon-image"></use></svg><span>上传背景图片</span>
                         </button>
                         <label class="s-slider-row" id="sBgBlurRow" style="display:none;">
                             <span>模糊度 <span class="slider-value" id="sBgBlurValue">0px</span></span>
@@ -654,7 +297,7 @@
                             <input type="range" id="sBgOverlaySlider" min="0" max="100" value="30" class="context-slider">
                         </label>
                         <button type="button" class="s-action-btn" data-setting-action="resetBg">
-                            <svg class="dh-icon dh-icon--refresh dh-icon--md"" role="img"><use href="#dh-icon-refresh"></use></svg><span>重置背景</span>
+                            <svg class="dh-icon dh-icon--refresh dh-icon--md" role="img"><use href="#dh-icon-refresh"></use></svg><span>重置背景</span>
                         </button>
 
                         <h3 class="s-section-title">搜索框设置</h3>
@@ -837,24 +480,6 @@
 
                     <!-- Tab 3: 数据与备份 -->
                     <section class="s-tab" data-s-tab="data">
-                        <!-- 任务到期通知 -->
-                        <h3 class="s-section-title">任务通知</h3>
-                        <div class="s-row">
-                            <div class="s-row-left"><span class="s-row-label">任务到期提醒</span><span class="s-row-desc">四象限任务到期时通过系统通知提醒</span></div>
-                            <label class="s-toggle" id="sToggleTaskNotify"><input type="checkbox" id="taskNotifyToggle"><span class="s-toggle-thumb"></span></label>
-                        </div>
-                        <div class="s-row" id="taskNotifyRemindRow" style="display:none;">
-                            <div class="s-row-left"><span class="s-row-label">提前提醒</span></div>
-                            <div class="s-row-right">
-                                <select id="remindBeforeSelect" class="s-input" style="width:120px;">
-                                    <option value="5">5 分钟前</option>
-                                    <option value="10">10 分钟前</option>
-                                    <option value="15" selected>15 分钟前</option>
-                                    <option value="30">30 分钟前</option>
-                                </select>
-                            </div>
-                        </div>
-
                         <!-- 行为面板（工作台模式） -->
                         <div id="wbSettingsStatsWrap" data-mode="workbench" style="display:none;">
                             <h3 class="s-section-title">行为数据看板</h3>
@@ -880,689 +505,37 @@
 
                         <h3 class="s-section-title">备份</h3>
                         <button type="button" class="s-action-btn" data-setting-action="exportData">
-                            <svg class="dh-icon dh-icon--download dh-icon--md"" role="img"><use href="#dh-icon-download"></use></svg><span>导出全部数据</span>
+                            <svg class="dh-icon dh-icon--download dh-icon--md" role="img"><use href="#dh-icon-download"></use></svg><span>导出全部数据</span>
                         </button>
                         <button type="button" class="s-action-btn" data-setting-action="importData">
-                            <svg class="dh-icon dh-icon--upload dh-icon--md"" role="img"><use href="#dh-icon-upload"></use></svg><span>导入备份数据</span>
+                            <svg class="dh-icon dh-icon--upload dh-icon--md" role="img"><use href="#dh-icon-upload"></use></svg><span>导入备份数据</span>
                         </button>
 
                         <h3 class="s-section-title">文件同步</h3>
                         <button type="button" class="s-action-btn" data-setting-action="syncToFile" id="configSyncBtn" style="display:none;">
-                            <svg class="dh-icon dh-icon--refresh dh-icon--md"" role="img"><use href="#dh-icon-refresh"></use></svg><span>立即同步到文件</span>
+                            <svg class="dh-icon dh-icon--refresh dh-icon--md" role="img"><use href="#dh-icon-refresh"></use></svg><span>立即同步到文件</span>
                         </button>
                         <button type="button" class="s-action-btn" data-setting-action="changeConfigDir" id="configChangeDirBtn">
-                            <svg class="dh-icon dh-icon--bookmark dh-icon--md"" role="img"><use href="#dh-icon-bookmark"></use></svg><span id="configDirLabel">选择配置目录</span>
+                            <svg class="dh-icon dh-icon--bookmark dh-icon--md" role="img"><use href="#dh-icon-bookmark"></use></svg><span id="configDirLabel">选择配置目录</span>
                         </button>
                         <div class="s-subtext" id="configSyncStatus"></div>
                     </section>
 
                     <!-- Tab 4: 高级与开发者 -->
                     <section class="s-tab" data-s-tab="advanced">
-                        <div id="wbAdvancedWrap" data-mode="workbench" style="display:none;">
-                            <h3 class="s-section-title">专注模式</h3>
-                            <div class="s-row">
-                                <div class="s-row-left"><span class="s-row-label">快捷键</span></div>
-                                <div class="s-row-right">
-                                    <div class="s-shortcut-capture" id="sShortcutCapture" tabindex="0">
-                                        <span class="s-shortcut-keys" id="sShortcutKeys">Ctrl + K</span>
-                                        <input type="hidden" id="wbMeShortcutCtrl">
-                                        <input type="hidden" id="wbMeShortcutShift">
-                                        <input type="hidden" id="wbMeShortcutAlt">
-                                        <input type="hidden" id="wbMeShortcutKey" value="k">
-                                    </div>
-                                </div>
-                            </div>
-                            <button type="button" class="s-action-btn" id="wbMeShortcutSave"><span>保存快捷键</span></button>
-
-                            <h3 class="s-section-title">模式</h3>
-                            <div class="s-row">
-                                <div class="s-row-left"><span class="s-row-label">严厉鞭策模式</span><span class="s-row-desc">任务超时后弹出全屏警告</span></div>
-                                <label class="s-toggle" id="sToggleStrict"><input type="checkbox" id="wbMeToggleStrict"><span class="s-toggle-thumb"></span></label>
-                            </div>
-                            <div class="s-row">
-                                <div class="s-row-left"><span class="s-row-label">文件自动同步</span><span class="s-row-desc">配置变更自动写入本地文件</span></div>
-                                <label class="s-toggle" id="sToggleFileSync"><input type="checkbox" id="wbMeToggleFileSync"><span class="s-toggle-thumb"></span></label>
-                            </div>
-                        </div>
-
-                        <h3 class="s-section-title">网络代理</h3>
-                        <div class="s-row">
-                            <div class="s-row-left"><span class="s-row-label">代理感知</span><span class="s-row-desc">自动检测系统代理，优化 Google 服务访问</span></div>
-                            <label class="s-toggle" id="sToggleProxyEnabled"><input type="checkbox" id="proxyEnabledToggle"><span class="s-toggle-thumb"></span></label>
-                        </div>
-                        <div id="proxyConfigSection" style="display:none;">
-                            <div class="s-row">
-                                <div class="s-row-left"><span class="s-row-label">代理模式</span></div>
-                                <div class="s-row-right">
-                                    <div class="s-seg" id="proxyModeSeg">
-                                        <button class="s-seg-btn" data-proxy-mode="auto">自动检测</button>
-                                        <button class="s-seg-btn" data-proxy-mode="manual">手动配置</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div id="proxyManualConfig" style="display:none;margin-top:6px;">
-                                <div class="s-row">
-                                    <div class="s-row-left"><span class="s-row-label">代理地址</span></div>
-                                    <div class="s-row-right" style="display:flex;gap:6px;align-items:center;">
-                                        <input type="text" id="proxyHostInput" class="s-input" placeholder="127.0.0.1" style="width:120px;">
-                                        <span style="font-size:12px;color:var(--color-text-tertiary);">:</span>
-                                        <input type="number" id="proxyPortInput" class="s-input" placeholder="7890" min="1" max="65535" style="width:80px;">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="s-row">
-                                <div class="s-row-left" style="flex:1;"><span class="s-row-label">系统代理状态</span></div>
-                                <div class="s-row-right"><span id="proxyStatusBadge" class="s-badge" style="background:var(--color-bg-secondary);font-size:11px;padding:2px 8px;border-radius:4px;">检测中...</span></div>
-                            </div>
-                            <div class="s-row">
-                                <div class="s-row-left" style="flex:1;"><span class="s-row-label">Google 连通性</span></div>
-                                <div class="s-row-right"><span id="googleStatusBadge" class="s-badge" style="background:var(--color-bg-secondary);font-size:11px;padding:2px 8px;border-radius:4px;">检测中...</span></div>
-                            </div>
-                            <button type="button" class="s-action-btn" id="proxyRetestBtn" style="margin-top:6px;">
-                                <svg class="dh-icon dh-icon--refresh dh-icon--sm"" role="img"><use href="#dh-icon-refresh"></use></svg><span>重新检测</span>
-                            </button>
-                        </div>
-
                         <h3 class="s-section-title">关于</h3>
-                        <button type="button" class="s-action-btn" id="changelogBtn">
-                            <svg class="dh-icon dh-icon--release-note dh-icon--md"" role="img"><use href="#dh-icon-release-note"></use></svg><span>更新说明 v2.27.1</span>
-                        </button>
+                        
 
                         <div class="s-danger-zone">
                             <h3 class="s-section-title" style="color:var(--color-danger);">危险操作</h3>
                             <button type="button" class="s-danger-btn" data-setting-action="resetSettings">
-                                <svg class="dh-icon dh-icon--refresh dh-icon--md"" role="img"><use href="#dh-icon-refresh"></use></svg><span>重置所有设置</span>
+                                <svg class="dh-icon dh-icon--refresh dh-icon--md" role="img"><use href="#dh-icon-refresh"></use></svg><span>重置所有设置</span>
                             </button>
                         </div>
                     </section>
                 </div>
             </div>
         </aside>
-    </div>
-
-    <!-- 更新说明内容（供 Shadcn Dialog 动态读取渲染） -->
-    <div id="changelogBodyTemplate" style="display:none">
-        <div class="changelog-body" id="changelogBody">
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.31.0</span>
-                        <span class="changelog-date">2026-07-22</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>修复</strong> 复制任务列表时跳过「隐藏已完成」视图中已勾选的任务项，与编辑器视图保持一致</li>
-                        <li><strong>修复</strong> 笔记正文与工具栏取消居中限宽（max-width:860px），改为左对齐铺满横向空间</li>
-                        <li><strong>修复</strong> favicon 解析增加 DuckDuckGo 图标服务兜底，减少「站点有图标却报无可用图标」误判</li>
-                        <li><strong>修复</strong> 磁贴拖拽因容器 transform:scale 导致图标远离光标与落点错位：拖拽中临时移出缩放容器挂到 body，fixed 定位基准回归视口</li>
-                        <li><strong>优化</strong> 搜索联想词网络失败仅控制台告警（warn），不再抛到插件层</li>
-                        <li><strong>优化</strong> 专注模式下新建笔记时确保专注舞台保持可见，避免编辑器在隐藏舞台内不可见</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.27.1</span>
-                        <span class="changelog-date">2026-07-20</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>新增</strong> 磁贴右键菜单「重新获取图片」——清除域名缓存并强制重新请求 favicon 服务获取最新图标</li>
-                        <li><strong>新增</strong> 磁贴右键菜单「上传图片」——支持从本地选择图片文件（jpg/png/gif/webp），转 base64 后替换磁贴图标</li>
-                        <li><strong>限制</strong> 新菜单项仅在日常模式（非专注模式）下显示，专注模式下自动隐藏</li>
-                        <li><strong>安全</strong> 上传图片文件大小限制 2MB，仅接受 image/* 类型，含格式校验与加载状态提示</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.27.0</span>
-                        <span class="changelog-date">2026-07-20</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>新增</strong> 代理管理模块：自动检测系统代理状态，支持手动指定代理地址和端口</li>
-                        <li><strong>新增</strong> 实时监听系统代理变更（chrome.proxy.settings.onChange + 轮询兜底），代理端口变化时自动同步</li>
-                        <li><strong>新增</strong> 设置面板「高级」Tab 增加代理配置区域：开关、自动/手动模式、代理地址/端口、系统代理状态、Google 连通性指示</li>
-                        <li><strong>优化</strong> 所有 Google 服务请求（favicon 等）感知代理状态，Google 不可达时自动跳过缓存请求避免无谓超时</li>
-                        <li><strong>技术</strong> 新增 proxyManager.js 模块，新增 proxy 权限及 Google/DuckDuckGo 域名 host_permissions</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.26.1</span>
-                        <span class="changelog-date">2026-07-20</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>修复</strong> 国内网络环境下图标全部变成字母方块的问题——主流程回到 <code>img.src</code> + onerror 多级回退（不受 CORS 限制），回退链包含国内可访问的 api.xinac.net</li>
-                        <li><strong>优化</strong> 图标缓存改为后台 <code>fetch</code> + 5 秒超时，失败不影响主显示流程</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.26.0</span>
-                        <span class="changelog-date">2026-07-20</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>优化</strong> 磁贴图标清晰度大幅提升——使用 Google S2 128px 高分辨率源取代替换低分辨率第三方 API，覆盖 2x/3x Retina 显示</li>
-                        <li><strong>新增</strong> 多级 favicon 回退策略：128px → 64px → DuckDuckGo → 纯色字母方块，确保极端网络条件下图标不会丢失</li>
-                        <li><strong>优化</strong> CSS 缩放渲染：启用 <code>image-rendering: -webkit-optimize-contrast</code> 和 GPU 硬件加速，消除边缘模糊和 hover 抖动</li>
-                        <li><strong>优化</strong> 并发请求合并：同一域名多个磁贴共享一次网络请求，减少重复流量</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.25.2</span>
-                        <span class="changelog-date">2026-07-20</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>修复</strong> 日常模式下"常用"分类快捷方式首次不显示的问题——启动流程中数据加载完成后无条件重新渲染磁贴</li>
-                        <li><strong>修复</strong> 从专注模式退出后分类页磁贴空白的问题——去掉 <code>state.currentPage</code> 相等时的跳过条件，确保恢复分支总是执行</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.25.1</span>
-                        <span class="changelog-date">2026-07-17</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>修复</strong> 导入备份时四象限任务不显示的问题——导入后自动将 v2 任务数据同步到 localStorage devhome_workbench，确保 getWorkbenchState() 可正确读取</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.25.0</span>
-                        <span class="changelog-date">2026-07-17</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>新增</strong> 「数据与备份」→「导出全部数据」按钮，一键导出所有笔记、任务、快速捕获、磁贴和配置为 JSON 文件</li>
-                        <li><strong>新增</strong> 「导入备份数据」支持 v3.0 完整快照格式，导入后自动刷新页面加载所有数据，实现跨设备/跨 Profile 数据迁移</li>
-                        <li><strong>优化</strong> 导入流程兼容旧版磁贴备份格式，平滑升级</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.23.8</span>
-                        <span class="changelog-date">2026-07-17</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>设计</strong> 全局视觉改为极简风：中性纯色背景、石墨文字、低饱和强调色</li>
-                        <li><strong>优化</strong> 去除大面积渐变、毛玻璃、发光阴影和强装饰图标，不改变页面布局与功能入口</li>
-                        <li><strong>技术</strong> 新增 minimal-global.css 作为最终视觉覆盖层，并纳入构建产物</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.23.0</span>
-                        <span class="changelog-date">2026-07-17</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>重构</strong> 设置面板从居中弹窗改为右侧侧边栏（400px 宽，滑入动画），顶部水平 Tab 导航</li>
-                        <li><strong>移除</strong> 左下角壁纸按钮和面板，图片上传功能迁移至设置→外观→上传背景图片</li>
-                        <li><strong>新增</strong> 设置面板中壁纸模糊度/遮罩度滑块（从原壁纸面板迁移），实时反映到主界面</li>
-                        <li><strong>移除</strong> 倒计时卡片功能（右上角 countdownRoot）及相关 CSS/JS 代码</li>
-                        <li><strong>增强</strong> 背景图片上传自动压缩至 1920px 宽，挂载时恢复模糊度设置</li>
-                        <li><strong>修复</strong> 复制包含多个任务列表的笔记时，每个任务项之间产生大量空白行的格式错误</li>
-                        <li><strong>技术</strong> TaskItem 扩展新增 renderText 剪贴板序列化，单行输出任务项</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.22.6</span>
-                        <span class="changelog-date">2026-07-17</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>重构</strong> 每日问候卡片移除容器样式，问候文本无缝融合至纯色页面背景中</li>
-                        <li><strong>设计</strong> 页面背景改为纯色（原深色模式多径向渐变 → 统一纯色 #071b26）</li>
-                        <li><strong>优化</strong> 天气数据取消页面加载时自动请求，改为手动点击刷新按钮触发</li>
-                        <li><strong>新增</strong> 天气缓存策略：30 分钟 TTL，超时后自动刷新；支持点击↻手动刷新</li>
-                        <li><strong>新增</strong> 鼓励话语↻刷新按钮，支持点击手动随机换一句</li>
-                        <li><strong>优化</strong> 天气初始化仅加载缓存数据到内存，不发起网络请求</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.19.3</span>
-                        <span class="changelog-date">2026-07-15</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>新增</strong> 番茄钟关联四象限任务：侧边栏下拉选择器，选中后在计时和通知中显示任务名称</li>
-                        <li><strong>增强</strong> 番茄钟通知包含关联任务信息，会话记录保存 taskTitle</li>
-                        <li><strong>优化</strong> 笔记本新建/重命名改用纯 DOM 弹窗（规避 Shadcn PromptDialog React 渲染链问题）</li>
-                        <li><strong>优化</strong> 切换笔记本筛选时，当前编辑笔记不属于新笔记本则自动关闭编辑器</li>
-                        <li><strong>优化</strong> 笔记删除后自动刷新四象限任务关联计数，清理孤立引用</li>
-                        <li><strong>优化</strong> 专注模式右键菜单隐藏日常专属项（新建/删除/重命名分类）</li>
-                        <li><strong>简化</strong> 四象限任务不再显示未完成/已完成计数，只保留任务列表</li>
-                        <li><strong>优化</strong> Inter 字体本地化至 fonts/inter-var.woff2，移除 Google Fonts 外部 CDN，离线秒开</li>
-                        <li><strong>修复</strong> 问候卡片 z-index 与容器弹窗层叠冲突</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.19.0</span>
-                        <span class="changelog-date">2026-07-15</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>新增</strong> 笔记本（Notebook）容器型分类：每条笔记可归属一个笔记本，支持筛选、重命名、删除</li>
-                        <li><strong>新增</strong> 专注模式工具栏：笔记本下拉选择器 + 新建笔记/笔记本/标签图标按钮</li>
-                        <li><strong>新增</strong> 编辑器内笔记本归属徽章，点击弹出选择器快速迁移笔记</li>
-                        <li><strong>新增</strong> 长按笔记本菜单项可重命名或删除笔记本（删笔记本不删笔记）</li>
-                        <li><strong>新增</strong> 笔记数据模型新增 updatedAt 修改时间字段，自动在保存时更新</li>
-                        <li><strong>设计决策</strong> 笔记本扁平结构、一对一归属、notebookId=null 允许未分类、独立存储</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.18.4</span>
-                        <span class="changelog-date">2026-07-15</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>新增</strong> 富文本编辑器工具栏支持任务列表（checkbox），每条带复选框可勾选完成</li>
-                        <li><strong>新增</strong> 专注模式下禁用 Ctrl+S 保存网页（数据已后台实时保存）</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.14.0</span>
-                        <span class="changelog-date">2026-07-06</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>新增</strong> 番茄钟自动循环：工作时间结束自动进入休息，休息结束自动开始下一轮</li>
-                        <li><strong>新增</strong> 系统通知：工作完成/休息结束弹出 Chrome 通知，含随机激励语句</li>
-                        <li><strong>新增</strong> 激励语句库：工作完成/休息完成/工作开始/休息开始四类共40+条</li>
-                        <li><strong>新增</strong> 循环/单次切换按钮，UI 显示"工作中#N"或"休息中"状态标签</li>
-                        <li><strong>新增</strong> sessionCount 轮次计数，service worker 自动循环直到用户点击重置</li>
-                        <li><strong>修复</strong> POMODORO_STATE 广播包含 isResting/sessionCount/autoCycle/restDuration</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.13.5</span>
-                        <span class="changelog-date">2026-07-06</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>新增</strong> 番茄钟正计时模式：点击"正计时"切换到从00:00向上计数</li>
-                        <li><strong>新增</strong> 可修改休息时长：输入框在番茄钟面板中，范围1~30分钟</li>
-                        <li><strong>新增</strong> 倒计时/正计时模式切换按钮（双按钮组）</li>
-                        <li><strong>实现</strong> 正计时使用本地 setInterval 每秒 +1，进度环以2小时为上限逐渐填满</li>
-                        <li><strong>实现</strong> 正计时模式下隐藏快捷时长按钮，暂停/重置正常停止定时器</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.13.4</span>
-                        <span class="changelog-date">2026-07-06</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>改进</strong> 四象限任务操作不再挤压标题：下拉选择器和删除按钮合并为 hover 时出现的"⋮"浮动菜单</li>
-                        <li><strong>新增</strong> 任务可关联多篇笔记（noteIds 数组），关联后在任务项旁显示 📎N 徽章</li>
-                        <li><strong>新增</strong> 笔记编辑器"转为任务"按钮，一键将笔记转为四象限任务（默认放入重要不紧急）</li>
-                        <li><strong>新增</strong> 任务⋮菜单中"关联笔记"选项，弹窗多选关联/取消关联笔记</li>
-                        <li><strong>移除</strong> 旧 .wb-task-selector 下拉选择器和 .wb-task-del 删除按钮样式</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.13.3</span>
-                        <span class="changelog-date">2026-07-06</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>修复</strong> 番茄钟快捷时长按钮不再自动开始，仅选中时长，需手动点击"开始"</li>
-                        <li><strong>移除</strong> 右侧栏底部"快捷设置"占位面板</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.13.2</span>
-                        <span class="changelog-date">2026-07-06</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>调整</strong> 右侧栏宽度从30%改为240px固定宽度，与左侧四象限面板一致</li>
-                        <li><strong>调整</strong> 主工作区笔记区域占据全部剩余空间（flex:1），不再按比例分配</li>
-                        <li><strong>移动</strong> 番茄钟从主工作区底部移至右侧栏日历下方</li>
-                        <li><strong>新增</strong> 右侧栏折叠/展开按钮（与左侧栏同款汉堡图标），折叠后仅48px</li>
-                        <li><strong>优化</strong> 番茄钟在侧边栏采用垂直居中布局，快捷按钮缩小为28px圆形</li>
-                        <li><strong>方案达成</strong> 左右两侧等宽240px + 可独立折叠 → 最大笔记空间</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.13.1</span>
-                        <span class="changelog-date">2026-07-06</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>简化</strong> 专注模式移除装饰效果：去除所有文字阴影、盒阴影、毛玻璃模糊效果、渐变背景</li>
-                        <li><strong>简化</strong> 番茄钟开始按钮改用纯色背景替代渐变</li>
-                        <li><strong>简化</strong> 日历今日标记、视图切换按钮去除发光阴影</li>
-                        <li><strong>简化</strong> 移除左侧栏和右侧栏的 backdrop-filter 毛玻璃效果</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.13.0</span>
-                        <span class="changelog-date">2026-07-06</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>重构</strong> 专注模式三栏布局 → 双栏仪表盘：左侧可折叠四象限面板 + 主工作区(70%) + 右侧栏(30%)</li>
-                        <li><strong>改进</strong> 四象限任务面板增加折叠/展开按钮，折叠后仅48px宽</li>
-                        <li><strong>改进</strong> 番茄钟从右侧栏移至主工作区底部，与笔记形成统一工作流</li>
-                        <li><strong>改进</strong> 番茄钟预设时长改为圆形快捷按钮，点击即刻开始倒计时</li>
-                        <li><strong>改进</strong> 日历新增周/月视图切换，今日日期高亮为实心圆</li>
-                        <li><strong>优化</strong> 统一卡片风格：引入 --card-radius/--card-shadow/--card-border Token</li>
-                        <li><strong>优化</strong> 去除笔记工具栏重复"+"按钮，标签栏整合在同一行</li>
-                        <li><strong>新增</strong> 右侧栏新增快捷设置面板预留位</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.12.1</span>
-                        <span class="changelog-date">2026-07-06</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>修复</strong> 移除遗留的 daily-layout.css 及三列布局残留文件，恢复原始居中布局</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.12.0</span>
-                        <span class="changelog-date">2026-07-06</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>新增</strong> 天气预报（Open-Meteo API + 3天趋势面板）、每日金句（50条本地库 + hitokoto API）、个性化问候语（按时间段动态切换）</li>
-                        <li><strong>权限</strong> 新增 open-meteo、hitokoto host_permissions</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.7.5</span>
-                        <span class="changelog-date">2026-07-03</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>修复</strong> 像素主题 Press Start 2P / VT323 字体加载 SyntaxError：CSS font shorthand 中空格字体名补上引号</li>
-                        <li><strong>修复</strong> 主题初始化时自动纠正不兼容的深浅色方案（如恢复 pixel+light 组合时自动切 dark）</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.7.3</span>
-                        <span class="changelog-date">2026-07-03</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>视觉中心微调</strong> 取消 body 绝对垂直居中（align-items: flex-start），.container 改用 padding-top: 15vh 顶部相对偏移，时间组件落在屏幕黄金阅读区</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.7.2</span>
-                        <span class="changelog-date">2026-07-03</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>磁贴卡片重构</strong> 标准卡片 80→100px 正方形，卡片间距 10→24px，三档预设（小/标准/大）同步放大</li>
-                        <li><strong>边框弱化</strong> 移除实线边框 → 极淡背景(var(--color-surface-subtle)) + 轻柔阴影(var(--shadow-sm))</li>
-                        <li><strong>内部布局</strong> label 从 absolute→flow 流式布局，icon-label 间距 8px，卡片 padding 8px，图标容器 max-size 约束</li>
-                        <li><strong>Hover 增强</strong> 上浮 -1→-2px，阴影加深</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.7.1</span>
-                        <span class="changelog-date">2026-07-03</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>时间日期可读性</strong> 时间字重 300→500、删除硬编码渐变改用 var(--color-text)、添加 text-shadow 双层白色发光防护</li>
-                        <li><strong>日期优化</strong> 字重 400→500，letter-spacing 增加 0.01em</li>
-                        <li><strong>布局居中</strong> body align-items: center 垂直居中，容器间距 16px→24px，磁贴正方形化</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.7.0</span>
-                        <span class="changelog-date">2026-07-03</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>AI助手修复</strong> 修复AI助手功能不可用问题</li>
-                        <li><strong>代码优化</strong> 合并 loadMeConfig 重复定义，浅色/深色主题双模式验证通过</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.6.2</span>
-                        <span class="changelog-date">2026-07-03</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>BDD 验证</strong> 10/10 规则全部通过：禁止原生弹窗、交互日志完整、Semantic Token 引用、主题双模式、ProseMirror 无残留等</li>
-                        <li><strong>修复</strong> 补充 openSettingsPanel/closeSettingsPanel/startPomodoro 等6处 console.log 交互日志</li>
-                        <li><strong>修复</strong> badge-capture/idea/bug/meeting 等6类徽章颜色从硬编码改为 CSS 变量引用</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.6.0</span>
-                        <span class="changelog-date">2026-07-03</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>设置中心重构</strong> 弹窗从小尺寸右下角→居中大尺寸 Modal(min(760px, 92vw), 85vh)，左170px导航5Tab（通用/外观/AI助手/数据/高级），右侧自适应内容区</li>
-                        <li><strong>UI 组件标准化</strong> 自定义 Toggle 滑动开关、分段选择器 .s-seg、AI Key 密码切换、快捷键捕获组件 .s-shortcut-capture、危险操作区 .s-danger-zone</li>
-                        <li><strong>数据统计</strong> .s-stat-card：大号数字+小号标签展示磁贴/笔记/任务统计</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.5.1</span>
-                        <span class="changelog-date">2026-07-03</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>数字雨联动</strong> 勾选"开启数字雨效果"→显示字符大小/流动速度/字符密度滑块+启动动画，取消勾选→滑块自动隐藏+停止动画</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.5.0</span>
-                        <span class="changelog-date">2026-07-03</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>日常模式重置</strong> 停止自动加载用户自定义背景，日常模式使用纯 CSS 渐变背景</li>
-                        <li><strong>数字雨开关化</strong> 默认 OFF，在设置面板外观区域新增"Matrix 数字雨"复选框手动开启</li>
-                        <li><strong>API</strong> 暴露 ns.matrixRain.start/stop/isRunning() 供外部调用</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.4.3</span>
-                        <span class="changelog-date">2026-07-03</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>移除 ProseMirror</strong> 删除 pm.bundle.js/hljs.bundle.js 等9个依赖文件，回退 contenteditable 方案，清理 migrate/export 残留代码</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.4.2</span>
-                        <span class="changelog-date">2026-07-03</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>修复弹窗样式</strong> confirm/prompt/toast 弹窗关键 CSS 在之前重构中丢失，本次全部恢复（120行样式+动画）</li>
-                        <li><strong>修复笔记按钮</strong> #wbNotesAddBtn 新建笔记按钮在上次 HTML 重写中被移除，本次补回</li>
-                        <li><strong>补齐样式</strong> 新增 filter-chip-editing / filter-del / delete-mode 样式</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.4.1</span>
-                        <span class="changelog-date">2026-07-03</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>四象限重构</strong> 切换为导航式分组，左栏改为4个独立象限分组卡片式展示，移除左侧顶部导航</li>
-                        <li><strong>笔记列表</strong> 新增完整 .wb-note-list-item 样式体系，修复之前空白问题</li>
-                        <li><strong>番茄钟修复</strong> 右侧开始/暂停按钮切换，左右栏 DOM 状态同步</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.4.0</span>
-                        <span class="changelog-date">2026-07-03</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>三栏式布局</strong> 从单列居中Tab切换→左260px导航+中flex笔记编辑+右280px时间，非对称三栏常驻布局</li>
-                        <li><strong>侧边栏毛玻璃</strong> var(--color-sidebar-bg) + backdrop-filter: blur(20px)</li>
-                        <li><strong>四象限标签模式</strong> 横向胶囊标签，active 薄荷绿发光边框，维度下拉切换归属</li>
-                        <li><strong>右栏迷你日历</strong> 7列紧凑月视图 + 今天高亮 + 内容标记点</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.3.1</span>
-                        <span class="changelog-date">2026-07-03</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>工作台视觉重构</strong> 深蓝半透明毛玻璃主卡片+霓虹薄荷绿标题、精炼顶部导航栏（任务/记录/日历/番茄钟+图标）</li>
-                        <li><strong>浮动日历</strong> 日历重构为独立浮动卡片，固定定位右上角，点击外部自动关闭</li>
-                        <li><strong>番茄钟增强</strong> SVG圆环220px大圆环+48px字重300计时器，accent色预设按钮</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.3.0</span>
-                        <span class="changelog-date">2026-07-03</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>主题系统重构</strong> 全量改造为 Primitive→Semantic 双层 Design Token 体系，39 个语义令牌覆盖背景、文字、交互色、边框、阴影、字体、梯度全部视觉维度</li>
-                        <li><strong>4 套预设主题</strong> 默认（深海科技渐变·浅色深色双模式）、黑客（纯黑终端绿·仅深色）、暖纸（米白纸质·仅浅色）、像素（8-bit 命令行·仅深色），主题卡片网格选择器</li>
-                        <li><strong>浅色/深色双轨模式</strong> 跟随系统/始终浅色/始终深色三选一分段控制器，通过 data-color-scheme 属性驱动，200ms 平滑过渡</li>
-                        <li><strong>外观设置页</strong> 左右分栏布局（控制区+实时预览沙箱），智能联动：选黑客/像素主题自动切换深色并提示</li>
-                        <li><strong>背景管理升级</strong> 统一为纯色/动态效果（Matrix数字雨）/自定义图片三选一，图片支持本地上传+URL+模糊/亮度/不透明度滑块</li>
-                        <li><strong>集中式 ThemeManager</strong> 主题切换、字体异步加载、localStorage 持久化全部集中管理，发布 theme-changed 事件</li>
-                        <li><strong>字体配置驱动</strong> 主题元数据声明字体需求，Fira Code woff2 本地存储，系统等宽字体兜底</li>
-                        <li><strong>模式与主题解耦</strong> 日常/专注模式不再操作 link media，布局功能与视觉主题完全正交</li>
-                        <li><strong>架构</strong> 9 个 CSS 文件全部改造，退役 --px-* / --wb-* / --sp-* 变量体系，组件与主题配置完全解耦</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.1.0</span>
-                        <span class="changelog-date">2026-06-23</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>富文本编辑器</strong> contenteditable 替代 textarea，工具栏支持标题1-6、加粗、斜体、下划线、有序/无序列表、20色颜色面板、高亮背景</li>
-                        <li><strong>代码块</strong> 右键菜单支持插入代码块，20种编程语言标签</li>
-                        <li><strong>类型多选</strong> 文章可同时归属多个类型（笔记/想法/Bug/会议/剪藏），类型徽章支持 chip 化增删</li>
-                        <li><strong>日期标签</strong> 新建文章自动附加年月日标签，侧边栏按日期分组（今天/昨天/周几）</li>
-                        <li><strong>右键菜单</strong> 专注模式下隐藏磁贴/分类操作；编辑器内右键弹出格式菜单（标题/加粗/颜色/代码块）</li>
-                        <li><strong>禁止原生弹窗</strong> 全部 alert/prompt 替换为主题化组件，新增 showPrompt / showToast</li>
-                        <li><strong>交互日志</strong> 所有可点击功能输出控制台日志，标记 [交互][面板][编辑][警告] 前缀便于排查</li>
-                        <li><strong>修复</strong> 编辑器内数字键被误拦截切换搜索引擎</li>
-                        <li><strong>修复</strong> 自定义弹窗在日常模式下裸露显示</li>
-                        <li><strong>修复</strong> 工具栏按钮点击后选区丢失导致格式无效</li>
-                        <li><strong>修复</strong> 颜色面板被 overflow:hidden 裁剪不可见</li>
-                        <li><strong>导航</strong> Tab"总览"更名为"工作台"</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v2.0.0</span>
-                        <span class="changelog-date">2026-06-22</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>核心重构</strong> 双模式架构：日常像素主题 + 专注暖纸主题，通过 CSS &lt;link&gt; 动态切换互不污染</li>
-                        <li><strong>多 Tab 工作台</strong> 专注模式下顶部导航栏：总览（快速捕获 + 四象限）/ 记录（笔记编辑）/ 日历（月视图）/ 番茄钟</li>
-                        <li><strong>四象限任务</strong> 艾森豪威尔矩阵，支持任务增删、拖拽移动、完成/取消标记、活跃/全部筛选</li>
-                        <li><strong>笔记系统</strong> Markdown 编辑 + 预览，笔记/捕获混合列表，类型筛选，全文搜索，自动保存</li>
-                        <li><strong>番茄钟</strong> 预设/自定义时长、默认/专注模式、休息时长、进度环、今日历史</li>
-                        <li><strong>日历视图</strong> 月度日历，标记有内容的日期，点击查看当日笔记和捕获</li>
-                        <li><strong>网页剪藏</strong> 右键菜单 + Ctrl+Shift+S 快捷键，自动保存为剪藏类型笔记</li>
-                        <li><strong>AI 每日总结</strong> 腾讯混元 API，设置面板配置 Key/端点/模型，生成后一键保存为笔记</li>
-                        <li><strong>导出中心</strong> 设置面板中按类型筛选，全选/导出选中为 Markdown 文件</li>
-                        <li><strong>行为追踪</strong> 连续打卡、完成任务数、番茄钟数、专注分钟、笔记数统计</li>
-                        <li><strong>数据存储</strong> chrome.storage.local 主存储 + localStorage 缓存 + 文件同步（可选）</li>
-                        <li><strong>快捷键</strong> 可配置专注模式快捷键，Esc 退出，Ctrl+Shift+S 剪藏</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v1.3.1</span>
-                        <span class="changelog-date">2026-06-17</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>新增</strong> 设置面板「数据」区域新增「切换配置目录」入口，更换目录后自动同步数据</li>
-                        <li><strong>修复</strong> 分类选择浮窗过于灵敏 — 鼠标掠过即弹出改为需停留 200ms 后才显示，点击仍即时响应</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v1.3.0</span>
-                        <span class="changelog-date">2026-06-17</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>核心改动</strong> 新增文件系统配置持久化：用户选择本地文件夹存放配置，清除浏览器缓存/切换浏览器后可恢复全部数据</li>
-                        <li><strong>搜索历史</strong> 改用浏览器原生历史记录 API，不再占用配置文件空间</li>
-                        <li><strong>未授权保护</strong> 首次或目录失效时强制提示用户选择配置目录，扩展图标显示红色感叹号角标</li>
-                        <li><strong>设置面板</strong> 新增「立即同步到文件」和「切换配置目录」入口</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v1.2.0</span>
-                        <span class="changelog-date">2026-06-17</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>核心改动</strong> 移除亮色/晨雾/暗色三套主题，统一为黑客像素风格唯一主题，纯黑背景</li>
-                        <li><strong>数字雨重写</strong> 极慢速攻防双向流动（55%下落为攻/45%上升为防），红色警示字符混入，鼠标涟漪与字符位移互动</li>
-                        <li><strong>外观透明化</strong> 时间区域、搜索栏、磁贴全部改为透明背景仅保留边框，数字雨穿透整个页面</li>
-                        <li><strong>背景参数面板</strong> 新增字符大小(8-80px)、流动速度(2-20×)、字符密度(60%-100%)三个可调滑块，带实时数值显示</li>
-                        <li><strong>新增</strong> 设置面板「重置设置」按钮，一键恢复默认值（保留磁贴和分类数据）</li>
-                        <li><strong>修复</strong> 数字雨背景未铺满全屏（z-index 层叠 + body 宽度限制导致两边留白）</li>
-                        <li><strong>修复</strong> 磁贴未居中显示（auto-fill grid 改为 flexbox）</li>
-                        <li><strong>修复</strong> CRT 闪烁动画导致持续屏闪（直接移除）</li>
-                        <li><strong>修复</strong> 背景参数滑块调节后未实时生效</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v1.1.1</span>
-                        <span class="changelog-date">2026-06-17</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>修复</strong> 数字雨背景未铺满全屏，仅中间区域有效两边留白（z-index 层叠冲突 + body width 受 flex 限制）</li>
-                        <li><strong>修复</strong> 快捷方式磁贴未居中（auto-fill grid 改为 flexbox 布局）</li>
-                        <li><strong>修复</strong> CRT 屏闪（body flicker 0.15s 动画）</li>
-                        <li><strong>修复</strong> 数字雨脚本双 else 语法错误导致背景消失</li>
-                        <li><strong>修复</strong> 背景参数滑块修改后未实时生效</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v1.1.0</span>
-                        <span class="changelog-date">2026-06-16</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>新增</strong> 设置齿轮按钮替换为更直观的齿轮造型图标，视觉识别性更强</li>
-                        <li><strong>新增</strong> 设置面板中增加「更新说明」入口，点击可查看完整版本变更记录</li>
-                        <li><strong>修复</strong> Font Awesome 样式表内联 onload 事件处理器违反 CSP 策略的报错</li>
-                    </ul>
-                </div>
-                <div class="changelog-entry">
-                    <div class="changelog-version">
-                        <span class="changelog-version-tag">v1.0.0</span>
-                        <span class="changelog-date">2026-06-01</span>
-                    </div>
-                    <ul class="changelog-list">
-                        <li><strong>核心功能</strong> 全新标签页工作台，替代浏览器默认新标签页，面向独立开发者的一站式工作入口</li>
-                        <li><strong>时间显示</strong> 大字号数字时钟与完整中文日期（含星期），支持大小拖拽调节</li>
-                        <li><strong>多引擎搜索</strong> 集成 Google、百度、Bing、DuckDuckGo、Yahoo 五种搜索引擎，实时切换，支持搜索建议（Bing API）与历史记录</li>
-                        <li><strong>磁贴系统</strong> 可自定义的图标磁贴（Font Awesome 图标库 / 本地上传图片 / Emoji），支持拖拽排序、右键编辑删除、长按进入编辑模式</li>
-                        <li><strong>分类页面</strong> 多页面分类管理，可通过空白区域右键新建/删除分类，支持拖拽重排分类顺序，分类名称支持双击重命名</li>
-                        <li><strong>三套主题</strong> 亮色、晨雾、暗色三种视觉主题，右上角齿轮设置或右键菜单中切换</li>
-                        <li><strong>自定义背景</strong> 支持上传图片或视频作为背景，可调节遮罩透明度与视频帧率，一键重置默认背景</li>
-                        <li><strong>专注模式</strong> 偏右上角点击时间进入隐藏态——轻专注保留搜索仅隐藏分类和磁贴，深专注全部收起；再次点击时间恢复</li>
-                        <li><strong>分类按钮行</strong> 可选显隐的水平分类按钮栏，支持快捷切换页面</li>
-                        <li><strong>自动聚焦</strong> 新标签页打开时自动聚焦搜索框（可配置开关），支持 / 键快捷聚焦</li>
-                        <li><strong>分类记忆</strong> 记住上次离开时的分类页面，下次打开自动恢复（可配置开关）</li>
-                        <li><strong>快捷方式调节</strong> 设置面板中可切换磁贴大小（小/标准/大）和每排数量（6/8个）</li>
-                        <li><strong>DevHome 开发工作台</strong> 右键打开独立工作台面板，展示当前焦点项目、Inbox 收件箱、项目列表与资源入口，支持搜索项目、资源和命令</li>
-                        <li><strong>Popup 预览模式</strong> 在工作台面板中内置 Popup 快速操作预览页，可在一处查看书签、历史、下载等核心能力</li>
-                        <li><strong>数据备份</strong> 支持导出全部配置到 JSON 文件备份，支持导入恢复（覆盖当前配置）</li>
-                        <li><strong>键盘快捷键</strong> / 聚焦搜索、Esc 退出/关闭面板、Ctrl+B 打开弹窗、Ctrl+K 打开工作台、Alt+1~5 切换搜索引擎、1~5 切换搜索引擎、Enter 执行搜索、Tab 切换页面</li>
-                        <li><strong>扩展弹窗</strong> 点击工具栏图标或 Ctrl+B 打开 Popup，支持综合搜索、书签管理、历史记录查看、下载管理，带键盘导航</li>
-                        <li><strong>Popup 设置</strong> 弹窗内可配置默认标签页、主题色、书签排序方式、日期折叠分组、删除确认等</li>
-                        <li><strong>浏览器集成</strong> 利用 Chrome storage、bookmarks、history、downloads、tabs API 实现数据同步与功能集成</li>
-                        <li><strong>视觉效果</strong> CSS 自定义属性体系、毛玻璃面板、网格背景、渐变动画过渡、响应式布局支持</li>
-                    </ul>
-                </div>
-        </div>
     </div>
 
     <!-- 隐藏的背景文件上传 -->
@@ -1573,107 +546,32 @@
     <!-- 搜索引擎下拉弹窗（body 直接子级，避免层叠上下文限制）-->
     <div class="engine-dropdown" id="engineDropdown">
         <div class="engine-option" data-engine="google" data-url="https://www.google.com/search?q=">
-            <svg class="dh-icon dh-icon--google dh-icon--md"" role="img"><use href="#dh-icon-google"></use></svg><span>Google</span>
+            <svg class="dh-icon dh-icon--google dh-icon--md" role="img"><use href="#dh-icon-google"></use></svg><span>Google</span>
         </div>
         <div class="engine-option" data-engine="baidu" data-url="https://www.baidu.com/s?wd=">
-            <svg class="dh-icon dh-icon--baidu dh-icon--md"" role="img"><use href="#dh-icon-baidu"></use></svg><span>百度</span>
+            <svg class="dh-icon dh-icon--baidu dh-icon--md" role="img"><use href="#dh-icon-baidu"></use></svg><span>百度</span>
         </div>
         <div class="engine-option" data-engine="bing" data-url="https://www.bing.com/search?q=">
-            <svg class="dh-icon dh-icon--bing dh-icon--md"" role="img"><use href="#dh-icon-bing"></use></svg><span>Bing</span>
+            <svg class="dh-icon dh-icon--bing dh-icon--md" role="img"><use href="#dh-icon-bing"></use></svg><span>Bing</span>
         </div>
         <div class="engine-option" data-engine="duckduckgo" data-url="https://duckduckgo.com/?q=">
-            <svg class="dh-icon dh-icon--duckduckgo dh-icon--md"" role="img"><use href="#dh-icon-duckduckgo"></use></svg><span>DuckDuckGo</span>
+            <svg class="dh-icon dh-icon--duckduckgo dh-icon--md" role="img"><use href="#dh-icon-duckduckgo"></use></svg><span>DuckDuckGo</span>
         </div>
         <div class="engine-option" data-engine="yahoo" data-url="https://search.yahoo.com/search?p=">
-            <svg class="dh-icon dh-icon--yahoo dh-icon--md"" role="img"><use href="#dh-icon-yahoo"></use></svg><span>Yahoo</span>
+            <svg class="dh-icon dh-icon--yahoo dh-icon--md" role="img"><use href="#dh-icon-yahoo"></use></svg><span>Yahoo</span>
+        </div>
+        <div class="engine-option" data-engine="yandex" data-url="https://ya.ru/search/?text=">
+            <svg class="dh-icon dh-icon--yandex dh-icon--md" role="img"><use href="#dh-icon-yandex"></use></svg><span>Yandex</span>
+        </div>
+        <div class="engine-option" data-engine="gamer520" data-url="https://www.gamer520.com/?s=">
+            <svg class="dh-icon dh-icon--gamer520 dh-icon--md" role="img"><use href="#dh-icon-gamer520"></use></svg><span>Gamer520</span>
+        </div>
+        <div class="engine-option" data-engine="linuxdo" data-url="https://linux.do/search?q=">
+            <svg class="dh-icon dh-icon--linuxdo dh-icon--md" role="img"><use href="#dh-icon-linuxdo"></use></svg><span>Linux.do</span>
         </div>
     </div>
 
-    <!-- Shadcn/ui 依赖：React 18 + Tailwind base + 组件编译产物 -->
-    <link rel="stylesheet" href="css/tailwind-base.css">
-    <link rel="stylesheet" href="css/minimal-global.css">
-    <script src="js/lib/react.production.min.js" defer></script>
-    <script src="js/lib/react-dom.production.min.js" defer></script>
-    <script src="js/ui-components/button.js" defer></script>
-    <script src="js/ui-components/dialog.js" defer></script>
-    <script src="js/ui-components/confirm-dialog.js" defer></script>
-    <!-- React 交互式数据看板（替代原生统计卡片） -->
-    <script src="js/ui-components/dashboard.js" defer></script>
-    <script src="js/ui-components/toast.js" defer></script>
-    <script src="js/ui-components/prompt-dialog.js" defer></script>
-    <script src="js/ui-components/tile-form-dialog.js" defer></script>
-    <script src="js/ui-components/changelog-dialog.js" defer></script>
-    <script src="js/shadcn-dialogs.js" defer></script>
 
-    <!-- v2 外部依赖：marked.js（Markdown 渲染） + dayjs（日期处理） -->
-    <script src="js/lib/marked.min.js" defer></script>
-    <script src="js/lib/dayjs.min.js" defer></script>
-
-    <script src="js/secrets.js" defer></script>
-    <script src="js/icons.js" defer></script>
-    <script src="js/config.js" defer></script>
-    <script src="js/logger.js" defer></script>
-    <script src="js/storage.js" defer></script>
-    <script src="js/storageV2.js" defer></script>
-    <script src="js/dataService.js" defer></script>
-    <script src="js/fileConfig.js" defer></script>
-    <script src="js/state.js" defer></script>
-    <script src="js/utils.js" defer></script>
-    <script src="js/quotes.js" defer></script>
-    <script src="js/weather.js" defer></script>
-    <script src="js/dailyGreetingCard.js" defer></script>
-    <script src="js/proxyManager.js" defer></script>
-    <script src="js/favicon.js" defer></script>
-    <script src="js/theme-manager.js" defer></script>
-    <script src="js/bgManager.js" defer></script>
-    <script src="js/pageManager.js" defer></script>
-    <script src="js/linkOpener.js" defer></script>
-    <script src="js/tiles.js" defer></script>
-    <script src="js/categoryUI.js" defer></script>
-    <!-- UI 子模块（右键菜单 → 设置面板 → 磁贴编辑器） -->
-    <script src="js/ui/_context-menu.js" defer></script>
-    <script src="js/ui/_settings-panel.js" defer></script>
-    <script src="js/ui/_tile-editor.js" defer></script>
-    <!-- UI 编排入口 -->
-    <script src="js/ui.js" defer></script>
-    <script src="js/search.js" defer></script>
-    <!-- Tiptap 富文本编辑器（ProseMirror 内核 + StarterKit 扩展） -->
-    <script src="js/tiptap-bundle.js" defer></script>
-    <!-- notes 子模块（按依赖顺序：CRUD → 笔记本 → 捕获 → 视图 → 编辑器 → 筛选器） -->
-    <script src="js/notes/_notes-crud.js" defer></script>
-    <script src="js/notes/_notes-notebook.js" defer></script>
-    <script src="js/notes/_notes-capture.js" defer></script>
-    <script src="js/notes/_notes-view.js" defer></script>
-    <script src="js/notes/_notes-editor.js" defer></script>
-    <script src="js/notes/_notes-filter.js" defer></script>
-    <!-- notes 编排入口（聚合 notesManager API） -->
-    <script src="js/notes.js" defer></script>
-    <script src="js/export.js" defer></script>
-    <script src="js/workbench.js" defer></script>
-    <!-- workbench 子模块（按依赖顺序：先任务后关联） -->
-    <script src="js/workbench_private/_quadrant-tasks.js" defer></script>
-    <script src="js/workbench_private/_notes-workbench.js" defer></script>
-    <script src="js/workbench_private/_pomodoro.js" defer></script>
-    <script src="js/workbench_private/_calendar.js" defer></script>
-    <script src="js/workbench_private/_dashboard.js" defer></script>
-    <!-- 事件模块：按领域拆分，events.js 负责编排调用 -->
-    <script src="js/events/category-events.js" defer></script>
-    <script src="js/events/notebook-events.js" defer></script>
-    <script src="js/events/toolbar-events.js" defer></script>
-    <script src="js/events/quadrant-events.js" defer></script>
-    <script src="js/events/calendar-events.js" defer></script>
-    <script src="js/events/pomodoro-events.js" defer></script>
-    <script src="js/events/filter-events.js" defer></script>
-    <script src="js/events/settings-events.js" defer></script>
-    <script src="js/events/search-events.js" defer></script>
-    <script src="js/events/global-events.js" defer></script>
-    <script src="js/events/misc-events.js" defer></script>
-    <script src="js/events.js" defer></script>
-    <script src="js/wallpaper.js" defer></script>
-    <script src="js/main.js" defer></script>
-    <script src="js/matrix-bg.js"></script>
-
-    <!-- React 应用挂载点 -->
-    <div id="reactToastRoot"></div>
+  <script src="dist/index.js"></script>
 </body>
 </html>

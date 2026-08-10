@@ -1,17 +1,39 @@
 /* ============================================
-   DevHome Workbench — 统一 UI 组件样式层
-   
+   Thrilled — 统一 UI 组件样式层
+
    职责：所有弹窗、输入框、按钮等交互组件的统一基础样式。
    React/Shadcn 与原生 DOM 组件共享同一套 CSS 变量与基础样式。
-   
+
+   【框架使用声明】
+   本文件为纯原生 CSS，不依赖任何运行时 CSS 框架（无 Tailwind / vanilla-extract / Emotion）。
+   - 样式体系：原生 CSS + Semantic Token（--color-* / --radius-* / --shadow-*，见 tokens.css）
+   - 能力型第三方库（非样式框架，仅特定场景使用）：
+       · Tiptap   — 笔记富文本编辑器（js/tiptap-bundle.js，必要）
+       · marked   — AI 回复 Markdown 渲染（js/lib/marked.min.js，必要）
+       · dayjs    — 相对时间格式化（js/lib/dayjs.min.js，轻量可选）
+       · React/Shadcn — 仅遗留弹窗场景（js/ui-components/*，正在逐步替换）
+   - 新 UI 一律使用本文件 .ui-* 原生组件，禁止新增依赖 React/Shadcn 的组件。
+   - Shadcn → 原生对照：见下方各组件注释「替代 ShadcnXxx」。
+
    使用方式：在 index.html 中于 base.css 之后、模块 CSS 之前引入。
+   ============================================ */
+
+/* ============================================
+   弹窗规范（重要）
+   【禁止使用浏览器原生弹窗】alert() / confirm() / prompt() 一律不允许出现在业务代码中。
+   原生弹窗阻塞线程、破坏主题视觉一致性、无键盘规范，必须改用符合本样式体系的弹窗：
+   - 确认类 → ns.showConfirm(message, opts) → Promise<boolean>（内部使用 ShadcnDialog，兜底原生仅作降级）
+   - 输入类 → ns.showPrompt(message, opts)  → Promise<string|null>
+   - 提示类 → ns.showToast(message, type)    自动消失通知；带操作按钮用 ns.showActionToast(...)
+   - 自定义内容 → ns.createModal(title, bodyHTML, footerHTML, opts) 或直接使用下方 .ui-overlay + .ui-dialog 结构
+   - 键盘支持：Enter 确认 / Esc 取消；焦点圈闭（打开聚焦关闭按钮，关闭后还原焦点）
    ============================================ */
 
 /* ===== 统一弹窗遮罩层 ===== */
 .ui-overlay {
     position: fixed;
     inset: 0;
-    z-index: 2800;
+    z-index: 3200;
     background: rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
@@ -40,6 +62,61 @@
     color: var(--color-text);
     margin: 0 0 8px 0;
 }
+
+/* 弹窗头部（标题 + 关闭按钮）— 替代 ShadcnDialogHeader / DialogClose */
+.ui-dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 12px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--color-border);
+}
+.ui-dialog-close {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    flex-shrink: 0;
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+.ui-dialog-close:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text);
+}
+
+/* 确认弹窗（图标 + 标题 + 居中按钮）— 替代 ShadcnConfirmDialog / ShadcnPromptDialog */
+.ui-dialog--confirm {
+    width: min(90vw, 360px);
+    padding: 24px;
+    text-align: center;
+}
+.ui-dialog--confirm .ui-dialog-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 12px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.ui-dialog--confirm .ui-dialog-icon svg { width: 24px; height: 24px; }
+.ui-dialog--confirm .ui-dialog-icon.is-info { background: var(--color-accent-bg-12); color: var(--color-accent); }
+.ui-dialog--confirm .ui-dialog-icon.is-warning { background: var(--color-warning); color: var(--color-text-inverse); }
+.ui-dialog--confirm .ui-dialog-icon.is-danger { background: var(--color-danger-bg-12); color: var(--color-danger); }
+.ui-dialog--confirm .ui-dialog-title { margin-bottom: 8px; }
+.ui-dialog--confirm .ui-dialog-body { margin: 0 0 16px; }
+.ui-dialog--confirm .ui-dialog-footer { border-top: none; justify-content: center; }
 
 .ui-dialog-body {
     margin: 8px 0 12px 0;
@@ -78,6 +155,32 @@
 .ui-input::placeholder {
     color: var(--color-text-tertiary);
 }
+
+/* ===== 统一多行文本域 — 替代 ShadcnTextarea ===== */
+.ui-textarea {
+    width: 100%;
+    min-height: 88px;
+    max-height: 260px;
+    padding: 10px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    background: var(--color-input-bg);
+    color: var(--color-text);
+    font-size: 14px;
+    font-family: var(--font-sans);
+    line-height: 1.6;
+    resize: vertical;
+    outline: none;
+    box-sizing: border-box;
+    margin: 8px 0;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.ui-textarea:hover { border-color: var(--color-border-hover); }
+.ui-textarea:focus {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px var(--color-accent-disabled);
+}
+.ui-textarea::placeholder { color: var(--color-text-tertiary); }
 
 /* ===== 统一按钮 ===== */
 .ui-btn {
@@ -132,6 +235,40 @@
 .ui-btn-ghost:hover {
     background: var(--color-surface-hover);
     color: var(--color-text);
+}
+
+/* 尺寸：小按钮 / 纯图标按钮 — 替代 ShadcnButton size="sm|icon" */
+.ui-btn-sm {
+    padding: 6px 12px;
+    font-size: 12px;
+    border-radius: 8px;
+}
+.ui-btn-icon {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 8px;
+}
+
+/* 加载态（前置旋转 spinner，用 ::after 实现）— 替代 ShadcnButton loading */
+.ui-btn-loading {
+    position: relative;
+    color: transparent !important;
+    pointer-events: none;
+}
+.ui-btn-loading::after {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: uiSpin 0.7s linear infinite;
+}
+.ui-btn-loading.ui-btn-primary::after { color: var(--color-text-inverse); }
+@keyframes uiSpin {
+    to { transform: rotate(360deg); }
 }
 
 /* ===== 统一面包屑/徽章/标签 ===== */
@@ -247,3 +384,43 @@
     from { opacity: 1; }
     to { opacity: 0; transform: translateY(-8px); }
 }
+
+/* ===== 开关（Switch / Toggle）— 替代 ShadcnSwitch ===== */
+.ui-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.ui-switch input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    overflow: hidden;
+}
+.ui-switch-track {
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    background: var(--color-surface-muted);
+    transition: background var(--transition-normal);
+}
+.ui-switch-track::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--color-bg-elevated);
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition-normal);
+}
+.ui-switch input:checked + .ui-switch-track { background: var(--color-accent); }
+.ui-switch input:checked + .ui-switch-track::after { transform: translateX(20px); }
+.ui-switch input:focus-visible + .ui-switch-track { box-shadow: 0 0 0 3px var(--color-accent-disabled); }
+.ui-switch.is-disabled { opacity: 0.5; cursor: not-allowed; }

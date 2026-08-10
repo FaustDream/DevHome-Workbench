@@ -1,0 +1,147 @@
+---
+description: 开发结构规范（Chrome 扩展 MV3 · TypeScript）。定义目录结构、运行上下文边界、进程间消息协议（判别联合）、Native Host 协议、存储与权限模型。新增/重构模块、修改消息协议、调整目录结构、变更存储或权限时必须遵守。
+globs: src/**,lib/**,manifest.json,tsconfig.json
+alwaysApply: false
+enabled: true
+---
+
+# 开发结构规范（通用 Chrome 扩展 MV3 · TypeScript）
+
+> 本规范定义**目录结构、运行上下文边界、进程间通信协议、存储与权限模型**。
+> 两条技能（`clerk-chrome-extension-patterns`、`typescript-advanced-types`）的核心思想已沉淀为下方约束，**详见技能原文，不在此复述**。
+
+---
+
+## 1. 总体架构（MV3 分层）
+
+```
+目标网页 (Tab) ──executeScript(纯JSON)──► Popup/Options (UI)
+                                          │ runtime message
+                                          ▼
+                                  Background Service Worker（单一可信源）
+                                          │ connectNative
+                                          ▼
+                                  Native Host (Rust/其他)
+```
+
+**关键约束**
+- Popup 与页面**永远不直接共享对象引用**；通过 `chrome.scripting.executeScript` 注入纯函数，返回值必须是可序列化 JSON（`JSON.parse(JSON.stringify(result))` 必须成立）。
+- Popup 与 Background 之间的通信**只走 `chrome.runtime` 消息通道**，消息体必须符合第 3 节类型。
+- 所有"扩展级状态"（CRX 身份、连接句柄、用户会话令牌）**只存于 Background + `chrome.storage`**，不得缓存进 Popup 闭包后跨事件存活。
+- Native Host 通信**只经 Background**，Popup 不直接 `connectNative`。
+
+---
+
+## 2. 目录结构规范
+
+> 推荐仓库结构，所有代码使用 TypeScript（`.ts` / `.tsx`）。
+
+```
+chrome-extension/
+├── manifest.json                 # MV3 清单（建议用 key 锁定 CRX ID）
+├── tsconfig.json                 # strict + noUncheckedIndexedAccess
+├── native-host/                  # Native Messaging Host（可选，独立 crate/项目）
+├── src/
+│   ├── background/               # Service Worker（单一可信源）
+│   │   ├── background.ts         # 入口：onMessage/onConnectNative 路由
+│   │   ├── host-bridge.ts        # Native Host 连接生命周期（connectNative）
+│   │   └── session.ts            # 扩展身份/会话令牌持有（不出 Background）
+│   ├── pages/                    # 扩展内 UI 页面
+│   │   ├── popup.ts / popup.html
+│   │   ├── options.ts / options.html
+│   │   └── injected/             # executeScript 注入的纯函数（仅返回 JSON）
+│   │       └── probe.ts
+│   ├── shared/                   # 跨上下文共享（必须可序列化、无副作用）
+│   │   ├── messages.ts           # 判别联合：所有 runtime 消息类型
+│   │   ├── protocol.ts           # Native Host 协议类型
+│   │   └── types.ts              # 品牌类型 / 字面量联合 / 公共类型
+│   └── styles/                   # 样式文件（vanilla-extract *.css.ts 或纯 CSS）
+├── lib/                          # 纯逻辑工具（无 Chrome API 依赖，便于单测）
+└── tests/                        # vitest（与 lib/ 一一对应）
+```
+
+**模块边界（红线）**
+- `src/shared/**` 只能 import 类型与纯函数，禁止引用 `chrome.*`。
+- `lib/**` 禁止引用 `chrome.*`（保持纯逻辑、可在 Node 下单测）。Chrome API 调用集中在 `src/background`、`src/pages`。
+- `src/pages/injected/**` 不得 import `chrome.runtime`、不得持有状态；必须是 `(input) => JSON` 的纯函数。
+
+---
+
+## 3. 进程间通信协议（TypeScript 判别联合）
+
+所有 `runtime.sendMessage` / `onMessage` 的消息体必须符合 `src/shared/messages.ts` 的判别联合。**新增消息类型=新增联合成员，禁止用裸 `any` 包消息。**
+
+**约束**
+- 消息 `type` 必须为 `const` 字面量（发消息处用 `type: "HOST_PING" as const` 或字面量推断）。
+- 接收侧 switch 必须覆盖全部联合成员；未覆盖在编译期由 `never` 兜底。
+- `payload`/`value` 内不得含函数、类实例、`Map`/`Set`（不可序列化）。
+
+> 完整代码示例（判别联合定义、类型守卫、穷尽 `route()`、`Brand`/`Result<T,E>` 封装）见 `references/protocol-examples.md`。
+
+---
+
+## 4. 存储规范（chrome.storage）
+
+- 持久状态用 `chrome.storage.local`（本地，无同步需求）。敏感值（会话令牌）**只存 Background 内存 + 必要时 `session` 存储**，不得写入 `local` 明文。
+- 存储 schema 用 `zod` 或手写运行时校验后入库，读取即校验。
+- 键命名：`namespace:entity:id`，如 `session:meta:<id>`、`host:status`。
+- 监听 `chrome.storage.onChanged` 做跨页面（Popup/Options）一致性的唯一可信通道。
+
+---
+
+## 5. Native Host 通信协议
+
+Background 通过 `chrome.runtime.connectNative("<native_host_name>")` 建立长连接，双方以**换行分隔的 JSON** 互发。协议类型统一在 `src/shared/protocol.ts`。
+
+**约束**
+- 每条 `NativeRequest` 带 `id`，`RESPONSE` 回带同 `id` 以支持并发。
+- Native Host 侧解析失败必须回 `{ kind: "RESPONSE", id, result: { ok:false, error:"..." } }`，不得静默断开。
+- `lib/services/native-host.ts` 仅封装"发请求 + 按 id 收集响应"的逻辑，不含 UI。
+
+> 完整 `NativeCommand` / `NativeRequest` / `NativeEvent` 类型定义见 `references/protocol-examples.md`。
+
+---
+
+## 6. 配置与权限模型（MV3 安全）
+
+- `manifest.json` 用 `key` 字段锁定 CRX ID（避免 Native Host 白名单漂移）。
+- 权限遵循最小集：`scripting`、`activeTab`、`tabs`、`storage`、`nativeMessaging`；不申明 `host_permissions` 全站通配，注入改用 `activeTab` + `chrome.scripting`。
+- `manifest_version: 3`；Background 必须为 Service Worker（`background.service_worker`），不得用 `background.scripts`。
+- 任何密钥（API Key、令牌）**不得进前端包体**；统一经 Native Host / Background 代理。
+
+---
+
+## 7. TypeScript 工程配置
+
+`tsconfig.json` 必须开启 `strict` + `noUncheckedIndexedAccess`；ESLint 用 `typescript-eslint` strict，其中 `no-explicit-any` / `no-floating-promises` / `consistent-type-imports` 为 error，并限制 `enum`（用 `as const` 字面量联合替代）。
+
+> 完整 `tsconfig.json` 与 ESLint 配置见 `references/tsconfig-reference.md`。
+
+---
+
+## 8. 校验与运行时类型守卫
+
+跨上下文边界（消息、storage、Native 响应）必须做**运行时校验**，不能只靠编译期类型：
+- 用 `zod` 定义 schema，`safeParse` 后在守卫里收窄（示例见 `references/protocol-examples.md`）。
+- `lib/**` 纯函数对外部输入一律先做类型守卫，再进入业务逻辑。
+- 所有 `executeScript` 注入函数返回对象先 `JSON.parse(JSON.stringify(x))` 自检可序列化。
+
+---
+
+## 9. 测试与构建
+
+- `lib/**` 用 `vitest` 单测（无 Chrome 依赖）；`src/shared/messages.ts`、`protocol.ts` 的判别联合必须有穷尽性测试。
+- 构建产出映射到 `manifest.json` 的 `background.service_worker` 与 `action.default_popup` 等路径。
+- CI 必须跑：`tsc --noEmit`、`eslint`、`vitest run`。
+
+---
+
+## 10. 反模式红线
+
+> 反模式红线为**全局唯一权威源**，见 `rules/global/RULE.mdc` 第 5 节「模块边界红线」。**本文件不重复罗列**，避免多份维护不一致。简言之：
+- ❌ 消息协议用 `any` / 字符串 `type` 无字面量约束
+- ❌ Popup 直连 Native Host 或缓存跨打开周期会话
+- ❌ `injected` 脚本引用 `chrome.runtime` 或保留闭包状态
+- ❌ `lib/**` / `shared/**` 引用 `chrome.*`
+- ❌ 把密钥写进前端代码或 `chrome.storage.local` 明文
+- ❌ 跨进程传递函数 / DOM / `Map` / `Set`

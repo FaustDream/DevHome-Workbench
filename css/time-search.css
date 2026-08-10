@@ -449,3 +449,127 @@
     user-select: none;
     cursor: default;
 }
+
+/* ===== 每日问候区域（左上角固定，无缝融合至页面背景） ===== */
+.dh-greeting-area {
+    position: fixed;
+    top: 32px;
+    left: 36px;
+    z-index: 10;
+    user-select: none;
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-width: 460px;
+    /* F4 视图缩放 */
+    transform: scale(var(--view-scale, 1));
+    transform-origin: top left;
+}
+
+.dh-greeting-top-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.dh-greeting-date {
+    font-size: calc(var(--font-size-sm) * var(--font-size-multiplier, 1));
+    font-weight: 500;
+    color: var(--font-color-override, var(--color-text-secondary));
+    letter-spacing: 0.02em;
+    text-shadow: var(--text-shadow-strength, none);
+    white-space: nowrap;
+}
+
+/* 天气徽标（与日期同行） */
+.dh-weather-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 10px;
+    border-radius: var(--radius-full);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+.dh-weather-badge:hover {
+    background: var(--color-surface-hover);
+    border-color: var(--color-border-active);
+}
+.dh-weather-badge.reloading {
+    animation: greetingPulse 0.4s ease;
+}
+
+.dh-weather-icon {
+    font-size: 15px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+}
+.dh-weather-temp {
+    font-weight: 600;
+    color: var(--font-color-override, var(--color-text));
+}
+.dh-weather-desc {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-tertiary);
+}
+
+.dh-greeting-main {
+    font-size: calc(var(--font-size-2xl) * var(--font-size-multiplier, 1));
+    font-weight: 600;
+    color: var(--font-color-override, var(--color-text));
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    text-shadow: var(--text-shadow-strength, none);
+    animation: greetingFadeIn 0.6s ease;
+}
+
+.dh-encourage-row {
+    margin-top: 2px;
+}
+
+.dh-encourage-text {
+    display: inline-block;
+    font-size: calc(var(--font-size-sm) * var(--font-size-multiplier, 1));
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    line-height: 1.5;
+    padding-left: 10px;
+    border-left: 2px solid var(--color-border);
+    transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+.dh-encourage-text:hover {
+    border-left-color: var(--color-accent);
+    color: var(--color-text-secondary);
+}
+.dh-encourage-text.reloading {
+    animation: greetingPulse 0.4s ease;
+}
+
+@keyframes greetingPulse {
+    0%   { opacity: 1; }
+    50%  { opacity: 0.4; }
+    100% { opacity: 1; }
+}
+
+/* 响应式：窄屏缩小问候区域 */
+@media (max-width: 720px) {
+    .dh-greeting-area {
+        top: 16px;
+        left: 16px;
+        max-width: 90vw;
+    }
+    .dh-greeting-main {
+        font-size: calc(var(--font-size-xl) * var(--font-size-multiplier, 1));
+    }
+    .dh-greeting-top-row {
+        gap: 8px;
+    }
+}

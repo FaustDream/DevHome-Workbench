@@ -1,0 +1,139 @@
+---
+description: 编码规范（TypeScript · Chrome 扩展）。命名、类型安全、异常体系、日志体系、魔法值禁止、外部输入校验等每行代码必须遵守的约定。
+alwaysApply: true
+enabled: true
+---
+
+# 编码规范
+
+> 项目使用 **TypeScript** 开发。本规范用于提醒开发（含 AI 协作）时在编码过程中应遵守的约定。
+> 全局约束（UTF-8、PowerShell 7、相对路径、测试目录等）见根目录 `.codebuddy/rules/global/`；Chrome 扩展架构见 `.codebuddy/skills/clerk-chrome-extension-patterns`；TypeScript 高级类型用法见 `.codebuddy/skills/typescript-advanced-types`。
+
+## 一、通用编码约定
+
+- **文件编码**：统一 UTF-8。
+- **命名**：标识符保持英文；变量/函数用 `camelCase`；常量用 `UPPER_SNAKE_CASE`；类、类型、接口、枚举用 `PascalCase`；文件名沿用 `kebab-case` 或 `camelCase`，保持项目内一致。
+- **模块与目录**：遵循职责单一原则，避免超大文件。
+- **文件代码长度**：单文件代码行数建议不超过 **500 行**（原则上不超过 **800 行**）；单个函数/方法建议不超过 **80 行**。超出时应按职责拆分（类型定义、常量、业务逻辑、工具函数分离到不同文件或段落），避免单文件臃肿导致可读性与可维护性下降。自动生成代码、测试夹具文件可酌情放宽。
+- **注释与文档**：公共 API（导出函数/类/类型）加 JSDoc；默认简体中文注释（技术术语可用英文）；复杂或不直观的逻辑必须加说明。
+- **禁止魔法值**：禁止在代码中直接出现未解释的常量（魔法值，如裸数字、裸字符串、裸状态码、裸 path）。必须提取为具名常量、`enum` 或常量对象，并加注释说明其含义与取值范围（如状态码、重试次数、超时时间、接口 path、功能开关等）。
+- **外部输入必须做空值检查**：所有外部输入（URL/查询参数、`chrome.runtime` 消息体、接口返回、配置项、DOM 取值、JSON 解析结果等）在用于业务逻辑前必须先做空值与类型校验，校验未通过不得向下传递。
+- **错误处理（异常体系）**：必须使用统一异常错误体系处理错误，**禁止直接 `throw` 非业务异常**（如裸 `throw "xxx"`、未分类的裸 `Error`）。业务异常应继承自项目统一错误基类（如 `BusinessError`），携带错误码与上下文；只允许在体系内抛出已分类异常。不得静默吞掉异常；所有外部调用（`chrome.*`、网络 `fetch`、Native Host 通信）必须处理失败分支。项目统一错误模块见 `src/lib/errors.ts`。
+- **日志体系**：必须使用统一日志入口，禁止 `console.*` 散落。尽量输出与当前操作相关的上下文日志（入参摘要、关键分支、耗时等），确保抛出异常时能通过日志结合错误码/上下文定位问题。但**不得无限输出日志**：禁止在循环/高频路径中无节制打日志；禁止将敏感信息（密钥、令牌、完整请求体）写入日志；生产环境遵循日志级别控制。项目统一日志模块见 `src/lib/logger.ts`。
+- **测试**：测试相关文件统一放在 `tests/` 目录下（全局规则）。
+
+## 二、TypeScript 开发规范
+
+### 2.1 工程配置
+
+- `tsconfig.json` 开启 `strict: true`（含 `strictNullChecks`、`noImplicitAny`、`strictFunctionTypes` 等）。
+- 所有代码使用 `.ts`；含 JSX 的 UI 组件使用 `.tsx`。
+- 引入 `@types/chrome` 以获得 `chrome.*` API 的类型定义。
+- 编译产物与源码分离，不把 `.js` 产物提交进 `src/`、`lib/` 等源码目录。
+
+### 2.2 类型安全原则
+
+1. **优先 `unknown` 而非 `any`**：外部输入（`chrome.runtime` 消息、`fetch` 响应、JSON 解析）先作为 `unknown`，再用类型守卫收窄。
+2. **`interface` 用于对象形状**，`type` 用于联合类型、交叉类型与复杂类型运算。
+3. **善用类型推断**：函数返回值、局部变量尽量交给编译器推断，仅在公开 API 边界显式标注。
+4. **创建可复用辅助类型**：项目级公共类型（消息协议、配置结构）集中到 `src/types` 或模块内 `types.ts`。
+5. **使用 `const` 断言保留字面量类型**：`as const` 用于枚举式常量、配置表。
+6. **避免类型断言（`as`）**：优先用类型守卫（type guard）或断言函数（assertion function）做运行时验证。
+7. **开启 strict 模式**：编译期拦截空值、未初始化等隐患。
+8. **复杂类型加 JSDoc**：对泛型参数、条件分支加注释说明意图。
+9. **为关键类型写类型测试**：可在 `tests/` 内用 `vitest` 的 `expectTypeOf` / `assertType` 验证类型契约。
+
+### 2.3 高级类型用法（确有收益处使用，避免过度设计）
+
+- **泛型 Generics**：用于可复用函数/类（消息处理器、API 客户端），必要时用 `extends` 约束（如 `T extends Record<string, unknown>`）。
+- **条件类型 Conditional Types**：根据输入推导输出类型（`ReturnType`、`Awaited` 风格推导）。
+- **映射类型 Mapped Types**：批量变换属性（`Partial` / `Readonly` / `Pick` / `Omit` 之外可自定义 key remapping）。
+- **模板字面量类型 Template Literal Types**：类型安全的事件名、路径、消息类型标识（如 `` `on${Capitalize<EventName>}` ``）。
+- **内置工具类型 Utility Types**：`Partial` / `Required` / `Pick` / `Omit` / `Record` / `Exclude` / `Extract` / `NonNullable` 等优先于手写。
+
+详细模式与示例（类型安全事件发射器、API Client、可辨识联合、表单校验、Builder、DeepReadonly 等）参见技能 `.codebuddy/skills/typescript-advanced-types/references/details.md`。
+
+### 2.4 推荐模式
+
+- **可辨识联合（Discriminated Unions）**：异步状态 `AsyncState<T> = { status: "success"; data: T } | { status: "error"; error: string } | { status: "loading" }`，用 `switch` 收窄。
+- **类型守卫 / 断言函数**：`function isX(v: unknown): v is X { ... }` 与 `function assertX(v: unknown): asserts v is X { ... }`，处理 Native Host、message 通道等边界。
+- **类型安全消息协议**：将 `chrome.runtime.sendMessage` / `onMessage` 的消息体定义为带 `type` 字段的联合类型，避免 `any` 透传。
+
+### 2.5 命名与风格
+
+- 类型、接口、枚举用 `PascalCase`；类型变量用 `T` / `U` / `V` 或语义化名称（如 `TConfig`）。
+- 公共类型导出用清晰名词，避免缩写（如 `Msg` → `Message`）。
+- 类型文件命名：`types.ts` 或 `*.types.ts`，与实现同目录或集中到 `src/types`。
+
+### 2.6 常见陷阱（避免）
+
+1. 滥用 `any`，消解 TS 价值。
+2. 忽略 strict null 检查，导致运行时空值错误。
+3. 类型过于复杂（深层嵌套条件类型）拖慢编译并降低可读性。
+4. 不使用可辨识联合，错失类型收窄机会。
+5. 遗漏 `readonly`，造成非预期变更。
+6. 循环类型引用导致编译错误。
+7. 未处理边界情况（空数组、null、未定义字段）。
+8. 使用魔法值（裸常量直接写死在代码中）。
+9. 外部输入未做空值/类型校验即进入业务逻辑。
+10. 直接 `throw` 非业务异常、绕过统一异常错误体系。
+11. 无节制打日志（循环/高频路径狂打、打印敏感信息）。
+12. 单文件/单函数过长（超过行数软上限仍未拆分）。
+
+## 三、Chrome 扩展专项
+
+- 使用 `@types/chrome` 提供的 `chrome.*` API 类型，不手写 `any` 包装。
+- 消息通信类型化：`sendMessage` / `onMessage` 的消息体定义为带 `type` 字段的联合类型。
+- `manifest.json` 字段通过类型或 schema 校验，避免出现拼写/结构错误。
+
+## 四、与仓库技能联动
+
+- 实现复杂类型逻辑、可复用类型工具时，先加载技能 `typescript-advanced-types` 并按其 SOP 执行。
+- Chrome 扩展架构与 UI 相关遵循技能 `clerk-chrome-extension-patterns`、`chrome-ext-ui-design-system`。
+
+## 五、项目反模式红线（Anti-Pattern Rules）
+
+> 本目录下 `anti-pattern-rules.md` 为**项目专属反模式编码规则**，由代码审查（`wiki/13-重构改造建议.md`）识别的问题转化而来，每条含「问题描述 / 适用范围 / 违反示例 / 合规写法」。**编码与代码审查时必须逐条对照**，防止同类问题在本项目重现。
+
+### 5.1 必守红线（P0，违反即打回）
+
+| 编号 | 红线 | 一句话 |
+|------|------|--------|
+| R1 | 模块/命名空间挂载必须有类型契约 | 导出的模块接口必须有显式类型（`interface`/`type`），禁止 `any` 透传 |
+| R2 | 数据必须单一权威存储，禁止双写 | 同一数据只保留一个写入路径（本项目以 `v2/*` 为准） |
+| R3 | 消息协议必须判别联合 + 运行时校验 | `onMessage` switch 需带 type 联合 + 守卫 + default 兜底 |
+| R6 | 统计/计数写入必须幂等 | 禁止「当日无记录即 +1」，用「最后打卡日期」判定 |
+| R7 | SW 状态必须持久化，禁止只存内存 | 已处理标记写入 `v2/*`，SW 唤醒后恢复 |
+| R16 | 密钥禁止明文入常规存储 | API Key 走 `src/shared/secrets.ts` 隔离，不进业务配置/导出 |
+| R17 | 不可信内容渲染必须净化 | Markdown/剪藏回填统一 sanitize（升级 DOMPurify） |
+| R18 | 外部 URL 请求必须校验目标 | 域名格式/白名单校验 + 仅 https + 超时 |
+| R20 | 外部输入必须先校验再进入业务逻辑 | JSON/消息体/DOM 取值先结构校验 |
+
+### 5.2 一般红线（P1，代码审查重点）
+
+| 编号 | 红线 | 一句话 |
+|------|------|--------|
+| R4 | 日志必须统一入口 | 禁止 `console.*` 散落，统一 `lib/logger.ts` |
+| R5 | 事件绑定必须幂等 | 绑定前检查标记，document 监听单次注册 |
+| R8 | 禁止 execCommand | 剪贴板用 `navigator.clipboard` |
+| R9 | 常量与映射表单一来源 | 天气映射/QUADRANTS 等只定义一次 |
+| R10 | 大列表禁止全量 innerHTML 重建 | 用 DocumentFragment / 局部更新 |
+| R11 | 高频写入必须防抖/分键 | 自动保存等路径防抖合并 |
+| R12 | 高频路径禁止日志与重复 DOM 查询 | 节流日志 + `ns.dom` 缓存 |
+| R13 | 单文件/单函数超限必须拆分 | 遵循「复用性/领域独立性/物理邻近」铁律 |
+| R14 | 禁止魔法值 | 阈值/超时/状态码入 `src/shared/constants.ts` |
+| R15 | 弹窗能力单一实现 | 统一 `showConfirm/Prompt/Toast` 单一入口，Shadcn 仅重组件 |
+| R19 | 存储键/消息 type/通知 id 常量集中 | 键名、alarm 名、通知 id 入常量表 |
+
+### 5.3 审查 CheckList（提交前自查）
+
+- [ ] 新增/修改的存储键、消息 type、通知 id、alarm 名是否已在常量表（R19/R14）？
+- [ ] 新增导出模块是否带显式类型契约、无 `any` 透传（R1）？
+- [ ] 是否引入第二处写入同一数据的代码（R2）？
+- [ ] `chrome.runtime` 消息是否带校验守卫 + default 兜底（R3）？
+- [ ] 计数器/统计逻辑是否有幂等标志（R6）？
+- [ ] SW 中是否有新的纯内存状态需持久化（R7）？
+- [ ] 是否有 `console.*`、`execCommand`、裸魔法值新增（R4/R8/R14）？
+- [ ] 是否有大列表全量 innerHTML、无防抖写入（R10/R11）？
+- [ ] 渲染是否接入不可信内容且未净化（R17）？
+- [ ] 新增外部请求是否校验目标 + 超时（R18）？

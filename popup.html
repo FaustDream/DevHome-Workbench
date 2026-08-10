@@ -1,155 +1,34 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevHome Workbench</title>
-    <!-- 引用主题 Semantic Token 体系，popup 自动响应浅色/深色模式 -->
-    <link id="theme-default" rel="stylesheet" href="css/themes/default.css">
-    <link rel="stylesheet" href="css/tokens.css">
-    <link rel="stylesheet" href="css/base.css">
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            width: 380px;
-            min-height: 200px;
-            background: var(--color-bg);
-            color: var(--color-text);
-            font-family: var(--font-sans);
-            font-size: 14px;
-            padding: var(--spacing-md);
-        }
-        .popup-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: var(--spacing-md);
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--color-border);
-        }
-        .popup-header h1 {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--color-text);
-        }
-        .popup-header .version {
-            font-size: var(--font-size-xs);
-            color: var(--color-text-tertiary);
-        }
-        .popup-search {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-sm);
-            background: var(--color-input-bg);
-            color: var(--color-text);
-            font-size: 14px;
-            font-family: inherit;
-            outline: none;
-            margin-bottom: 12px;
-        }
-        .popup-search:focus {
-            border-color: var(--color-accent);
-            box-shadow: 0 0 0 3px var(--color-accent-disabled);
-        }
-        .popup-actions {
-            display: flex;
-            gap: var(--spacing-sm);
-            flex-wrap: wrap;
-        }
-        .popup-btn {
-            flex: 1;
-            min-width: 80px;
-            padding: var(--spacing-sm) 14px;
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-sm);
-            background: var(--color-surface-subtle);
-            color: var(--color-text-secondary);
-            font-size: var(--font-size-sm);
-            font-family: inherit;
-            cursor: pointer;
-            text-align: center;
-            transition: all 0.15s ease;
-            text-decoration: none;
-            display: inline-block;
-        }
-        .popup-btn:hover {
-            background: var(--color-surface-hover);
-            border-color: var(--color-accent);
-            color: var(--color-accent);
-        }
-        .popup-btn.primary {
-            background: var(--color-accent);
-            border-color: var(--color-accent);
-            color: var(--color-text-inverse);
-            font-weight: 600;
-        }
-        .popup-btn.primary:hover {
-            opacity: 0.9;
-        }
-        .popup-shortcuts {
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid var(--color-border);
-        }
-        .popup-shortcuts .kbd-group {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
-        .popup-shortcuts kbd {
-            padding: 2px var(--spacing-sm);
-            border: 1px solid var(--color-border);
-            border-radius: 4px;
-            background: var(--color-kbd-bg);
-            font-size: var(--font-size-xs);
-            color: var(--color-text-tertiary);
-            font-family: var(--font-mono);
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thrilled</title>
+  <link rel="stylesheet" href="css/tokens.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/features.css" />
+  <link rel="stylesheet" href="css/themes/default.css" />
 </head>
-<body>
-    <div class="popup-header">
-        <h1>DevHome Workbench</h1>
-        <span class="version">v2.19.5</span>
+<body class="popup-body">
+  <header class="popup-header">
+    <span class="popup-logo">D</span>
+    <div class="popup-title-wrap">
+      <h1 class="popup-title">Thrilled</h1>
+      <span id="version" class="popup-version"></span>
     </div>
+  </header>
 
-    <input type="text" class="popup-search" id="popupSearch"
-           placeholder="搜索或输入网址... (Enter 在新标签页搜索)"
-           autofocus>
+  <nav class="popup-actions" aria-label="快捷入口">
+    <button id="openIndex" class="popup-action" type="button">
+      <span class="popup-action-icon">⌂</span>
+      <span>打开新标签页</span>
+    </button>
+    <button id="openSidePanel" class="popup-action" type="button">
+      <span class="popup-action-icon">▤</span>
+      <span>打开侧边栏</span>
+    </button>
+  </nav>
 
-    <div class="popup-actions">
-        <button class="popup-btn primary" id="btnNewTab">打开工作台</button>
-        <button class="popup-btn" id="btnSidePanel">侧边栏</button>
-    </div>
-
-    <div class="popup-shortcuts">
-        <div class="kbd-group">
-            <kbd>Ctrl+B</kbd> 弹窗 &nbsp;
-            <kbd>Ctrl+Shift+S</kbd> 剪藏 &nbsp;
-            <kbd>Ctrl+Shift+D</kbd> 侧边栏
-        </div>
-    </div>
-
-    <script>
-        var searchInput = document.getElementById('popupSearch');
-        searchInput.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter' && searchInput.value.trim()) {
-                var query = searchInput.value.trim();
-                var url = query.includes('.') && !query.includes(' ')
-                    ? (query.startsWith('http') ? query : 'https://' + query)
-                    : 'https://www.google.com/search?q=' + encodeURIComponent(query);
-                chrome.tabs.create({ url: url });
-            }
-        });
-
-        document.getElementById('btnNewTab').addEventListener('click', function () {
-            chrome.tabs.create({ url: 'index.html' });
-        });
-
-        document.getElementById('btnSidePanel').addEventListener('click', function () {
-            chrome.sidePanel.open({ windowId: chrome.windows.WINDOW_ID_CURRENT });
-        });
-    </script>
+  <script src="dist/popup.js"></script>
 </body>
 </html>

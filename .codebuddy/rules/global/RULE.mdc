@@ -1,0 +1,118 @@
+---
+description: 项目全局规则（Chrome 扩展 MV3 · TypeScript）。环境约束、技术栈、模块边界红线、编码核心约束、提交规范与 AI 协作约定。所有任务常驻加载（alwaysApply）。
+alwaysApply: true
+enabled: true
+---
+
+# 项目全局规则 — Chrome 扩展开发规范（Manifest V3 · TypeScript）
+
+> 本规则为项目**全局约束**（alwaysApply 常驻加载），定义跨所有任务的基础约定。具体规范见 `.codebuddy/rules/` 下的项目规则，任务编排见 `.codebuddy/skills/` 下的技能。
+
+---
+
+## 1. 环境与工具约束
+
+- **文件编码**：统一 UTF-8。
+- **Shell**：PowerShell 7（非 Windows PowerShell 5）。
+- **文件路径**：优先使用相对路径（AI 涉及文件读写时尽量使用绝对路径）。
+- **默认语言**：简体中文；技术术语可用英文；代码标识符保持英文。
+
+---
+
+## 2. 项目技术栈
+
+| 维度 | 技术选型 | 说明 |
+| --- | --- | --- |
+| **语言** | TypeScript（开启 `strict: true`） | 全部代码使用 `.ts` / `.tsx` |
+| **扩展框架** | Chrome Manifest V3 | 构建产物指向 `manifest.json` |
+| **UI 样式** | **vanilla-extract**（零运行时 CSS-in-TS） | 编译为静态 `.css`，不引入 antd/Tailwind/Emotion 等运行时方案 |
+| **UI 模板** | 原生 HTML + ESM JS | 无前端框架依赖 |
+| **Native Host** | Rust 或其他语言 | Native Messaging 通信桥 |
+| **存储** | `chrome.storage.local` / `session` | 配置/状态持久化 |
+| **测试** | Vitest | 测试文件统一放 `tests/` |
+| **运行时校验** | `zod` | 跨上下文消息边界的 `safeParse` 校验 |
+
+---
+
+## 3. 规则与技能体系（自动触发）
+
+| 优先级 | 位置 | 内容概要 | 触发方式 |
+| --- | --- | --- | --- |
+| **P0** | `.codebuddy/rules/global/`（本规则） | 环境、技术栈、模块边界红线、编码核心约束、提交规范 | **常驻加载（alwaysApply）** |
+| **P0** | `.codebuddy/rules/coding-standards/` | 命名、类型安全、异常体系、日志、魔法值禁止 | **常驻加载（alwaysApply）** |
+| **P0** | `.codebuddy/rules/context-memory/` | 上下文记忆写入规范（依托 `.codebuddy/memory/`） | **常驻加载（alwaysApply）** |
+| **P0** | `.codebuddy/rules/architecture/` | MV3 分层架构、模块边界、消息协议、存储规范 | 新增/重构模块时自动引入 |
+| **P0** | `.codebuddy/rules/dev-workflow/` | 全链路开发流程、反模式红线清单、提交流程 | 开发任务时自动引入 |
+| **P0** | `.codebuddy/skills/coding-standard-workflow/` | **全流程编码工作流编排** — 自动串联全部规则、子 Skill、上下文记忆 | **写代码/开发功能时优先加载** |
+| P1 | `.codebuddy/skills/chrome-ext-ui-design-system/` | UI Token、组件模式、build-setup | UI 页面开发 |
+| P1 | `.codebuddy/skills/typescript-advanced-types/` | 泛型、条件类型、映射类型、品牌类型 | 复杂类型逻辑 |
+| P2 | `.codebuddy/skills/clerk-chrome-extension-patterns/` | Clerk 鉴权集成、syncHost、createClerkClient | 鉴权相关开发 |
+
+项目知识库（架构、平台适配、协议 spec 等）位于 `.codebuddy/wiki/`，需要了解项目背景时优先查阅。
+
+---
+
+## 4. 开发流程速览
+
+```
+需求分析 → 加载对应 Skill → 规则自动生效 → 代码实现 → 自测 → 上下文记忆 → 提交 → 发布
+```
+
+- **加载 Skill**：按任务类型加载（写代码/开发功能优先→**`coding-standard-workflow`**，UI→`chrome-ext-ui-design-system`，类型→`typescript-advanced-types`）。
+- **中大型改动**：需在 `.codebuddy/memory/` 当日日志中记录变更方案与决策。
+- **自测通过方可提交**（`tsc --noEmit` + `npm test`，详见 `dev-workflow` 规则）。
+- **上下文记忆**：修改完成后按 `context-memory` 规则在 `.codebuddy/memory/` 下记录记忆条目。
+
+---
+
+## 5. 模块边界红线（不得违反）
+
+| 行为 | 后果 |
+| --- | --- |
+| ❌ `lib/**` 引用 `chrome.*` | 破坏可测性 |
+| ❌ `src/shared/**` 引用 `chrome.*` | 注入脚本不可复用 |
+| ❌ `src/pages/injected/**` 引用 `chrome.runtime` 或保留闭包状态 | 必须是纯函数 |
+| ❌ Popup 直连 Native Host | 应经 Background 代理 |
+| ❌ 跨进程传递函数/DOM/Map/Set | 仅可传可序列化 JSON |
+| ❌ 消息协议中使用 `any` 或裸字符串 `type` | 必须用判别联合 |
+
+---
+
+## 6. 编码核心约束
+
+- **类型安全**：`unknown` 优于 `any`；外部输入用类型守卫收窄后使用。
+- **禁止魔法值**：所有裸数字/字符串/状态码提为具名常量。
+- **外部输入必校验**：消息体、DOM 取值、JSON 解析 → 先 `zod.safeParse` 或类型守卫。
+- **错误处理**：使用统一异常体系（`src/lib/errors.ts`），禁止 `throw "xxx"`。
+- **日志体系**：使用统一日志入口（`src/lib/logger.ts`），禁止 `console.*` 散落；禁止高频路径无节制打日志。
+- **UI 样式**：禁止写死色值字面量（引用 `vars.*`）；禁止引入运行时 CSS 方案；图标用内联 SVG。
+- **测试**：`lib/` 纯逻辑必须有单元测试；消息协议必须有穷尽性测试；测试文件放 `tests/`。
+
+---
+
+## 7. 提交规范
+
+```
+<type>(<scope>): <简短描述>
+```
+
+- type: `feat` / `fix` / `refactor` / `style` / `test` / `docs` / `chore` / `perf`
+- 提交前必须通过语法检查 + 单元测试
+- 遵循最小 diff、单一职责
+
+---
+
+## 8. 与 AI 协作约定
+
+1. **加载对应 Skill**：按任务类型加载。**写代码/开发功能优先加载 `coding-standard-workflow`**（自动串联全部规则、子 Skill、上下文记忆）；UI→`chrome-ext-ui-design-system`；类型→`typescript-advanced-types`。
+2. **规则自动生效**：本全局规则、`coding-standards`、`context-memory` 常驻加载；`architecture`、`dev-workflow` 由 CodeBuddy 按任务相关性自动引入，也可 `@` 手动引用。
+3. **遵循模块边界**：AI 不得生成违反红线的代码。
+4. **AI 注释约定**：类型体操（推导、判别式逻辑）写在 `*.ts` 内并由注释解释意图，不要把 AI 的长篇推理塞进内联代码。
+5. **生成代码规范**：AI 生成的代码必须符合编码规范全部条款（无魔法值、外部输入校验、统一错误体系等）。
+6. **执行上下文记忆**：修改完成后，按 `context-memory` 规则在 `.codebuddy/memory/` 下记录记忆条目（关键决策、变更范围、待办问题）。
+7. **完成后输出使用清单**：任务回应收尾时，AI 必须**明确列出本次实际生效 / 使用的规则与技能清单**，便于用户审计上下文来源与积分消耗。清单包含：
+   - **常驻规则（alwaysApply）**：本全局规则、`coding-standards`、`context-memory`（每轮已自动注入，列出以明示）。
+   - **按需引入的规则**：本次任务实际读取 / 引用的 `architecture`、`dev-workflow` 等 P0 规则（未命中则不列）。
+   - **加载的技能**：本次任务实际调用的 Skill（如 `coding-standard-workflow`、`chrome-ext-ui-design-system`、`typescript-advanced-types`、`clerk-chrome-extension-patterns`）。
+   - **未使用的排除项**：若 `design-to-code` 等场景规则 / 非相关 MCP 被本项目显式禁用或本次未触发，可一行注明「未使用」，避免用户误以为被加载。
+   - **格式**：在回复末尾以简短列表呈现（标题如「本次使用的规则与技能」），不展开全文，仅列名称与一句话用途。

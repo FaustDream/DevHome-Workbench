@@ -1,0 +1,75 @@
+/* ============================================
+   Thrilled - popup.css（页面骨架样式）
+   
+   仅含 popup 特有布局样式；通用组件（按钮/弹窗/Toast/输入框等）
+   直接复用 references/components.css 中的 .ui-* 组件，无需重复定义。
+   所有颜色/间距/字号引用 Token 变量（--color-* / --spacing-* / --radius-*）。
+   ============================================ */
+
+/* popup 容器：窄面板宽度 */
+.container {
+    width: 340px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+}
+
+/* 顶栏 */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.header-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--color-text);
+    letter-spacing: -0.01em;
+}
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* 状态卡片 */
+.card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+}
+.card-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.card-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text);
+}
+.card-text {
+    margin: 6px 0 0;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+}
+
+/* 操作区 */
+.actions {
+    display: flex;
+    gap: 8px;
+}
+.actions .ui-btn {
+    flex: 1;
+}
+
+/* 响应式：窄屏缩减 */
+@media (max-width: 360px) {
+    .container { width: 100%; padding: 10px; }
+}

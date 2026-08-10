@@ -1,0 +1,83 @@
+{
+  "skill_name": "clerk-chrome-extension-patterns",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我需要用 @clerk/chrome-extension 的 ClerkProvider 包裹我的 Chrome 扩展 popup。要让重定向 URL 在 Chrome 扩展内生效，它需要哪些属性？",
+      "expected_output": "ClerkProvider 需要 publishableKey，以及使用 chrome.runtime.getURL 构造的重定向 URL",
+      "scaffold": "chrome-ext-basic-auth",
+      "expectations": [
+        "从 @clerk/chrome-extension（而非 @clerk/react 或 @clerk/nextjs）导入 ClerkProvider",
+        "向 ClerkProvider 传入 publishableKey 属性",
+        "重定向 URL 属性（afterSignOutUrl、signInFallbackRedirectUrl 等）使用 chrome.runtime.getURL",
+        "未登录状态使用 SignInButton 或 SignUpButton",
+        "已登录状态使用 UserButton 或用户资料组件"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "我的 background service worker 需要向我的服务器发起带鉴权的 API 调用。它如何获取当前用户的会话 token？",
+      "expected_output": "使用 @clerk/chrome-extension/client 的 createClerkClient，并设置 background: true 以获取新鲜的会话 token",
+      "scaffold": "chrome-ext-basic-auth",
+      "expectations": [
+        "从 @clerk/chrome-extension/client（而非 @clerk/chrome-extension）导入 createClerkClient",
+        "调用 createClerkClient 时传入 background: true 选项",
+        "调用 getToken() 前检查 clerk.session",
+        "从 chrome.runtime.onMessage 监听器返回 true，以保持连接对异步 sendResponse 开放",
+        "说明 background: true 会在 popup 关闭时保持会话新鲜"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "我的内容脚本需要在向页面注入 UI 浮层前检查用户是否已登录。如何在内容脚本中访问 Clerk 认证状态？",
+      "expected_output": "内容脚本使用消息传递，向 background service worker 请求认证状态；后者使用 createClerkClient 获取认证状态",
+      "scaffold": "chrome-ext-basic-auth",
+      "expectations": [
+        "说明由于源限制，内容脚本中不能直接使用 Clerk",
+        "使用 chrome.runtime.sendMessage 向 background service worker 请求认证状态",
+        "后台脚本使用 @clerk/chrome-extension/client 的 createClerkClient",
+        "展示如何根据响应条件性地注入 UI",
+        "在后台监听器中使用 return true 处理消息传递的异步特性"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "我的 Chrome 扩展需要让用户用 Google OAuth 登录。该如何设置？",
+      "expected_output": "OAuth 在 popup 或 side panel 中不直接支持——必须使用 syncHost 将认证委托给配套 web app",
+      "scaffold": "chrome-ext-basic-auth",
+      "expectations": [
+        "明确指出 OAuth 在 popup 或 side panel 中不受支持",
+        "说明 OAuth 需要来自身份提供方的重定向，而 Chrome 扩展不支持",
+        "引入 syncHost 方案，将认证委托给配套 web app",
+        "提及添加 PLASMO_PUBLIC_CLERK_SYNC_HOST 环境变量",
+        "提及向 ClerkProvider 添加 syncHost 属性"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "我希望扩展能在用户在 web app 登录时自动感知，而无需他们与 popup 交互。怎么做？",
+      "expected_output": "使用 syncHost 属性 + host_permissions + 通过 Clerk API 将扩展 ID 加入 allowed_origins",
+      "scaffold": "chrome-ext-basic-auth",
+      "expectations": [
+        "引入 syncHost 特性，将认证状态从 web app 同步到扩展",
+        "展示开发与生产环境的 PLASMO_PUBLIC_CLERK_SYNC_HOST 环境变量配置",
+        "展示向 ClerkProvider 添加 syncHost 属性",
+        "展示 package.json manifest 中的 host_permissions 配置",
+        "展示通过 Clerk API 添加扩展 ID 到 allowed_origins 的 curl 命令"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "每次重新构建 Chrome 扩展，扩展 ID 都会变化，导致 Clerk 认证失效，因为重定向 URL 不匹配。如何修复？",
+      "expected_output": "通过在 manifest 中提供一致的 key 固定扩展 ID，然后用稳定的 chrome-extension:// URL 更新 Clerk Dashboard",
+      "scaffold": "chrome-ext-basic-auth",
+      "expectations": [
+        "说明扩展 ID 变化是因为 Chrome 从 key 字段派生它",
+        "展示如何通过 .env.chrome 与 package.json 提供一致的 key 来固定扩展 ID",
+        "提及 CRX_PUBLIC_KEY 环境变量与 manifest 的 key 字段",
+        "提及用稳定的 chrome-extension:// URL 更新 Clerk Dashboard 或 allowed_origins",
+        "说明 Plasmo Itero 可生成密钥对"
+      ]
+    }
+  ]
+}
