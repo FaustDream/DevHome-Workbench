@@ -82,8 +82,8 @@ export const pageManager = {
   },
 
   /** 追加新页 */
-  addPage(pagesData: readonly TilePage[]): TilePage[] {
-    return pagesData.concat([{ name: `第${pagesData.length + 1}页`, tiles: [] }]);
+  addPage(pagesData: readonly TilePage[], name?: string): TilePage[] {
+    return pagesData.concat([{ name: name ?? `第${pagesData.length + 1}页`, tiles: [] }]);
   },
 
   /**

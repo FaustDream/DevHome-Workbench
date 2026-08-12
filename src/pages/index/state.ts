@@ -91,8 +91,6 @@ const DOM_REGISTRY: Readonly<Record<string, string>> = {
   '#dateDisplay': '日期显示',
   '#engineDropdown': '引擎下拉',
   '#settingsPanel': '设置面板',
-  '#contextMenu': '磁贴右键菜单',
-  '#blankContextMenu': '空白右键菜单',
 };
 
 /**

@@ -19,6 +19,8 @@ import { state, dom } from './state';
 import { localStorageService } from './storage';
 import { tileManager } from './tiles';
 import { icon } from './icons';
+import { showPrompt, showConfirm } from './dialogs';
+import { showPopover } from './popover';
 
 const MODULE = 'category-ui';
 
@@ -50,30 +52,74 @@ export function renderCatRow(): void {
     del.innerHTML = icon('x', 'dh-icon--sm');
     del.addEventListener('click', (e) => {
       e.stopPropagation();
-      void tileManager.removePageAt(idx).then(() => refreshCatRowIfVisible());
+      void confirmDeleteCategory(idx, name);
     });
     del.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         e.stopPropagation();
-        void tileManager.removePageAt(idx).then(() => refreshCatRowIfVisible());
+        void confirmDeleteCategory(idx, name);
       }
     });
     btn.appendChild(del);
 
+    // 更多按钮（⋮ — hover 时显示，点击弹出 Popover）
+    const moreBtn = document.createElement('button');
+    moreBtn.type = 'button';
+    moreBtn.className = 'cat-more-btn';
+    moreBtn.setAttribute('aria-label', `更多操作 - ${name}`);
+    moreBtn.innerHTML = '⋮';
+    moreBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showPopover(moreBtn, [
+        {
+          label: '重命名',
+          icon: icon('edit'),
+          action: () => void renameCategoryAt(idx),
+        },
+        {
+          label: '删除',
+          icon: icon('trash'),
+          danger: true,
+          action: () => void confirmDeleteCategory(idx, name),
+        },
+      ]);
+    });
+    btn.appendChild(moreBtn);
+
+    // 左键点击切页
     btn.addEventListener('click', (e) => {
-      if ((e.target as HTMLElement).closest('.cat-delete-btn') !== null) return;
+      if ((e.target as HTMLElement).closest('.cat-delete-btn, .cat-more-btn') !== null) return;
       void changePageWithAnimation(idx);
     });
-    btn.addEventListener('contextmenu', (e) => {
+
+    // 双击分类名 → 重命名
+    label.addEventListener('dblclick', (e) => {
       e.preventDefault();
-      setCategoryEditMode(!state.categoryEditMode);
+      e.stopPropagation();
+      void renameCategoryAt(idx);
     });
+
     fragment.appendChild(btn);
   });
 
+  // 分类行末尾的 + 按钮（快速新建分类）
+  const addBtn = document.createElement('button');
+  addBtn.type = 'button';
+  addBtn.className = 'cat-add-btn';
+  addBtn.title = '新建分类';
+  addBtn.setAttribute('aria-label', '新建分类');
+  addBtn.innerHTML = icon('plus', 'dh-icon--sm');
+  addBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    void promptAddPage();
+  });
+  fragment.appendChild(addBtn);
+
   row.replaceChildren(fragment);
   row.classList.toggle('visible', state.settings.catRow);
+  // 关键修复：根据编辑模式切换 CSS 类（控制删除按钮显隐）
+  row.classList.toggle('category-edit-mode', state.categoryEditMode);
 }
 
 /** 刷新分类行（若开启） */
@@ -97,9 +143,48 @@ export function applyCategoryButtonMode(enabled: boolean, save = true): void {
   }
 }
 
-/** 切换分类编辑模式（显示删除按钮）并重渲染 */
-export function setCategoryEditMode(active: boolean): void {
-  state.categoryEditMode = active;
+/** 双击分类名 → 弹出重命名弹窗 */
+async function renameCategoryAt(idx: number): Promise<void> {
+  const oldName = state.pageNames[idx];
+  if (oldName === undefined) return;
+  const values = await showPrompt('重命名分类', {
+    title: '重命名分类',
+    fields: [
+      { name: 'name', label: '分类名称', defaultValue: oldName },
+    ],
+    confirmText: '保存',
+  });
+  if (values === null) return;
+  const v = values as { name?: string };
+  const newName = (v.name ?? '').trim();
+  if (newName === '' || newName === oldName) return;
+  await tileManager.renamePageAt(idx, newName);
+  renderCatRow();
+}
+
+/** 确认后删除分类（R15 统一 showConfirm，至少保留 1 页） */
+async function confirmDeleteCategory(idx: number, name: string): Promise<void> {
+  if (state.totalPages <= 1) {
+    await showConfirm('至少需要保留一个分类页面。', { title: '无法删除' });
+    return;
+  }
+  const ok = await showConfirm(`确定要删除分类「${name}」吗？\n分类中的磁贴将被清空。`, { title: '删除分类', danger: true });
+  if (!ok) return;
+  await tileManager.removePageAt(idx);
+  refreshCatRowIfVisible();
+}
+
+/** 弹出新建分类弹窗，确认后创建空分类 */
+async function promptAddPage(): Promise<void> {
+  const name = await showPrompt('新建分类', {
+    title: '新建分类',
+    placeholder: '分类名称',
+    confirmText: '创建',
+  });
+  if (name === null) return;
+  const trimmed = (name as string).trim();
+  if (trimmed === '') return;
+  await tileManager.addNewPage(trimmed);
   renderCatRow();
 }
 

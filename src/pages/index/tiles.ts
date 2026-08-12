@@ -9,14 +9,17 @@
  */
 
 import { LS_KEYS, TILE_LONG_PRESS_MS } from '../../shared/constants';
-import type { Tile } from '../../shared/types';
 import { isTileId } from '../../shared/guards';
+import type { Tile } from '../../shared/types';
 import { localStorageService } from './storage';
 import { dom, state } from './state';
 import { pageManager } from './page-manager';
 import { loadFavicon } from './favicon';
 import { openUrl } from './link-opener';
 import { icon, ICONS } from './icons';
+import { showPrompt, showConfirm } from './dialogs';
+import type { PromptFieldValues } from './dialogs';
+import { showPopover } from './popover';
 
 /* ================= 数据操作 ================= */
 
@@ -92,8 +95,8 @@ export const tileManager = {
   },
 
   /** 新增空白页 */
-  async addNewPage(): Promise<void> {
-    const nextPages = pageManager.addPage(state.pagesData);
+  async addNewPage(name?: string): Promise<void> {
+    const nextPages = pageManager.addPage(state.pagesData, name);
     state.pagesData = nextPages;
     state.pageNames = nextPages.map((p) => p.name);
     state.totalPages = nextPages.length;
@@ -116,6 +119,14 @@ export const tileManager = {
   /** 重命名当前页 */
   async renameCurrentPage(newName: string): Promise<void> {
     const nextPages = pageManager.renamePage(state.pagesData, state.currentPage, newName);
+    state.pagesData = nextPages;
+    state.pageNames = nextPages.map((p) => p.name);
+    await pageManager.save(nextPages);
+  },
+
+  /** 重命名指定索引的页面 */
+  async renamePageAt(idx: number, newName: string): Promise<void> {
+    const nextPages = pageManager.renamePage(state.pagesData, idx, newName);
     state.pagesData = nextPages;
     state.pageNames = nextPages.map((p) => p.name);
     await pageManager.save(nextPages);
@@ -175,6 +186,60 @@ export const tileManager = {
   },
 };
 
+/* ================= 添加磁贴弹窗 ================= */
+
+/** 弹出添加磁贴表单（label + url），确认后写入当前分类 */
+async function promptAddTile(): Promise<void> {
+  const values = await showPrompt('添加新磁贴', {
+    title: '添加新磁贴',
+    fields: [
+      { name: 'label', label: '磁贴名称', placeholder: '例如：GitHub' },
+      { name: 'url', label: '网址', placeholder: 'https://...', defaultValue: 'https://' },
+    ],
+    confirmText: '添加',
+  });
+  if (values === null) return;
+  const v = values as PromptFieldValues;
+  const url = (v.url ?? '').trim();
+  if (url === '' || url === 'https://') return;
+  const label = (v.label ?? '').trim() || url;
+  tileManager.add({
+    id: `tile_${Date.now()}` as Tile['id'],
+    label,
+    url,
+    type: 'favicon',
+    icon: '',
+    color: '#4a9eff',
+    position: state.currentTiles.length,
+    imageData: '',
+  });
+}
+
+/** 确认后删除磁贴（R15 统一 showConfirm） */
+async function confirmDeleteTile(tile: Tile): Promise<void> {
+  const ok = await showConfirm(`确定要删除「${tile.label}」吗？`, { title: '删除磁贴', danger: true });
+  if (!ok) return;
+  tileManager.remove(tile.id);
+}
+
+/** 编辑磁贴（弹出 Prompt 修改名称+URL） */
+async function editTile(tile: Tile): Promise<void> {
+  const values = await showPrompt('编辑磁贴', {
+    title: '编辑磁贴',
+    fields: [
+      { name: 'label', label: '磁贴名称', defaultValue: tile.label },
+      { name: 'url', label: '网址', defaultValue: tile.url },
+    ],
+    confirmText: '保存',
+  });
+  if (values === null) return;
+  const v = values as PromptFieldValues;
+  const label = (v.label ?? '').trim();
+  const url = (v.url ?? '').trim();
+  if (url === '') return;
+  tileManager.update(tile.id, { label: label || tile.label, url });
+}
+
 /* ================= 渲染 ================= */
 
 /**
@@ -188,6 +253,19 @@ export function renderTiles(container: HTMLElement | null = dom.get('#tilesConta
   for (const tile of state.currentTiles) {
     fragment.appendChild(buildTileElement(tile));
   }
+
+  // 磁贴网格末尾的 + 按钮（快速添加磁贴到当前分类）
+  const addBtn = document.createElement('button');
+  addBtn.type = 'button';
+  addBtn.className = 'add-tile-btn';
+  addBtn.title = '添加新磁贴';
+  addBtn.setAttribute('aria-label', '添加新磁贴到当前分类');
+  addBtn.innerHTML = icon('plus', 'dh-icon--md');
+  addBtn.addEventListener('click', () => {
+    void promptAddTile();
+  });
+  fragment.appendChild(addBtn);
+
   container.replaceChildren(fragment);
   container.classList.toggle('tile-edit-mode', state.tileEditMode);
 
@@ -215,34 +293,6 @@ export function renderTiles(container: HTMLElement | null = dom.get('#tilesConta
       hidden.style.display = 'none';
     }
   }
-}
-
-/** 空状态添加快捷方式（自定义弹窗，R15） */
-async function promptAddTile(): Promise<void> {
-  const { showPrompt } = await import('./dialogs');
-  const values = await showPrompt('添加新磁贴', {
-    title: '添加新磁贴',
-    fields: [
-      { name: 'label', label: '磁贴名称', placeholder: '例如：GitHub' },
-      { name: 'url', label: '网址', placeholder: 'https://...', defaultValue: 'https://' },
-    ],
-    confirmText: '添加',
-  });
-  if (values === null) return;
-  const v = values as { label?: string; url?: string };
-  const url = (v.url ?? '').trim();
-  if (url === '' || url === 'https://') return;
-  const label = (v.label ?? '').trim();
-  tileManager.add({
-    id: `tile_${Date.now()}_${Math.floor(Math.random() * 1000)}` as Tile['id'],
-    label: label || url,
-    url,
-    type: 'favicon',
-    icon: '',
-    color: '#4a9eff',
-    position: state.currentTiles.length,
-    imageData: '',
-  });
 }
 
 /** 构建单个磁贴 DOM（对齐原版） */
@@ -278,7 +328,7 @@ export function buildTileElement(tile: Tile): HTMLAnchorElement {
   label.className = 'tile-label';
   label.textContent = tile.label;
 
-  // 删除按钮（编辑模式）
+  // 删除按钮（tile-edit-mode 下可见，单击立即删除）
   const deleteBtn = document.createElement('span');
   deleteBtn.className = 'tile-delete-btn';
   deleteBtn.setAttribute('role', 'button');
@@ -289,19 +339,44 @@ export function buildTileElement(tile: Tile): HTMLAnchorElement {
   deleteBtn.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    tileManager.remove(tile.id);
+    void confirmDeleteTile(tile);
   });
   deleteBtn.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       e.stopPropagation();
-      tileManager.remove(tile.id);
+      void confirmDeleteTile(tile);
     }
+  });
+
+  // 更多按钮（⋮ — hover 时显示，点击弹出 Popover）
+  const moreBtn = document.createElement('button');
+  moreBtn.type = 'button';
+  moreBtn.className = 'tile-more-btn';
+  moreBtn.setAttribute('aria-label', `更多操作 - ${tile.label}`);
+  moreBtn.innerHTML = '⋮';
+  moreBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    showPopover(moreBtn, [
+      {
+        label: '编辑',
+        icon: icon('edit'),
+        action: () => void editTile(tile),
+      },
+      {
+        label: '删除',
+        icon: icon('trash'),
+        danger: true,
+        action: () => void confirmDeleteTile(tile),
+      },
+    ]);
   });
 
   a.appendChild(iconWrap);
   a.appendChild(label);
   a.appendChild(deleteBtn);
+  a.appendChild(moreBtn);
 
   a.addEventListener('click', (e) => {
     if (state.dragMoved || state.preventNextTileClick || state.tileEditMode) {
@@ -375,25 +450,10 @@ function getClientPos(e: Event): { x: number; y: number } {
 export function attachTileDrag(container: HTMLElement): void {
   container.addEventListener('mousedown', onPointerDown);
   container.addEventListener('touchstart', onPointerDown, { passive: false });
-  container.addEventListener('contextmenu', onTileContextMenu);
   document.addEventListener('mousemove', onPointerMove);
   document.addEventListener('mouseup', onPointerUp);
   document.addEventListener('touchmove', onPointerMove, { passive: false });
   document.addEventListener('touchend', onPointerUp);
-}
-
-function onTileContextMenu(e: Event): void {
-  const target = (e.target as HTMLElement).closest<HTMLElement>('.tile');
-  if (target === null) return;
-  const id = target.dataset.tileId;
-  if (id === undefined || !isTileId(id)) return;
-  e.preventDefault();
-  // 交给 context-menu 模块处理
-  const detail = new CustomEvent('dh:tile-contextmenu', {
-    detail: { tileId: id, clientX: (e as MouseEvent).clientX, clientY: (e as MouseEvent).clientY },
-    bubbles: true,
-  });
-  target.dispatchEvent(detail);
 }
 
 function onPointerDown(e: Event): void {

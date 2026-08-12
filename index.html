@@ -152,69 +152,7 @@
         <div class="hidden-message" id="hiddenMessage" style="display:none;"></div>
         </section>
 
-    <!-- 磁贴右键菜单 -->
-    <div class="context-menu" id="contextMenu">
-        <div class="context-menu-item" data-action="edit">
-            <svg class="dh-icon dh-icon--edit dh-icon--md" role="img"><use href="#dh-icon-edit"></use></svg><span>编辑磁贴</span>
-        </div>
-        <div class="context-menu-item" data-action="delete">
-            <svg class="dh-icon dh-icon--trash dh-icon--md" role="img"><use href="#dh-icon-trash"></use></svg><span>删除磁贴</span>
-        </div>
-        <div class="context-menu-divider"></div>
-        <div class="context-menu-item ctx-daily-only" data-action="refreshImage">
-            <svg class="dh-icon dh-icon--refresh dh-icon--md" role="img"><use href="#dh-icon-refresh"></use></svg><span>重新获取图片</span>
-        </div>
-        <div class="context-menu-item ctx-daily-only" data-action="uploadImage">
-            <svg class="dh-icon dh-icon--image dh-icon--md" role="img"><use href="#dh-icon-image"></use></svg><span>上传图片</span>
-        </div>
-        <div class="context-menu-divider"></div>
-        <div class="context-menu-item" data-action="upload">
-            <svg class="dh-icon dh-icon--upload dh-icon--md" role="img"><use href="#dh-icon-upload"></use></svg><span>上传磁贴</span>
-        </div>
-        <div class="context-menu-divider" id="ctxMoveDivider" style="display:none;"></div>
-        <div class="context-menu-item ctx-has-submenu" id="ctxMoveToItem" data-submenu="move" style="display:none;">
-            <svg class="dh-icon dh-icon--move-folder dh-icon--md" role="img"><use href="#dh-icon-move-folder"></use></svg><span>移动到分类</span>
-            <span class="ctx-sub-arrow dh-icon dh-icon--chevron-right dh-icon--sm" aria-hidden="true"></span>
-        </div>
-        <div class="context-menu-item ctx-has-submenu" id="ctxCopyToItem" data-submenu="copy" style="display:none;">
-            <svg class="dh-icon dh-icon--copy dh-icon--md" role="img"><use href="#dh-icon-copy"></use></svg><span>复制到分类</span>
-            <span class="ctx-sub-arrow dh-icon dh-icon--chevron-right dh-icon--sm" aria-hidden="true"></span>
-        </div>
-    </div>
-
-    <!-- 分类子菜单（移动到/复制到分类时弹出） -->
-    <div class="context-menu ctx-submenu" id="ctxCategorySubMenu"></div>
-
-    <!-- 空白区域右键菜单 -->
-    <div class="context-menu" id="blankContextMenu">
-        <div class="context-menu-item" data-action="refresh">
-            <svg class="dh-icon dh-icon--refresh dh-icon--md" role="img"><use href="#dh-icon-refresh"></use></svg><span>刷新</span>
-            <kbd class="doc-kbd ctx-kbd">F5</kbd>
-        </div>
-        <div class="context-menu-item ctx-daily-only" data-action="addTile">
-            <svg class="dh-icon dh-icon--plus dh-icon--md" role="img"><use href="#dh-icon-plus"></use></svg><span>新添磁贴</span>
-            <kbd class="doc-kbd ctx-kbd">Ctrl+N</kbd>
-        </div>
-        <div class="context-menu-item ctx-daily-only" data-action="addPage">
-            <svg class="dh-icon dh-icon--new-page dh-icon--md" role="img"><use href="#dh-icon-new-page"></use></svg><span>新建分类</span>
-        </div>
-    </div>
-
-    <!-- 编辑器右键菜单（专注模式，已精简：去掉代码块、引用块、B/I/U/标题/颜色，气泡工具栏覆盖） -->
-    <div class="context-menu" id="editorContextMenu">
-
-
-        <div class="context-menu-item" data-editor-action="copy">
-            <span><svg class="dh-icon dh-icon--clipboard dh-icon--md" role="img"><use href="#dh-icon-clipboard"></use></svg> 复制</span><kbd class="doc-kbd ctx-kbd">Ctrl+C</kbd>
-        </div>
-        <div class="context-menu-item" data-editor-action="pasteText">
-            <span><svg class="dh-icon dh-icon--note dh-icon--md" role="img"><use href="#dh-icon-note"></use></svg> 粘贴纯文本</span><kbd class="doc-kbd ctx-kbd">Ctrl+Shift+V</kbd>
-        </div>
-        <div class="context-menu-item" data-editor-action="pasteHtml">
-            <span>📄 粘贴（含格式）</span><kbd class="doc-kbd ctx-kbd">Ctrl+V</kbd>
-        </div>
-    </div>
-
+    <!-- TODO: 右键菜单待重新实现 → 参见 .codebuddy/docs/context-menu-spec.md -->
 
     <!-- 固定设置入口（日常模式下可见） -->
     <button class="settings-gear-btn" id="settingsGearBtn" type="button" title="设置" aria-label="打开设置">

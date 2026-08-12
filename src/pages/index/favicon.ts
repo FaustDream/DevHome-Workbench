@@ -146,7 +146,8 @@ export async function requestFavicon(domain: string): Promise<string | null> {
 /**
  * 加载磁贴 favicon（原版 API 形态：url + img 元素 + 容器 + 标签）
  * - IndexedDB 缓存 → SW 解析（RESOLVE_FAVICON）→ 写缓存
- * - 失败时移除 img 并在容器内显示首字符字母兜底（对齐原版 fallback 体验）
+ * - 失败时尝试 Google favicon 服务直链（仅 https 站点）
+ * - 全部失败显示首字符字母兜底
  */
 export async function loadFavicon(url: string, imgElement: HTMLImageElement, iconWrap: HTMLElement, label: string): Promise<void> {
   const domain = extractDomain(url);
@@ -157,15 +158,44 @@ export async function loadFavicon(url: string, imgElement: HTMLImageElement, ico
   const cached = await getCachedFavicon(domain);
   if (cached !== null) {
     imgElement.src = cached;
+    imgElement.onerror = () => {
+      // 缓存数据可能已损坏，清除并降级
+      void (async () => {
+        const db = await openFaviconDB();
+        if (db !== null) {
+          const tx = db.transaction(FAVICON_STORE, 'readwrite');
+          tx.objectStore(FAVICON_STORE).delete(domain);
+        }
+      })();
+      tryGoogleFaviconFallback(url, domain, imgElement, iconWrap, label);
+    };
     return;
   }
   const dataUrl = await requestFavicon(domain);
   if (dataUrl !== null) {
     imgElement.src = dataUrl;
     void cacheFavicon(domain, dataUrl);
+    imgElement.onerror = () => tryGoogleFaviconFallback(url, domain, imgElement, iconWrap, label);
     return;
   }
-  showLetterFallback(imgElement, iconWrap, label);
+  tryGoogleFaviconFallback(url, domain, imgElement, iconWrap, label);
+}
+
+/** Google favicon 服务直链兜底（仅 https 站点；http 站直走字母降级，节省无效请求） */
+function tryGoogleFaviconFallback(
+  originalUrl: string,
+  domain: string,
+  imgElement: HTMLImageElement,
+  iconWrap: HTMLElement,
+  label: string,
+): void {
+  // http 站点谷歌图标服务不可达，跳过
+  if (originalUrl.startsWith('http://')) {
+    showLetterFallback(imgElement, iconWrap, label);
+    return;
+  }
+  imgElement.src = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=48`;
+  imgElement.onerror = () => showLetterFallback(imgElement, iconWrap, label);
 }
 
 /** 字母兜底：移除 img，容器显示首字符 */

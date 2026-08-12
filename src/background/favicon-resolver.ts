@@ -25,11 +25,18 @@ async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Respons
   }
 }
 
-/** 响应 → dataURL（体积校验） */
+/** 图片 MIME 类型白名单 */
+const IMAGE_MIME_PREFIXES: ReadonlyArray<string> = ['image/', 'application/octet-stream'] as const;
+
+/** 响应 → dataURL（Content-Type + 体积双重校验） */
 async function responseToDataUrl(res: Response): Promise<string | null> {
   if (!res.ok) return null;
+  // 校验 Content-Type：拒绝非图片响应（防止 HTML 404 页面被当图标渲染）
+  const contentType = res.headers.get('content-type') ?? '';
+  const isImage = IMAGE_MIME_PREFIXES.some((prefix) => contentType.startsWith(prefix));
+  if (!isImage) return null;
   const blob = await res.blob();
-  if (blob.size > FAVICON_MAX_BYTES) return null;
+  if (blob.size === 0 || blob.size > FAVICON_MAX_BYTES) return null;
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : null);

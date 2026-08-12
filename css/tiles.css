@@ -48,12 +48,12 @@
     transition: transform 0.08s ease;
 }
 .cat-add-btn {
-    width: 28px;
-    height: 28px;
+    padding: 5px 14px;
     border: 1px dashed var(--color-accent-border-46);
     border-radius: 16px;
     background: var(--color-accent-bg-08);
     color: var(--color-accent);
+    font-size: var(--font-size-sm);
     display: grid;
     place-items: center;
     cursor: pointer;
@@ -371,9 +371,9 @@
 
 /* ===== 添加磁贴按钮 ===== */
 .add-tile-btn {
-    width: var(--shortcut-icon);
-    height: var(--shortcut-icon);
-    border-radius: var(--shortcut-radius);
+    width: 100%;
+    height: var(--shortcut-container);
+    border-radius: var(--tile-radius-override, var(--shortcut-radius));
     background: var(--color-tile-bg);
     border: 2px dashed var(--color-accent-border-46);
     color: var(--color-accent);
@@ -386,6 +386,106 @@
 }
 .add-tile-btn:hover { background: var(--color-accent-bg-18); transform: scale(1.05); }
 .add-tile-btn:active { transform: scale(0.95); }
+
+/* ===== 磁贴更多按钮（⋮ hover 显示） ===== */
+.tile-more-btn {
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    z-index: 2;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: var(--radius-full);
+    background: transparent;
+    color: var(--color-text-tertiary);
+    display: grid;
+    place-items: center;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+}
+.tile:hover .tile-more-btn,
+.tile-more-btn:hover {
+    opacity: 1;
+}
+.tile-more-btn:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text);
+}
+
+/* ===== 分类更多按钮（⋮ hover 显示） ===== */
+.cat-more-btn {
+    width: 20px;
+    height: 20px;
+    border: none;
+    border-radius: var(--radius-full);
+    background: transparent;
+    color: inherit;
+    display: inline-grid;
+    place-items: center;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity var(--transition-fast), background var(--transition-fast);
+    flex-shrink: 0;
+    margin-left: 2px;
+}
+.cat-btn:hover .cat-more-btn,
+.cat-more-btn:hover {
+    opacity: 1;
+}
+.cat-more-btn:hover {
+    background: rgba(255,255,255,0.25);
+}
+
+/* ===== Popover 菜单 ===== */
+.dh-popover {
+    position: fixed;
+    z-index: 3100;
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border-active);
+    border-radius: 12px;
+    min-width: 140px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: var(--shadow-lg);
+    padding: 4px;
+    overflow: hidden;
+}
+.dh-popover-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background var(--transition-fast), color var(--transition-fast);
+    user-select: none;
+}
+.dh-popover-item:hover {
+    background: var(--color-accent-bg-12);
+    color: var(--color-accent);
+}
+.dh-popover-item.danger:hover {
+    background: var(--color-danger-bg-12);
+    color: var(--color-danger);
+}
+.dh-popover-icon {
+    width: 16px;
+    text-align: center;
+    flex-shrink: 0;
+}
+.dh-popover-icon svg {
+    width: 16px;
+    height: 16px;
+    display: block;
+}
 
 /* ===== 磁贴网格响应式断点 ===== */
 @media (max-width: 768px) {

@@ -20,7 +20,6 @@ import { initCountdown } from './countdown';
 import { initDailyGreetingCard } from './daily-greeting';
 import { initWeather } from './weather';
 import { initSettingsPanel } from './settings-panel';
-import { initContextMenus } from './context-menu';
 import { initExport, exportAllData } from './export';
 import { initFileConfig } from './file-config';
 import { initIconHydrate } from './icon-hydrate';
@@ -70,7 +69,6 @@ export async function boot(): Promise<void> {
   initDailyGreetingCard();
   initWeather();
   initSettingsPanel();
-  initContextMenus();
   initExport();
   initFileConfig();
   initIconHydrate();
