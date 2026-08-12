@@ -1,17 +1,17 @@
 /**
- * 新标签页启动入口（对齐原版 main.js boot + 原版 DOM 结构）
+ * 新标签页启动入口
  *
  * Phase 0：主题（0 开销）
- * Phase 1：数据加载（设置/磁贴/存储监听）
- * Phase 2：首屏渲染（引擎/磁贴/分类/搜索/背景/倒计时/问候/天气/设置面板/右键菜单）
+ * Phase 1：数据加载（设置/磁贴）
+ * Phase 2：首屏渲染（引擎/磁贴/分类/搜索/背景/倒计时/问候/天气/设置面板）
  */
 
 import { info } from '../../lib/logger';
 import { SHORTCUT_SIZE_OPTIONS } from '../../shared/constants';
 import { initTheme, getColorScheme } from './theme-manager';
-import { initStorageWatch, dataService } from './storage';
+import { dataService } from './storage';
 import { state } from './state';
-import { tileManager, renderTiles, attachTileDrag } from './tiles';
+import { tileManager, renderTiles, attachTileDrag, clearSelection } from './tiles';
 import { renderCatRow, handleWheelScroll, attachCategoryDrag } from './category-ui';
 import { initSearch } from './search';
 import { bindEngineSelector, initEngineUI } from './navigation';
@@ -29,7 +29,7 @@ import { bindGlobalEvents } from '../events';
 
 const MODULE = 'main';
 
-/** 应用快捷方式尺寸（CSS 变量，对齐原版 --shortcut-*） */
+/** 应用快捷方式尺寸（CSS 变量） */
 function applyShortcutSize(): void {
   const cfg = SHORTCUT_SIZE_OPTIONS[state.settings.shortcutSize];
   const root = document.documentElement;
@@ -50,7 +50,6 @@ export async function boot(): Promise<void> {
   info(MODULE, '主题初始化', { scheme: getColorScheme() });
 
   // Phase 1：数据加载
-  initStorageWatch();
   const settings = await dataService.getSettings();
   state.settings = settings;
   state.engine = settings.engine;
@@ -75,8 +74,7 @@ export async function boot(): Promise<void> {
   bindGlobalEvents();
   info(MODULE, 'Phase 2 渲染完成');
 
-  // Phase 2.5：首次初始化引导（弹窗询问收藏夹 → 生成分类磁贴）
-  // 注意：必须在渲染完成后调用（依赖 state.totalPages 已就绪）
+  // Phase 2.5：首次初始化引导
   void initOnboarding();
 
   // Phase 3：全局事件
@@ -84,12 +82,10 @@ export async function boot(): Promise<void> {
 
   // Phase 4：全局快捷键
   document.addEventListener('keydown', (e) => {
-    // Ctrl+Shift+E 导出数据
     if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'e') {
       e.preventDefault();
       void exportAllData();
     }
-    // Ctrl+Shift+R 重置所有数据到出厂状态
     if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'r') {
       e.preventDefault();
       void resetAllData();
@@ -121,6 +117,14 @@ function bindEvents(): void {
     if (target.closest('#engineSelector') === null && target.closest('#engineDropdown') === null) {
       document.getElementById('engineDropdown')?.classList.remove('visible');
     }
+  });
+
+  // 点击空白区域清除批量选择
+  document.addEventListener('click', (e) => {
+    if (state.selectedTileIds.size === 0) return;
+    const target = e.target as HTMLElement;
+    if (target.closest('.tile, .batch-action-bar') !== null) return;
+    clearSelection();
   });
 
   info(MODULE, 'Phase 3 事件绑定完成');

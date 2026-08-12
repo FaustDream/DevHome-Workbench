@@ -171,6 +171,7 @@
             <nav class="s-nav" id="sNav">
                 <button class="s-nav-item active" data-s-tab="general">通用</button>
                 <button class="s-nav-item" data-s-tab="appearance">外观</button>
+                <button class="s-nav-item" data-s-tab="shortcuts">快捷键</button>
                 <button class="s-nav-item" data-s-tab="data">数据</button>
                 <button class="s-nav-item" data-s-tab="advanced">高级</button>
             </nav>
@@ -416,31 +417,75 @@
                         </div>
                     </section>
 
+                    <!-- Tab 2: 快捷键管理 -->
+                    <section class="s-tab" data-s-tab="shortcuts">
+                        <h3 class="s-section-title">系统快捷键 <span class="s-badge">参考</span></h3>
+                        <div class="s-shortcut-list">
+                            <div class="s-shortcut-item">
+                                <div class="s-shortcut-info">
+                                    <span class="s-shortcut-name">打开设置</span>
+                                    <span class="s-shortcut-desc">点击右下角齿轮图标</span>
+                                </div>
+                                <span class="s-shortcut-key"><kbd>ESC</kbd> 关闭</span>
+                            </div>
+                            <div class="s-shortcut-item">
+                                <div class="s-shortcut-info">
+                                    <span class="s-shortcut-name">切换搜索引擎</span>
+                                    <span class="s-shortcut-desc">非输入状态下按数字键</span>
+                                </div>
+                                <span class="s-shortcut-key"><kbd>1</kbd> – <kbd>8</kbd></span>
+                            </div>
+                            <div class="s-shortcut-item">
+                                <div class="s-shortcut-info">
+                                    <span class="s-shortcut-name">导出全部数据</span>
+                                </div>
+                                <span class="s-shortcut-key"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>E</kbd></span>
+                            </div>
+                            <div class="s-shortcut-item">
+                                <div class="s-shortcut-info">
+                                    <span class="s-shortcut-name">重置所有数据</span>
+                                </div>
+                                <span class="s-shortcut-key"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>R</kbd></span>
+                            </div>
+                            <div class="s-shortcut-item">
+                                <div class="s-shortcut-info">
+                                    <span class="s-shortcut-name">右键菜单</span>
+                                    <span class="s-shortcut-desc">分类/磁贴上右键弹出操作菜单</span>
+                                </div>
+                                <span class="s-shortcut-key"><kbd>鼠标右键</kbd></span>
+                            </div>
+                            <div class="s-shortcut-item">
+                                <div class="s-shortcut-info">
+                                    <span class="s-shortcut-name">拖拽重排磁贴</span>
+                                    <span class="s-shortcut-desc">长按 600ms 后拖动</span>
+                                </div>
+                                <span class="s-shortcut-key">长按 + 拖拽</span>
+                            </div>
+                            <div class="s-shortcut-item">
+                                <div class="s-shortcut-info">
+                                    <span class="s-shortcut-name">滚轮翻页</span>
+                                    <span class="s-shortcut-desc">在磁贴区域滚动切换分类页</span>
+                                </div>
+                                <span class="s-shortcut-key"><kbd>滚轮</kbd></span>
+                            </div>
+                        </div>
+
+                        <h3 class="s-section-title">批量选择修饰键</h3>
+                        <p class="s-section-desc">按住修饰键并点击磁贴可多选，然后批量删除。切换修饰键后当前选中状态会清除。</p>
+                        <div class="s-row">
+                            <div class="s-row-left"><span class="s-row-label">修饰键组合</span></div>
+                            <div class="s-row-right">
+                                <div class="s-seg">
+                                    <button class="s-seg-btn active" data-batch-modifier="ctrlShift">Ctrl+Shift</button>
+                                    <button class="s-seg-btn" data-batch-modifier="ctrl">Ctrl</button>
+                                    <button class="s-seg-btn" data-batch-modifier="alt">Alt</button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
                     <!-- Tab 3: 数据与备份 -->
                     <section class="s-tab" data-s-tab="data">
-                        <!-- 行为面板（工作台模式） -->
-                        <div id="wbSettingsStatsWrap" data-mode="workbench" style="display:none;">
-                            <h3 class="s-section-title">行为数据看板</h3>
-                            <!-- React 交互式数据看板挂载点（替代原生 DOM 统计卡片） -->
-                            <div id="reactDashboardRoot"></div>
-                        </div>
-
-                        <h3 class="s-section-title">导出中心</h3>
-                        <div id="wbExportCenterWrap" data-mode="workbench" style="display:none;">
-                            <p style="font-size:11px;color:var(--color-text-tertiary);margin:0 0 8px;">选择内容导出为单个 Markdown 文件</p>
-                            <div class="wb-settings-filter-row" id="wbSettingsExportFilters">
-                                <button class="wb-filter-chip active" data-export-filter="all">全部</button>
-                                <button class="wb-filter-chip" data-export-filter="note">笔记</button>
-                                <button class="wb-filter-chip" data-export-filter="capture">捕获</button>
-                                <button class="wb-filter-chip" data-export-filter="task">任务</button>
-                            </div>
-                            <div class="wb-settings-export-list" id="wbMeExportList"></div>
-                            <div class="wb-settings-export-actions" style="margin-top:8px;">
-                                <button type="button" class="s-action-btn" id="wbMeSelectAll"><span>全选</span></button>
-                                <button type="button" class="s-action-btn" id="wbMeExportSelected"><span>导出选中</span></button>
-                            </div>
-                        </div>
-
                         <h3 class="s-section-title">备份</h3>
                         <button type="button" class="s-action-btn" data-setting-action="exportData">
                             <svg class="dh-icon dh-icon--download dh-icon--md" role="img"><use href="#dh-icon-download"></use></svg><span>导出全部数据</span>

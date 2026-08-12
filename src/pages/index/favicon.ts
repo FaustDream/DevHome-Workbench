@@ -5,6 +5,7 @@
  * 1. 优先 IndexedDB favicon 缓存（避免重复请求）
  * 2. 未命中 → 发 `RESOLVE_FAVICON` 消息给 SW（SW 解析真实 favicon 返回 dataURL）
  * 3. 返回 dataURL 后写缓存 + 更新磁贴图标
+ * 4. 全部失败 → 显示纯色背景（使用磁贴 color 属性，不再走 Google favicon 兜底）
  *
  * 域名白名单校验（R18）：仅允许合法域名格式，防 SSRF。
  */
@@ -144,22 +145,27 @@ export async function requestFavicon(domain: string): Promise<string | null> {
 /* ================= 磁贴图标加载（对齐原版 js/favicon.js loadFavicon） ================= */
 
 /**
- * 加载磁贴 favicon（原版 API 形态：url + img 元素 + 容器 + 标签）
+ * 加载磁贴 favicon
  * - IndexedDB 缓存 → SW 解析（RESOLVE_FAVICON）→ 写缓存
- * - 失败时尝试 Google favicon 服务直链（仅 https 站点）
- * - 全部失败显示首字符字母兜底
+ * - 全部失败 → 显示纯色背景（使用磁贴 color）
  */
-export async function loadFavicon(url: string, imgElement: HTMLImageElement, iconWrap: HTMLElement, label: string): Promise<void> {
+export async function loadFavicon(
+  url: string,
+  imgElement: HTMLImageElement,
+  iconWrap: HTMLElement,
+  _label: string,
+  color: string,
+): Promise<void> {
   const domain = extractDomain(url);
   if (domain === null || !isSafeDomain(domain)) {
-    showLetterFallback(imgElement, iconWrap, label);
+    showColorFallback(imgElement, iconWrap, color);
     return;
   }
   const cached = await getCachedFavicon(domain);
   if (cached !== null) {
     imgElement.src = cached;
     imgElement.onerror = () => {
-      // 缓存数据可能已损坏，清除并降级
+      // 缓存数据可能已损坏，清除缓存 → 纯色兜底
       void (async () => {
         const db = await openFaviconDB();
         if (db !== null) {
@@ -167,7 +173,7 @@ export async function loadFavicon(url: string, imgElement: HTMLImageElement, ico
           tx.objectStore(FAVICON_STORE).delete(domain);
         }
       })();
-      tryGoogleFaviconFallback(url, domain, imgElement, iconWrap, label);
+      showColorFallback(imgElement, iconWrap, color);
     };
     return;
   }
@@ -175,33 +181,15 @@ export async function loadFavicon(url: string, imgElement: HTMLImageElement, ico
   if (dataUrl !== null) {
     imgElement.src = dataUrl;
     void cacheFavicon(domain, dataUrl);
-    imgElement.onerror = () => tryGoogleFaviconFallback(url, domain, imgElement, iconWrap, label);
+    imgElement.onerror = () => showColorFallback(imgElement, iconWrap, color);
     return;
   }
-  tryGoogleFaviconFallback(url, domain, imgElement, iconWrap, label);
+  showColorFallback(imgElement, iconWrap, color);
 }
 
-/** Google favicon 服务直链兜底（仅 https 站点；http 站直走字母降级，节省无效请求） */
-function tryGoogleFaviconFallback(
-  originalUrl: string,
-  domain: string,
-  imgElement: HTMLImageElement,
-  iconWrap: HTMLElement,
-  label: string,
-): void {
-  // http 站点谷歌图标服务不可达，跳过
-  if (originalUrl.startsWith('http://')) {
-    showLetterFallback(imgElement, iconWrap, label);
-    return;
-  }
-  imgElement.src = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=48`;
-  imgElement.onerror = () => showLetterFallback(imgElement, iconWrap, label);
-}
-
-/** 字母兜底：移除 img，容器显示首字符 */
-function showLetterFallback(imgElement: HTMLImageElement, iconWrap: HTMLElement, label: string): void {
+/** 纯色背景兜底：移除 img，容器显示纯色背景 */
+function showColorFallback(imgElement: HTMLImageElement, iconWrap: HTMLElement, color: string): void {
   imgElement.remove();
-  const text = label.trim().charAt(0) || '?';
-  iconWrap.textContent = text;
+  iconWrap.style.setProperty('--fallback-color', color || '#4a9eff');
   iconWrap.classList.add('tile-icon-fallback');
 }

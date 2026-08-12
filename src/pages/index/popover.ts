@@ -1,7 +1,7 @@
 /**
  * 简易 Popover 组件
  *
- * 用于磁贴和分类的 ⋮ 按钮弹出菜单（编辑 / 删除）。
+ * 用于磁贴和分类的右键弹出菜单（编辑 / 删除）。
  * 单例：同一时间仅一个 popover 可见；点击外部自动关闭。
  */
 
@@ -35,7 +35,6 @@ function ensureGlobalClose(): void {
     if (_current === null) return;
     const target = e.target as HTMLElement;
     if (target.closest('.dh-popover') !== null) return;
-    if (target.closest('.tile-more-btn, .cat-more-btn') !== null) return;
     destroyCurrent();
   });
   document.addEventListener('keydown', (e) => {
@@ -44,11 +43,16 @@ function ensureGlobalClose(): void {
 }
 
 /**
- * 在 anchor 元素附近显示 popover
- * @param anchor 触发按钮（⋮）
+ * 显示 popover 菜单
+ * @param anchor 触发元素（用于 fallback 定位）
  * @param items 菜单项列表
+ * @param at 可选鼠标坐标 {x, y}；提供时菜单定位到鼠标位置，否则定位到 anchor 右下
  */
-export function showPopover(anchor: HTMLElement, items: readonly PopoverItem[]): void {
+export function showPopover(
+  anchor: HTMLElement,
+  items: readonly PopoverItem[],
+  at?: { x: number; y: number },
+): void {
   destroyCurrent();
   ensureGlobalClose();
 
@@ -93,20 +97,44 @@ export function showPopover(anchor: HTMLElement, items: readonly PopoverItem[]):
     menu.appendChild(el);
   }
 
-  // 定位：默认右下
-  const anchorRect = anchor.getBoundingClientRect();
-  const x = anchorRect.right - 8;
-  const y = anchorRect.bottom + 4;
-
-  // 先挂到 body 获取尺寸
+  // 先挂到 body 获取菜单尺寸
   menu.style.visibility = 'hidden';
   document.body.appendChild(menu);
 
-  const rect = menu.getBoundingClientRect();
-  const maxX = window.innerWidth - rect.width - 8;
-  const maxY = window.innerHeight - rect.height - 8;
-  menu.style.left = `${Math.min(x, Math.max(8, maxX))}px`;
-  menu.style.top = `${Math.min(y, Math.max(8, maxY))}px`;
+  const menuRect = menu.getBoundingClientRect();
+  const padding = 8;
+  const gap = 4;
+
+  let x: number;
+  let y: number;
+
+  if (at !== undefined) {
+    // 按鼠标坐标定位：默认显示在鼠标右下方
+    x = at.x + gap;
+    y = at.y + gap;
+  } else {
+    // fallback：anchor 元素右下
+    const anchorRect = anchor.getBoundingClientRect();
+    x = anchorRect.right - padding;
+    y = anchorRect.bottom + gap;
+  }
+
+  // 边界处理：右侧越界则翻到鼠标左侧
+  if (x + menuRect.width + padding > window.innerWidth) {
+    x = (at?.x ?? x) - menuRect.width - gap;
+  }
+  // 底部越界则翻到鼠标上方
+  if (y + menuRect.height + padding > window.innerHeight) {
+    y = (at?.y ?? y) - menuRect.height - gap;
+  }
+
+  // 最终钳位，确保不超出屏幕
+  const minX = padding;
+  const minY = padding;
+  const maxX = window.innerWidth - menuRect.width - padding;
+  const maxY = window.innerHeight - menuRect.height - padding;
+  menu.style.left = `${Math.max(minX, Math.min(x, maxX))}px`;
+  menu.style.top = `${Math.max(minY, Math.min(y, maxY))}px`;
   menu.style.visibility = '';
 
   _current = menu;

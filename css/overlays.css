@@ -241,6 +241,64 @@
 .s-theme-name { font-size: 10px; font-weight: 500; color: var(--color-text-secondary); }
 .s-theme-card.active .s-theme-name { color: var(--color-accent); font-weight: 600; }
 
+/* ===== 快捷键列表 ===== */
+.s-shortcut-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 12px;
+}
+.s-shortcut-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--color-surface);
+    transition: background var(--transition-fast);
+}
+.s-shortcut-item:hover {
+    background: var(--color-surface-hover);
+}
+.s-shortcut-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.s-shortcut-name {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text);
+}
+.s-shortcut-desc {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-tertiary);
+}
+.s-shortcut-key {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.s-shortcut-key kbd {
+    display: inline-block;
+    padding: 1px 6px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: var(--color-surface);
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: 600;
+    color: var(--color-text);
+}
+.s-section-desc {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-tertiary);
+    margin: 0 0 12px 0;
+    line-height: 1.5;
+}
+
 /* ===== 辅助文本 ===== */
 .s-subtext { font-size: 11px; color: var(--color-text-tertiary); margin-top: 4px; }
 

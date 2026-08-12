@@ -17,9 +17,152 @@ import { pageManager } from './page-manager';
 import { loadFavicon } from './favicon';
 import { openUrl } from './link-opener';
 import { icon, ICONS } from './icons';
-import { showPrompt, showConfirm } from './dialogs';
+import { showPrompt, showConfirm, showToast } from './dialogs';
 import type { PromptFieldValues } from './dialogs';
 import { showPopover } from './popover';
+
+/* ================= 批量选择辅助 ================= */
+
+/** 检查修饰键是否按下 */
+function isModifierHeld(e: MouseEvent): boolean {
+  const key = state.settings.batchModifierKey;
+  if (key === 'ctrl') return e.ctrlKey && !e.shiftKey;
+  if (key === 'alt') return e.altKey && !e.ctrlKey && !e.shiftKey;
+  if (key === 'ctrlShift') return e.ctrlKey && e.shiftKey;
+  return e.ctrlKey && e.shiftKey; // fallback
+}
+
+/** 清除所有选中状态 */
+export function clearSelection(): void {
+  state.selectedTileIds.clear();
+  document.querySelectorAll('.tile.tile-selected').forEach((el) => el.classList.remove('tile-selected'));
+  hideBatchBar();
+}
+
+/** 更新磁贴选中样式 */
+function syncTileSelectedState(): void {
+  document.querySelectorAll<HTMLElement>('.tile').forEach((el) => {
+    const id = el.dataset.tileId;
+    el.classList.toggle('tile-selected', id !== undefined && state.selectedTileIds.has(id));
+  });
+}
+
+/* ================= 批量操作栏 ================= */
+
+let _batchBar: HTMLElement | null = null;
+
+function getBatchBar(): HTMLElement {
+  if (_batchBar === null || !document.body.contains(_batchBar)) {
+    _batchBar = document.createElement('div');
+    _batchBar.className = 'batch-action-bar';
+    _batchBar.setAttribute('role', 'toolbar');
+    _batchBar.setAttribute('aria-label', '批量操作');
+    _batchBar.style.display = 'none';
+    document.body.appendChild(_batchBar);
+  }
+  return _batchBar;
+}
+
+function showBatchBar(): void {
+  const bar = getBatchBar();
+  const count = state.selectedTileIds.size;
+  bar.innerHTML = `
+    <span class="batch-action-count">已选择 ${count} 个</span>
+    <button class="batch-action-btn batch-action-delete" type="button">删除选中</button>
+    <button class="batch-action-btn batch-action-cancel" type="button">取消选择</button>
+  `;
+  bar.style.display = 'flex';
+
+  // 绑定事件
+  bar.querySelector('.batch-action-delete')?.addEventListener('click', () => {
+    void confirmBatchDelete();
+  });
+  bar.querySelector('.batch-action-cancel')?.addEventListener('click', () => {
+    clearSelection();
+  });
+}
+
+function hideBatchBar(): void {
+  const bar = getBatchBar();
+  bar.style.display = 'none';
+  bar.replaceChildren();
+}
+
+/** 确认批量删除 */
+async function confirmBatchDelete(): Promise<void> {
+  const ids = [...state.selectedTileIds];
+  if (ids.length === 0) return;
+  const ok = await showConfirm(`确定要删除选中的 ${ids.length} 个快捷方式吗？`, { title: '批量删除', danger: true });
+  if (!ok) return;
+
+  // 保存到撤销栈
+  const deleted: Tile[] = [];
+  for (const tid of ids) {
+    const tile = state.currentTiles.find((t) => t.id === tid as Tile['id']);
+    if (tile !== undefined) deleted.push(tile);
+  }
+  state.undoStack = deleted;
+
+  // 执行删除
+  state.currentTiles = state.currentTiles.filter((t) => !state.selectedTileIds.has(t.id));
+  void tileManager.save();
+  renderTiles();
+  clearSelection();
+
+  // 显示撤销提示
+  showUndoToast(deleted.length);
+}
+
+/** 撤销删除 */
+function undoDelete(): void {
+  if (state.undoStack.length === 0) return;
+  for (const tile of state.undoStack) {
+    state.currentTiles.push(tile);
+  }
+  state.undoStack = [];
+  void tileManager.save();
+  renderTiles();
+  clearSelection();
+  showToast('已恢复快捷方式', 'success');
+}
+
+/** 显示撤销 Toast */
+function showUndoToast(count: number): void {
+  const host = (() => {
+    let h = document.getElementById('dhDialogHost');
+    if (h === null) {
+      h = document.createElement('div');
+      h.id = 'dhDialogHost';
+      h.style.cssText = 'position:fixed;inset:0;z-index:3200;pointer-events:none;';
+      document.body.appendChild(h);
+    }
+    return h;
+  })();
+
+  host.querySelectorAll('.ui-toast').forEach((t) => t.remove());
+
+  const toast = document.createElement('div');
+  toast.className = 'ui-toast ui-toast--info';
+  toast.style.pointerEvents = 'auto';
+  toast.innerHTML = `
+    <span class="ui-toast-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></span>
+    <span>已删除 ${count} 个快捷方式</span>
+    <button class="ui-toast-undo-btn" type="button">撤销</button>
+  `;
+  host.appendChild(toast);
+
+  let timer: ReturnType<typeof setTimeout> | null = setTimeout(() => {
+    toast.classList.add('ui-toast--out');
+    setTimeout(() => toast.remove(), 200);
+  }, 5000);
+
+  toast.querySelector('.ui-toast-undo-btn')?.addEventListener('click', () => {
+    if (timer !== null) clearTimeout(timer);
+    timer = null;
+    toast.remove();
+    undoDelete();
+  });
+}
 
 /* ================= 数据操作 ================= */
 
@@ -269,6 +412,10 @@ export function renderTiles(container: HTMLElement | null = dom.get('#tilesConta
   container.replaceChildren(fragment);
   container.classList.toggle('tile-edit-mode', state.tileEditMode);
 
+  // 恢复选中状态
+  syncTileSelectedState();
+  if (state.selectedTileIds.size > 0) showBatchBar();
+
   // 空状态引导：让用户知道如何添加
   const hidden = document.getElementById('hiddenMessage');
   if (hidden !== null) {
@@ -316,11 +463,11 @@ export function buildTileElement(tile: Tile): HTMLAnchorElement {
   img.height = 56;
   img.decoding = 'async';
   iconWrap.appendChild(img);
-  // favicon 加载（含字母兜底，失败时 img 移除、iconWrap 显示首字符）
+  // favicon 加载（失败时 img 移除、iconWrap 显示纯色背景）
   if (tile.imageData) {
     img.src = tile.imageData;
   } else {
-    void loadFavicon(tile.url, img, iconWrap, tile.label);
+    void loadFavicon(tile.url, img, iconWrap, tile.label, tile.color);
   }
 
   // 标签
@@ -349,16 +496,15 @@ export function buildTileElement(tile: Tile): HTMLAnchorElement {
     }
   });
 
-  // 更多按钮（⋮ — hover 时显示，点击弹出 Popover）
-  const moreBtn = document.createElement('button');
-  moreBtn.type = 'button';
-  moreBtn.className = 'tile-more-btn';
-  moreBtn.setAttribute('aria-label', `更多操作 - ${tile.label}`);
-  moreBtn.innerHTML = '⋮';
-  moreBtn.addEventListener('click', (e) => {
+  a.appendChild(iconWrap);
+  a.appendChild(label);
+  a.appendChild(deleteBtn);
+
+  // 右键弹出菜单（编辑 / 删除）
+  a.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    showPopover(moreBtn, [
+    showPopover(a, [
       {
         label: '编辑',
         icon: icon('edit'),
@@ -370,13 +516,8 @@ export function buildTileElement(tile: Tile): HTMLAnchorElement {
         danger: true,
         action: () => void confirmDeleteTile(tile),
       },
-    ]);
+    ], { x: e.clientX, y: e.clientY });
   });
-
-  a.appendChild(iconWrap);
-  a.appendChild(label);
-  a.appendChild(deleteBtn);
-  a.appendChild(moreBtn);
 
   a.addEventListener('click', (e) => {
     if (state.dragMoved || state.preventNextTileClick || state.tileEditMode) {
@@ -385,6 +526,28 @@ export function buildTileElement(tile: Tile): HTMLAnchorElement {
       state.preventNextTileClick = false;
       return;
     }
+
+    // 修饰键 + 点击 → 批量选择 / 取消选择
+    if (isModifierHeld(e)) {
+      e.preventDefault();
+      if (state.selectedTileIds.has(tile.id)) {
+        state.selectedTileIds.delete(tile.id);
+      } else {
+        state.selectedTileIds.add(tile.id);
+      }
+      syncTileSelectedState();
+      if (state.selectedTileIds.size > 0) showBatchBar();
+      else hideBatchBar();
+      return;
+    }
+
+    // 如果有选中的磁贴，从选中状态点击任意磁贴 → 清除选择
+    if (state.selectedTileIds.size > 0) {
+      e.preventDefault();
+      clearSelection();
+      return;
+    }
+
     e.preventDefault();
     void openUrl(tile.url, { type: 'tiles' });
   });

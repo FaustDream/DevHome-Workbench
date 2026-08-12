@@ -8,21 +8,16 @@
  */
 
 import { z } from 'zod';
-import {
-  MESSAGE_TYPE,
-  SHORTCUT_SIZE_OPTIONS,
-} from './constants';
-import {
-  ENGINES,
-} from './types';
+import { MESSAGE_TYPE, SHORTCUT_SIZE_OPTIONS } from './constants';
+import { ENGINES } from './types';
 import type { TileId, EngineId, ShortcutSize, ShortcutColumns } from './types';
 import type { ExtensionRequest, ResolveFaviconData } from './messages';
 
-// 注册表派生的引擎 id 集合（避免在 isEngineId 内构造中间数组，R9）
+// 注册表派生的引擎 id 集合
 const ENGINE_IDS: ReadonlySet<string> = new Set(ENGINES.map((e: { id: EngineId }) => e.id));
 
 /* ===== 品牌类型字符串 schema（复用） ===== */
-/** 磁贴 id 校验（输出 string 可赋给幽灵品牌 TileId） */
+/** 磁贴 id 校验 */
 const tileIdSchema = z.string().min(1).startsWith('tile_');
 
 /* ===== 基础数据模型 schema ===== */
@@ -59,6 +54,7 @@ export const SettingsSchema = z.object({
   linkNewTabSearch: z.boolean(),
   nickname: z.string(),
   lastPage: z.number().int().nonnegative(),
+  batchModifierKey: z.enum(['ctrl', 'alt', 'ctrlShift']).default('ctrlShift'),
 });
 
 /* ===== 消息 payload schema ===== */
@@ -76,7 +72,6 @@ const resolveFaviconSchema: z.ZodType<ResolveFaviconData> = z.object({
 
 /** 消息判别联合 schema：逐分支 safeParse 兜底 */
 const requestParsers = [
-  { type: MESSAGE_TYPE.OPEN_SIDE_PANEL, dataSchema: null },
   { type: MESSAGE_TYPE.RESOLVE_FAVICON, dataSchema: resolveFaviconSchema },
 ] as const;
 
@@ -111,7 +106,7 @@ export function isSafeDomain(v: string): boolean {
   return /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/.test(v);
 }
 
-/** 是否为合法 http(s) URL（R18：仅 https 白名单） */
+/** 是否为合法 http(s) URL */
 export function isHttpsUrl(v: string): boolean {
   try {
     const url = new URL(v);
@@ -121,7 +116,7 @@ export function isHttpsUrl(v: string): boolean {
   }
 }
 
-/** 是否为合法引擎 id（从 ENGINES 注册表推导，避免字面量重复，R9） */
+/** 是否为合法引擎 id（从 ENGINES 注册表推导） */
 export function isEngineId(v: unknown): v is EngineId {
   return typeof v === 'string' && ENGINE_IDS.has(v);
 }
@@ -131,7 +126,7 @@ export function isTileId(v: unknown): v is TileId {
   return typeof v === 'string' && v.startsWith('tile_');
 }
 
-/** 是否为合法快捷方式尺寸（从 SHORTCUT_SIZE_OPTIONS 推导） */
+/** 是否为合法快捷方式尺寸 */
 export function isShortcutSize(v: unknown): v is ShortcutSize {
   return typeof v === 'string' && Object.prototype.hasOwnProperty.call(SHORTCUT_SIZE_OPTIONS, v);
 }

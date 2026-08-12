@@ -1,8 +1,8 @@
 /**
  * 共享类型定义（跨上下文，纯类型，无 chrome.* 依赖）
  *
- * 集中定义新标签页项目的数据模型：磁贴、分页、搜索引擎、设置项、番茄钟状态等。
- * 命名约定：`TileId`/`PageName` 等品牌类型（Branded Type）用于防止原始类型混用；
+ * 集中定义新标签页项目的数据模型：磁贴、分页、搜索引擎、设置项等。
+ * 命名约定：`TileId`/`PageIndex` 等品牌类型（Branded Type）用于防止原始类型混用；
  * 所有可空字段显式使用 `| null`，避免 `exactOptionalPropertyTypes` 下赋值歧义。
  */
 
@@ -23,7 +23,6 @@ export type TileType = 'favicon' | 'custom' | 'text' | 'emoji';
 
 /**
  * 磁贴（快捷方式）
- * @see wiki/04 4.1.1 数据结构
  */
 export interface Tile {
   /** 唯一 ID，`tile_<ts>_<rand>` */
@@ -87,37 +86,15 @@ export interface SearchEngine {
 }
 
 /** 快捷方式尺寸 */
-/** 快捷方式尺寸（对齐原版：small / standard / large） */
 export type ShortcutSize = 'small' | 'standard' | 'large';
 /** 快捷方式列数配置值 */
 export type ShortcutColumns = 'auto' | '4' | '5' | '6' | '7' | '8';
 
-/** 布局预设 id（F5 布局） */
-export type LayoutPresetId = '2x6' | '3x4' | '4x3' | '6x2';
-
-/**
- * F5 布局配置
- * 对应设置面板「布局」参数区
- */
-export interface LayoutConfig {
-  /** 行数 */
-  rows: number;
-  /** 列数 */
-  columns: number;
-  /** 磁贴水平间距（px） */
-  gapX: number;
-  /** 磁贴垂直间距（px） */
-  gapY: number;
-}
-
 /** 主题方案 */
 export type ColorScheme = 'light' | 'dark' | 'auto';
 
-/** 打开新标签页行为的链接类型（决定 linkNewTab_<type> 开关） */
-export type LinkOpenType = 'tiles' | 'search' | 'other';
-
 /**
- * 新标签页设置项（tabpage_ 前缀存储，映射自 wiki/02 §2.2 与 wiki/12 §12.5.2）
+ * 新标签页设置项（tabpage_ 前缀存储）
  */
 export interface TabPageSettings {
   /** 当前搜索引擎 id */
@@ -144,54 +121,8 @@ export interface TabPageSettings {
   nickname: string;
   /** 上次所在分页（分类记忆恢复） */
   lastPage: PageIndex;
-}
-
-/** ===== 四象限任务（v2/tasks 扁平结构，已由工作台模块移除后不再使用，保留类型文档） ===== */
-/**
-
-/** 捕获/剪藏（对齐原版 v2/captures 数据模型，wiki/02 §2.7.2） */
-export interface CaptureItem {
-  id: string;
-  /** 选区文本（纯文本） */
-  content: string;
-  /** 字数（中英混排） */
-  wordCount: number;
-  tags: string[];
-  /** 来源 URL（网页剪藏） */
-  sourceUrl: string;
-  /** 来源页面标题 */
-  sourceTitle: string;
-  createdAt: number;
-  updatedAt: number;
-}
-
-export interface QuadrantTask {
-  id: string;
-  title: string;
-  description: string;
-  quadrant: 'q1' | 'q2' | 'q3' | 'q4';
-  status: 'active' | 'completed' | 'cancelled';
-  /** 关联笔记 ID（去重） */
-  noteIds: string[];
-  pomodoroCount: number;
-  /** 到期时间（ISO 字符串）或 null */
-  dueDate: string | null;
-  /** 计划时间戳 */
-  plannedAt: number | null;
-  createdAt: number;
-  completedAt: number | null;
-  cancelledAt: number | null;
-}
-
-/** 行为统计数据（v2/behavior） */
-export interface BehaviorState {
-  /** 连续打卡天数 */
-  streakDays: number;
-  /** 累计完成任务数 */
-  totalCompleted: number;
-  /** 最后活跃日期 YYYY-MM-DD */
-  lastActiveDate: string | null;
-  dailyStats: Record<string, { streakDay: boolean }>;
+  /** 批量选择修饰键：ctrl / alt / ctrlShift */
+  batchModifierKey: string;
 }
 
 /** 倒计时目标（localStorage `countdowns`） */

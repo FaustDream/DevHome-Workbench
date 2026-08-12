@@ -1,10 +1,8 @@
 /**
- * 全局事件总线（对齐原版 js/events/ 11 子模块的统一抽象）
+ * 全局事件总线
  *
- * 原版 events/ 下有 category-events / notebook-events / toolbar-events / quadrant-events /
- * calendar-events / pomodoro-events / filter-events / settings-events / search-events /
- * global-events / misc-events。TS 重构合并为统一 EventBus + 按域命名空间，
- * 各域模块通过 `events.on('category:change', ...)` 订阅。
+ * 提供模块间松耦合通信：on / once / emit。
+ * bindGlobalEvents 绑定数字键切换搜索引擎等全局键盘事件。
  */
 
 const listeners = new Map<string, Set<(...args: unknown[]) => void>>();
@@ -44,40 +42,12 @@ export function emit(event: string, ...args: unknown[]): void {
   }
 }
 
-/** 常用事件名（统一管理，R19） */
-export const EVENTS = {
-  // 磁贴
-  TILE_ADD: 'tile:add',
-  TILE_REMOVE: 'tile:remove',
-  TILE_UPDATE: 'tile:update',
-  TILES_RENDER: 'tiles:render',
-  // 分类
-  CATEGORY_ADD: 'category:add',
-  CATEGORY_RENAME: 'category:rename',
-  CATEGORY_REMOVE: 'category:remove',
-  CATEGORY_CHANGE: 'category:change',
-  CATROW_RENDER: 'catrow:render',
-  // 搜索
-  SEARCH_INPUT: 'search:input',
-  SEARCH_SELECT: 'search:select',
-  // 设置
-  SETTINGS_CHANGE: 'settings:change',
-  THEME_CHANGE: 'theme:change',
-  // 工作台
-  WORKBENCH_ENTER: 'workbench:enter',
-  WORKBENCH_EXIT: 'workbench:exit',
-  // 全局
-  STORAGE_CHANGE: 'storage:change',
-} as const;
-
-/** 绑定全局键盘（global-events 对齐：Esc 关闭面板/数字键切引擎等） */
+/** 绑定全局键盘（数字键 1-8 切引擎，仅非输入状态） */
 export function bindGlobalEvents(): void {
   document.addEventListener('keydown', async (e) => {
     const target = e.target as HTMLElement | null;
     const isTyping =
       target !== null && typeof target.matches === 'function' && target.matches('input, textarea, [contenteditable]');
-    // Esc 不做全局拦截（工作台已移除）
-    // 数字键 1-8 切引擎（仅日常模式）
     if (/^[1-8]$/.test(e.key) && !isTyping) {
       const m = await import('../index/navigation');
       m.switchEngineByNumber(Number(e.key));

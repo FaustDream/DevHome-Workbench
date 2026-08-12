@@ -4,12 +4,13 @@
  * 接收页面 `RESOLVE_FAVICON` 请求，解析站点真实 favicon 为 dataURL：
  * 1. 域名白名单校验（R18，防 SSRF）
  * 2. 尝试 `https://<domain>/favicon.ico`
- * 3. 兜底 Google favicon 服务
  * 仅 https，加超时（R18）。
+ * 注意：不再使用 Google favicon 服务兜底，其默认地球图标不符合设计预期；
+ *       获取失败时由页面侧展示纯色背景。
  */
 
 import { isSafeDomain } from '../shared/guards';
-import { FAVICON_FETCH_TIMEOUT_MS, FAVICON_MAX_BYTES, GOOGLE_FAVICON_SERVICE } from '../shared/constants';
+import { FAVICON_FETCH_TIMEOUT_MS, FAVICON_MAX_BYTES } from '../shared/constants';
 import { warn } from '../lib/logger';
 
 const MODULE = 'favicon-resolver';
@@ -61,15 +62,6 @@ export async function resolveRealFavicon(domain: string): Promise<string | null>
     // 失败走兜底
   }
 
-  // 2. Google favicon 服务兜底
-  try {
-    const res = await fetchWithTimeout(
-      `${GOOGLE_FAVICON_SERVICE}?domain=${encodeURIComponent(domain)}&sz=64`,
-      FAVICON_FETCH_TIMEOUT_MS,
-    );
-    return await responseToDataUrl(res);
-  } catch {
-    warn(MODULE, `favicon 解析失败`, { domain });
-    return null;
-  }
+  warn(MODULE, `favicon 解析失败`, { domain });
+  return null;
 }

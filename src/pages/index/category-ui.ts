@@ -1,11 +1,11 @@
 /**
- * 分类 UI（对齐原版 js/categoryUI.js）
+ * 分类 UI
  *
  * 分类按钮 DOM：
  * `<button class="cat-btn[ active]" data-page="idx">`
  *   `.cat-btn-label`（分类名）
  *   `.cat-delete-btn`（SVG ×，分类编辑模式显示）
- * 交互：点击切页、长按拖拽重排（目标位高亮）、右键进入分类编辑模式。
+ * 交互：左键点击切页、右键弹出菜单（重命名/删除）、长按拖拽重排（目标位高亮）。
  */
 
 import { info } from '../../lib/logger';
@@ -63,15 +63,17 @@ export function renderCatRow(): void {
     });
     btn.appendChild(del);
 
-    // 更多按钮（⋮ — hover 时显示，点击弹出 Popover）
-    const moreBtn = document.createElement('button');
-    moreBtn.type = 'button';
-    moreBtn.className = 'cat-more-btn';
-    moreBtn.setAttribute('aria-label', `更多操作 - ${name}`);
-    moreBtn.innerHTML = '⋮';
-    moreBtn.addEventListener('click', (e) => {
+    // 左键点击切页
+    btn.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('.cat-delete-btn') !== null) return;
+      void changePageWithAnimation(idx);
+    });
+
+    // 右键弹出菜单（重命名 / 删除）
+    btn.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
       e.stopPropagation();
-      showPopover(moreBtn, [
+      showPopover(btn, [
         {
           label: '重命名',
           icon: icon('edit'),
@@ -83,14 +85,7 @@ export function renderCatRow(): void {
           danger: true,
           action: () => void confirmDeleteCategory(idx, name),
         },
-      ]);
-    });
-    btn.appendChild(moreBtn);
-
-    // 左键点击切页
-    btn.addEventListener('click', (e) => {
-      if ((e.target as HTMLElement).closest('.cat-delete-btn, .cat-more-btn') !== null) return;
-      void changePageWithAnimation(idx);
+      ], { x: e.clientX, y: e.clientY });
     });
 
     // 双击分类名 → 重命名

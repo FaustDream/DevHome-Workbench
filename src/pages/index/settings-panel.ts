@@ -18,6 +18,7 @@ import { localStorageService } from './storage';
 import { setColorScheme } from './theme-manager';
 import { showConfirm } from './dialogs';
 import { resetAllData } from './reset';
+import { clearSelection } from './tiles';
 
 const MODULE = 'settings-panel';
 
@@ -64,6 +65,15 @@ function syncAllControls(): void {
   }
   syncShortcutControls();
   syncThemeCards();
+  syncBatchModifierKey();
+}
+
+/** 同步批量选择修饰键单选 */
+function syncBatchModifierKey(): void {
+  const key = state.settings.batchModifierKey;
+  document.querySelectorAll<HTMLElement>('[data-batch-modifier]').forEach((el) => {
+    el.classList.toggle('active', el.dataset.batchModifier === key);
+  });
 }
 
 /** 同步磁贴大小/列数分段控件 */
@@ -204,6 +214,19 @@ export function initSettingsPanel(): void {
           void resetAllData();
         }
       });
+    });
+  });
+
+  // 批量选择修饰键
+  document.querySelectorAll<HTMLElement>('[data-batch-modifier]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.batchModifier;
+      if (key === undefined) return;
+      state.settings.batchModifierKey = key;
+      syncBatchModifierKey();
+      localStorageService.setRaw(LS_KEYS.BATCH_MODIFIER_KEY, key);
+      // 切换修饰键后清除当前选中状态
+      clearSelection();
     });
   });
 }

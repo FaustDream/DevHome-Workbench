@@ -42,6 +42,10 @@ export interface AppState {
   dragMoved: boolean;
   /** 拖拽后抑制下一次磁贴点击 */
   preventNextTileClick: boolean;
+  /** 批量选择的磁贴 ID 集合 */
+  selectedTileIds: Set<string>;
+  /** 撤销栈：保存最近一次删除的磁贴列表（当前会话内有效） */
+  undoStack: Tile[];
 }
 
 /** 初始状态 */
@@ -66,6 +70,7 @@ export function createInitialState(): AppState {
       linkNewTabSearch: true,
       nickname: '主人',
       lastPage: 0,
+      batchModifierKey: 'ctrlShift',
     },
     tileEditMode: false,
     categoryEditMode: false,
@@ -75,6 +80,8 @@ export function createInitialState(): AppState {
     searchHistory: [],
     dragMoved: false,
     preventNextTileClick: false,
+    selectedTileIds: new Set(),
+    undoStack: [],
   };
 }
 

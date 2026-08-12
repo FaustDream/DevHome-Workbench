@@ -1,14 +1,13 @@
 /**
- * 导出中心（对齐原版 js/export.js + 设置面板导出按钮）
+ * 导出中心
  *
- * - 导出 v2 数据（tasks/captures/pomodoro_sessions/config/pages）为 JSON 文件下载
- * - 导入：解析 JSON → 写回 v2 storage
- * - 触发：设置面板 `data-setting-action="exportData"` 按钮
+ * - 导出本地数据为 JSON 文件下载
+ * - 导入：解析 JSON → 写回 localStorage
  */
 
 import { info, warn } from '../../lib/logger';
-import { V2_KEYS } from '../../shared/constants';
-import { chromeStorageV2 } from './storage';
+import { LS_KEYS } from '../../shared/constants';
+import { localStorageService } from './storage';
 
 const MODULE = 'export';
 
@@ -19,15 +18,12 @@ interface ExportPayload {
   data: Record<string, unknown>;
 }
 
-/** 导出所有 v2 数据为 JSON 触发下载 */
+/** 导出所有数据为 JSON 触发下载 */
 export async function exportAllData(): Promise<void> {
-  const keys = [
-    V2_KEYS.PAGES, V2_KEYS.PAGE_NAMES, V2_KEYS.CAPTURES, V2_KEYS.CONFIG,
-  ];
   const data: Record<string, unknown> = {};
-  for (const k of keys) {
-    data[k] = await chromeStorageV2.get(k, null);
-  }
+  data.pages = localStorageService.get(LS_KEYS.PAGES, []);
+  data.pageNames = localStorageService.get(LS_KEYS.PAGE_NAMES, []);
+
   const payload: ExportPayload = {
     version: '1.0',
     exportedAt: Date.now(),
@@ -54,12 +50,14 @@ export async function importDataFile(file: File): Promise<void> {
     if (typeof payload !== 'object' || payload === null || typeof payload.data !== 'object') {
       throw new Error('非法导出文件结构');
     }
-    for (const [k, v] of Object.entries(payload.data)) {
-      if (v !== null) {
-        await chromeStorageV2.set(k, v);
-      }
+    const d = payload.data;
+    if (Array.isArray(d.pages)) {
+      localStorageService.set(LS_KEYS.PAGES, d.pages);
     }
-    info(MODULE, `数据已导入`, { keys: Object.keys(payload.data) });
+    if (Array.isArray(d.pageNames)) {
+      localStorageService.set(LS_KEYS.PAGE_NAMES, d.pageNames);
+    }
+    info(MODULE, `数据已导入`);
   } catch (e) {
     warn(MODULE, `导入失败`, { err: (e as Error).message });
     throw e;
