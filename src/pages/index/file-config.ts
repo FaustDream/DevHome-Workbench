@@ -11,7 +11,6 @@ import {
   FILECONFIG_DB_NAME,
   FILECONFIG_DB_STORE,
   FILECONFIG_HANDLE_KEY,
-  FILECONFIG_WRITE_DEBOUNCE_MS,
   LS_KEYS,
 } from '../../shared/constants';
 import { localStorageService } from './storage';

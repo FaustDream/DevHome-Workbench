@@ -21,7 +21,6 @@ export const LS_KEYS = {
   CAT_ROW: 'cat_row',
   PAGE_TRANSITION: 'page_transition',
   ENGINE: 'engine',
-  VIEW_SCALE: 'tabpage_view_scale',
   LINK_NEW_TAB_TILES: 'linkNewTab_tiles',
   LINK_NEW_TAB_SEARCH: 'linkNewTab_search',
   CONFIG_NICKNAME: 'config_nickname',
@@ -29,7 +28,6 @@ export const LS_KEYS = {
   SEARCH_RETAIN: 'search_retain',
   SEARCH_HIDE_BTN: 'search_hide_btn',
   ANIM_REDUCE: 'anim_reduce',
-  WEATHER_CACHE: 'tabpage_weather_cache',
   DEFAULTS_CACHED: 'tabpage_defaults_cached',
   DEFAULTS_VERSION: 'tabpage_defaults_version',
   /** 首次初始化标记（onboarding 已弹窗/已跳过） */
@@ -92,7 +90,6 @@ export const DEFAULT_SETTINGS = {
   categoryMemory: true,
   catRow: true,
   pageTransition: true,
-  viewScale: 1,
   linkNewTabTiles: true,
   linkNewTabSearch: true,
   nickname: DEFAULT_NICKNAME,
@@ -109,46 +106,6 @@ export const FILECONFIG_DB_STORE = 'handles' as const;
 export const FILECONFIG_HANDLE_KEY = 'directoryHandle' as const;
 /** 数据变更写盘防抖（ms） */
 export const FILECONFIG_WRITE_DEBOUNCE_MS = 1000 as const;
-
-/** ===== 天气 ===== */
-export const WEATHER_DEFAULT_LAT = 39.9042;
-export const WEATHER_DEFAULT_LON = 116.4074;
-export const WEATHER_DEFAULT_CITY = '北京';
-export const WEATHER_CACHE_TTL_MS = 30 * 60 * 1000;
-export const WEATHER_AUTO_REFRESH_MS = 30 * 60 * 1000;
-export const WEATHER_GEO_TIMEOUT_MS = 5000;
-/** 定位与缓存坐标最大偏移（度） */
-export const WEATHER_COORD_EPSILON = 1;
-/** Open-Meteo API 端点 */
-export const WEATHER_API_ENDPOINT = 'https://api.open-meteo.com/v1/forecast';
-
-/** WMO 天气码 → 文案+图标 映射 */
-export const WEATHER_CODE_MAP: Readonly<Record<number, { text: string; icon: string }>> = {
-  0: { text: '晴', icon: 'weather-sun' },
-  1: { text: '大部晴', icon: 'weather-sun' },
-  2: { text: '多云', icon: 'weather-cloud-sun' },
-  3: { text: '阴', icon: 'weather-cloud' },
-  45: { text: '雾', icon: 'weather-fog' },
-  48: { text: '雾凇', icon: 'weather-fog' },
-  51: { text: '小雨', icon: 'weather-rain' },
-  53: { text: '中雨', icon: 'weather-rain' },
-  55: { text: '大雨', icon: 'weather-rain' },
-  61: { text: '小雨', icon: 'weather-rain' },
-  63: { text: '中雨', icon: 'weather-rain' },
-  65: { text: '大雨', icon: 'weather-rain' },
-  71: { text: '小雪', icon: 'weather-snow' },
-  73: { text: '中雪', icon: 'weather-snow' },
-  75: { text: '大雪', icon: 'weather-snow' },
-  77: { text: '雪粒', icon: 'weather-snow' },
-  80: { text: '阵雨', icon: 'weather-rain' },
-  81: { text: '暴雨', icon: 'weather-rain' },
-  82: { text: '大暴雨', icon: 'weather-storm' },
-  85: { text: '阵雪', icon: 'weather-snow' },
-  86: { text: '大雪', icon: 'weather-snow' },
-  95: { text: '雷暴', icon: 'weather-storm' },
-  96: { text: '冰雹雷暴', icon: 'weather-storm' },
-  99: { text: '强雷暴', icon: 'weather-storm' },
-};
 
 /** ===== 壁纸 ===== */
 export const WALLPAPER_DEFAULT_SETTINGS = { blur: 0, overlay: 30 } as const;

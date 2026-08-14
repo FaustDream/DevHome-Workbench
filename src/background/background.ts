@@ -39,17 +39,14 @@ async function routeMessage(message: unknown): Promise<ExtensionResponse> {
   }
   const req: ExtensionRequest = message;
 
-  switch (req.type) {
-    case MESSAGE_TYPE.RESOLVE_FAVICON: {
-      const dataUrl = await resolveRealFavicon(req.data.domain);
-      if (dataUrl === null) return errResponse('favicon_not_found');
-      return okResponse(dataUrl);
-    }
-    default: {
-      const exhaustive: never = req;
-      throw new BusinessError('MESSAGE_UNKNOWN_TYPE', '未预期的消息类型', { exhaustive });
-    }
+  if (req.type === MESSAGE_TYPE.RESOLVE_FAVICON) {
+    const dataUrl = await resolveRealFavicon(req.data.domain);
+    if (dataUrl === null) return errResponse('favicon_not_found');
+    return okResponse(dataUrl);
   }
+
+  const exhaustive: never = req.type;
+  throw new BusinessError('MESSAGE_UNKNOWN_TYPE', '未预期的消息类型', { type: exhaustive });
 }
 
 info(MODULE, 'Service Worker 就绪');

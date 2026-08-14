@@ -73,9 +73,6 @@ body.focus-transition .focus-overlay.ready {
     --z-context-menu: 2700;
     --z-modal: 3000;
 
-    /* F4 视图缩放默认值 */
-    --view-scale: 1;
-
     /* F6 图标设置默认值 */
     --tile-label-display: block;
     --tile-icon-shadow: none;

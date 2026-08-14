@@ -91,7 +91,6 @@ export const dataService = {
       autoFocus: localStorageService.getRaw(LS_KEYS.AUTO_FOCUS) === 'true',
       catRow: localStorageService.getRaw(LS_KEYS.CAT_ROW) !== 'false',
       pageTransition: localStorageService.getRaw(LS_KEYS.PAGE_TRANSITION) !== 'false',
-      viewScale: parseFloat(localStorageService.getRaw(LS_KEYS.VIEW_SCALE) ?? '1'),
       linkNewTabTiles: localStorageService.getRaw(LS_KEYS.LINK_NEW_TAB_TILES) !== 'false',
       linkNewTabSearch: localStorageService.getRaw(LS_KEYS.LINK_NEW_TAB_SEARCH) !== 'false',
       nickname: localStorageService.getRaw(LS_KEYS.CONFIG_NICKNAME) ?? DEFAULT_SETTINGS.nickname,

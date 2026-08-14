@@ -10,26 +10,68 @@
 
 import { LS_KEYS, TILE_LONG_PRESS_MS } from '../../shared/constants';
 import { isTileId } from '../../shared/guards';
-import type { Tile } from '../../shared/types';
+import type { Tile, TilePage } from '../../shared/types';
 import { localStorageService } from './storage';
 import { dom, state } from './state';
 import { pageManager } from './page-manager';
 import { loadFavicon } from './favicon';
 import { openUrl } from './link-opener';
 import { icon, ICONS } from './icons';
-import { showPrompt, showConfirm, showToast } from './dialogs';
+import { showPrompt, showConfirm, showToast, createModal } from './dialogs';
 import type { PromptFieldValues } from './dialogs';
 import { showPopover } from './popover';
+import { renderCatRow } from './category-ui';
 
 /* ================= 批量选择辅助 ================= */
 
 /** 检查修饰键是否按下 */
 function isModifierHeld(e: MouseEvent): boolean {
   const key = state.settings.batchModifierKey;
-  if (key === 'ctrl') return e.ctrlKey && !e.shiftKey;
+  if (key === 'ctrl') return e.ctrlKey && !e.shiftKey && !e.altKey;
   if (key === 'alt') return e.altKey && !e.ctrlKey && !e.shiftKey;
-  if (key === 'ctrlShift') return e.ctrlKey && e.shiftKey;
-  return e.ctrlKey && e.shiftKey; // fallback
+  if (key === 'ctrlShift') return e.ctrlKey && e.shiftKey && !e.altKey;
+  // fallback：默认 Ctrl+Shift
+  return e.ctrlKey && e.shiftKey && !e.altKey;
+}
+
+/** HTML 转义，防分类名注入 */
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => {
+    switch (c) {
+      case '&': return '&amp;';
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '"': return '&quot;';
+      default: return '&#39;';
+    }
+  });
+}
+
+/** 规范化磁贴 position 与数组下标一致 */
+function normalizePositions(tiles: Tile[]): Tile[] {
+  return tiles.map((t, i) => ({ ...t, position: i }));
+}
+
+/** 核心移动：把指定磁贴从 fromPage 移动到 toPage，返回新的 pagesData（无变化返回原引用） */
+function moveTilesBetweenPages(
+  pagesData: readonly TilePage[],
+  tileIds: readonly string[],
+  fromPageIndex: number,
+  toPageIndex: number,
+): TilePage[] {
+  if (fromPageIndex === toPageIndex) return pagesData as TilePage[];
+  const next = pagesData.slice();
+  const fromPage = next[fromPageIndex];
+  const toPage = next[toPageIndex];
+  if (fromPage === undefined || toPage === undefined) return pagesData as TilePage[];
+
+  const idSet = new Set(tileIds);
+  const moved = fromPage.tiles.filter((t) => idSet.has(t.id));
+  if (moved.length === 0) return pagesData as TilePage[];
+
+  next[fromPageIndex] = { ...fromPage, tiles: normalizePositions(fromPage.tiles.filter((t) => !idSet.has(t.id))) };
+  next[toPageIndex] = { ...toPage, tiles: normalizePositions(toPage.tiles.concat(moved)) };
+  return next;
 }
 
 /** 清除所有选中状态 */
@@ -68,12 +110,18 @@ function showBatchBar(): void {
   const count = state.selectedTileIds.size;
   bar.innerHTML = `
     <span class="batch-action-count">已选择 ${count} 个</span>
+    <button class="batch-action-btn batch-action-move" type="button">
+      <svg class="dh-icon dh-icon--move-folder dh-icon--sm" role="img"><use href="#dh-icon-move-folder"></use></svg>移动到分类
+    </button>
     <button class="batch-action-btn batch-action-delete" type="button">删除选中</button>
     <button class="batch-action-btn batch-action-cancel" type="button">取消选择</button>
   `;
   bar.style.display = 'flex';
 
   // 绑定事件
+  bar.querySelector('.batch-action-move')?.addEventListener('click', () => {
+    void promptSelectCategory([...state.selectedTileIds] as Tile['id'][], 'move');
+  });
   bar.querySelector('.batch-action-delete')?.addEventListener('click', () => {
     void confirmBatchDelete();
   });
@@ -95,58 +143,162 @@ async function confirmBatchDelete(): Promise<void> {
   const ok = await showConfirm(`确定要删除选中的 ${ids.length} 个快捷方式吗？`, { title: '批量删除', danger: true });
   if (!ok) return;
 
-  // 保存到撤销栈
-  const deleted: Tile[] = [];
-  for (const tid of ids) {
-    const tile = state.currentTiles.find((t) => t.id === tid as Tile['id']);
-    if (tile !== undefined) deleted.push(tile);
+  const idSet = new Set(ids);
+  const deleted = state.currentTiles.filter((t) => idSet.has(t.id));
+  const nextPages = state.pagesData.slice();
+  const page = nextPages[state.currentPage];
+  if (page !== undefined) {
+    nextPages[state.currentPage] = { ...page, tiles: normalizePositions(page.tiles.filter((t) => !idSet.has(t.id))) };
   }
-  state.undoStack = deleted;
+  state.pagesData = nextPages;
+  await pageManager.save(nextPages);
+  tileManager.updateCurrentTiles();
+  state.undoAction = { type: 'delete', tiles: deleted, pageIndex: state.currentPage };
 
-  // 执行删除
-  state.currentTiles = state.currentTiles.filter((t) => !state.selectedTileIds.has(t.id));
-  void tileManager.save();
-  renderTiles();
   clearSelection();
-
-  // 显示撤销提示
-  showUndoToast(deleted.length);
+  renderTiles();
+  showUndoToast('delete', deleted.length);
 }
 
-/** 撤销删除 */
-function undoDelete(): void {
-  if (state.undoStack.length === 0) return;
-  for (const tile of state.undoStack) {
-    state.currentTiles.push(tile);
-  }
-  state.undoStack = [];
-  void tileManager.save();
-  renderTiles();
-  clearSelection();
-  showToast('已恢复快捷方式', 'success');
+/* ================= 移动/复制分类选择弹窗 ================= */
+
+/** 分类选择弹窗模式 */
+type CategorySelectMode = 'move' | 'copy';
+
+/** 弹出分类选择弹窗，确认后将磁贴移动/复制到目标分类（含「新建分类」入口） */
+async function promptSelectCategory(tileIds: Tile['id'][], mode: CategorySelectMode): Promise<void> {
+  if (tileIds.length === 0) return;
+  const count = tileIds.length;
+  const isCopy = mode === 'copy';
+
+  const otherPages = state.pageNames
+    .map((name, idx) => ({ name, idx }))
+    .filter(({ idx }) => idx !== state.currentPage);
+
+  const listHTML = otherPages
+    .map(
+      (t) => `
+      <button type="button" class="move-target-item" data-page-index="${t.idx}">
+        <span class="move-target-icon">${icon('folder', 'dh-icon--md')}</span>
+        <span class="move-target-name">${escapeHtml(t.name)}</span>
+        <span class="move-target-arrow">${icon('chevron-right', 'dh-icon--sm')}</span>
+      </button>`,
+    )
+    .join('');
+
+  const emptyHint =
+    otherPages.length === 0
+      ? '<p class="move-target-empty">当前没有其他分类，可点击下方「新建分类」创建目标分类。</p>'
+      : '';
+
+  const verb = isCopy ? '复制' : '移动';
+  const hintText = isCopy
+    ? '选择目标分类，磁贴副本将追加到目标分类。'
+    : '选择目标分类，磁贴将从当前分类移除。';
+
+  const destroy = createModal(
+    `${verb} ${count} 个快捷方式到`,
+    `<p class="move-target-hint">${hintText}</p>
+     ${emptyHint}
+     <div class="move-target-list">${listHTML}</div>
+     <button type="button" class="move-target-new">${icon('plus', 'dh-icon--sm')}<span>新建分类</span></button>`,
+    '',
+  );
+
+  // 绑定已有分类选项
+  document.querySelectorAll<HTMLElement>('.move-target-item').forEach((el) => {
+    const idx = Number(el.dataset.pageIndex);
+    el.addEventListener('click', () => {
+      destroy();
+      if (isCopy) {
+        void tileManager.copyTilesToPage(tileIds, idx);
+      } else {
+        void tileManager.moveTilesToPage(tileIds, idx);
+      }
+    });
+  });
+
+  // 绑定「新建分类」：仅移动模式支持（复制到新分类无意义）
+  document.querySelector<HTMLElement>('.move-target-new')?.addEventListener('click', () => {
+    destroy();
+    if (isCopy) return;
+    void (async () => {
+      const name = await showPrompt('新建分类', {
+        title: '新建分类',
+        placeholder: '分类名称',
+        confirmText: '创建并移动',
+      });
+      if (name === null) return;
+      const trimmed = (name as string).trim();
+      if (trimmed === '') return;
+      await tileManager.moveTilesToNewPage(tileIds, trimmed);
+    })();
+  });
 }
 
-/** 显示撤销 Toast */
-function showUndoToast(count: number): void {
-  const host = (() => {
-    let h = document.getElementById('dhDialogHost');
-    if (h === null) {
-      h = document.createElement('div');
-      h.id = 'dhDialogHost';
-      h.style.cssText = 'position:fixed;inset:0;z-index:3200;pointer-events:none;';
-      document.body.appendChild(h);
+/* ================= 撤销机制 ================= */
+
+/** 获取 Toast 挂载点（懒创建） */
+function getToastHost(): HTMLElement {
+  let host = document.getElementById('dhDialogHost');
+  if (host === null) {
+    host = document.createElement('div');
+    host.id = 'dhDialogHost';
+    host.style.cssText = 'position:fixed;inset:0;z-index:3200;pointer-events:none;';
+    document.body.appendChild(host);
+  }
+  return host;
+}
+
+/** 撤销最近一次删除或移动操作 */
+function undoLastAction(): void {
+  const action = state.undoAction;
+  if (action === null) return;
+  state.undoAction = null;
+
+  if (action.type === 'delete') {
+    const nextPages = state.pagesData.slice();
+    const page = nextPages[action.pageIndex];
+    if (page !== undefined) {
+      nextPages[action.pageIndex] = { ...page, tiles: normalizePositions(page.tiles.concat(action.tiles)) };
+      state.pagesData = nextPages;
+      void pageManager.save(nextPages);
     }
-    return h;
-  })();
+    tileManager.updateCurrentTiles();
+    renderTiles();
+    clearSelection();
+    showToast('已恢复快捷方式', 'success');
+    return;
+  }
 
+  // 撤销移动：把磁贴从目标分类移回源分类
+  const nextPages = moveTilesBetweenPages(
+    state.pagesData,
+    action.tiles.map((t) => t.id),
+    action.toPageIndex,
+    action.fromPageIndex,
+  );
+  if (nextPages === state.pagesData) return;
+  state.pagesData = nextPages;
+  void pageManager.save(nextPages);
+  tileManager.updateCurrentTiles();
+  renderTiles();
+  clearSelection();
+  showToast('已撤销移动', 'success');
+}
+
+/** 显示带撤销按钮的 Toast */
+function showUndoToast(kind: 'delete' | 'move', count: number): void {
+  const host = getToastHost();
   host.querySelectorAll('.ui-toast').forEach((t) => t.remove());
 
+  const text = kind === 'delete' ? `已删除 ${count} 个快捷方式` : `已移动 ${count} 个快捷方式`;
   const toast = document.createElement('div');
   toast.className = 'ui-toast ui-toast--info';
   toast.style.pointerEvents = 'auto';
   toast.innerHTML = `
     <span class="ui-toast-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></span>
-    <span>已删除 ${count} 个快捷方式</span>
+    <span>${text}</span>
     <button class="ui-toast-undo-btn" type="button">撤销</button>
   `;
   host.appendChild(toast);
@@ -160,7 +312,7 @@ function showUndoToast(count: number): void {
     if (timer !== null) clearTimeout(timer);
     timer = null;
     toast.remove();
-    undoDelete();
+    undoLastAction();
   });
 }
 
@@ -295,37 +447,85 @@ export const tileManager = {
     this.updateCurrentTiles();
   },
 
-  /** 将磁贴移动到目标分类 */
-  moveTileToPage(tileId: Tile['id'], targetPageIndex: number): void {
+  /** 批量移动磁贴到目标分类（记录撤销动作，自动重排两分类 position） */
+  async moveTilesToPage(tileIds: Tile['id'][], targetPageIndex: number): Promise<void> {
     if (targetPageIndex === state.currentPage) return;
-    const page = pageManager.getCurrentPageData();
-    if (page === null) return;
-    const tile = page.tiles.find((t) => t.id === tileId);
-    if (tile === undefined) return;
-    this.remove(tileId);
-    const nextPages = state.pagesData.slice();
-    const target = nextPages[targetPageIndex];
-    if (target !== undefined) {
-      nextPages[targetPageIndex] = { ...target, tiles: target.tiles.concat([{ ...tile, position: target.tiles.length }]) };
-    }
+    if (tileIds.length === 0) return;
+
+    const idSet = new Set(tileIds as string[]);
+    const moved = state.currentTiles.filter((t) => idSet.has(t.id));
+    if (moved.length === 0) return;
+
+    const fromPageIndex = state.currentPage;
+    const nextPages = moveTilesBetweenPages(state.pagesData, [...idSet], fromPageIndex, targetPageIndex);
+    if (nextPages === state.pagesData) return;
     state.pagesData = nextPages;
-    void pageManager.save(nextPages);
+    await pageManager.save(nextPages);
+    this.updateCurrentTiles();
+
+    state.undoAction = {
+      type: 'move',
+      tiles: moved,
+      fromPageIndex,
+      toPageIndex: targetPageIndex,
+    };
+
+    clearSelection();
+    renderTiles();
+    showUndoToast('move', moved.length);
   },
 
-  /** 将磁贴复制到目标分类 */
-  copyTileToPage(tileId: Tile['id'], targetPageIndex: number): void {
+  /** 移动磁贴到新建分类（创建分类 + 移动 + 记录撤销，不切换当前页） */
+  async moveTilesToNewPage(tileIds: Tile['id'][], newName: string): Promise<void> {
+    const safeName = newName.trim();
+    if (safeName === '' || tileIds.length === 0) return;
+
+    const fromPageIndex = state.currentPage;
+    const idSet = new Set(tileIds as string[]);
+    const moved = state.currentTiles.filter((t) => idSet.has(t.id));
+    if (moved.length === 0) return;
+
+    const nextPages = state.pagesData.slice();
+    const fromPage = nextPages[fromPageIndex];
+    if (fromPage === undefined) return;
+    nextPages[fromPageIndex] = { ...fromPage, tiles: normalizePositions(fromPage.tiles.filter((t) => !idSet.has(t.id))) };
+    nextPages.push({ name: safeName, tiles: normalizePositions(moved) });
+
+    state.pagesData = nextPages;
+    state.pageNames = nextPages.map((p) => p.name);
+    state.totalPages = nextPages.length;
+    await pageManager.save(nextPages);
+    this.updateCurrentTiles();
+
+    state.undoAction = { type: 'move', tiles: moved, fromPageIndex, toPageIndex: nextPages.length - 1 };
+
+    clearSelection();
+    renderTiles();
+    renderCatRow();
+    showUndoToast('move', moved.length);
+  },
+
+  /** 复制磁贴到目标分类（源分类保留，副本追加到目标分类） */
+  async copyTilesToPage(tileIds: Tile['id'][], targetPageIndex: number): Promise<void> {
     if (targetPageIndex === state.currentPage) return;
-    const page = pageManager.getCurrentPageData();
-    if (page === null) return;
-    const tile = page.tiles.find((t) => t.id === tileId);
-    if (tile === undefined) return;
+    if (tileIds.length === 0) return;
+
+    const idSet = new Set(tileIds as string[]);
+    const copies = state.currentTiles.filter((t) => idSet.has(t.id));
+    if (copies.length === 0) return;
+
     const nextPages = state.pagesData.slice();
     const target = nextPages[targetPageIndex];
-    if (target !== undefined) {
-      nextPages[targetPageIndex] = { ...target, tiles: target.tiles.concat([{ ...tile, position: target.tiles.length }]) };
-    }
+    if (target === undefined) return;
+    const cloned = copies.map((t) => ({
+      ...t,
+      id: `tile_${Date.now()}_${Math.random().toString(36).slice(2, 8)}` as Tile['id'],
+    }));
+    nextPages[targetPageIndex] = { ...target, tiles: normalizePositions(target.tiles.concat(cloned)) };
     state.pagesData = nextPages;
-    void pageManager.save(nextPages);
+    await pageManager.save(nextPages);
+    this.updateCurrentTiles();
+    showToast(`已复制 ${copies.length} 个快捷方式`, 'success');
   },
 };
 
@@ -381,6 +581,34 @@ async function editTile(tile: Tile): Promise<void> {
   const url = (v.url ?? '').trim();
   if (url === '') return;
   tileManager.update(tile.id, { label: label || tile.label, url });
+}
+
+/** 更换磁贴图标：读取本地图片 → dataURL → 更新为 custom 类型 */
+async function promptChangeIcon(tile: Tile): Promise<void> {
+  const input = document.getElementById('tileImageInput') as HTMLInputElement | null;
+  if (input === null) return;
+
+  // 一次性读取文件
+  const file = await new Promise<File | null>((resolve) => {
+    const onChange = (): void => {
+      input.removeEventListener('change', onChange);
+      resolve(input.files?.[0] ?? null);
+    };
+    input.addEventListener('change', onChange);
+    input.click();
+  });
+  if (file === null) return;
+
+  const dataUrl = await new Promise<string | null>((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : null);
+    reader.onerror = () => resolve(null);
+    reader.readAsDataURL(file);
+  });
+  if (dataUrl === null) return;
+
+  tileManager.update(tile.id, { type: 'custom', imageData: dataUrl });
+  showToast('图标已更新', 'success');
 }
 
 /* ================= 渲染 ================= */
@@ -500,7 +728,7 @@ export function buildTileElement(tile: Tile): HTMLAnchorElement {
   a.appendChild(label);
   a.appendChild(deleteBtn);
 
-  // 右键弹出菜单（编辑 / 删除）
+  // 右键弹出菜单（编辑 / 更换图标 / 移动到分类 / 复制到分类 / 删除）
   a.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -509,6 +737,21 @@ export function buildTileElement(tile: Tile): HTMLAnchorElement {
         label: '编辑',
         icon: icon('edit'),
         action: () => void editTile(tile),
+      },
+      {
+        label: '更换图标',
+        icon: icon('image'),
+        action: () => void promptChangeIcon(tile),
+      },
+      {
+        label: '移动到分类',
+        icon: icon('move-folder'),
+        action: () => void promptSelectCategory([tile.id], 'move'),
+      },
+      {
+        label: '复制到分类',
+        icon: icon('copy'),
+        action: () => void promptSelectCategory([tile.id], 'copy'),
       },
       {
         label: '删除',
@@ -568,6 +811,17 @@ export function setTileDeleteMode(active: boolean): void {
   container?.classList.toggle('tile-edit-mode', active);
 }
 
+/**
+ * 切换编辑模式（磁贴 + 分类联动）
+ * 进入后磁贴/分类右上角删除按钮可见，再次触发退出。
+ */
+export function toggleEditMode(): void {
+  state.tileEditMode = !state.tileEditMode;
+  state.categoryEditMode = state.tileEditMode;
+  renderTiles();
+  renderCatRow();
+}
+
 /* ================= 拖拽系统（对齐原版：长按 + 跟随 + 目标位高亮 + 触屏） ================= */
 
 interface DragPointer {
@@ -595,6 +849,9 @@ const pointer: DragPointer = {
   ready: false,
   active: false,
 };
+
+/** 拖拽悬停的目标分类索引（-1 表示未悬停在分类按钮上） */
+let catDropTarget = -1;
 
 function isTouch(e: Event): boolean {
   return 'touches' in e;
@@ -658,6 +915,7 @@ function onPointerMove(e: Event): void {
     if (isTouch(e)) e.preventDefault();
     positionDragTile();
     highlightDropTarget();
+    highlightCategoryDropTarget();
   }
 }
 
@@ -669,15 +927,27 @@ function onPointerUp(): void {
   if (!pointer.active) return;
   const tile = pointer.tile;
   if (pointer.ready && pointer.moved && tile !== null) {
-    const target = document.querySelector<HTMLElement>('.tile.drag-over');
-    const toId = target?.dataset.tileId;
-    if (toId !== undefined) {
-      const toIndex = state.currentTiles.findIndex((t) => t.id === toId);
-      if (toIndex >= 0 && toIndex !== pointer.index) {
-        tileManager.reorder(pointer.index, toIndex);
+    // 优先：拖到分类按钮 → 跨分类移动
+    if (catDropTarget >= 0 && catDropTarget !== state.currentPage) {
+      const id = tile.dataset.tileId;
+      if (id !== undefined && isTileId(id)) {
+        // 若当前磁贴在选中集合中，则移动整个选中集合
+        const ids = state.selectedTileIds.has(id) ? [...state.selectedTileIds] : [id];
+        void tileManager.moveTilesToPage(ids as Tile['id'][], catDropTarget);
       }
+      state.preventNextTileClick = true;
+    } else {
+      // 原有：同分类内重排
+      const target = document.querySelector<HTMLElement>('.tile.drag-over');
+      const toId = target?.dataset.tileId;
+      if (toId !== undefined) {
+        const toIndex = state.currentTiles.findIndex((t) => t.id === toId);
+        if (toIndex >= 0 && toIndex !== pointer.index) {
+          tileManager.reorder(pointer.index, toIndex);
+        }
+      }
+      state.preventNextTileClick = true;
     }
-    state.preventNextTileClick = true;
   }
   resetDragState();
 }
@@ -688,13 +958,44 @@ function resetDragState(): void {
     (el as HTMLElement).style.position = '';
     (el as HTMLElement).style.left = '';
     (el as HTMLElement).style.top = '';
+    (el as HTMLElement).style.width = '';
+    (el as HTMLElement).style.height = '';
     (el as HTMLElement).style.zIndex = '';
   });
+  clearCategoryDropTarget();
   pointer.tile = null;
   pointer.index = -1;
   pointer.moved = false;
   pointer.ready = false;
   pointer.active = false;
+}
+
+/** 检测鼠标坐标下命中的分类按钮 */
+function findCatBtnAt(x: number, y: number): HTMLElement | null {
+  const btns = document.querySelectorAll<HTMLElement>('.cat-btn[data-page]');
+  for (const btn of Array.from(btns)) {
+    const r = btn.getBoundingClientRect();
+    if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) {
+      return btn;
+    }
+  }
+  return null;
+}
+
+/** 高亮拖拽悬停的分类按钮 */
+function highlightCategoryDropTarget(): void {
+  clearCategoryDropTarget();
+  const btn = findCatBtnAt(pointer.currentX, pointer.currentY);
+  if (btn !== null) {
+    btn.classList.add('tile-drop-over');
+    catDropTarget = Number(btn.dataset.page ?? '-1');
+  }
+}
+
+/** 清除分类按钮拖拽高亮 */
+function clearCategoryDropTarget(): void {
+  document.querySelectorAll('.cat-btn.tile-drop-over').forEach((el) => el.classList.remove('tile-drop-over'));
+  catDropTarget = -1;
 }
 
 /** 拖拽跟随定位 */
@@ -704,6 +1005,10 @@ function positionDragTile(): void {
   const rect = tile.getBoundingClientRect();
   tile.classList.add('dragging');
   tile.style.position = 'fixed';
+  // 关键修复：position:fixed 会让网格项脱离流，width:100% 坍缩为视口宽；
+  // 显式固定原始宽高，保持磁贴尺寸与内容布局不变。
+  tile.style.width = `${rect.width}px`;
+  tile.style.height = `${rect.height}px`;
   tile.style.left = `${pointer.currentX - rect.width / 2}px`;
   tile.style.top = `${pointer.currentY - rect.height / 2}px`;
   tile.style.zIndex = '9999';

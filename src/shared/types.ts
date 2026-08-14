@@ -93,6 +93,9 @@ export type ShortcutColumns = 'auto' | '4' | '5' | '6' | '7' | '8';
 /** 主题方案 */
 export type ColorScheme = 'light' | 'dark' | 'auto';
 
+/** 链接打开类型（link-opener 统一入口） */
+export type LinkOpenType = 'tiles' | 'search' | 'other';
+
 /**
  * 新标签页设置项（tabpage_ 前缀存储）
  */
@@ -111,8 +114,6 @@ export interface TabPageSettings {
   catRow: boolean;
   /** 页面切换动画 */
   pageTransition: boolean;
-  /** 视图缩放比例（0.5 ~ 2.0） */
-  viewScale: number;
   /** 磁贴新标签打开 */
   linkNewTabTiles: boolean;
   /** 搜索结果新标签打开 */
@@ -141,24 +142,6 @@ export interface WallpaperSettings {
   blur: number;
   /** 遮罩透明度 0-100 */
   overlay: number;
-}
-
-/** 天气数据（Open-Meteo 解析结果） */
-export interface WeatherData {
-  /** 当前温度 ℃ */
-  temperature: number;
-  /** 天气文案（WMO 映射） */
-  description: string;
-  /** 语义图标名（weather-sun 等） */
-  icon: string;
-  /** 今日最高温 */
-  tempMax: number;
-  /** 今日最低温 */
-  tempMin: number;
-  /** 城市名（定位失败为默认） */
-  city: string;
-  /** 缓存时间戳 */
-  cachedAt: number;
 }
 
 /** 搜索引擎注册表 */

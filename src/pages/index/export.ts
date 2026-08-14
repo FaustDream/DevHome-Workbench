@@ -69,14 +69,20 @@ export function initExport(): void {
   document.querySelectorAll('[data-setting-action="exportData"]').forEach((btn) => {
     btn.addEventListener('click', () => void exportAllData());
   });
-  document.querySelectorAll<HTMLInputElement>('[data-setting-input="importData"]').forEach((input) => {
-    input.addEventListener('change', () => {
-      const file = input.files?.[0];
-      if (file !== undefined) {
-        void importDataFile(file).then(() => {
-          input.value = '';
-        });
-      }
-    });
+
+  // 导入按钮触发隐藏的 #importInput 文件选择框
+  const importInput = document.getElementById('importInput') as HTMLInputElement | null;
+  document.querySelectorAll('[data-setting-action="importData"]').forEach((btn) => {
+    btn.addEventListener('click', () => importInput?.click());
+  });
+
+  // #importInput change 事件：解析并导入文件
+  importInput?.addEventListener('change', () => {
+    const file = importInput.files?.[0];
+    if (file !== undefined) {
+      void importDataFile(file).then(() => {
+        importInput.value = '';
+      });
+    }
   });
 }

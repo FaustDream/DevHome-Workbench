@@ -47,6 +47,36 @@ async function responseToDataUrl(res: Response): Promise<string | null> {
 }
 
 /**
+ * 从站点首页 HTML 解析 `<link rel="icon">` 的 href
+ * @returns 绝对 URL 或 null
+ */
+async function extractIconHref(domain: string): Promise<string | null> {
+  try {
+    const res = await fetchWithTimeout(`https://${domain}/`, FAVICON_FETCH_TIMEOUT_MS);
+    if (!res.ok) return null;
+    const contentType = res.headers.get('content-type') ?? '';
+    if (!contentType.includes('text/html')) return null;
+    const html = await res.text();
+    // 匹配 <link rel="...icon..." href="...">，rel 优先取含 "icon" 的项
+    const linkRe = /<link\b[^>]*rel=["']([^"']*icon[^"']*)["'][^>]*>/gi;
+    let href: string | null = null;
+    for (const match of html.matchAll(linkRe)) {
+      const tag = match[0];
+      const hrefMatch = /href=["']([^"']+)["']/i.exec(tag);
+      if (hrefMatch !== null && hrefMatch[1] !== undefined) {
+        href = hrefMatch[1];
+        break;
+      }
+    }
+    if (href === null) return null;
+    // 相对路径 → 绝对 URL
+    return new URL(href, `https://${domain}/`).href;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * 解析真实 favicon
  * @returns dataURL 或 null
  */
@@ -58,6 +88,18 @@ export async function resolveRealFavicon(domain: string): Promise<string | null>
     const res = await fetchWithTimeout(`https://${domain}/favicon.ico`, FAVICON_FETCH_TIMEOUT_MS);
     const dataUrl = await responseToDataUrl(res);
     if (dataUrl !== null) return dataUrl;
+  } catch {
+    // 失败走下一候选
+  }
+
+  // 2. 解析首页 HTML 的 <link rel="icon"> 指向的图标
+  try {
+    const iconUrl = await extractIconHref(domain);
+    if (iconUrl !== null && isSafeDomain(new URL(iconUrl).hostname)) {
+      const res = await fetchWithTimeout(iconUrl, FAVICON_FETCH_TIMEOUT_MS);
+      const dataUrl = await responseToDataUrl(res);
+      if (dataUrl !== null) return dataUrl;
+    }
   } catch {
     // 失败走兜底
   }

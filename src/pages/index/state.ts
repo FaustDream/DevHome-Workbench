@@ -10,6 +10,29 @@ import type { EngineId, TabPageSettings, Tile, TilePage } from '../../shared/typ
 
 const MODULE = 'state';
 
+/** 撤销删除动作 */
+export interface UndoDeleteAction {
+  type: 'delete';
+  /** 被删除的磁贴（含原 position） */
+  tiles: Tile[];
+  /** 删除时所在分类索引 */
+  pageIndex: number;
+}
+
+/** 撤销移动动作 */
+export interface UndoMoveAction {
+  type: 'move';
+  /** 被移动的磁贴 */
+  tiles: Tile[];
+  /** 源分类索引 */
+  fromPageIndex: number;
+  /** 目标分类索引 */
+  toPageIndex: number;
+}
+
+/** 撤销动作联合类型（当前会话内有效） */
+export type UndoAction = UndoDeleteAction | UndoMoveAction;
+
 /** 全局应用状态 */
 export interface AppState {
   /** 磁贴分页数据 */
@@ -32,10 +55,6 @@ export interface AppState {
   categoryEditMode: boolean;
   /** 页面切换动画中 */
   pageTransition: boolean;
-  /** 时钟防重复更新缓存 */
-  lastMinute: string;
-  /** 日期防重复更新缓存 */
-  lastDate: string;
   /** 搜索历史 */
   searchHistory: string[];
   /** 拖拽已移动（点击需忽略） */
@@ -44,8 +63,8 @@ export interface AppState {
   preventNextTileClick: boolean;
   /** 批量选择的磁贴 ID 集合 */
   selectedTileIds: Set<string>;
-  /** 撤销栈：保存最近一次删除的磁贴列表（当前会话内有效） */
-  undoStack: Tile[];
+  /** 最近一次可撤销动作（当前会话内有效，null 表示无可撤销动作） */
+  undoAction: UndoAction | null;
 }
 
 /** 初始状态 */
@@ -65,7 +84,6 @@ export function createInitialState(): AppState {
       categoryMemory: true,
       catRow: true,
       pageTransition: true,
-      viewScale: 1,
       linkNewTabTiles: true,
       linkNewTabSearch: true,
       nickname: '主人',
@@ -75,13 +93,11 @@ export function createInitialState(): AppState {
     tileEditMode: false,
     categoryEditMode: false,
     pageTransition: false,
-    lastMinute: '',
-    lastDate: '',
     searchHistory: [],
     dragMoved: false,
     preventNextTileClick: false,
     selectedTileIds: new Set(),
-    undoStack: [],
+    undoAction: null,
   };
 }
 
@@ -94,8 +110,6 @@ const DOM_REGISTRY: Readonly<Record<string, string>> = {
   '#searchInput': '搜索输入框',
   '#tilesContainer': '磁贴容器',
   '#catRow': '分类按钮行',
-  '#timeMain': '时间显示',
-  '#dateDisplay': '日期显示',
   '#engineDropdown': '引擎下拉',
   '#settingsPanel': '设置面板',
 };

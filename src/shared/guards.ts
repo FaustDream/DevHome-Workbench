@@ -49,7 +49,6 @@ export const SettingsSchema = z.object({
   categoryMemory: z.boolean(),
   catRow: z.boolean(),
   pageTransition: z.boolean(),
-  viewScale: z.number().min(0.5).max(2),
   linkNewTabTiles: z.boolean(),
   linkNewTabSearch: z.boolean(),
   nickname: z.string(),

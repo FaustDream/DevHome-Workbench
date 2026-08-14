@@ -7,9 +7,12 @@
  * 每分钟刷新（天级精度）。
  */
 
-import { calcCountdown } from '../../lib/utils';
+import { createId, calcCountdown } from '../../lib/utils';
 import { COUNTDOWN_REFRESH_INTERVAL_MS, RAW_KEYS } from '../../shared/constants';
 import type { CountdownItem } from '../../shared/types';
+import { showPrompt } from './dialogs';
+import type { PromptFieldValues } from './dialogs';
+import { icon } from './icons';
 
 /** 读取倒计时列表（校验结构，R20） */
 export function getCountdowns(): CountdownItem[] {
@@ -44,6 +47,44 @@ export function saveCountdowns(items: readonly CountdownItem[]): void {
 export function deleteCountdown(id: string): void {
   const next = getCountdowns().filter((c) => c.id !== id);
   saveCountdowns(next);
+  refreshCountdownUI();
+}
+
+/** 校验 YYYY-MM-DD 日期格式 */
+function isDateStr(v: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(v);
+}
+
+/** 今日 YYYY-MM-DD */
+function todayStr(): string {
+  const d = new Date();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
+/** 弹出添加倒计时表单，确认后新增并持久化 */
+export async function addCountdown(): Promise<void> {
+  const values = await showPrompt('添加倒计时', {
+    title: '添加倒计时',
+    fields: [
+      { name: 'title', label: '名称', placeholder: '例如：项目上线' },
+      { name: 'targetDate', label: '目标日期', placeholder: 'YYYY-MM-DD', defaultValue: todayStr() },
+    ],
+    confirmText: '添加',
+  });
+  if (values === null) return;
+  const v = values as PromptFieldValues;
+  const title = (v.title ?? '').trim();
+  const targetDate = (v.targetDate ?? '').trim();
+  if (title === '' || !isDateStr(targetDate)) return;
+  const item: CountdownItem = {
+    id: createId('cd'),
+    title,
+    targetDate,
+    createdAt: todayStr(),
+  };
+  saveCountdowns([...getCountdowns(), item]);
   refreshCountdownUI();
 }
 
@@ -129,6 +170,15 @@ function refreshCountdownUI(): void {
   for (const cd of list) {
     root.appendChild(renderCountdownCard(cd));
   }
+  // 末尾「添加倒计时」按钮
+  const addBtn = document.createElement('button');
+  addBtn.type = 'button';
+  addBtn.className = 'countdown-add-btn';
+  addBtn.title = '添加倒计时';
+  addBtn.setAttribute('aria-label', '添加倒计时');
+  addBtn.innerHTML = icon('plus', 'dh-icon--sm');
+  addBtn.addEventListener('click', () => void addCountdown());
+  root.appendChild(addBtn);
 }
 
 /** 初始化倒计时：动态创建容器 + 渲染 + 每分钟刷新 */

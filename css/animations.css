@@ -48,7 +48,7 @@
 /* ===== 页面过渡动画（专注模式切换等） ===== */
 .tiles-container.page-transition {
     opacity: 0;
-    transform: translateY(10px) scale(var(--view-scale, 1));
+    transform: translateY(10px);
 }
 
 /* ===== 减少动画：全局禁用所有动画和过渡 ===== */

@@ -10,12 +10,12 @@
  */
 
 import { info } from '../../lib/logger';
-import { LS_KEYS, RAW_KEYS, SHORTCUT_SIZE_OPTIONS } from '../../shared/constants';
+import { LS_KEYS, SHORTCUT_SIZE_OPTIONS } from '../../shared/constants';
 import { isShortcutColumns, isShortcutSize } from '../../shared/guards';
 import type { ShortcutColumns, ShortcutSize } from '../../shared/types';
 import { state } from './state';
 import { localStorageService } from './storage';
-import { setColorScheme } from './theme-manager';
+import { setColorScheme, setAutoFollowSystem, getTheme } from './theme-manager';
 import { showConfirm } from './dialogs';
 import { resetAllData } from './reset';
 import { clearSelection } from './tiles';
@@ -90,9 +90,10 @@ function syncShortcutControls(): void {
 
 /** 同步主题卡片高亮 */
 function syncThemeCards(): void {
-  const scheme = localStorageService.getRaw(RAW_KEYS.THEME_CARD) ?? 'auto';
+  const theme = getTheme();
+  const activeScheme = theme.autoFollowSystem ? 'auto' : theme.colorScheme;
   document.querySelectorAll<HTMLElement>('.s-theme-card').forEach((c) => {
-    c.classList.toggle('active', c.dataset.scheme === scheme);
+    c.classList.toggle('active', c.dataset.scheme === activeScheme);
   });
 }
 
@@ -152,6 +153,10 @@ export function initSettingsPanel(): void {
     el?.addEventListener('change', () => {
       localStorageService.setRaw(cfg.key, String(el.checked));
       info(MODULE, `设置变更`, { key: cfg.key, value: el.checked });
+      // 减少动画开关实时生效
+      if (toggleId === 'animReduceToggle') {
+        document.body.classList.toggle('reduce-motion', el.checked);
+      }
     });
   }
 
@@ -182,9 +187,10 @@ export function initSettingsPanel(): void {
     card.addEventListener('click', () => {
       const scheme = card.dataset.scheme;
       if (scheme === undefined) return;
-      localStorageService.setRaw(RAW_KEYS.THEME_CARD, scheme);
       if (scheme === 'light' || scheme === 'dark') {
         setColorScheme(scheme);
+      } else if (scheme === 'auto') {
+        setAutoFollowSystem(true);
       }
       syncThemeCards();
     });

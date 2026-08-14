@@ -239,36 +239,66 @@ const catDrag = {
   timer: null as ReturnType<typeof setTimeout> | null,
 };
 
-/** 绑定分类行拖拽（长按进入，跟随，松手重排） */
+/** 是否为 touch 事件 */
+function isTouchEvent(e: Event): boolean {
+  return 'touches' in e;
+}
+
+/** 取事件客户端坐标（统一 mouse / touch） */
+function catClientPos(e: Event): { x: number; y: number } {
+  if (isTouchEvent(e)) {
+    const touch = (e as TouchEvent).touches[0];
+    return { x: touch?.clientX ?? 0, y: touch?.clientY ?? 0 };
+  }
+  const me = e as MouseEvent;
+  return { x: me.clientX, y: me.clientY };
+}
+
+/** 绑定分类行拖拽（长按进入，跟随，松手重排；支持鼠标与触屏） */
 export function attachCategoryDrag(row: HTMLElement): void {
-  row.addEventListener('mousedown', (e) => {
-    const btn = (e.target as HTMLElement).closest<HTMLElement>('.cat-btn');
-    if (btn === null || btn.dataset.page === undefined) return;
-    if ((e.target as HTMLElement).closest('.cat-delete-btn') !== null) return;
-    if (e.button !== 0) return;
-    catDrag.fromIndex = Number(btn.dataset.page);
-    catDrag.btn = btn;
-    catDrag.timer = setTimeout(() => {
-      btn.classList.add('dragging');
-    }, CATEGORY_LONG_PRESS_MS);
-  });
+  row.addEventListener('mousedown', onCatPointerDown);
+  row.addEventListener('touchstart', onCatPointerDown, { passive: false });
+  document.addEventListener('mousemove', onCatPointerMove);
+  document.addEventListener('mouseup', onCatPointerUp);
+  document.addEventListener('touchmove', onCatPointerMove, { passive: false });
+  document.addEventListener('touchend', onCatPointerUp);
+}
 
-  row.addEventListener('mousemove', (e) => {
-    if (catDrag.btn === null || !catDrag.btn.classList.contains('dragging')) return;
-    const rect = catDrag.btn.getBoundingClientRect();
-    catDrag.btn.style.position = 'fixed';
-    catDrag.btn.style.left = `${e.clientX - rect.width / 2}px`;
-    catDrag.btn.style.top = `${e.clientY - rect.height / 2}px`;
-    catDrag.btn.style.zIndex = '9999';
-    highlightCatDropTarget(e.clientX, e.clientY);
-  });
+function onCatPointerDown(e: Event): void {
+  const row = dom.get('#catRow');
+  if (row === null) return;
+  const btn = (e.target as HTMLElement).closest<HTMLElement>('.cat-btn');
+  if (btn === null || btn.dataset.page === undefined) return;
+  if ((e.target as HTMLElement).closest('.cat-delete-btn') !== null) return;
+  if (e instanceof MouseEvent && e.button !== 0) return;
+  if (isTouchEvent(e)) e.preventDefault();
+  catDrag.fromIndex = Number(btn.dataset.page);
+  catDrag.btn = btn;
+  catDrag.timer = setTimeout(() => {
+    btn.classList.add('dragging');
+  }, CATEGORY_LONG_PRESS_MS);
+}
 
-  row.addEventListener('mouseup', () => {
-    if (catDrag.timer !== null) {
-      clearTimeout(catDrag.timer);
-      catDrag.timer = null;
-    }
-    if (catDrag.fromIndex < 0) return;
+function onCatPointerMove(e: Event): void {
+  if (catDrag.btn === null || !catDrag.btn.classList.contains('dragging')) return;
+  if (isTouchEvent(e)) e.preventDefault();
+  const pos = catClientPos(e);
+  const rect = catDrag.btn.getBoundingClientRect();
+  catDrag.btn.style.position = 'fixed';
+  catDrag.btn.style.left = `${pos.x - rect.width / 2}px`;
+  catDrag.btn.style.top = `${pos.y - rect.height / 2}px`;
+  catDrag.btn.style.zIndex = '9999';
+  highlightCatDropTarget(pos.x, pos.y);
+}
+
+function onCatPointerUp(): void {
+  const row = dom.get('#catRow');
+  if (catDrag.timer !== null) {
+    clearTimeout(catDrag.timer);
+    catDrag.timer = null;
+  }
+  if (catDrag.fromIndex < 0) return;
+  if (row !== null) {
     const target = row.querySelector<HTMLElement>('.cat-btn.drag-over');
     if (target !== null && target.dataset.page !== undefined) {
       const toIndex = Number(target.dataset.page);
@@ -283,9 +313,9 @@ export function attachCategoryDrag(row: HTMLElement): void {
       (el as HTMLElement).style.top = '';
       (el as HTMLElement).style.zIndex = '';
     });
-    catDrag.fromIndex = -1;
-    catDrag.btn = null;
-  });
+  }
+  catDrag.fromIndex = -1;
+  catDrag.btn = null;
 }
 
 /** 分类目标位高亮 */

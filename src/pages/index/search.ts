@@ -16,6 +16,7 @@ import {
 } from '../../shared/constants';
 import { getEngineById } from '../../shared/types';
 import type { EngineId } from '../../shared/types';
+import { parseBooleanStr } from '../../shared/guards';
 import { state } from './state';
 import { localStorageService } from './storage';
 import { openUrl } from './link-opener';
@@ -34,6 +35,16 @@ const suggestionState = {
   items: [] as SuggestionItem[],
   selectedIndex: -1,
   visible: false,
+};
+
+/** 搜索相关开关（initSearch 时读取一次） */
+const searchFlags = {
+  /** 是否显示网络搜索建议（Bing 联想词） */
+  suggestions: true,
+  /** 搜索后是否保留输入框内容 */
+  retain: false,
+  /** 是否隐藏搜索按钮 */
+  hideBtn: false,
 };
 
 /* ================= 搜索历史 ================= */
@@ -114,7 +125,7 @@ export function handleSearchInput(query: string): void {
   if (suggestionDebounceTimer !== null) {
     clearTimeout(suggestionDebounceTimer);
   }
-  if (query.trim() !== '') {
+  if (query.trim() !== '' && searchFlags.suggestions) {
     suggestionDebounceTimer = setTimeout(async () => {
       const online = await fetchOnlineSuggestions(query.trim());
       const existing = new Set(suggestionState.items.map((i) => i.text));
@@ -249,14 +260,30 @@ export async function executeSearch(query: string, engineId?: EngineId): Promise
   addSearchHistory(q);
   hideSuggestions();
   await openUrl(`${engine.base}${encodeURIComponent(q)}`, { type: 'search' });
+  // 未开启「保留搜索内容」时，搜索后清空输入框
+  if (!searchFlags.retain) {
+    const input = document.getElementById('searchInput') as HTMLInputElement | null;
+    if (input !== null) input.value = '';
+  }
 }
 
 /** 初始化搜索：加载历史 + 绑定事件 */
 export function initSearch(): void {
   loadSearchHistory();
+  // 读取搜索相关开关（suggestions 默认开启，其余默认关闭）
+  const suggestionsRaw = localStorageService.getRaw(LS_KEYS.SEARCH_SUGGESTIONS);
+  searchFlags.suggestions = suggestionsRaw === null ? true : parseBooleanStr(suggestionsRaw);
+  searchFlags.retain = parseBooleanStr(localStorageService.getRaw(LS_KEYS.SEARCH_RETAIN));
+  searchFlags.hideBtn = parseBooleanStr(localStorageService.getRaw(LS_KEYS.SEARCH_HIDE_BTN));
+
   const input = document.getElementById('searchInput');
   const searchBtn = document.getElementById('searchButton');
   if (input === null) return;
+
+  // 隐藏搜索按钮开关
+  if (searchFlags.hideBtn && searchBtn !== null) {
+    searchBtn.style.display = 'none';
+  }
 
   input.addEventListener('input', () => handleSearchInput((input as HTMLInputElement).value));
   input.addEventListener('focus', () => renderSuggestions());

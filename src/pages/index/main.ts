@@ -7,11 +7,11 @@
  */
 
 import { info } from '../../lib/logger';
-import { SHORTCUT_SIZE_OPTIONS } from '../../shared/constants';
+import { LS_KEYS, SHORTCUT_SIZE_OPTIONS } from '../../shared/constants';
 import { initTheme, getColorScheme } from './theme-manager';
-import { dataService } from './storage';
+import { dataService, localStorageService } from './storage';
 import { state } from './state';
-import { tileManager, renderTiles, attachTileDrag, clearSelection } from './tiles';
+import { tileManager, renderTiles, attachTileDrag, clearSelection, toggleEditMode } from './tiles';
 import { renderCatRow, handleWheelScroll, attachCategoryDrag } from './category-ui';
 import { initSearch } from './search';
 import { bindEngineSelector, initEngineUI } from './navigation';
@@ -49,6 +49,11 @@ export async function boot(): Promise<void> {
   initTheme();
   info(MODULE, '主题初始化', { scheme: getColorScheme() });
 
+  // 减少动画开关：给 body 添加 reduce-motion 类
+  if (localStorageService.getRaw(LS_KEYS.ANIM_REDUCE) === 'true') {
+    document.body.classList.add('reduce-motion');
+  }
+
   // Phase 1：数据加载
   const settings = await dataService.getSettings();
   state.settings = settings;
@@ -63,6 +68,10 @@ export async function boot(): Promise<void> {
   renderTiles();
   renderCatRow();
   initSearch();
+  // 自动聚焦开关：启动时聚焦搜索框
+  if (state.settings.autoFocus) {
+    document.getElementById('searchInput')?.focus();
+  }
   initWallpaper();
   initCountdown();
   initDailyGreetingCard();
@@ -90,6 +99,10 @@ export async function boot(): Promise<void> {
       e.preventDefault();
       void resetAllData();
     }
+    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'd') {
+      e.preventDefault();
+      toggleEditMode();
+    }
   });
 
   info(MODULE, 'boot 完成');
@@ -103,10 +116,12 @@ function bindEvents(): void {
   const catRow = document.getElementById('catRow');
   if (catRow !== null) attachCategoryDrag(catRow);
 
-  // 滚轮翻页
-  document.addEventListener('wheel', (e) => {
-    handleWheelScroll(e);
-  });
+  // 滚轮翻页：限定在磁贴容器区域，避免设置面板/下拉框滚动误触翻页
+  if (tilesContainer !== null) {
+    tilesContainer.addEventListener('wheel', (e) => {
+      handleWheelScroll(e);
+    });
+  }
 
   // 引擎选择器
   const selector = document.getElementById('engineSelector');

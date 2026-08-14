@@ -90,6 +90,7 @@
     --color-accent-bg-15: rgba(14,165,233,0.15);
     --color-accent-bg-16: rgba(14,165,233,0.16);
     --color-accent-bg-18: rgba(14,165,233,0.18);
+    --color-accent-bg-30: rgba(14,165,233,0.30);
     --color-accent-border-18: rgba(14,165,233,0.18);
     --color-accent-border-20: rgba(14,165,233,0.20);
     --color-accent-border-30: rgba(14,165,233,0.30);
@@ -127,9 +128,6 @@
     /* ===== 梯度 (Gradients) ===== */
     --gradient-page: none;    /* 页面背景梯度（复合值，可为 none 用纯色） */
     --gradient-overlay: none; /* 背景图片遮罩梯度 */
-
-    /* ===== F4 视图缩放 ===== */
-    --view-scale: 1;
 
     /* ===== F6 图标设置 ===== */
     --tile-label-display: block;

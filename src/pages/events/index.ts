@@ -42,13 +42,13 @@ export function emit(event: string, ...args: unknown[]): void {
   }
 }
 
-/** 绑定全局键盘（数字键 1-8 切引擎，仅非输入状态） */
+/** 绑定全局键盘（数字键 1-9 切引擎，仅非输入状态） */
 export function bindGlobalEvents(): void {
   document.addEventListener('keydown', async (e) => {
     const target = e.target as HTMLElement | null;
     const isTyping =
       target !== null && typeof target.matches === 'function' && target.matches('input, textarea, [contenteditable]');
-    if (/^[1-8]$/.test(e.key) && !isTyping) {
+    if (/^[1-9]$/.test(e.key) && !isTyping) {
       const m = await import('../index/navigation');
       m.switchEngineByNumber(Number(e.key));
     }

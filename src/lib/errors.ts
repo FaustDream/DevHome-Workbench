@@ -5,13 +5,7 @@
  */
 
 /** 错误码字面量联合 */
-export type ErrorCode =
-  | 'STORAGE_WRITE_FAILED'
-  | 'INVALID_INPUT'
-  | 'MESSAGE_UNKNOWN_TYPE'
-  | 'FETCH_FAILED'
-  | 'DOM_NOT_FOUND'
-  | 'FILE_CONFIG_ERROR';
+export type ErrorCode = 'INVALID_INPUT' | 'MESSAGE_UNKNOWN_TYPE';
 
 /** 业务异常基类 */
 export class BusinessError extends Error {
