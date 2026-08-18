@@ -1,11 +1,12 @@
 /**
  * favicon 解析（wiki/05 §5.10）
  *
- * 为磁贴加载站点 favicon：
- * 1. 优先 IndexedDB favicon 缓存（避免重复请求）
- * 2. 未命中 → 发 `RESOLVE_FAVICON` 消息给 SW（SW 解析真实 favicon 返回 dataURL）
- * 3. 返回 dataURL 后写缓存 + 更新磁贴图标
- * 4. 全部失败 → 显示纯色背景（使用磁贴 color 属性，不再走 Google favicon 兜底）
+ * 多级加载策略：
+ * 1. IndexedDB favicon 缓存（离线可用）
+ * 2. 发 `RESOLVE_FAVICON` 消息给 SW（SW 解析 <link> 图标 + 多路径探测，返回 dataURL）
+ * 3. SW 失败 → 页面侧 <img> 直链兜底（浏览器原生 image loader，绕过 SW fetch 的 MIME/重定向限制，
+ *    天然支持跨域显示，且走浏览器自身 HTTP/ favicon 缓存）
+ * 4. 全部失败 → 纯色背景兜底（使用磁贴 color 属性）
  *
  * 域名白名单校验（R18）：仅允许合法域名格式，防 SSRF。
  */
@@ -14,11 +15,11 @@ import { MESSAGE_TYPE } from '../../shared/constants';
 import { isSafeDomain } from '../../shared/guards';
 import type { ExtensionResponse } from '../../shared/messages';
 import type { Tile } from '../../shared/types';
-import { warn } from '../../lib/logger';
+import { debug, warn } from '../../lib/logger';
 import { stripHtml } from '../../lib/utils';
 
 const MODULE = 'favicon';
-const FAVICON_DB_NAME = 'devhome-favicon';
+export const FAVICON_DB_NAME = 'devhome-favicon';
 const FAVICON_DB_VERSION = 1;
 const FAVICON_STORE = 'favicons';
 
@@ -95,6 +96,16 @@ export function openFaviconDB(): Promise<IDBDatabase | null> {
   return dbPromise;
 }
 
+/** 关闭 favicon 数据库连接（供重置时调用） */
+export function closeFaviconDB(): void {
+  if (dbPromise !== null) {
+    void dbPromise.then((db) => {
+      if (db !== null) db.close();
+      dbPromise = null;
+    });
+  }
+}
+
 /** 读取缓存 favicon dataURL */
 export async function getCachedFavicon(domain: string): Promise<string | null> {
   const db = await openFaviconDB();
@@ -142,12 +153,66 @@ export async function requestFavicon(domain: string): Promise<string | null> {
   }
 }
 
-/* ================= 磁贴图标加载（对齐原版 js/favicon.js loadFavicon） ================= */
+/* ================= 页面侧直链兜底（浏览器原生加载） ================= */
 
 /**
- * 加载磁贴 favicon
- * - IndexedDB 缓存 → SW 解析（RESOLVE_FAVICON）→ 写缓存
- * - 全部失败 → 显示纯色背景（使用磁贴 color）
+ * 页面侧直链候选顺序：高清 PNG → 通用 .ico → DDG 代理（最后兜底）。
+ * 不设 crossOrigin：浏览器可无 CORS 直接显示；缺点是无法读像素写回 IndexedDB，
+ * 但浏览器自身 HTTP 缓存会接管后续加载。
+ */
+function directFallbackCandidates(domain: string): string[] {
+  return [
+    `https://${domain}/apple-touch-icon.png`,
+    `https://${domain}/favicon-32x32.png`,
+    `https://${domain}/favicon.png`,
+    `https://${domain}/favicon.ico`,
+    // DDG 图标服务作为最后兜底：有图标时返回真实图标，无图标时返回首字母方块（比纯色更友好）
+    `https://icons.duckduckgo.com/ip3/${domain}.ico`,
+  ];
+}
+
+/**
+ * 让 <img> 元素依次尝试一组 URL；首个 onload 即停止，全部 onerror 后调用 finalFail。
+ * 不做 dataURL 转换 —— 浏览器直接显示即可。
+ */
+function tryDirectCandidates(
+  img: HTMLImageElement,
+  candidates: string[],
+  finalFail: () => void,
+): void {
+  let idx = 0;
+  const tryNext = () => {
+    if (idx >= candidates.length) {
+      finalFail();
+      return;
+    }
+    const url = candidates[idx]!;
+    idx++;
+    // 保存监听器引用便于卸载
+    const onLoad = () => {
+      cleanup();
+      debug(MODULE, `直链 favicon 加载成功`, { url });
+    };
+    const onError = () => {
+      cleanup();
+      tryNext();
+    };
+    const cleanup = () => {
+      img.removeEventListener('load', onLoad);
+      img.removeEventListener('error', onError);
+    };
+    img.addEventListener('load', onLoad, { once: true });
+    img.addEventListener('error', onError, { once: true });
+    img.src = url;
+  };
+  tryNext();
+}
+
+/* ================= 磁贴图标加载 ================= */
+
+/**
+ * 加载磁贴 favicon（多级策略）
+ * - IndexedDB 缓存 → SW 解析（dataURL）→ 页面 <img> 直链兜底 → 纯色背景
  */
 export async function loadFavicon(
   url: string,
@@ -161,11 +226,11 @@ export async function loadFavicon(
     showColorFallback(imgElement, iconWrap, color);
     return;
   }
+  // 1. IndexedDB 缓存
   const cached = await getCachedFavicon(domain);
   if (cached !== null) {
-    imgElement.src = cached;
-    imgElement.onerror = () => {
-      // 缓存数据可能已损坏，清除缓存 → 纯色兜底
+    const onErr = () => {
+      // 缓存数据可能已损坏：清缓存 → 继续走 SW/直链
       void (async () => {
         const db = await openFaviconDB();
         if (db !== null) {
@@ -173,18 +238,38 @@ export async function loadFavicon(
           tx.objectStore(FAVICON_STORE).delete(domain);
         }
       })();
-      showColorFallback(imgElement, iconWrap, color);
+      trySwThenDirect(domain, imgElement, iconWrap, color);
     };
+    imgElement.addEventListener('error', onErr, { once: true });
+    imgElement.addEventListener('load', () => imgElement.removeEventListener('error', onErr), { once: true });
+    imgElement.src = cached;
     return;
   }
-  const dataUrl = await requestFavicon(domain);
-  if (dataUrl !== null) {
-    imgElement.src = dataUrl;
-    void cacheFavicon(domain, dataUrl);
-    imgElement.onerror = () => showColorFallback(imgElement, iconWrap, color);
-    return;
-  }
-  showColorFallback(imgElement, iconWrap, color);
+  // 2. SW → 3. 直链 → 4. 纯色
+  trySwThenDirect(domain, imgElement, iconWrap, color);
+}
+
+/** SW 解析成功则用 dataURL 并写缓存；失败走直链兜底 */
+function trySwThenDirect(
+  domain: string,
+  img: HTMLImageElement,
+  iconWrap: HTMLElement,
+  color: string,
+): void {
+  void requestFavicon(domain).then((dataUrl) => {
+    if (dataUrl !== null) {
+      const onErr = () =>
+        tryDirectCandidates(img, directFallbackCandidates(domain), () => showColorFallback(img, iconWrap, color));
+      img.addEventListener('error', onErr, { once: true });
+      img.addEventListener('load', () => img.removeEventListener('error', onErr), { once: true });
+      img.src = dataUrl;
+      void cacheFavicon(domain, dataUrl);
+      return;
+    }
+    // SW 失败：走浏览器直链
+    debug(MODULE, 'SW 解析失败，回退到直链加载', { domain });
+    tryDirectCandidates(img, directFallbackCandidates(domain), () => showColorFallback(img, iconWrap, color));
+  });
 }
 
 /** 纯色背景兜底：移除 img，容器显示纯色背景 */

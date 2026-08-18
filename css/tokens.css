@@ -132,7 +132,6 @@
     /* ===== F6 图标设置 ===== */
     --tile-label-display: block;
     --tile-icon-shadow: none;
-    --tile-radius-override: 12px;
     --tile-opacity: 1;
 
     /* ===== F8 字体设置 ===== */

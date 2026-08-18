@@ -12,7 +12,7 @@
 .cat-btn {
     padding: 5px 14px;
     border: 1px solid var(--color-border);
-    border-radius: 16px;
+    border-radius: var(--radius-full);
     background: var(--color-surface);
     color: var(--color-text-secondary);
     font-size: 12px;
@@ -47,7 +47,7 @@
 .cat-add-btn {
     padding: 5px 14px;
     border: 1px dashed var(--color-accent-border-46);
-    border-radius: 16px;
+    border-radius: var(--radius-full);
     background: var(--color-accent-bg-08);
     color: var(--color-accent);
     font-size: var(--font-size-sm);
@@ -148,7 +148,7 @@
     width: 100%;
     height: var(--shortcut-container);
     min-height: auto;
-    border-radius: var(--tile-radius-override, var(--shortcut-radius));
+    border-radius: var(--shortcut-radius);
     /* 弱化边框，改用极淡背景 + 轻柔阴影界定卡片边缘 */
     background: var(--color-surface-subtle);
     box-shadow: var(--shadow-sm);
@@ -230,7 +230,7 @@
     opacity: 0.65;
     z-index: 99;
     cursor: grabbing;
-    transform: scale(1.02);
+    /* 不使用 transform: scale()，避免与 fixed 定位叠加导致视觉错位与越级缩放 */
     box-shadow: var(--shadow-lg);
     border-color: var(--color-accent);
     background: var(--color-tile-drag-bg);
@@ -238,12 +238,13 @@
     transition: none;
 }
 
+/* 长按等待态：仅用阴影呼吸提示，不缩放，杜绝尺寸反馈坍缩 */
 .tile.long-pressing {
     animation: long-press-pulse 0.8s ease-in-out infinite;
 }
 @keyframes long-press-pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(0.96); }
+    0%, 100% { box-shadow: var(--shadow-md); }
+    50% { box-shadow: var(--shadow-lg); }
 }
 
 .tile.drag-over {
@@ -396,7 +397,7 @@
 .add-tile-btn {
     width: 100%;
     height: var(--shortcut-container);
-    border-radius: var(--tile-radius-override, var(--shortcut-radius));
+    border-radius: var(--shortcut-radius);
     background: var(--color-tile-bg);
     border: 2px dashed var(--color-accent-border-46);
     color: var(--color-accent);
@@ -416,7 +417,7 @@
     z-index: 3100;
     background: var(--color-bg-elevated);
     border: 1px solid var(--color-border-active);
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     min-width: 140px;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -432,7 +433,7 @@
     font-size: var(--font-size-sm);
     color: var(--color-text-secondary);
     cursor: pointer;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     transition: background var(--transition-fast), color var(--transition-fast);
     user-select: none;
 }
@@ -509,7 +510,7 @@
 }
 .batch-action-delete {
     background: var(--color-danger);
-    color: #fff;
+    color: var(--color-text-inverse);
 }
 .batch-action-delete:hover {
     background: var(--color-danger-hover);
@@ -531,7 +532,7 @@
 }
 .batch-action-move:hover {
     background: var(--color-accent);
-    color: #fff;
+    color: var(--color-text-inverse);
     transform: scale(1.04);
 }
 .batch-action-move .dh-icon--sm {
@@ -560,7 +561,7 @@
     width: 100%;
     padding: 10px 14px;
     border: 1px solid var(--color-border);
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     background: var(--color-surface);
     cursor: pointer;
     text-align: left;
@@ -577,7 +578,7 @@
     justify-content: center;
     width: 30px;
     height: 30px;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     background: var(--color-accent-bg-18);
     color: var(--color-accent);
     flex-shrink: 0;
@@ -612,7 +613,7 @@
     margin-top: 10px;
     padding: 10px 14px;
     border: 1px dashed var(--color-accent-border-46);
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     background: var(--color-accent-bg-08);
     color: var(--color-accent);
     font-size: var(--font-size-sm);
@@ -629,23 +630,7 @@
     height: 14px;
 }
 
-/* ===== 撤销 Toast 按钮 ===== */
-.ui-toast-undo-btn {
-    margin-left: 8px;
-    padding: 2px 10px;
-    border: 1px solid var(--color-accent);
-    border-radius: 6px;
-    background: transparent;
-    color: var(--color-accent);
-    font-size: var(--font-size-xs);
-    font-weight: 600;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-}
-.ui-toast-undo-btn:hover {
-    background: var(--color-accent);
-    color: #fff;
-}
+/* ===== 撤销 Toast 按钮样式已移至 ui-components.css ===== */
 
 /* ===== 磁贴网格响应式断点 ===== */
 @media (max-width: 768px) {

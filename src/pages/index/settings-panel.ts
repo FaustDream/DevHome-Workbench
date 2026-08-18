@@ -1,12 +1,10 @@
 /**
- * 设置面板（对齐原版 js/ui/_settings-panel.js + index.html #settingsOverlay）
+ * 设置面板
  *
  * - 打开/关闭：`#settingsGearBtn` / `#settingsCloseBtn` / 遮罩点击
  * - Tab 切换：`.s-nav-item[data-s-tab]` ↔ `.s-tab[data-s-tab]`
  * - 开关：`.s-toggle input` 读写对应存储键并更新 state
  * - 分段控件：磁贴大小/每排数量 → CSS 变量
- * - 主题卡片：`.s-theme-card[data-scheme]`
- * - 滑块：搜索框宽度/圆角/不透明度 → CSS 变量；背景滑块由 wallpaper.ts 接管
  */
 
 import { info } from '../../lib/logger';
@@ -15,12 +13,63 @@ import { isShortcutColumns, isShortcutSize } from '../../shared/guards';
 import type { ShortcutColumns, ShortcutSize } from '../../shared/types';
 import { state } from './state';
 import { localStorageService } from './storage';
-import { setColorScheme, setAutoFollowSystem, getTheme } from './theme-manager';
 import { showConfirm } from './dialogs';
 import { resetAllData } from './reset';
 import { clearSelection } from './tiles';
+import { updateSearchFlags } from './search';
 
 const MODULE = 'settings-panel';
+
+/** 之前聚焦的元素（关闭面板时恢复） */
+let lastFocusedElement: HTMLElement | null = null;
+
+/** 获取面板内所有可聚焦元素 */
+function getFocusableElements(panel: HTMLElement): HTMLElement[] {
+  const selectors = [
+    'button:not([disabled])',
+    'input:not([disabled]):not([type="hidden"])',
+    'select:not([disabled])',
+    'textarea:not([disabled])',
+    'a[href]',
+    '[tabindex]:not([tabindex="-1"])',
+  ].join(',');
+  return Array.from(panel.querySelectorAll<HTMLElement>(selectors)).filter(
+    (el) => !el.hasAttribute('disabled') && el.offsetParent !== null
+  );
+}
+
+/** 焦点陷阱：Tab/Shift+Tab 循环 */
+function trapFocus(e: KeyboardEvent): void {
+  if (e.key !== 'Tab') return;
+  const panel = document.getElementById('settingsPanel');
+  if (panel === null) return;
+  const focusable = getFocusableElements(panel);
+  if (focusable.length === 0) return;
+  const first = focusable[0]!;
+  const last = focusable[focusable.length - 1]!;
+  const active = document.activeElement as HTMLElement | null;
+
+  if (e.shiftKey) {
+    // Shift+Tab: 如果在第一个元素，跳到最后一个
+    if (active === first || !panel.contains(active)) {
+      e.preventDefault();
+      last.focus();
+    }
+  } else {
+    // Tab: 如果在最后一个元素，跳到第一个
+    if (active === last || !panel.contains(active)) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
+}
+
+/** 获取开关 input（兼容 id 写在 label 或 input 上的两种写法） */
+function getToggleInput(id: string): HTMLInputElement | null {
+  const el = document.getElementById(id);
+  if (el instanceof HTMLInputElement) return el;
+  return el?.querySelector<HTMLInputElement>('input') ?? null;
+}
 
 /** 开关控件 id → 存储键映射（原版命名） */
 const TOGGLE_MAP: Readonly<Record<string, { key: string; defaultVal: boolean }>> = {
@@ -31,21 +80,42 @@ const TOGGLE_MAP: Readonly<Record<string, { key: string; defaultVal: boolean }>>
   searchSuggestionsToggle: { key: LS_KEYS.SEARCH_SUGGESTIONS, defaultVal: true },
   searchRetainToggle: { key: LS_KEYS.SEARCH_RETAIN, defaultVal: false },
   searchHideBtnToggle: { key: LS_KEYS.SEARCH_HIDE_BTN, defaultVal: false },
-  animReduceToggle: { key: LS_KEYS.ANIM_REDUCE, defaultVal: false },
   sToggleCatRow: { key: LS_KEYS.CAT_ROW, defaultVal: true },
 };
 
 /** 打开设置面板 */
 export function openSettings(): void {
   const overlay = document.getElementById('settingsOverlay');
-  overlay?.classList.add('visible');
+  if (overlay === null) return;
+  // 记录当前聚焦元素，关闭时恢复
+  lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  overlay.classList.add('visible');
   syncAllControls();
+  // 将焦点移到面板内的关闭按钮（或第一个可聚焦元素）
+  requestAnimationFrame(() => {
+    const panel = document.getElementById('settingsPanel');
+    if (panel !== null) {
+      const focusable = getFocusableElements(panel);
+      (focusable[0] ?? panel).focus();
+    }
+  });
 }
 
 /** 关闭设置面板 */
 export function closeSettings(): void {
   const overlay = document.getElementById('settingsOverlay');
   overlay?.classList.remove('visible');
+  // 恢复之前的焦点
+  if (lastFocusedElement !== null && document.body.contains(lastFocusedElement)) {
+    lastFocusedElement.focus();
+    lastFocusedElement = null;
+  }
+}
+
+/** 切换设置面板 */
+export function toggleSettings(): void {
+  if (isSettingsOpen()) closeSettings();
+  else openSettings();
 }
 
 /** 面板是否打开 */
@@ -57,14 +127,13 @@ export function isSettingsOpen(): boolean {
 /** 同步所有控件状态（从存储读取） */
 function syncAllControls(): void {
   for (const [toggleId, cfg] of Object.entries(TOGGLE_MAP)) {
-    const el = document.getElementById(toggleId) as HTMLInputElement | null;
+    const el = getToggleInput(toggleId);
     if (el !== null) {
       const raw = localStorageService.getRaw(cfg.key);
       el.checked = raw === null ? cfg.defaultVal : raw !== 'false';
     }
   }
   syncShortcutControls();
-  syncThemeCards();
   syncBatchModifierKey();
 }
 
@@ -85,15 +154,6 @@ function syncShortcutControls(): void {
   const colBtns = document.querySelectorAll<HTMLElement>('[data-shortcut-columns]');
   colBtns.forEach((b) => {
     b.classList.toggle('active', b.dataset.shortcutColumns === state.settings.shortcutColumns);
-  });
-}
-
-/** 同步主题卡片高亮 */
-function syncThemeCards(): void {
-  const theme = getTheme();
-  const activeScheme = theme.autoFollowSystem ? 'auto' : theme.colorScheme;
-  document.querySelectorAll<HTMLElement>('.s-theme-card').forEach((c) => {
-    c.classList.toggle('active', c.dataset.scheme === activeScheme);
   });
 }
 
@@ -133,7 +193,30 @@ export function initSettingsPanel(): void {
     if (e.target === overlay) closeSettings();
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && isSettingsOpen()) closeSettings();
+    // Ctrl+, 打开/关闭设置面板（VS Code / Chrome 约定快捷键）
+    // 不在输入框中触发，避免与输入冲突
+    const target = e.target as HTMLElement;
+    const isTyping =
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement ||
+      target.isContentEditable;
+
+    if (e.ctrlKey && e.key === ',' && !isTyping) {
+      e.preventDefault();
+      toggleSettings();
+      return;
+    }
+
+    if (e.key === 'Escape' && isSettingsOpen()) {
+      e.preventDefault();
+      closeSettings();
+      return;
+    }
+
+    // 设置面板打开时，启用焦点陷阱
+    if (isSettingsOpen()) {
+      trapFocus(e);
+    }
   });
 
   // Tab 切换
@@ -149,14 +232,14 @@ export function initSettingsPanel(): void {
 
   // 开关绑定
   for (const [toggleId, cfg] of Object.entries(TOGGLE_MAP)) {
-    const el = document.getElementById(toggleId) as HTMLInputElement | null;
+    const el = getToggleInput(toggleId);
     el?.addEventListener('change', () => {
       localStorageService.setRaw(cfg.key, String(el.checked));
-      info(MODULE, `设置变更`, { key: cfg.key, value: el.checked });
-      // 减少动画开关实时生效
-      if (toggleId === 'animReduceToggle') {
-        document.body.classList.toggle('reduce-motion', el.checked);
+      // 搜索相关开关需立即同步到 searchFlags，否则需刷新才生效
+      if (cfg.key === LS_KEYS.SEARCH_SUGGESTIONS || cfg.key === LS_KEYS.SEARCH_RETAIN || cfg.key === LS_KEYS.SEARCH_HIDE_BTN) {
+        updateSearchFlags(cfg.key, el.checked);
       }
+      info(MODULE, `设置变更`, { key: cfg.key, value: el.checked });
     });
   }
 
@@ -180,31 +263,6 @@ export function initSettingsPanel(): void {
         syncShortcutControls();
       }
     });
-  });
-
-  // 主题卡片
-  document.querySelectorAll<HTMLElement>('.s-theme-card').forEach((card) => {
-    card.addEventListener('click', () => {
-      const scheme = card.dataset.scheme;
-      if (scheme === undefined) return;
-      if (scheme === 'light' || scheme === 'dark') {
-        setColorScheme(scheme);
-      } else if (scheme === 'auto') {
-        setAutoFollowSystem(true);
-      }
-      syncThemeCards();
-    });
-  });
-
-  // 搜索框设置滑块
-  bindSlider('searchWidthSlider', 'searchWidthValue', (v) => {
-    document.documentElement.style.setProperty('--search-width', `${v}px`);
-  });
-  bindSlider('searchRadiusSlider', 'searchRadiusValue', (v) => {
-    document.documentElement.style.setProperty('--search-radius', `${v}px`);
-  });
-  bindSlider('searchOpacitySlider', 'searchOpacityValue', (v) => {
-    document.documentElement.style.setProperty('--search-opacity', String(v / 100));
   });
 
   // 高级 Tab：全部数据重置按钮
@@ -234,17 +292,5 @@ export function initSettingsPanel(): void {
       // 切换修饰键后清除当前选中状态
       clearSelection();
     });
-  });
-}
-
-/** 滑块绑定（实时更新值标签） */
-function bindSlider(sliderId: string, valueId: string, apply: (v: number) => void): void {
-  const slider = document.getElementById(sliderId) as HTMLInputElement | null;
-  const valueEl = document.getElementById(valueId);
-  if (slider === null) return;
-  slider.addEventListener('input', () => {
-    const v = Number(slider.value);
-    apply(v);
-    if (valueEl !== null) valueEl.textContent = String(v);
   });
 }

@@ -6,8 +6,7 @@
  */
 
 import { info, warn } from '../../lib/logger';
-import { LS_KEYS } from '../../shared/constants';
-import { localStorageService } from './storage';
+import { collectAppSnapshot, restoreAppSnapshot } from './storage';
 
 const MODULE = 'export';
 
@@ -20,14 +19,10 @@ interface ExportPayload {
 
 /** 导出所有数据为 JSON 触发下载 */
 export async function exportAllData(): Promise<void> {
-  const data: Record<string, unknown> = {};
-  data.pages = localStorageService.get(LS_KEYS.PAGES, []);
-  data.pageNames = localStorageService.get(LS_KEYS.PAGE_NAMES, []);
-
   const payload: ExportPayload = {
     version: '1.0',
     exportedAt: Date.now(),
-    data,
+    data: collectAppSnapshot(),
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -39,7 +34,7 @@ export async function exportAllData(): Promise<void> {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
-  info(MODULE, `数据已导出`, { keys: Object.keys(data) });
+  info(MODULE, `数据已导出`, { keys: Object.keys(payload.data) });
 }
 
 /** 导入 JSON 文件 */
@@ -50,13 +45,7 @@ export async function importDataFile(file: File): Promise<void> {
     if (typeof payload !== 'object' || payload === null || typeof payload.data !== 'object') {
       throw new Error('非法导出文件结构');
     }
-    const d = payload.data;
-    if (Array.isArray(d.pages)) {
-      localStorageService.set(LS_KEYS.PAGES, d.pages);
-    }
-    if (Array.isArray(d.pageNames)) {
-      localStorageService.set(LS_KEYS.PAGE_NAMES, d.pageNames);
-    }
+    restoreAppSnapshot(payload.data);
     info(MODULE, `数据已导入`);
   } catch (e) {
     warn(MODULE, `导入失败`, { err: (e as Error).message });

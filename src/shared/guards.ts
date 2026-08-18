@@ -44,7 +44,7 @@ export const TilePageSchema = z.object({
 export const SettingsSchema = z.object({
   engine: z.enum(['google', 'bing', 'baidu', 'zhihu', 'weibo', 'duckduckgo', 'github', 'bilibili', 'yandex', 'gamer520', 'linuxdo']),
   shortcutSize: z.enum(['small', 'standard', 'large']),
-  shortcutColumns: z.enum(['auto', '4', '5', '6', '7', '8']),
+  shortcutColumns: z.enum(['auto', '4', '5', '6', '7', '8', '10']),
   autoFocus: z.boolean(),
   categoryMemory: z.boolean(),
   catRow: z.boolean(),
@@ -132,7 +132,7 @@ export function isShortcutSize(v: unknown): v is ShortcutSize {
 
 /** 是否为合法快捷方式列数 */
 export function isShortcutColumns(v: unknown): v is ShortcutColumns {
-  return v === 'auto' || v === '4' || v === '5' || v === '6' || v === '7' || v === '8';
+  return v === 'auto' || v === '4' || v === '5' || v === '6' || v === '7' || v === '8' || v === '10';
 }
 
 /** 布尔串 'true'/'false' → boolean（localStorage 字符串开关） */

@@ -3,29 +3,30 @@
  *
  * Phase 0：主题（0 开销）
  * Phase 1：数据加载（设置/磁贴）
- * Phase 2：首屏渲染（引擎/磁贴/分类/搜索/背景/倒计时/问候/天气/设置面板）
+ * Phase 2：首屏渲染（引擎/磁贴/分类/搜索/背景/问候/天气/设置面板）
  */
 
 import { info } from '../../lib/logger';
-import { LS_KEYS, SHORTCUT_SIZE_OPTIONS } from '../../shared/constants';
+import { SHORTCUT_SIZE_OPTIONS } from '../../shared/constants';
 import { initTheme, getColorScheme } from './theme-manager';
-import { dataService, localStorageService } from './storage';
+import { initStorage, dataService } from './storage';
 import { state } from './state';
-import { tileManager, renderTiles, attachTileDrag, clearSelection, toggleEditMode } from './tiles';
+import { tileManager, renderTiles, attachTileDrag, toggleEditMode } from './tiles';
 import { renderCatRow, handleWheelScroll, attachCategoryDrag } from './category-ui';
 import { initSearch } from './search';
 import { bindEngineSelector, initEngineUI } from './navigation';
 import { initWallpaper } from './wallpaper';
-import { initCountdown } from './countdown';
 import { initDailyGreetingCard } from './daily-greeting';
 import { initWeather } from './weather';
 import { initSettingsPanel } from './settings-panel';
 import { initExport, exportAllData } from './export';
-import { initFileConfig } from './file-config';
+import { initFileConfig, runInitialSetup } from './file-config';
 import { initIconHydrate } from './icon-hydrate';
 import { initOnboarding } from './onboarding';
 import { resetAllData } from './reset';
+import { showConfirm } from './dialogs';
 import { bindGlobalEvents } from '../events';
+import { initCommandPalette } from './command-palette';
 
 const MODULE = 'main';
 
@@ -45,14 +46,11 @@ function applyShortcutSize(): void {
 
 /** 启动序列 */
 export async function boot(): Promise<void> {
+  await initStorage();
+
   // Phase 0：主题
   initTheme();
   info(MODULE, '主题初始化', { scheme: getColorScheme() });
-
-  // 减少动画开关：给 body 添加 reduce-motion 类
-  if (localStorageService.getRaw(LS_KEYS.ANIM_REDUCE) === 'true') {
-    document.body.classList.add('reduce-motion');
-  }
 
   // Phase 1：数据加载
   const settings = await dataService.getSettings();
@@ -73,7 +71,6 @@ export async function boot(): Promise<void> {
     document.getElementById('searchInput')?.focus();
   }
   initWallpaper();
-  initCountdown();
   initDailyGreetingCard();
   initWeather();
   initSettingsPanel();
@@ -81,9 +78,13 @@ export async function boot(): Promise<void> {
   initFileConfig();
   initIconHydrate();
   bindGlobalEvents();
+  initCommandPalette();
   info(MODULE, 'Phase 2 渲染完成');
 
-  // Phase 2.5：首次初始化引导
+  // Phase 2.3：首次安装初始化设置（路径选择）- 必须在onboarding之前
+  await runInitialSetup();
+
+  // Phase 2.5：首次初始化引导（收藏夹导入）
   void initOnboarding();
 
   // Phase 3：全局事件
@@ -97,7 +98,15 @@ export async function boot(): Promise<void> {
     }
     if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'r') {
       e.preventDefault();
-      void resetAllData();
+      void (async () => {
+        const confirmed = await showConfirm(
+          '此操作将清除所有自定义磁贴、设置和数据目录配置，恢复到初始默认状态，且不可撤销。确定要继续吗？',
+          { title: '⚠️ 重置所有数据', iconType: 'danger', danger: true, confirmText: '确认重置', cancelText: '取消' },
+        );
+        if (confirmed) {
+          await resetAllData();
+        }
+      })();
     }
     if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'd') {
       e.preventDefault();
@@ -132,14 +141,6 @@ function bindEvents(): void {
     if (target.closest('#engineSelector') === null && target.closest('#engineDropdown') === null) {
       document.getElementById('engineDropdown')?.classList.remove('visible');
     }
-  });
-
-  // 点击空白区域清除批量选择
-  document.addEventListener('click', (e) => {
-    if (state.selectedTileIds.size === 0) return;
-    const target = e.target as HTMLElement;
-    if (target.closest('.tile, .batch-action-bar') !== null) return;
-    clearSelection();
   });
 
   info(MODULE, 'Phase 3 事件绑定完成');

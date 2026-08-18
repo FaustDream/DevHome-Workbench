@@ -358,6 +358,12 @@
     pointer-events: none;
 }
 .ui-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: min(480px, calc(100vw - 48px));
+    width: fit-content;
     padding: 12px 20px;
     border-radius: 12px;
     font-size: 14px;
@@ -366,19 +372,59 @@
     border: 1px solid var(--color-border-active);
     color: var(--color-text);
     box-shadow: var(--shadow-lg);
-    animation: uiToastIn 0.3s ease, uiToastOut 0.3s ease 2.7s forwards;
+    animation: uiToastIn 0.3s ease;
     pointer-events: auto;
     display: flex;
     align-items: center;
     gap: 8px;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    word-break: break-word;
+}
+.ui-toast.ui-toast--out {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-8px);
 }
 .ui-toast.success { border-color: var(--color-success); }
+.ui-toast.success .ui-toast-icon { color: var(--color-success); }
 .ui-toast.error { border-color: var(--color-danger); }
+.ui-toast.error .ui-toast-icon { color: var(--color-danger); }
 .ui-toast.warning { border-color: var(--color-warning); }
+.ui-toast.warning .ui-toast-icon { color: var(--color-warning); }
+.ui-toast .ui-toast-icon {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+.ui-toast .ui-toast-icon svg {
+    width: 18px;
+    height: 18px;
+}
+.ui-toast .ui-toast-message {
+    min-width: 0;
+    line-height: 1.5;
+}
+.ui-toast .ui-toast-undo-btn {
+    flex-shrink: 0;
+    margin-left: 8px;
+    padding: 4px 12px;
+    border: 1px solid var(--color-accent);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--color-accent);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+.ui-toast .ui-toast-undo-btn:hover {
+    background: var(--color-accent);
+    color: var(--color-text-inverse);
+}
 
 @keyframes uiToastIn {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 @keyframes uiToastOut {
     from { opacity: 1; }

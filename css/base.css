@@ -60,7 +60,7 @@ body.focus-transition .focus-overlay.ready {
     --shortcut-label-size: 12px;
     --shortcut-label-bottom: 8px;
     --shortcut-add-icon: 28px;
-    --shortcut-columns: 6;
+    --shortcut-columns: 8;
     /* F5 布局系统 */
     --shortcut-row-gap: 24px;
     --shortcut-max-rows: auto;
@@ -76,7 +76,6 @@ body.focus-transition .focus-overlay.ready {
     /* F6 图标设置默认值 */
     --tile-label-display: block;
     --tile-icon-shadow: none;
-    --tile-radius-override: auto;
     --tile-opacity: 1;
 
     /* F8 字体设置默认值 */
@@ -320,6 +319,7 @@ body::before {
     left: 50%;
     transform: translateX(-50%);
     z-index: 3100;
+    max-width: min(480px, calc(100vw - 48px));
     padding: 10px 22px;
     border-radius: 12px;
     font-size: 13px;
@@ -330,6 +330,7 @@ body::before {
     -webkit-backdrop-filter: blur(16px);
     pointer-events: none;
     animation: wbToastIn 0.25s ease, wbToastOut 0.3s ease 2.2s forwards;
+    word-break: break-word;
 }
 .wb-toast.info    { background: var(--color-accent-bg-12); border: 1px solid var(--color-accent-border-20); color: var(--color-accent); }
 .wb-toast.success { background: var(--color-accent-bg-12); border: 1px solid var(--color-accent-border-20); color: var(--color-success); }

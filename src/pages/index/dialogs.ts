@@ -46,7 +46,7 @@ export interface PromptMultiOptions extends PromptOptions {
 }
 
 /** Toast 类型 */
-export type ToastType = 'success' | 'error' | 'info';
+export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
 /** 多输入结果 */
 export interface PromptFieldValues {
@@ -58,12 +58,14 @@ let modalHost: HTMLElement | null = null;
 let lastFocused: HTMLElement | null = null;
 let toastTimer: ReturnType<typeof setTimeout> | null = null;
 
-/** 获取弹窗挂载点（懒创建） */
+/** 获取弹窗挂载点（懒创建，包含 aria-live 区域用于通知） */
 function getHost(): HTMLElement {
   if (modalHost === null || !document.body.contains(modalHost)) {
     modalHost = document.createElement('div');
     modalHost.id = 'dhDialogHost';
     modalHost.style.cssText = 'position:fixed;inset:0;z-index:3200;pointer-events:none;';
+    modalHost.setAttribute('aria-live', 'polite');
+    modalHost.setAttribute('aria-atomic', 'false');
     document.body.appendChild(modalHost);
   }
   return modalHost;
@@ -82,7 +84,10 @@ function restoreFocus(): void {
 }
 
 /** 创建遮罩 + 对话框容器 */
-function createOverlay(kind: 'confirm' | 'prompt' | 'custom'): { overlay: HTMLElement; dialog: HTMLElement; destroy: () => void } {
+function createOverlay(
+  kind: 'confirm' | 'prompt' | 'custom',
+  onDismiss?: () => void,
+): { overlay: HTMLElement; dialog: HTMLElement; destroy: () => void } {
   const host = getHost();
   // host 为 fixed 全屏容器，pointer-events:none；每个 overlay 自身开启交互，
   // 避免 showToast 设置的 host pointer-events 干扰弹窗按钮点击
@@ -100,10 +105,14 @@ function createOverlay(kind: 'confirm' | 'prompt' | 'custom'): { overlay: HTMLEl
   focusAndRestore();
 
   // 关闭函数
+  let closed = false;
   const destroy = (): void => {
+    if (closed) return;
+    closed = true;
     host.removeChild(overlay);
     document.removeEventListener('keydown', onKey);
     restoreFocus();
+    onDismiss?.();
   };
 
   // Esc 关闭
@@ -144,7 +153,8 @@ function buildHeader(dialog: HTMLElement, title: string, onClose: () => void): H
  */
 export function showConfirm(message: string, opts: ConfirmOptions = {}): Promise<boolean> {
   return new Promise((resolve) => {
-    const { dialog, destroy } = createOverlay('confirm');
+    let result = false;
+    const { dialog, destroy } = createOverlay('confirm', () => resolve(result));
     const iconType = opts.iconType ?? 'warning';
 
     // 图标
@@ -191,18 +201,18 @@ export function showConfirm(message: string, opts: ConfirmOptions = {}): Promise
 
     // 事件
     cancelBtn.addEventListener('click', () => {
+      result = false;
       destroy();
-      resolve(false);
     });
     confirmBtn.addEventListener('click', () => {
+      result = true;
       destroy();
-      resolve(true);
     });
     dialog.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
+        result = true;
         destroy();
-        resolve(true);
       }
     });
   });
@@ -220,7 +230,8 @@ export function showPrompt(
 ): Promise<string | null | PromptFieldValues> {
   return new Promise((resolve) => {
     const options = opts ?? ({} as PromptOptions);
-    const { dialog, destroy } = createOverlay('prompt');
+    let result: string | PromptFieldValues | null = null;
+    const { dialog, destroy } = createOverlay('prompt', () => resolve(result));
 
     // 标题（若有）
     if (options.title !== undefined && options.title !== '') {
@@ -294,18 +305,18 @@ export function showPrompt(
     };
 
     cancelBtn.addEventListener('click', () => {
+      result = null;
       destroy();
-      resolve(null);
     });
     confirmBtn.addEventListener('click', () => {
+      result = collect();
       destroy();
-      resolve(collect());
     });
     dialog.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
+        result = collect();
         destroy();
-        resolve(collect());
       }
     });
   });
@@ -313,8 +324,15 @@ export function showPrompt(
 
 /**
  * Toast 通知（自动消失）
+ * @param message 通知文本
+ * @param type 类型：info / success / error / warning
+ * @param options 可选配置：action 显示操作按钮（用于撤销等）；duration 自定义停留时间（毫秒）
  */
-export function showToast(message: string, type: ToastType = 'info'): void {
+export function showToast(
+  message: string,
+  type: ToastType = 'info',
+  options?: { action?: { label: string; onClick: () => void }; duration?: number },
+): void {
   const host = getHost();
   // 移除旧 toast
   host.querySelectorAll('.ui-toast').forEach((t) => t.remove());
@@ -326,6 +344,9 @@ export function showToast(message: string, type: ToastType = 'info'): void {
   const toast = document.createElement('div');
   toast.className = `ui-toast ui-toast--${type}`;
   toast.style.pointerEvents = 'auto';
+  // 错误通知使用 role="alert" 立即播报，其他使用 role="status" 礼貌播报
+  toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
+  toast.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
   const icon = document.createElement('span');
   icon.className = 'ui-toast-icon';
   icon.innerHTML =
@@ -333,27 +354,53 @@ export function showToast(message: string, type: ToastType = 'info'): void {
       ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="M22 4L12 14l-3-3"/></svg>'
       : type === 'error'
         ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>'
-        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>';
+        : type === 'warning'
+          ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+          : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>';
   const text = document.createElement('span');
+  text.className = 'ui-toast-message';
   text.textContent = message;
   toast.appendChild(icon);
   toast.appendChild(text);
 
+  // 操作按钮（用于撤销等）
+  if (options?.action) {
+    const actionBtn = document.createElement('button');
+    actionBtn.type = 'button';
+    actionBtn.className = 'ui-toast-undo-btn';
+    actionBtn.textContent = options.action.label;
+    actionBtn.addEventListener('click', () => {
+      options.action!.onClick();
+      toast.classList.add('ui-toast--out');
+      setTimeout(() => toast.remove(), 200);
+      if (toastTimer !== null) {
+        clearTimeout(toastTimer);
+        toastTimer = null;
+      }
+    });
+    toast.appendChild(actionBtn);
+  }
+
   host.appendChild(toast);
+  const duration = options?.duration ?? (options?.action ? 4000 : 2200);
   toastTimer = setTimeout(() => {
     toast.classList.add('ui-toast--out');
     setTimeout(() => {
       toast.remove();
     }, 200);
-  }, 2200);
+  }, duration);
 }
 
 /**
  * 自定义内容弹窗
+ * @param title 弹窗标题
+ * @param bodyHTML 正文 HTML
+ * @param footerHTML 底部按钮 HTML
+ * @param onDismiss 弹窗关闭时的回调（无论以何种方式关闭）
  * @returns 关闭函数
  */
-export function createModal(title: string, bodyHTML: string, footerHTML = ''): () => void {
-  const { dialog, destroy } = createOverlay('custom');
+export function createModal(title: string, bodyHTML: string, footerHTML = '', onDismiss?: () => void): () => void {
+  const { dialog, destroy } = createOverlay('custom', onDismiss);
   buildHeader(dialog, title, destroy);
   const body = document.createElement('div');
   body.className = 'ui-dialog-body';

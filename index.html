@@ -132,15 +132,15 @@
                             <svg class="dh-icon dh-icon--chevron-down dh-icon--sm" role="img"><use href="#dh-icon-chevron-down"></use></svg>
                         </div>
                     </div>
-                    <input type="text" class="search-input doc-cmd-input" id="searchInput" placeholder="Search..." autocomplete="off" aria-label="搜索框">
+                    <input type="text" class="search-input doc-cmd-input" id="searchInput" placeholder="Search..." autocomplete="off" aria-label="搜索框" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="suggestionsList" aria-activedescendant="">
                     <button class="search-button" id="searchButton" aria-label="搜索">
-                        <svg class="dh-icon dh-icon--search dh-icon--md" role="img"><use href="#dh-icon-search"></use></svg>
+                        <svg class="dh-icon dh-icon--search dh-icon--md" aria-hidden="true"><use href="#dh-icon-search"></use></svg>
                     </button>
                 </div>
                 <!-- 搜索建议面板 -->
-                <div class="search-suggestions" id="searchSuggestions">
+                <div class="search-suggestions" id="searchSuggestions" hidden>
                     <div class="suggestions-header" id="suggestionsHeader"></div>
-                    <div class="suggestions-list" id="suggestionsList"></div>
+                    <div class="suggestions-list" id="suggestionsList" role="listbox" aria-label="搜索建议"></div>
                     <div class="suggestions-footer" id="suggestionsFooter"></div>
                 </div>
             </div>
@@ -182,21 +182,21 @@
                         <h3 class="s-section-title">分类与搜索</h3>
                         <div class="s-row">
                             <div class="s-row-left"><span class="s-row-label">自动聚焦</span><span class="s-row-desc">打开新标签时自动聚焦搜索框</span></div>
-                            <label class="s-toggle" id="sToggleAutoFocus"><input type="checkbox"><span class="s-toggle-thumb"></span></label>
+                            <label class="s-toggle"><input type="checkbox" id="sToggleAutoFocus"><span class="s-toggle-thumb"></span></label>
                         </div>
                         <div class="s-row">
                             <div class="s-row-left"><span class="s-row-label">分类记忆</span><span class="s-row-desc">记住上次浏览的分类页</span></div>
-                            <label class="s-toggle" id="sToggleCategoryMemory"><input type="checkbox"><span class="s-toggle-thumb"></span></label>
+                            <label class="s-toggle"><input type="checkbox" id="sToggleCategoryMemory"><span class="s-toggle-thumb"></span></label>
                         </div>
 
                         <h3 class="s-section-title">链接打开方式</h3>
                         <div class="s-row">
                             <div class="s-row-left"><span class="s-row-label">新标签打开网站</span><span class="s-row-desc">磁贴等链接在新标签页打开</span></div>
-                            <label class="s-toggle" id="sToggleNewTabTiles"><input type="checkbox" checked><span class="s-toggle-thumb"></span></label>
+                            <label class="s-toggle"><input type="checkbox" id="sToggleNewTabTiles" checked><span class="s-toggle-thumb"></span></label>
                         </div>
                         <div class="s-row">
                             <div class="s-row-left"><span class="s-row-label">新标签打开搜索结果</span><span class="s-row-desc">搜索引擎结果在新标签页打开</span></div>
-                            <label class="s-toggle" id="sToggleNewTabSearch"><input type="checkbox" checked><span class="s-toggle-thumb"></span></label>
+                            <label class="s-toggle"><input type="checkbox" id="sToggleNewTabSearch" checked><span class="s-toggle-thumb"></span></label>
                         </div>
 
                         <h3 class="s-section-title">快捷方式布局</h3>
@@ -216,6 +216,7 @@
                                 <div class="s-seg">
                                     <button class="s-seg-btn" data-shortcut-columns="6">6个</button>
                                     <button class="s-seg-btn" data-shortcut-columns="8">8个</button>
+                                    <button class="s-seg-btn" data-shortcut-columns="10">10个</button>
                                 </div>
                             </div>
                         </div>
@@ -251,40 +252,6 @@
                         <div class="s-row">
                             <div class="s-row-left"><span class="s-row-label">隐藏搜索按钮</span><span class="s-row-desc">仅通过 Enter 键触发搜索</span></div>
                             <label class="s-toggle"><input type="checkbox" id="searchHideBtnToggle"><span class="s-toggle-thumb"></span></label>
-                        </div>
-                        <label class="s-slider-row">
-                            <span>搜索框宽度 <span class="slider-value" id="searchWidthValue">560px</span></span>
-                            <input type="range" id="searchWidthSlider" min="320" max="960" value="560" step="10" class="context-slider">
-                        </label>
-                        <label class="s-slider-row">
-                            <span>搜索框圆角 <span class="slider-value" id="searchRadiusValue">24px</span></span>
-                            <input type="range" id="searchRadiusSlider" min="8" max="36" value="24" step="2" class="context-slider">
-                        </label>
-                        <label class="s-slider-row">
-                            <span>搜索框不透明度 <span class="slider-value" id="searchOpacityValue">1</span></span>
-                            <input type="range" id="searchOpacitySlider" min="50" max="100" value="100" step="5" class="context-slider">
-                        </label>
-
-                        <h3 class="s-section-title">色彩模式</h3>
-                        <div class="s-theme-cards" id="sThemeCards">
-                            <button class="s-theme-card" data-scheme="light" title="明亮清爽的浅色界面">
-                                <span class="s-theme-swatch" style="background:#e8f4f8;"><i style="background:#0ea5e9;"></i></span>
-                                <span class="s-theme-name">浅色</span>
-                            </button>
-                            <button class="s-theme-card" data-scheme="dark" title="护眼舒适的深色界面">
-                                <span class="s-theme-swatch" style="background:#0a1628;"><i style="background:#55e6d2;"></i></span>
-                                <span class="s-theme-name">深色</span>
-                            </button>
-                            <button class="s-theme-card" data-scheme="auto" title="跟随操作系统深浅色自动切换">
-                                <span class="s-theme-swatch" style="background:linear-gradient(135deg,#e8f4f8 50%,#0a1628 50%);"><i style="background:#0ea5e9;"></i></span>
-                                <span class="s-theme-name">自动</span>
-                            </button>
-                        </div>
-
-                        <h3 class="s-section-title">动画效果</h3>
-                        <div class="s-row">
-                            <div class="s-row-left"><span class="s-row-label">减少动画</span><span class="s-row-desc">禁用所有过渡和动画效果</span></div>
-                            <label class="s-toggle"><input type="checkbox" id="animReduceToggle"><span class="s-toggle-thumb"></span></label>
                         </div>
                     </section>
 
@@ -372,12 +339,22 @@
                             <svg class="dh-icon dh-icon--upload dh-icon--md" role="img"><use href="#dh-icon-upload"></use></svg><span>导入备份数据</span>
                         </button>
 
-                        <h3 class="s-section-title">文件同步</h3>
+                        <h3 class="s-section-title">数据存储目录</h3>
+                        <div class="s-path-display" id="configCurrentPath" style="margin-bottom:8px;padding:8px 10px;background:var(--color-bg-secondary);border-radius:6px;font-family:monospace;font-size:12px;word-break:break-all;line-height:1.4;">未配置数据目录</div>
+                        <button type="button" class="s-action-btn" data-setting-action="changeConfigDir" id="configChangeDirBtn">
+                            <svg class="dh-icon dh-icon--folder dh-icon--md" role="img"><use href="#dh-icon-folder"></use></svg><span id="configDirLabel">选择数据目录</span>
+                        </button>
                         <button type="button" class="s-action-btn" data-setting-action="syncToFile" id="configSyncBtn" style="display:none;">
                             <svg class="dh-icon dh-icon--refresh dh-icon--md" role="img"><use href="#dh-icon-refresh"></use></svg><span>立即同步到文件</span>
                         </button>
-                        <button type="button" class="s-action-btn" data-setting-action="changeConfigDir" id="configChangeDirBtn">
-                            <svg class="dh-icon dh-icon--bookmark dh-icon--md" role="img"><use href="#dh-icon-bookmark"></use></svg><span id="configDirLabel">选择配置目录</span>
+                        <button type="button" class="s-action-btn" id="configAuthBtn" style="display:none;">
+                            <svg class="dh-icon dh-icon--refresh dh-icon--md" role="img"><use href="#dh-icon-refresh"></use></svg><span>重新授权目录访问</span>
+                        </button>
+                        <button type="button" class="s-action-btn" id="configDirHelpBtn" title="如何选择数据目录？">
+                            <svg class="dh-icon dh-icon--info dh-icon--md" role="img"><use href="#dh-icon-info"></use></svg><span>路径选择帮助</span>
+                        </button>
+                        <button type="button" class="s-danger-btn" id="configResetBtn" title="清除已保存的目录配置">
+                            <svg class="dh-icon dh-icon--trash dh-icon--md" role="img"><use href="#dh-icon-trash"></use></svg><span>重置目录配置</span>
                         </button>
                         <div class="s-subtext" id="configSyncStatus"></div>
                     </section>

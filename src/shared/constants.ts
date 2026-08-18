@@ -5,10 +5,20 @@
  * 所有模块禁止在业务代码中散落裸数字/裸字符串，必须引用此处常量。
  */
 
-/** ===== 存储键（localStorage 前缀体系） ===== */
+/** ===== 主数据库（IndexedDB） ===== */
+/** 业务主数据库名 */
+export const APP_DB_NAME = 'ThrilledAppData' as const;
+/** 业务主数据库版本 */
+export const APP_DB_VERSION = 1 as const;
+/** 通用键值 object store：所有业务数据按 key 拆分保存，便于后续扩展 store */
+export const APP_DB_KV_STORE = 'kv' as const;
+/** 本地同步时自动创建的项目目录名（隐藏目录，用于保存应用数据） */
+export const APP_SYNC_DIR_NAME = '.ThrilledData' as const;
+
+/** ===== 存储键（兼容旧 localStorage 前缀体系） ===== */
 export const STORAGE_PREFIX = 'tabpage_' as const;
 
-/** localStorage 键名（完整键 = STORAGE_PREFIX + key） */
+/** 业务存储键名（IndexedDB key；旧 localStorage 完整键 = STORAGE_PREFIX + key） */
 export const LS_KEYS = {
   PAGES: 'pages',
   PAGE_NAMES: 'page_names',
@@ -27,18 +37,27 @@ export const LS_KEYS = {
   SEARCH_SUGGESTIONS: 'search_suggestions',
   SEARCH_RETAIN: 'search_retain',
   SEARCH_HIDE_BTN: 'search_hide_btn',
-  ANIM_REDUCE: 'anim_reduce',
-  DEFAULTS_CACHED: 'tabpage_defaults_cached',
-  DEFAULTS_VERSION: 'tabpage_defaults_version',
   /** 首次初始化标记（onboarding 已弹窗/已跳过） */
   ONBOARDED: 'tabpage_onboarded',
   /** 批量选择修饰键（ctrl / alt / ctrlShift） */
   BATCH_MODIFIER_KEY: 'batch_modifier_key',
+  /** 主题设置 */
+  THEME: 'theme',
+  /** 首次配置本地目录的引导标记 */
+  SYNC_DIR_PROMPTED: 'sync_dir_prompted',
+  /** 用户选择的父目录路径（用于显示） */
+  PARENT_DIR_PATH: 'parent_dir_path',
+  /** 初始化设置完成标记（首次安装路径选择完成后设置） */
+  INIT_SETUP_COMPLETED: 'init_setup_completed',
+  /** 目录访问权限已授权缓存标记（命中则跳过每次启动的权限检查） */
+  PERMISSION_CACHED: 'dir_permission_cached',
 } as const;
 
 /** 裸键（无前缀） */
 export const RAW_KEYS = {
   COUNTDOWNS: 'countdowns',
+  WALLPAPER_BG: 'wallpaper_bg',
+  WALLPAPER_SETTINGS: 'wallpaper_settings',
   DAILY_GREETING_QUOTE: 'daily_greeting_card_quote',
   WEATHER_CACHE: 'tabpage_weather_cache',
   THEME_CARD: '_devhome_theme_card',
@@ -63,12 +82,10 @@ export const WHEEL_PAGE_COOLDOWN_MS = 350;
 export const SEARCH_HISTORY_LIMIT = 20;
 /** 搜索建议面板最近历史条数 */
 export const SUGGESTION_HISTORY_LIMIT = 10;
-/** Bing 联想词防抖（ms） */
-export const SUGGESTION_DEBOUNCE_MS = 150;
 
 /** ===== 尺寸/布局 ===== */
 export const DEFAULT_SHORTCUT_SIZE = 'standard' as const;
-export const DEFAULT_SHORTCUT_COLUMNS = 'auto' as const;
+export const DEFAULT_SHORTCUT_COLUMNS = '8' as const;
 
 /** 快捷方式尺寸配置（容器宽/图标尺寸/间距/圆角/字号） */
 export const SHORTCUT_SIZE_OPTIONS = {
@@ -125,15 +142,6 @@ export const GREETING_PERIODS = [
 ] as const;
 /** 深夜问候（0-5 点） */
 export const GREETING_NIGHT = '夜深了' as const;
-
-/** ===== 默认分类数据源路径 ===== */
-export const DEFAULTS_JSON_PATH = 'defaults.json';
-/** defaults.json 缓存版本校验 */
-export const DEFAULTS_VERSION = '1' as const;
-
-/** ===== 外部 API 端点 ===== */
-/** Bing 联想词 API（osjson） */
-export const BING_SUGGESTION_ENDPOINT = 'https://api.bing.com/osjson.aspx?query=';
 
 /** ===== favicon 解析 ===== */
 /** SW 解析 favicon 超时（ms） */

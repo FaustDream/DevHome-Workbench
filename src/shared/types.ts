@@ -88,7 +88,7 @@ export interface SearchEngine {
 /** 快捷方式尺寸 */
 export type ShortcutSize = 'small' | 'standard' | 'large';
 /** 快捷方式列数配置值 */
-export type ShortcutColumns = 'auto' | '4' | '5' | '6' | '7' | '8';
+export type ShortcutColumns = 'auto' | '4' | '5' | '6' | '7' | '8' | '10';
 
 /** 主题方案 */
 export type ColorScheme = 'light' | 'dark' | 'auto';

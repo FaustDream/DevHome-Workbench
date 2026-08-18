@@ -1,8 +1,14 @@
 node_modules/
 dist/
+dist.zip
 *.map
 *.log
 .DS_Store
 tests/
+.codebuddy/
+scripts/
+bugs.md
+release/
+
 
 

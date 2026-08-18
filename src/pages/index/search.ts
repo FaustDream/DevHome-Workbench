@@ -2,16 +2,14 @@
  * 搜索系统（对齐原版 js/search.js）
  *
  * 建议面板：`#suggestionsHeader`（历史标题 + 清空按钮）+ `#suggestionsList` + `#suggestionsFooter`。
- * 建议来源：搜索历史（去重上限 20）+ 磁贴匹配 + Bing 网络联想（防抖）。
+ * 建议来源：搜索历史（去重上限 20）+ 磁贴匹配。
  * 键盘导航：↑/↓ 移动、Enter 执行或选中、Esc 关闭；失焦 200ms 延迟隐藏。
  */
 
-import { debug, warn } from '../../lib/logger';
+import { debug } from '../../lib/logger';
 import {
-  BING_SUGGESTION_ENDPOINT,
   LS_KEYS,
   SEARCH_HISTORY_LIMIT,
-  SUGGESTION_DEBOUNCE_MS,
   SUGGESTION_HISTORY_LIMIT,
 } from '../../shared/constants';
 import { getEngineById } from '../../shared/types';
@@ -27,8 +25,7 @@ const MODULE = 'search';
 /** 建议项类型 */
 export type SuggestionItem =
   | { type: 'history'; text: string }
-  | { type: 'tile'; text: string; url: string }
-  | { type: 'online'; text: string };
+  | { type: 'tile'; text: string; url: string };
 
 /** 建议面板状态（模块级） */
 const suggestionState = {
@@ -37,15 +34,36 @@ const suggestionState = {
   visible: false,
 };
 
-/** 搜索相关开关（initSearch 时读取一次） */
-const searchFlags = {
-  /** 是否显示网络搜索建议（Bing 联想词） */
+/** 搜索相关开关（initSearch 时读取一次，设置变更时通过 updateSearchFlags 更新） */
+export const searchFlags = {
+  /** 是否显示搜索建议（历史 + 磁贴） */
   suggestions: true,
   /** 搜索后是否保留输入框内容 */
   retain: false,
   /** 是否隐藏搜索按钮 */
   hideBtn: false,
 };
+
+/** 更新搜索开关并立即生效 */
+export function updateSearchFlags(key: string, value: boolean): void {
+  const searchBtn = document.getElementById('searchButton');
+  switch (key) {
+    case 'search_suggestions':
+      searchFlags.suggestions = value;
+      // 关闭「显示搜索建议」时立即收起已展开的建议面板
+      if (!value) hideSuggestions();
+      break;
+    case 'search_retain':
+      searchFlags.retain = value;
+      break;
+    case 'search_hide_btn':
+      searchFlags.hideBtn = value;
+      if (searchBtn !== null) {
+        searchBtn.style.display = value ? 'none' : '';
+      }
+      break;
+  }
+}
 
 /* ================= 搜索历史 ================= */
 
@@ -72,7 +90,7 @@ export function clearSearchHistory(): void {
 
 /* ================= 建议构建 ================= */
 
-/** 构建建议列表（历史 + 磁贴 + 在线） */
+/** 构建建议列表（历史 + 磁贴） */
 export function buildSuggestions(query: string): SuggestionItem[] {
   const q = query.trim();
   const items: SuggestionItem[] = [];
@@ -96,24 +114,16 @@ export function buildSuggestions(query: string): SuggestionItem[] {
   return items;
 }
 
-/** 请求 Bing 在线联想（失败降级） */
-async function fetchOnlineSuggestions(query: string): Promise<string[]> {
-  try {
-    const res = await fetch(`${BING_SUGGESTION_ENDPOINT}${encodeURIComponent(query)}`);
-    if (!res.ok) return [];
-    const data = (await res.json()) as [string, string[]];
-    return Array.isArray(data[1]) ? data[1].slice(0, 8) : [];
-  } catch {
-    warn(MODULE, `Bing 联想词请求失败，降级离线建议`);
-    return [];
-  }
-}
-
-/** 建议面板防抖控制 */
-let suggestionDebounceTimer: ReturnType<typeof setTimeout> | null = null;
-
-/** 处理输入变更：构建建议 + 防抖请求在线词 */
+/** 处理输入变更：构建建议 */
 export function handleSearchInput(query: string): void {
+  // 「显示搜索建议」关闭时，不产生任何建议（含历史记录）
+  if (!searchFlags.suggestions) {
+    suggestionState.items = [];
+    suggestionState.selectedIndex = -1;
+    hideSuggestions();
+    return;
+  }
+
   const items = buildSuggestions(query);
   suggestionState.items = items;
   suggestionState.selectedIndex = -1;
@@ -121,21 +131,6 @@ export function handleSearchInput(query: string): void {
     suggestionState.visible = true;
   }
   renderSuggestions();
-
-  if (suggestionDebounceTimer !== null) {
-    clearTimeout(suggestionDebounceTimer);
-  }
-  if (query.trim() !== '' && searchFlags.suggestions) {
-    suggestionDebounceTimer = setTimeout(async () => {
-      const online = await fetchOnlineSuggestions(query.trim());
-      const existing = new Set(suggestionState.items.map((i) => i.text));
-      suggestionState.items = [
-        ...suggestionState.items,
-        ...online.filter((t) => !existing.has(t)).map((t) => ({ type: 'online' as const, text: t })),
-      ];
-      renderSuggestions();
-    }, SUGGESTION_DEBOUNCE_MS);
-  }
 }
 
 /* ================= 建议渲染（header/list/footer） ================= */
@@ -184,14 +179,22 @@ export function renderSuggestions(): void {
       suggestionState.items.forEach((item, i) => {
         const el = document.createElement('div');
         el.className = 'suggestion-item';
+        el.id = `suggestion-item-${i}`;
         el.classList.toggle('selected', i === suggestionState.selectedIndex);
         el.setAttribute('role', 'option');
         el.setAttribute('aria-selected', String(i === suggestionState.selectedIndex));
+        const iconWrap = document.createElement('span');
+        iconWrap.setAttribute('aria-hidden', 'true');
+        iconWrap.innerHTML = icon(item.type === 'tile' ? 'link' : 'search', 'dh-icon--sm');
+        el.appendChild(iconWrap);
+        const text = document.createElement('span');
         if (item.type === 'tile') {
-          el.innerHTML = `${icon('link', 'dh-icon--sm')}<span>${item.url}</span>`;
+          // 网址来自本地磁贴数据，必须走 textContent，避免通过导入数据注入 HTML
+          text.textContent = item.url;
         } else {
-          el.innerHTML = `${icon('search', 'dh-icon--sm')}<span>${escapeHtml(item.text)}</span>`;
+          text.textContent = item.text;
         }
+        el.appendChild(text);
         el.addEventListener('click', () => selectSuggestion(i));
         list.appendChild(el);
       });
@@ -209,14 +212,22 @@ export function renderSuggestions(): void {
     }
   }
 
-  const visible = suggestionState.visible && suggestionState.items.length > 0;
+  const visible = searchFlags.suggestions && suggestionState.visible && (suggestionState.items.length > 0 || q !== '');
   panel.classList.toggle('visible', visible);
   panel.classList.toggle('empty', q !== '' && suggestionState.items.length === 0);
+  panel.hidden = !visible;
   suggestionState.visible = visible;
-}
 
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
+  // 更新 combobox ARIA 属性
+  const inputEl = document.getElementById('searchInput') as HTMLInputElement | null;
+  if (inputEl !== null) {
+    inputEl.setAttribute('aria-expanded', String(visible));
+    if (visible && suggestionState.selectedIndex >= 0 && suggestionState.selectedIndex < suggestionState.items.length) {
+      inputEl.setAttribute('aria-activedescendant', `suggestion-item-${suggestionState.selectedIndex}`);
+    } else {
+      inputEl.setAttribute('aria-activedescendant', '');
+    }
+  }
 }
 
 /** 显示/隐藏建议面板 */

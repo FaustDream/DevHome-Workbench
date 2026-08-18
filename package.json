@@ -6,8 +6,9 @@
   "private": true,
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "node build.mjs",
-    "build:prod": "node build.mjs --prod",
+    "build": "node scripts/build.mjs",
+    "build:prod": "node scripts/build.mjs --prod",
+    "release": "node scripts/release.mjs",
     "test": "vitest run",
     "test:unit": "vitest run",
     "test:watch": "vitest",

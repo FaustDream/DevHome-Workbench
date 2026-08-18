@@ -157,13 +157,13 @@ async function renameCategoryAt(idx: number): Promise<void> {
   renderCatRow();
 }
 
-/** 确认后删除分类（R15 统一 showConfirm，至少保留 1 页） */
+/** 确认后删除分类（磁贴会移入首页，支持撤销） */
 async function confirmDeleteCategory(idx: number, name: string): Promise<void> {
   if (state.totalPages <= 1) {
     await showConfirm('至少需要保留一个分类页面。', { title: '无法删除' });
     return;
   }
-  const ok = await showConfirm(`确定要删除分类「${name}」吗？\n分类中的磁贴将被清空。`, { title: '删除分类', danger: true });
+  const ok = await showConfirm(`确定要删除分类「${name}」吗？\n分类中的磁贴将移入首页，可在5秒内撤销。`, { title: '删除分类', danger: true, confirmText: '删除' });
   if (!ok) return;
   await tileManager.removePageAt(idx);
   refreshCatRowIfVisible();

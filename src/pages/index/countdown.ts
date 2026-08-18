@@ -1,30 +1,16 @@
 /**
- * 倒计时卡片（对齐原版 js/countdown.js + css/countdown.css）
- *
- * 容器 `#countdownRoot` 动态创建并挂到 body（原版行为）。
- * 卡片结构：`countdown-card > countdown-title(icon+text) / countdown-days / countdown-label /
- * countdown-progress / countdown-target-date / countdown-delete-btn`。
- * 每分钟刷新（天级精度）。
+ * 倒计时数据管理
  */
 
-import { createId, calcCountdown } from '../../lib/utils';
-import { COUNTDOWN_REFRESH_INTERVAL_MS, RAW_KEYS } from '../../shared/constants';
+import { RAW_KEYS } from '../../shared/constants';
 import type { CountdownItem } from '../../shared/types';
-import { showPrompt } from './dialogs';
-import type { PromptFieldValues } from './dialogs';
-import { icon } from './icons';
+import { localStorageService } from './storage';
 
-/** 读取倒计时列表（校验结构，R20） */
+/** 读取倒计时列表（校验结构） */
 export function getCountdowns(): CountdownItem[] {
-  try {
-    const raw = localStorage.getItem(RAW_KEYS.COUNTDOWNS);
-    if (raw === null) return [];
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isCountdownItem);
-  } catch {
-    return [];
-  }
+  const parsed = localStorageService.get<unknown>(RAW_KEYS.COUNTDOWNS, []);
+  if (!Array.isArray(parsed)) return [];
+  return parsed.filter(isCountdownItem);
 }
 
 function isCountdownItem(v: unknown): v is CountdownItem {
@@ -40,155 +26,11 @@ function isCountdownItem(v: unknown): v is CountdownItem {
 
 /** 保存倒计时列表 */
 export function saveCountdowns(items: readonly CountdownItem[]): void {
-  localStorage.setItem(RAW_KEYS.COUNTDOWNS, JSON.stringify(items));
+  localStorageService.set(RAW_KEYS.COUNTDOWNS, items);
 }
 
 /** 删除倒计时 */
 export function deleteCountdown(id: string): void {
   const next = getCountdowns().filter((c) => c.id !== id);
   saveCountdowns(next);
-  refreshCountdownUI();
-}
-
-/** 校验 YYYY-MM-DD 日期格式 */
-function isDateStr(v: string): boolean {
-  return /^\d{4}-\d{2}-\d{2}$/.test(v);
-}
-
-/** 今日 YYYY-MM-DD */
-function todayStr(): string {
-  const d = new Date();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${d.getFullYear()}-${mm}-${dd}`;
-}
-
-/** 弹出添加倒计时表单，确认后新增并持久化 */
-export async function addCountdown(): Promise<void> {
-  const values = await showPrompt('添加倒计时', {
-    title: '添加倒计时',
-    fields: [
-      { name: 'title', label: '名称', placeholder: '例如：项目上线' },
-      { name: 'targetDate', label: '目标日期', placeholder: 'YYYY-MM-DD', defaultValue: todayStr() },
-    ],
-    confirmText: '添加',
-  });
-  if (values === null) return;
-  const v = values as PromptFieldValues;
-  const title = (v.title ?? '').trim();
-  const targetDate = (v.targetDate ?? '').trim();
-  if (title === '' || !isDateStr(targetDate)) return;
-  const item: CountdownItem = {
-    id: createId('cd'),
-    title,
-    targetDate,
-    createdAt: todayStr(),
-  };
-  saveCountdowns([...getCountdowns(), item]);
-  refreshCountdownUI();
-}
-
-/** 渲染单个倒计时卡片（对齐原版 DOM） */
-function renderCountdownCard(cd: CountdownItem): HTMLElement {
-  const card = document.createElement('div');
-  card.className = 'countdown-card';
-  card.dataset.countdownId = cd.id;
-
-  const result = calcCountdown(cd);
-
-  // 标题行：icon + 文本
-  const titleEl = document.createElement('div');
-  titleEl.className = 'countdown-title';
-  const iconEl = document.createElement('span');
-  iconEl.className = 'countdown-title-icon';
-  iconEl.textContent = result.isOverdue ? '\u23F0' : '\u2728';
-  const titleText = document.createElement('span');
-  titleText.textContent = cd.title;
-  titleEl.appendChild(iconEl);
-  titleEl.appendChild(titleText);
-  card.appendChild(titleEl);
-
-  if (result.isOverdue) {
-    const daysEl = document.createElement('div');
-    daysEl.className = 'countdown-days overdue';
-    daysEl.textContent = '已过期';
-    card.appendChild(daysEl);
-    const badge = document.createElement('div');
-    badge.className = 'countdown-overdue-badge';
-    badge.textContent = '\u26A0\uFE0F ' + formatTargetDate(cd.targetDate);
-    card.appendChild(badge);
-  } else {
-    const daysEl = document.createElement('div');
-    daysEl.className = 'countdown-days';
-    daysEl.textContent = String(result.days);
-    card.appendChild(daysEl);
-    const labelEl = document.createElement('div');
-    labelEl.className = 'countdown-label';
-    labelEl.textContent = result.days === 0 ? '就在今天！' : '天后';
-    card.appendChild(labelEl);
-    if (!result.isToday) {
-      const progressWrap = document.createElement('div');
-      progressWrap.className = 'countdown-progress';
-      const bar = document.createElement('div');
-      bar.className = 'countdown-progress-bar';
-      bar.style.width = `${result.progress}%`;
-      progressWrap.appendChild(bar);
-      card.appendChild(progressWrap);
-    }
-  }
-
-  const dateEl = document.createElement('div');
-  dateEl.className = 'countdown-target-date';
-  dateEl.textContent = '目标：' + formatTargetDate(cd.targetDate);
-  card.appendChild(dateEl);
-
-  const deleteBtn = document.createElement('button');
-  deleteBtn.className = 'countdown-delete-btn';
-  deleteBtn.innerHTML = '&#x2715;';
-  deleteBtn.title = '删除此倒计时';
-  deleteBtn.setAttribute('aria-label', `删除倒计时 ${cd.title}`);
-  deleteBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    deleteCountdown(cd.id);
-  });
-  card.appendChild(deleteBtn);
-
-  return card;
-}
-
-/** 目标日期格式化 YYYY-MM-DD → YYYY/M/D */
-function formatTargetDate(targetDate: string): string {
-  return targetDate.replace(/-/g, '/');
-}
-
-/** 刷新倒计时 UI */
-function refreshCountdownUI(): void {
-  const root = document.getElementById('countdownRoot');
-  if (root === null) return;
-  const list = getCountdowns();
-  root.replaceChildren();
-  for (const cd of list) {
-    root.appendChild(renderCountdownCard(cd));
-  }
-  // 末尾「添加倒计时」按钮
-  const addBtn = document.createElement('button');
-  addBtn.type = 'button';
-  addBtn.className = 'countdown-add-btn';
-  addBtn.title = '添加倒计时';
-  addBtn.setAttribute('aria-label', '添加倒计时');
-  addBtn.innerHTML = icon('plus', 'dh-icon--sm');
-  addBtn.addEventListener('click', () => void addCountdown());
-  root.appendChild(addBtn);
-}
-
-/** 初始化倒计时：动态创建容器 + 渲染 + 每分钟刷新 */
-export function initCountdown(): void {
-  let root = document.getElementById('countdownRoot');
-  if (root === null) {
-    root = document.createElement('div');
-    root.id = 'countdownRoot';
-    document.body.appendChild(root);
-  }
-  refreshCountdownUI();
-  setInterval(refreshCountdownUI, COUNTDOWN_REFRESH_INTERVAL_MS);
 }

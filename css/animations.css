@@ -51,12 +51,8 @@
     transform: translateY(10px);
 }
 
-/* ===== 减少动画：全局禁用所有动画和过渡 ===== */
-.reduce-motion *,
-.reduce-motion *::before,
-.reduce-motion *::after {
-    animation-duration: 0s !important;
-    animation-delay: 0s !important;
-    transition-duration: 0s !important;
-    transition-delay: 0s !important;
+/* ===== 加载旋转动画 ===== */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }

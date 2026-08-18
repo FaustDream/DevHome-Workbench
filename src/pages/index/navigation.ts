@@ -14,6 +14,7 @@ import { isEngineId } from '../../shared/guards';
 import { state } from './state';
 import { localStorageService } from './storage';
 import { icon } from './icons';
+import { showToast } from './dialogs';
 
 const MODULE = 'navigation';
 
@@ -27,13 +28,21 @@ export function loadEngine(): EngineId {
   return state.engine;
 }
 
-/** 切换引擎：持久化 + 更新 UI */
+/** 切换引擎：持久化 + 更新 UI + 反馈 */
 export function setEngine(id: EngineId): void {
   if (!isEngineId(id)) return;
+  const prevEngine = state.engine;
   state.engine = id;
   localStorageService.setRaw(LS_KEYS.ENGINE, id);
   updateCurrentEngine();
   info(MODULE, `引擎切换`, { id });
+  // 仅在用户主动切换时提示（非首次加载恢复）
+  if (prevEngine !== id) {
+    const engine = getEngineById(id);
+    if (engine !== null) {
+      showToast(`已切换到 ${engine.name}`, 'info');
+    }
+  }
 }
 
 /** 初始化引擎选择器 UI（启动时调用，从 ENGINES 动态生成下拉项） */

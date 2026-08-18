@@ -76,6 +76,7 @@ function moveTilesBetweenPages(
 
 /** 清除所有选中状态 */
 export function clearSelection(): void {
+  state.batchSelectMode = false;
   state.selectedTileIds.clear();
   document.querySelectorAll('.tile.tile-selected').forEach((el) => el.classList.remove('tile-selected'));
   hideBatchBar();
@@ -108,21 +109,24 @@ function getBatchBar(): HTMLElement {
 function showBatchBar(): void {
   const bar = getBatchBar();
   const count = state.selectedTileIds.size;
+  const disabledAttr = count === 0 ? ' disabled aria-disabled="true"' : '';
   bar.innerHTML = `
     <span class="batch-action-count">已选择 ${count} 个</span>
-    <button class="batch-action-btn batch-action-move" type="button">
+    <button class="batch-action-btn batch-action-move" type="button"${disabledAttr}>
       <svg class="dh-icon dh-icon--move-folder dh-icon--sm" role="img"><use href="#dh-icon-move-folder"></use></svg>移动到分类
     </button>
-    <button class="batch-action-btn batch-action-delete" type="button">删除选中</button>
+    <button class="batch-action-btn batch-action-delete" type="button"${disabledAttr}>删除选中</button>
     <button class="batch-action-btn batch-action-cancel" type="button">取消选择</button>
   `;
   bar.style.display = 'flex';
 
-  // 绑定事件
+  // 批量模式下可连续点选磁贴；移动/删除仅在已有选中项时可用
   bar.querySelector('.batch-action-move')?.addEventListener('click', () => {
+    if (state.selectedTileIds.size === 0) return;
     void promptSelectCategory([...state.selectedTileIds] as Tile['id'][], 'move');
   });
   bar.querySelector('.batch-action-delete')?.addEventListener('click', () => {
+    if (state.selectedTileIds.size === 0) return;
     void confirmBatchDelete();
   });
   bar.querySelector('.batch-action-cancel')?.addEventListener('click', () => {
@@ -157,7 +161,7 @@ async function confirmBatchDelete(): Promise<void> {
 
   clearSelection();
   renderTiles();
-  showUndoToast('delete', deleted.length);
+  showUndoToast('delete', String(deleted.length));
 }
 
 /* ================= 移动/复制分类选择弹窗 ================= */
@@ -245,12 +249,14 @@ function getToastHost(): HTMLElement {
     host = document.createElement('div');
     host.id = 'dhDialogHost';
     host.style.cssText = 'position:fixed;inset:0;z-index:3200;pointer-events:none;';
+    host.setAttribute('aria-live', 'polite');
+    host.setAttribute('aria-atomic', 'false');
     document.body.appendChild(host);
   }
   return host;
 }
 
-/** 撤销最近一次删除或移动操作 */
+/** 撤销最近一次删除、移动或删除分类操作 */
 function undoLastAction(): void {
   const action = state.undoAction;
   if (action === null) return;
@@ -266,8 +272,34 @@ function undoLastAction(): void {
     }
     tileManager.updateCurrentTiles();
     renderTiles();
+    renderCatRow();
     clearSelection();
     showToast('已恢复快捷方式', 'success');
+    return;
+  }
+
+  if (action.type === 'deletePage') {
+    const nextPages = state.pagesData.slice();
+    // 从首页移除之前合并过来的磁贴
+    const firstPage = nextPages[0];
+    if (firstPage !== undefined) {
+      const idSet = new Set(action.movedTileIds);
+      nextPages[0] = { ...firstPage, tiles: normalizePositions(firstPage.tiles.filter((t) => !idSet.has(t.id))) };
+    }
+    // 在原位置插回被删除的分类
+    nextPages.splice(action.pageIndex, 0, action.page);
+    state.pagesData = nextPages;
+    state.pageNames = nextPages.map((p) => p.name);
+    state.totalPages = nextPages.length;
+    if (state.currentPage >= nextPages.length) {
+      state.currentPage = nextPages.length - 1;
+    }
+    void pageManager.save(nextPages);
+    tileManager.updateCurrentTiles();
+    renderTiles();
+    renderCatRow();
+    clearSelection();
+    showToast(`已恢复分类「${action.page.name}」`, 'success');
     return;
   }
 
@@ -283,21 +315,28 @@ function undoLastAction(): void {
   void pageManager.save(nextPages);
   tileManager.updateCurrentTiles();
   renderTiles();
+  renderCatRow();
   clearSelection();
   showToast('已撤销移动', 'success');
 }
 
 /** 显示带撤销按钮的 Toast */
-function showUndoToast(kind: 'delete' | 'move', count: number): void {
+function showUndoToast(kind: 'delete' | 'move' | 'deletePage', label?: string): void {
   const host = getToastHost();
   host.querySelectorAll('.ui-toast').forEach((t) => t.remove());
 
-  const text = kind === 'delete' ? `已删除 ${count} 个快捷方式` : `已移动 ${count} 个快捷方式`;
+  let text: string;
+  if (kind === 'delete') text = `已删除 ${label ?? '1'} 个快捷方式`;
+  else if (kind === 'move') text = `已移动 ${label ?? '1'} 个快捷方式`;
+  else text = `已删除分类「${label ?? ''}」`;
+
   const toast = document.createElement('div');
-  toast.className = 'ui-toast ui-toast--info';
+  toast.className = 'ui-toast ui-toast--warning';
   toast.style.pointerEvents = 'auto';
+  toast.setAttribute('role', 'status');
+  toast.setAttribute('aria-live', 'polite');
   toast.innerHTML = `
-    <span class="ui-toast-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></span>
+    <span class="ui-toast-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
     <span>${text}</span>
     <button class="ui-toast-undo-btn" type="button">撤销</button>
   `;
@@ -427,8 +466,11 @@ export const tileManager = {
     await pageManager.save(nextPages);
   },
 
-  /** 删除指定页 */
+  /** 删除指定页（支持撤销，磁贴会先移入首页，撤销时移回） */
   async removePageAt(pageIndex: number): Promise<void> {
+    const page = state.pagesData[pageIndex];
+    if (page === undefined) return;
+    const movedTileIds = page.tiles.map((t) => t.id);
     const nextPages = pageManager.removePageWithStrategy(state.pagesData, pageIndex);
     if (nextPages.length === state.pagesData.length) return;
     state.pagesData = nextPages;
@@ -436,6 +478,12 @@ export const tileManager = {
     state.totalPages = nextPages.length;
     await pageManager.save(nextPages);
     this.updateCurrentTiles();
+    renderTiles();
+    renderCatRow();
+
+    // 记录撤销动作
+    state.undoAction = { type: 'deletePage', page: { ...page, tiles: [...page.tiles] }, pageIndex, movedTileIds };
+    showUndoToast('deletePage', page.name);
   },
 
   /** 页面重排 */
@@ -472,7 +520,8 @@ export const tileManager = {
 
     clearSelection();
     renderTiles();
-    showUndoToast('move', moved.length);
+    renderCatRow();
+    showUndoToast('move', String(moved.length));
   },
 
   /** 移动磁贴到新建分类（创建分类 + 移动 + 记录撤销，不切换当前页） */
@@ -502,7 +551,7 @@ export const tileManager = {
     clearSelection();
     renderTiles();
     renderCatRow();
-    showUndoToast('move', moved.length);
+    showUndoToast('move', String(moved.length));
   },
 
   /** 复制磁贴到目标分类（源分类保留，副本追加到目标分类） */
@@ -558,11 +607,22 @@ async function promptAddTile(): Promise<void> {
   });
 }
 
-/** 确认后删除磁贴（R15 统一 showConfirm） */
+/** 确认后删除磁贴（支持撤销） */
 async function confirmDeleteTile(tile: Tile): Promise<void> {
   const ok = await showConfirm(`确定要删除「${tile.label}」吗？`, { title: '删除磁贴', danger: true });
   if (!ok) return;
-  tileManager.remove(tile.id);
+
+  const page = state.pagesData[state.currentPage];
+  if (page === undefined) return;
+  const nextPages = state.pagesData.slice();
+  nextPages[state.currentPage] = { ...page, tiles: normalizePositions(page.tiles.filter((t) => t.id !== tile.id)) };
+  state.pagesData = nextPages;
+  await pageManager.save(nextPages);
+  tileManager.updateCurrentTiles();
+  state.undoAction = { type: 'delete', tiles: [tile], pageIndex: state.currentPage };
+
+  renderTiles();
+  showUndoToast('delete');
 }
 
 /** 编辑磁贴（弹出 Prompt 修改名称+URL） */
@@ -678,6 +738,7 @@ export function buildTileElement(tile: Tile): HTMLAnchorElement {
   a.target = '_blank';
   a.rel = 'noopener noreferrer';
   a.title = tile.label;
+  a.setAttribute('aria-label', `${tile.label}，在新标签页打开`);
   a.dataset.tileId = tile.id;
   a.draggable = false;
   a.style.setProperty('--tile-color', tile.color || '#4a9eff');
@@ -770,24 +831,17 @@ export function buildTileElement(tile: Tile): HTMLAnchorElement {
       return;
     }
 
-    // 修饰键 + 点击 → 批量选择 / 取消选择
-    if (isModifierHeld(e)) {
+    // 修饰键首次进入批量模式；进入后普通点击磁贴即可选择 / 取消选择
+    if (isModifierHeld(e) || state.batchSelectMode) {
       e.preventDefault();
+      state.batchSelectMode = true;
       if (state.selectedTileIds.has(tile.id)) {
         state.selectedTileIds.delete(tile.id);
       } else {
         state.selectedTileIds.add(tile.id);
       }
       syncTileSelectedState();
-      if (state.selectedTileIds.size > 0) showBatchBar();
-      else hideBatchBar();
-      return;
-    }
-
-    // 如果有选中的磁贴，从选中状态点击任意磁贴 → 清除选择
-    if (state.selectedTileIds.size > 0) {
-      e.preventDefault();
-      clearSelection();
+      showBatchBar();
       return;
     }
 
@@ -831,6 +885,12 @@ interface DragPointer {
   startY: number;
   currentX: number;
   currentY: number;
+  /** 拖拽启动时磁贴的原始尺寸（fixed 定位时保持，避免反复读取缩放后的 rect 导致坍缩） */
+  width: number;
+  height: number;
+  /** 指针按下点相对磁贴左上角的偏移（保持拖动相对位置稳定） */
+  offsetX: number;
+  offsetY: number;
   longPressTimer: ReturnType<typeof setTimeout> | null;
   moved: boolean;
   ready: boolean;
@@ -844,6 +904,10 @@ const pointer: DragPointer = {
   startY: 0,
   currentX: 0,
   currentY: 0,
+  width: 0,
+  height: 0,
+  offsetX: 0,
+  offsetY: 0,
   longPressTimer: null,
   moved: false,
   ready: false,
@@ -889,12 +953,18 @@ function onPointerDown(e: Event): void {
   if (index < 0) return;
 
   const pos = getClientPos(e);
+  const rect = target.getBoundingClientRect();
   pointer.tile = target;
   pointer.index = index;
   pointer.startX = pos.x;
   pointer.startY = pos.y;
   pointer.currentX = pos.x;
   pointer.currentY = pos.y;
+  // 记录原始尺寸与指针相对磁贴左上角的偏移，拖动时保持不变，杜绝缩放坍缩
+  pointer.width = rect.width;
+  pointer.height = rect.height;
+  pointer.offsetX = pos.x - rect.left;
+  pointer.offsetY = pos.y - rect.top;
   pointer.moved = false;
   pointer.ready = false;
   pointer.active = true;
@@ -965,6 +1035,10 @@ function resetDragState(): void {
   clearCategoryDropTarget();
   pointer.tile = null;
   pointer.index = -1;
+  pointer.width = 0;
+  pointer.height = 0;
+  pointer.offsetX = 0;
+  pointer.offsetY = 0;
   pointer.moved = false;
   pointer.ready = false;
   pointer.active = false;
@@ -998,19 +1072,18 @@ function clearCategoryDropTarget(): void {
   catDropTarget = -1;
 }
 
-/** 拖拽跟随定位 */
+/** 拖拽跟随定位（使用指针按下时记录的原始尺寸，不反复读取 rect 避免缩放坍缩） */
 function positionDragTile(): void {
   const tile = pointer.tile;
   if (tile === null) return;
-  const rect = tile.getBoundingClientRect();
+  // 启动拖拽时移除长按脉冲动画，避免 transform 与 fixed 定位冲突
+  tile.classList.remove('long-pressing');
   tile.classList.add('dragging');
   tile.style.position = 'fixed';
-  // 关键修复：position:fixed 会让网格项脱离流，width:100% 坍缩为视口宽；
-  // 显式固定原始宽高，保持磁贴尺寸与内容布局不变。
-  tile.style.width = `${rect.width}px`;
-  tile.style.height = `${rect.height}px`;
-  tile.style.left = `${pointer.currentX - rect.width / 2}px`;
-  tile.style.top = `${pointer.currentY - rect.height / 2}px`;
+  tile.style.width = `${pointer.width}px`;
+  tile.style.height = `${pointer.height}px`;
+  tile.style.left = `${pointer.currentX - pointer.offsetX}px`;
+  tile.style.top = `${pointer.currentY - pointer.offsetY}px`;
   tile.style.zIndex = '9999';
 }
 
@@ -1034,5 +1107,4 @@ function highlightDropTarget(): void {
     best.classList.add('drag-over');
   }
 }
-
 

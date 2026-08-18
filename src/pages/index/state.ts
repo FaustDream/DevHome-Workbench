@@ -30,8 +30,19 @@ export interface UndoMoveAction {
   toPageIndex: number;
 }
 
+/** 撤销删除分类动作 */
+export interface UndoDeletePageAction {
+  type: 'deletePage';
+  /** 被删除的分类页（含名称和所有磁贴） */
+  page: TilePage;
+  /** 删除时的索引位置 */
+  pageIndex: number;
+  /** 被合并到首页的磁贴 ID 集合（撤销时需从首页移除） */
+  movedTileIds: string[];
+}
+
 /** 撤销动作联合类型（当前会话内有效） */
-export type UndoAction = UndoDeleteAction | UndoMoveAction;
+export type UndoAction = UndoDeleteAction | UndoMoveAction | UndoDeletePageAction;
 
 /** 全局应用状态 */
 export interface AppState {
@@ -63,6 +74,8 @@ export interface AppState {
   preventNextTileClick: boolean;
   /** 批量选择的磁贴 ID 集合 */
   selectedTileIds: Set<string>;
+  /** 是否处于批量选择模式：进入后普通点击磁贴切换选中，只能通过取消按钮退出 */
+  batchSelectMode: boolean;
   /** 最近一次可撤销动作（当前会话内有效，null 表示无可撤销动作） */
   undoAction: UndoAction | null;
 }
@@ -79,7 +92,7 @@ export function createInitialState(): AppState {
     settings: {
       engine: 'google',
       shortcutSize: 'standard',
-      shortcutColumns: 'auto',
+      shortcutColumns: '8',
       autoFocus: false,
       categoryMemory: true,
       catRow: true,
@@ -97,6 +110,7 @@ export function createInitialState(): AppState {
     dragMoved: false,
     preventNextTileClick: false,
     selectedTileIds: new Set(),
+    batchSelectMode: false,
     undoAction: null,
   };
 }

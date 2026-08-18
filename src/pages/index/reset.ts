@@ -1,93 +1,63 @@
 /**
  * 数据重置模块 — 将扩展恢复到出厂默认状态
  *
- * 清除所有 localStorage 数据，重新加载默认分类磁贴并刷新页面。
+ * 清除所有 localStorage、IndexedDB 数据并刷新页面（不预置默认磁贴）。
  *
  * 触发方式：
  * - 控制台：`__thrilledReset()`
- * - 快捷键：Ctrl+Shift+R（在 boot 中绑定）
+ * - 快捷键：Ctrl+Shift+R（在 boot 中绑定，需确认）
  */
 
-import { info, warn } from '../../lib/logger';
-import {
-  LS_KEYS,
-  STORAGE_PREFIX,
-  DEFAULTS_JSON_PATH,
-  DEFAULTS_VERSION,
-  FILECONFIG_DB_NAME,
-} from '../../shared/constants';
-import { normalizeTilePositions, parseDefaultPages } from '../../lib/default-data-loader';
+import { info } from '../../lib/logger';
+import { FILECONFIG_DB_NAME } from '../../shared/constants';
 import { closeFileConfigDB } from './file-config';
+import { closeWallpaperDB, WALLPAPER_DB_NAME } from './wallpaper';
+import { closeFaviconDB, FAVICON_DB_NAME } from './favicon';
+import { clearAppStorage } from './storage';
 
 const MODULE = 'reset';
 
-/** ===== localStorage 清除 ===== */
+/** ===== 主存储清除 ===== */
 
-function clearAllLocalStorage(): void {
-  const count = localStorage.length;
-  localStorage.clear();
-  info(MODULE, `localStorage 已清空`, { removedKeys: count });
+async function clearAllStorage(): Promise<void> {
+  await clearAppStorage();
+  info(MODULE, 'IndexedDB 主存储已清空');
 }
 
-/** ===== IndexedDB 清除 ===== */
+/** ===== IndexedDB 删除 ===== */
 
 /** 重试配置 */
 const IDB_DELETE_MAX_RETRY = 3;
 const IDB_DELETE_RETRY_DELAY_MS = 300;
 
-function deleteFileConfigDB(retryCount = 0): Promise<void> {
+function deleteDatabase(dbName: string, retryCount = 0): Promise<void> {
   return new Promise((resolve) => {
     try {
-      const req = indexedDB.deleteDatabase(FILECONFIG_DB_NAME);
+      const req = indexedDB.deleteDatabase(dbName);
       req.onsuccess = () => {
-        info(MODULE, `IndexedDB ${FILECONFIG_DB_NAME} 已删除`);
+        info(MODULE, `IndexedDB ${dbName} 已删除`);
         resolve();
       };
       req.onerror = () => {
-        info(MODULE, `IndexedDB ${FILECONFIG_DB_NAME} 删除失败（已忽略）`, { err: String(req.error?.message ?? 'unknown') });
+        info(MODULE, `IndexedDB ${dbName} 删除失败（已忽略）`, { err: String(req.error?.message ?? 'unknown') });
         resolve();
       };
       req.onblocked = () => {
         if (retryCount < IDB_DELETE_MAX_RETRY) {
-          info(MODULE, `IndexedDB 删除被占用，${IDB_DELETE_RETRY_DELAY_MS}ms 后重试 (${retryCount + 1}/${IDB_DELETE_MAX_RETRY})`);
+          info(MODULE, `IndexedDB ${dbName} 删除被占用，${IDB_DELETE_RETRY_DELAY_MS}ms 后重试 (${retryCount + 1}/${IDB_DELETE_MAX_RETRY})`);
           setTimeout(() => {
-            deleteFileConfigDB(retryCount + 1).then(resolve);
+            void deleteDatabase(dbName, retryCount + 1).then(resolve);
           }, IDB_DELETE_RETRY_DELAY_MS);
         } else {
-          info(MODULE, `IndexedDB 删除多次重试仍被占用，跳过（刷新后自动清理）`);
+          info(MODULE, `IndexedDB ${dbName} 删除多次重试仍被占用，跳过（刷新后自动清理）`);
           resolve();
         }
       };
     } catch (e) {
-      info(MODULE, 'IndexedDB 删除异常（已忽略）', { err: (e as Error).message });
+      info(MODULE, `IndexedDB ${dbName} 删除异常（已忽略）`, { err: (e as Error).message });
       resolve();
     }
   });
-}
-
-/** ===== 默认数据写入 ===== */
-
-async function writeDefaultPages(): Promise<void> {
-  try {
-    localStorage.removeItem(LS_KEYS.DEFAULTS_CACHED);
-    localStorage.removeItem(LS_KEYS.DEFAULTS_VERSION);
-
-    const url = chrome.runtime.getURL(DEFAULTS_JSON_PATH);
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const raw = await res.text();
-    const pages = normalizeTilePositions(parseDefaultPages(raw));
-    if (pages.length > 0) {
-      localStorage.setItem(`${STORAGE_PREFIX}${LS_KEYS.PAGES}`, JSON.stringify(pages));
-      const names = pages.map((p) => p.name);
-      localStorage.setItem(`${STORAGE_PREFIX}${LS_KEYS.PAGE_NAMES}`, JSON.stringify(names));
-      localStorage.setItem(LS_KEYS.DEFAULTS_CACHED, raw);
-      localStorage.setItem(LS_KEYS.DEFAULTS_VERSION, DEFAULTS_VERSION);
-      info(MODULE, `默认磁贴已写入`, { pages: pages.length, names });
-    }
-  } catch (e) {
-    warn(MODULE, '默认数据写入失败', { err: (e as Error).message });
-  }
 }
 
 /** ===== 主入口 ===== */
@@ -95,15 +65,18 @@ async function writeDefaultPages(): Promise<void> {
 export async function resetAllData(): Promise<void> {
   info(MODULE, '开始重置所有数据...');
 
-  // Step 1: 清空所有 localStorage
-  clearAllLocalStorage();
-
-  // Step 2: 写入默认磁贴
-  await writeDefaultPages();
-
-  // Step 3: 关闭并删除 IndexedDB
+  // Step 1: 关闭所有数据库连接（必须在 deleteDatabase 之前）
   closeFileConfigDB();
-  await deleteFileConfigDB();
+  closeWallpaperDB();
+  closeFaviconDB();
+
+  // Step 2: 清空主存储（localStorage + 主 IndexedDB store）
+  await clearAllStorage();
+
+  // Step 3: 删除所有 IndexedDB 数据库
+  await deleteDatabase(FILECONFIG_DB_NAME);
+  await deleteDatabase(WALLPAPER_DB_NAME);
+  await deleteDatabase(FAVICON_DB_NAME);
 
   info(MODULE, '所有数据已重置，即将刷新页面');
   window.location.reload();
