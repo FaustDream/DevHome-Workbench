@@ -34,7 +34,6 @@ export const LS_KEYS = {
   LINK_NEW_TAB_TILES: 'linkNewTab_tiles',
   LINK_NEW_TAB_SEARCH: 'linkNewTab_search',
   CONFIG_NICKNAME: 'config_nickname',
-  SEARCH_SUGGESTIONS: 'search_suggestions',
   SEARCH_RETAIN: 'search_retain',
   SEARCH_HIDE_BTN: 'search_hide_btn',
   /** 首次初始化标记（onboarding 已弹窗/已跳过） */

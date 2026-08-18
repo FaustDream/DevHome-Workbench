@@ -77,7 +77,6 @@ const TOGGLE_MAP: Readonly<Record<string, { key: string; defaultVal: boolean }>>
   sToggleCategoryMemory: { key: LS_KEYS.CATEGORY_MEMORY, defaultVal: true },
   sToggleNewTabTiles: { key: LS_KEYS.LINK_NEW_TAB_TILES, defaultVal: true },
   sToggleNewTabSearch: { key: LS_KEYS.LINK_NEW_TAB_SEARCH, defaultVal: true },
-  searchSuggestionsToggle: { key: LS_KEYS.SEARCH_SUGGESTIONS, defaultVal: true },
   searchRetainToggle: { key: LS_KEYS.SEARCH_RETAIN, defaultVal: false },
   searchHideBtnToggle: { key: LS_KEYS.SEARCH_HIDE_BTN, defaultVal: false },
   sToggleCatRow: { key: LS_KEYS.CAT_ROW, defaultVal: true },
@@ -236,7 +235,7 @@ export function initSettingsPanel(): void {
     el?.addEventListener('change', () => {
       localStorageService.setRaw(cfg.key, String(el.checked));
       // 搜索相关开关需立即同步到 searchFlags，否则需刷新才生效
-      if (cfg.key === LS_KEYS.SEARCH_SUGGESTIONS || cfg.key === LS_KEYS.SEARCH_RETAIN || cfg.key === LS_KEYS.SEARCH_HIDE_BTN) {
+      if (cfg.key === LS_KEYS.SEARCH_RETAIN || cfg.key === LS_KEYS.SEARCH_HIDE_BTN) {
         updateSearchFlags(cfg.key, el.checked);
       }
       info(MODULE, `设置变更`, { key: cfg.key, value: el.checked });

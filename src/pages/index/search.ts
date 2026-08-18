@@ -36,7 +36,7 @@ const suggestionState = {
 
 /** 搜索相关开关（initSearch 时读取一次，设置变更时通过 updateSearchFlags 更新） */
 export const searchFlags = {
-  /** 是否显示搜索建议（历史 + 磁贴） */
+  /** 搜索建议常开（历史 + 磁贴） */
   suggestions: true,
   /** 搜索后是否保留输入框内容 */
   retain: false,
@@ -48,11 +48,6 @@ export const searchFlags = {
 export function updateSearchFlags(key: string, value: boolean): void {
   const searchBtn = document.getElementById('searchButton');
   switch (key) {
-    case 'search_suggestions':
-      searchFlags.suggestions = value;
-      // 关闭「显示搜索建议」时立即收起已展开的建议面板
-      if (!value) hideSuggestions();
-      break;
     case 'search_retain':
       searchFlags.retain = value;
       break;
@@ -116,14 +111,6 @@ export function buildSuggestions(query: string): SuggestionItem[] {
 
 /** 处理输入变更：构建建议 */
 export function handleSearchInput(query: string): void {
-  // 「显示搜索建议」关闭时，不产生任何建议（含历史记录）
-  if (!searchFlags.suggestions) {
-    suggestionState.items = [];
-    suggestionState.selectedIndex = -1;
-    hideSuggestions();
-    return;
-  }
-
   const items = buildSuggestions(query);
   suggestionState.items = items;
   suggestionState.selectedIndex = -1;
@@ -281,9 +268,8 @@ export async function executeSearch(query: string, engineId?: EngineId): Promise
 /** 初始化搜索：加载历史 + 绑定事件 */
 export function initSearch(): void {
   loadSearchHistory();
-  // 读取搜索相关开关（suggestions 默认开启，其余默认关闭）
-  const suggestionsRaw = localStorageService.getRaw(LS_KEYS.SEARCH_SUGGESTIONS);
-  searchFlags.suggestions = suggestionsRaw === null ? true : parseBooleanStr(suggestionsRaw);
+  // 读取搜索相关开关（搜索建议默认常开，其余默认关闭）
+  searchFlags.suggestions = true;
   searchFlags.retain = parseBooleanStr(localStorageService.getRaw(LS_KEYS.SEARCH_RETAIN));
   searchFlags.hideBtn = parseBooleanStr(localStorageService.getRaw(LS_KEYS.SEARCH_HIDE_BTN));
 

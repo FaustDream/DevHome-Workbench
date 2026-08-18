@@ -20,7 +20,7 @@ import { initDailyGreetingCard } from './daily-greeting';
 import { initWeather } from './weather';
 import { initSettingsPanel } from './settings-panel';
 import { initExport, exportAllData } from './export';
-import { initFileConfig, runInitialSetup } from './file-config';
+import { initFileConfig, runInitialSetup, setOnLocalDataRestored } from './file-config';
 import { initIconHydrate } from './icon-hydrate';
 import { initOnboarding } from './onboarding';
 import { resetAllData } from './reset';
@@ -42,6 +42,20 @@ function applyShortcutSize(): void {
   if (state.settings.shortcutColumns !== 'auto') {
     root.style.setProperty('--shortcut-columns', String(Number(state.settings.shortcutColumns)));
   }
+}
+
+/**
+ * 本地目录配置恢复完成后的重渲染钩子。
+ * restoreHandleOnStartup 把本地同步目录的 tiles/settings 等写回存储后，
+ * 主程序的内存状态与 UI 仍是恢复前的旧值，必须重新加载并重渲染才能「真正使用」本地默认配置。
+ */
+async function applyLocalRestore(): Promise<void> {
+  state.settings = await dataService.getSettings();
+  applyShortcutSize();
+  await tileManager.load();
+  renderCatRow();
+  renderTiles();
+  info(MODULE, '已从本地目录配置重渲染');
 }
 
 /** 启动序列 */
@@ -82,6 +96,7 @@ export async function boot(): Promise<void> {
   info(MODULE, 'Phase 2 渲染完成');
 
   // Phase 2.3：首次安装初始化设置（路径选择）- 必须在onboarding之前
+  setOnLocalDataRestored(applyLocalRestore);
   await runInitialSetup();
 
   // Phase 2.5：首次初始化引导（收藏夹导入）

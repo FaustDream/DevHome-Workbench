@@ -29,6 +29,18 @@ import { createModal, showConfirm, showToast } from './dialogs';
 const MODULE = 'file-config';
 
 /**
+ * 本地目录配置恢复完成后的回调（由主程序注册）。
+ * 当启动时从本地同步目录恢复数据写回存储后，主程序需要重新加载内存状态并重渲染，
+ * 否则用户会看到空白——即「本地目录配置未被插件实际使用」。
+ */
+let onLocalDataRestored: (() => Promise<void> | void) | null = null;
+
+/** 主程序注册本地配置恢复后的重渲染钩子 */
+export function setOnLocalDataRestored(cb: () => Promise<void> | void): void {
+  onLocalDataRestored = cb;
+}
+
+/**
  * 从任意抛出值中提取有意义的错误信息。
  * DOMException/Error 取 name + message；其他类型退回 String()。
  */
@@ -999,6 +1011,8 @@ async function restoreHandleOnStartup(): Promise<void> {
     if (existingData !== null) {
       await restoreAllData(existingData);
       info(MODULE, '[启动] 已从文件恢复数据');
+      // 通知主程序：本地目录配置已写回存储，需重新加载并渲染
+      await onLocalDataRestored?.();
     } else {
       await syncToFile(true);
       info(MODULE, '[启动] 目录为空，已写入当前数据');
@@ -1038,6 +1052,8 @@ async function restoreHandleOnStartup(): Promise<void> {
     if (existingData !== null) {
       await restoreAllData(existingData);
       info(MODULE, '[启动] 已从文件恢复数据');
+      // 通知主程序：本地目录配置已写回存储，需重新加载并渲染
+      await onLocalDataRestored?.();
     } else {
       await syncToFile(true);
       info(MODULE, '[启动] 目录为空，已写入当前数据');
