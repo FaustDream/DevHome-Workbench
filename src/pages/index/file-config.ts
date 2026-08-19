@@ -57,6 +57,21 @@ function isPermissionError(e: unknown): boolean {
   return name === 'SecurityError' || name === 'NotAllowedError';
 }
 
+/**
+ * 判断错误是否为句柄状态失效（InvalidStateError）。
+ * File System Access API 的 DirectoryHandle 在浏览器重启/扩展重载后，
+ * 从旧会话恢复出的句柄内部状态与磁盘不一致，再次读写会抛此错。
+ * 这类错误与权限失效等价：需要用户重新选择/授权目录才能恢复同步。
+ */
+function isStateError(e: unknown): boolean {
+  return (e as { name?: string })?.name === 'InvalidStateError';
+}
+
+/** 句柄失效或权限失效，均需重新授权目录 */
+function isHandleInvalid(e: unknown): boolean {
+  return isPermissionError(e) || isStateError(e);
+}
+
 /** 判断错误是否为"文件/目录不存在"（正常情况，首次同步时出现） */
 function isNotFoundError(e: unknown): boolean {
   return (e as { name?: string })?.name === 'NotFoundError';
@@ -339,7 +354,7 @@ async function readAllCategoryFiles(): Promise<ReadResult> {
       if (v !== null) data[cat] = v;
     } catch (e) {
       const info = getErrorInfo(e);
-      if (isPermissionError(e)) hasPermissionError = true;
+      if (isHandleInvalid(e)) hasPermissionError = true;
       warn(MODULE, `读取 ${DATA_LAYOUT[cat]?.desc ?? cat} 失败(${info.name})：${info.message}`);
     }
   }
@@ -399,12 +414,12 @@ async function syncToFile(force = false): Promise<void> {
         ok++;
       } catch (e) {
         const errInfo = getErrorInfo(e);
-        if (isPermissionError(e)) {
+        if (isHandleInvalid(e)) {
           hadPermissionError = true;
           // 查询权限状态（不自动请求，因为可能不在用户手势上下文中）
           const hasPerm = await verifyPermission(dirHandle, true, false);
           if (!hasPerm) {
-            // 权限确实失效了，标记为待授权并中断后续写入
+            // 权限/句柄确实失效了，标记为待授权并中断后续写入
             warn(MODULE, `写入失败(${errInfo.name})：${errInfo.message}，目录需要重新授权`);
             writePermissionPending = true;
             localStorageService.remove(LS_KEYS.PERMISSION_CACHED);
@@ -418,7 +433,7 @@ async function syncToFile(force = false): Promise<void> {
             continue;
           } catch (retryErr) {
             const retryInfo = getErrorInfo(retryErr);
-            if (isPermissionError(retryErr)) hadPermissionError = true;
+            if (isHandleInvalid(retryErr)) hadPermissionError = true;
             warn(MODULE, `重试写入仍失败(${retryInfo.name})：${retryInfo.message}`);
           }
         } else {
